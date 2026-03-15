@@ -54,8 +54,9 @@ services:
       - key: AUTH_RESEND_LIMIT_PER_HOUR
         value: "12"
 
-  - type: static
+  - type: web
     name: open-garden-web
+    runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
