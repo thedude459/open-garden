@@ -29,11 +29,29 @@ class MessageOut(BaseModel):
     message: str
 
 
+class CropTemplateSyncStatusOut(BaseModel):
+    status: str
+    is_running: bool
+    message: str
+    last_started_at: str | None = None
+    last_finished_at: str | None = None
+    added: int = 0
+    updated: int = 0
+    skipped: int = 0
+    failed: int = 0
+    cleaned_legacy_count: int = 0
+    error: str | None = None
+
+
 class VerifyEmailPayload(BaseModel):
     token: str
 
 
 class ForgotPasswordPayload(BaseModel):
+    email: EmailStr
+
+
+class ForgotUsernamePayload(BaseModel):
     email: EmailStr
 
 
@@ -85,6 +103,9 @@ class CropTemplateOut(BaseModel):
     id: int
     name: str
     variety: str
+    source: str
+    source_url: str
+    external_product_id: str
     family: str
     spacing_in: int
     days_to_harvest: int

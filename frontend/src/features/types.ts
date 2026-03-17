@@ -47,6 +47,9 @@ export type CropTemplate = {
   id: number;
   name: string;
   variety: string;
+  source: string;
+  source_url: string;
+  external_product_id: string;
   family: string;
   spacing_in: number;
   days_to_harvest: number;
@@ -55,6 +58,20 @@ export type CropTemplate = {
   frost_hardy: boolean;
   weeks_to_transplant: number;
   notes: string;
+};
+
+export type CropTemplateSyncStatus = {
+  status: string;
+  is_running: boolean;
+  message: string;
+  last_started_at: string | null;
+  last_finished_at: string | null;
+  added: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  cleaned_legacy_count: number;
+  error: string | null;
 };
 
 export type CalendarEvent = {

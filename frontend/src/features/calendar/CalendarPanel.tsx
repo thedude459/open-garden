@@ -296,18 +296,24 @@ export function CalendarPanel({
               />
               <div id="calendar-crop-list" className="crop-picker-list" role="listbox" aria-label="Vegetable search results">
                 {filteredCropTemplates.slice(0, 8).map((crop, index) => (
+                  (() => {
+                    const isSelected = selectedCropName === crop.name;
+                    const isFocused = cropSearchActiveIndex === index;
+                    return (
                   <button
                     key={crop.id}
                     id={`calendar-crop-option-${crop.id}`}
                     type="button"
                     role="option"
-                    aria-selected={selectedCropName === crop.name || cropSearchActiveIndex === index}
-                    className={selectedCropName === crop.name || cropSearchActiveIndex === index ? "crop-option active" : "crop-option"}
+                    aria-selected={isSelected}
+                    className={`crop-option${isSelected ? " active" : ""}${!isSelected && isFocused ? " focused" : ""}`}
                     onClick={() => onSelectCrop(crop)}
                   >
                     <strong>{cropBaseName(crop)}</strong>
                     <small>{crop.variety || crop.family || "Vegetable"}</small>
                   </button>
+                    );
+                  })()
                 ))}
                 {filteredCropTemplates.length === 0 && <p className="hint">No vegetables match that search.</p>}
               </div>

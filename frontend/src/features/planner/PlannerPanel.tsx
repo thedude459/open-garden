@@ -85,7 +85,7 @@ export function PlannerPanel({
   return (
     <article className="card bed-planner-card">
       <h2>Garden Bed Planner Studio</h2>
-      <p className="subhead">Build your layout map, then click inside each bed to assign crops by square foot.</p>
+      <p className="subhead">Build your layout map, then click inside each bed to place crops with proper spacing.</p>
       {isLoadingGardenData && <p className="hint">Refreshing layout data...</p>}
 
       <div className="planner-layout">
@@ -127,18 +127,24 @@ export function PlannerPanel({
               />
               <div id="planner-crop-list" className="crop-picker-list" role="listbox" aria-label="Planner vegetable search results">
                 {filteredCropTemplates.slice(0, 10).map((crop, index) => (
+                  (() => {
+                    const isSelected = selectedCropName === crop.name;
+                    const isFocused = cropSearchActiveIndex === index;
+                    return (
                   <button
                     key={crop.id}
                     id={`planner-crop-option-${crop.id}`}
                     type="button"
                     role="option"
-                    aria-selected={selectedCropName === crop.name || cropSearchActiveIndex === index}
-                    className={selectedCropName === crop.name || cropSearchActiveIndex === index ? "crop-option active" : "crop-option"}
+                    aria-selected={isSelected}
+                    className={`crop-option${isSelected ? " active" : ""}${!isSelected && isFocused ? " focused" : ""}`}
                     onClick={() => onSelectCrop(crop)}
                   >
                     <strong>{cropBaseName(crop)}</strong>
                     <small>{crop.variety || crop.family || "Vegetable"}</small>
                   </button>
+                    );
+                  })()
                 ))}
                 {filteredCropTemplates.length === 0 && <p className="hint">No vegetables match that search.</p>}
               </div>
@@ -194,6 +200,122 @@ export function PlannerPanel({
               <span>Yard (ft)</span>
             </div>
           </div>
+
+          <section className="planner-panel planner-bed-panel">
+            <div className="planner-section-head">
+              <div>
+                <h3>Bed Sheets</h3>
+                <p className="hint">Each square is one foot. Place crops directly on the grid or drag existing placements between beds.</p>
+              </div>
+            </div>
+
+            <div className="bed-detail-grid">
+              {beds.map((bed) => {
+                const cols = Math.max(1, Math.ceil(bed.width_in / 3));
+                const rows = Math.max(1, Math.ceil(bed.height_in / 3));
+                const bedPlacements = placements.filter((item) => item.bed_id === bed.id);
+
+                return (
+                  <section key={bed.id} className="bed-sheet">
+                    <header>
+                      <h4>{bed.name}</h4>
+                      <small>
+                        {cols} x {rows} squares
+                      </small>
+                      <button className="danger-sm" title="Delete bed" onClick={() => onDeleteBed(bed.id)}>
+                        Delete bed
+                      </button>
+                    </header>
+
+                    <div className="bed-board" style={{ gridTemplateColumns: `repeat(${cols}, minmax(2.1rem, 1fr))` }}>
+                      {Array.from({ length: cols * rows }).map((_, index) => {
+                        const x = index % cols;
+                        const y = Math.floor(index / cols);
+                        const occupant = bedPlacements.find((item) => item.grid_x === x && item.grid_y === y);
+                        const blockedForSelected = isCellBlockedForSelectedCrop(bed.id, x, y, occupant);
+
+                        return (
+                          <button
+                            key={`${bed.id}-${x}-${y}`}
+                            className={`plot-cell${occupant ? " occupied" : ""}${blockedForSelected ? " blocked" : ""}`}
+                            style={occupant ? { borderColor: occupant.color } : undefined}
+                            onClick={() => {
+                              if (!occupant && !blockedForSelected) {
+                                onAddPlacement(bed.id, x, y);
+                              }
+                            }}
+                            onDragOver={(event) => {
+                              event.preventDefault();
+                            }}
+                            onDrop={(event) => {
+                              event.preventDefault();
+                              if (occupant) {
+                                return;
+                              }
+                              const raw = event.dataTransfer.getData("application/json");
+                              if (!raw) {
+                                return;
+                              }
+                              const payload: DragPayload = JSON.parse(raw);
+                              const moving = placements.find((placement) => placement.id === payload.placementId);
+                              if (!moving) {
+                                return;
+                              }
+                              const blockedForMove = Boolean(placementSpacingConflict(bed.id, x, y, moving.crop_name, moving.id));
+                              if (blockedForMove) {
+                                onBlockedPlacementMove(moving.crop_name);
+                                return;
+                              }
+                              onMovePlacement(payload.placementId, bed.id, x, y);
+                            }}
+                            title={blockedForSelected ? `Blocked: too close for ${selectedCropName} spacing` : undefined}
+                          >
+                            {occupant ? occupant.crop_name.slice(0, 2).toUpperCase() : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <ul className="chip-list">
+                      {bedPlacements.map((placement) => (
+                        <li key={placement.id}>
+                          <button
+                            className="chip"
+                            style={{ background: placement.color }}
+                            draggable
+                            aria-label={`${placement.crop_name} at column ${placement.grid_x + 1}, row ${placement.grid_y + 1}. Arrow keys move; Enter removes.`}
+                            onDragStart={(event) => {
+                              event.dataTransfer.setData("application/json", JSON.stringify({ placementId: placement.id }));
+                              event.dataTransfer.effectAllowed = "move";
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "ArrowLeft") {
+                                event.preventDefault();
+                                onNudgePlacement(placement.id, -1, 0);
+                              } else if (event.key === "ArrowRight") {
+                                event.preventDefault();
+                                onNudgePlacement(placement.id, 1, 0);
+                              } else if (event.key === "ArrowUp") {
+                                event.preventDefault();
+                                onNudgePlacement(placement.id, 0, -1);
+                              } else if (event.key === "ArrowDown") {
+                                event.preventDefault();
+                                onNudgePlacement(placement.id, 0, 1);
+                              }
+                            }}
+                            onClick={() => onRequestRemovePlacement(placement.id, placement.crop_name)}
+                          >
+                            {placement.crop_name} ({placement.grid_x + 1},{placement.grid_y + 1})
+                          </button>
+                        </li>
+                      ))}
+                      {bedPlacements.length === 0 && <li>No crop placements yet.</li>}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          </section>
 
           <section className="planner-panel planner-yard-panel">
             <div className="planner-yard-header">
@@ -296,122 +418,6 @@ export function PlannerPanel({
                   );
                 })}
               </div>
-            </div>
-          </section>
-
-          <section className="planner-panel">
-            <div className="planner-section-head">
-              <div>
-                <h3>Bed Sheets</h3>
-                <p className="hint">Each square is one foot. Place crops directly on the grid or drag existing placements between beds.</p>
-              </div>
-            </div>
-
-            <div className="bed-detail-grid">
-              {beds.map((bed) => {
-                const cols = Math.max(1, Math.ceil(bed.width_in / 12));
-                const rows = Math.max(1, Math.ceil(bed.height_in / 12));
-                const bedPlacements = placements.filter((item) => item.bed_id === bed.id);
-
-                return (
-                  <section key={bed.id} className="bed-sheet">
-                    <header>
-                      <h4>{bed.name}</h4>
-                      <small>
-                        {cols} x {rows} squares
-                      </small>
-                      <button className="danger-sm" title="Delete bed" onClick={() => onDeleteBed(bed.id)}>
-                        Delete bed
-                      </button>
-                    </header>
-
-                    <div className="bed-board" style={{ gridTemplateColumns: `repeat(${cols}, minmax(2.1rem, 1fr))` }}>
-                      {Array.from({ length: cols * rows }).map((_, index) => {
-                        const x = index % cols;
-                        const y = Math.floor(index / cols);
-                        const occupant = bedPlacements.find((item) => item.grid_x === x && item.grid_y === y);
-                        const blockedForSelected = isCellBlockedForSelectedCrop(bed.id, x, y, occupant);
-
-                        return (
-                          <button
-                            key={`${bed.id}-${x}-${y}`}
-                            className={`plot-cell${occupant ? " occupied" : ""}${blockedForSelected ? " blocked" : ""}`}
-                            style={occupant ? { borderColor: occupant.color } : undefined}
-                            onClick={() => {
-                              if (!occupant && !blockedForSelected) {
-                                onAddPlacement(bed.id, x, y);
-                              }
-                            }}
-                            onDragOver={(event) => {
-                              event.preventDefault();
-                            }}
-                            onDrop={(event) => {
-                              event.preventDefault();
-                              if (occupant) {
-                                return;
-                              }
-                              const raw = event.dataTransfer.getData("application/json");
-                              if (!raw) {
-                                return;
-                              }
-                              const payload: DragPayload = JSON.parse(raw);
-                              const moving = placements.find((placement) => placement.id === payload.placementId);
-                              if (!moving) {
-                                return;
-                              }
-                              const blockedForMove = Boolean(placementSpacingConflict(bed.id, x, y, moving.crop_name, moving.id));
-                              if (blockedForMove) {
-                                onBlockedPlacementMove(moving.crop_name);
-                                return;
-                              }
-                              onMovePlacement(payload.placementId, bed.id, x, y);
-                            }}
-                            title={blockedForSelected ? `Blocked: too close for ${selectedCropName} spacing` : undefined}
-                          >
-                            {occupant ? occupant.crop_name.slice(0, 2).toUpperCase() : ""}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <ul className="chip-list">
-                      {bedPlacements.map((placement) => (
-                        <li key={placement.id}>
-                          <button
-                            className="chip"
-                            style={{ background: placement.color }}
-                            draggable
-                            aria-label={`${placement.crop_name} at column ${placement.grid_x + 1}, row ${placement.grid_y + 1}. Arrow keys move; Enter removes.`}
-                            onDragStart={(event) => {
-                              event.dataTransfer.setData("application/json", JSON.stringify({ placementId: placement.id }));
-                              event.dataTransfer.effectAllowed = "move";
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === "ArrowLeft") {
-                                event.preventDefault();
-                                onNudgePlacement(placement.id, -1, 0);
-                              } else if (event.key === "ArrowRight") {
-                                event.preventDefault();
-                                onNudgePlacement(placement.id, 1, 0);
-                              } else if (event.key === "ArrowUp") {
-                                event.preventDefault();
-                                onNudgePlacement(placement.id, 0, -1);
-                              } else if (event.key === "ArrowDown") {
-                                event.preventDefault();
-                                onNudgePlacement(placement.id, 0, 1);
-                              }
-                            }}
-                            onClick={() => onRequestRemovePlacement(placement.id, placement.crop_name)}
-                          >
-                            {placement.crop_name} ({placement.grid_x + 1},{placement.grid_y + 1})
-                          </button>
-                        </li>
-                      ))}
-                      {bedPlacements.length === 0 && <li>No crop placements yet.</li>}
-                    </ul>
-                  </section>
-                );
-              })}
             </div>
           </section>
         </div>

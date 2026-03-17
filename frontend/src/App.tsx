@@ -6,7 +6,7 @@ import { CropsPanel } from "./features/crops/CropsPanel";
 import { PlannerPanel } from "./features/planner/PlannerPanel";
 import { WeatherPanel } from "./features/weather/WeatherPanel";
 import { PestLogPanel } from "./features/pests/PestLogPanel";
-import { Bed, CalendarEvent, CropTemplate, Garden, PestLog, Placement, Planting, Task } from "./features/types";
+import { Bed, CalendarEvent, CropTemplate, CropTemplateSyncStatus, Garden, PestLog, Placement, Planting, Task } from "./features/types";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";
 
 type TokenResponse = { access_token: string; token_type: string };
@@ -38,7 +38,7 @@ function App() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginMode, setLoginMode] = useState<"signin" | "register">("signin");
-  const [authPane, setAuthPane] = useState<"login" | "forgot" | "reset">("login");
+  const [authPane, setAuthPane] = useState<"login" | "forgot-password" | "forgot-username" | "reset">("login");
   const [resetToken, setResetToken] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null);
@@ -57,7 +57,7 @@ function App() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [selectedDate, setSelectedDate] = useState(today);
-  const [selectedCropName, setSelectedCropName] = useState("Tomato");
+  const [selectedCropName, setSelectedCropName] = useState("");
   const [placementBedId, setPlacementBedId] = useState<number | null>(null);
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [activePage, setActivePage] = useState<AppPage>("home");
@@ -85,9 +85,14 @@ function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [pestLogs, setPestLogs] = useState<PestLog[]>([]);
   const [isLoadingPestLogs, setIsLoadingPestLogs] = useState(false);
+  const [isRefreshingCropLibrary, setIsRefreshingCropLibrary] = useState(false);
+  const [isCleaningLegacyCropLibrary, setIsCleaningLegacyCropLibrary] = useState(false);
+  const [cropTemplateSyncStatus, setCropTemplateSyncStatus] = useState<CropTemplateSyncStatus | null>(null);
 
   const yardGridRef = useRef<HTMLDivElement>(null);
   const weatherCacheRef = useRef<Map<number, any>>(new Map());
+  const authParamsHandledRef = useRef(false);
+  const cropSyncWasRunningRef = useRef(false);
   const debouncedTaskQuery = useDebouncedValue(taskQuery, 320);
 
   const authHeaders = useMemo(
@@ -300,9 +305,21 @@ function App() {
       throw new Error("Session expired. Please sign in again.");
     }
     if (!response.ok) {
-      throw new Error(await response.text());
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const payload = await response.json();
+        throw new Error(payload?.detail || payload?.message || JSON.stringify(payload));
+      }
+      throw new Error((await response.text()).trim() || `Request failed with status ${response.status}`);
     }
-    return response.json();
+    if (response.status === 204) {
+      return null;
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      return response.json();
+    }
+    return response.text();
   }
 
   async function handleAuth(e: FormEvent) {
@@ -384,6 +401,17 @@ function App() {
     }
   }
 
+  async function requestUsernameRecovery(emailAddress: string) {
+    const response = await fetch(`${API}/auth/forgot-username`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailAddress.trim() }),
+    });
+    if (!response.ok) {
+      throw new Error((await response.text()) || "Unable to send username");
+    }
+  }
+
   async function resendVerificationEmail() {
     const response = await fetch(`${API}/auth/resend-verification`, {
       method: "POST",
@@ -437,6 +465,21 @@ function App() {
     }
   }
 
+  async function handleForgotUsername(e: FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) {
+      pushNotice("Enter your email to request your username.", "error");
+      return;
+    }
+    try {
+      await requestUsernameRecovery(email);
+      pushNotice("If the account exists, username recovery instructions were sent.", "success");
+      setAuthPane("login");
+    } catch (err: any) {
+      pushNotice(err?.message || "Unable to request username.", "error");
+    }
+  }
+
   async function loadGardens() {
     const mine: Garden[] = await fetchAuthed("/gardens");
     setGardens(mine);
@@ -465,6 +508,62 @@ function App() {
         selectCrop(templates[0]);
       }
     }
+  }
+
+  async function loadCropTemplateSyncStatus(notifyOnCompletion = true) {
+    const status: CropTemplateSyncStatus = await fetchAuthed("/crop-templates/sync-status");
+    const wasRunning = cropSyncWasRunningRef.current;
+    cropSyncWasRunningRef.current = status.is_running;
+    setCropTemplateSyncStatus(status);
+
+    if (wasRunning && !status.is_running) {
+      await loadCropTemplates(selectedCropName || undefined);
+      if (notifyOnCompletion) {
+        if (status.status === "failed") {
+          pushNotice(status.error || status.message || "Crop database sync failed.", "error");
+        } else {
+          pushNotice(status.message || "Crop database sync completed.", "success");
+        }
+      }
+    }
+  }
+
+  async function refreshCropTemplateDatabase() {
+    try {
+      setIsRefreshingCropLibrary(true);
+      const result: { message: string } = await fetchAuthed("/crop-templates/refresh", {
+        method: "POST",
+      });
+      await loadCropTemplateSyncStatus(false);
+      pushNotice(result.message || "Crop database updated.", "success");
+    } catch (err: any) {
+      pushNotice(err?.message || "Unable to update crop database.", "error");
+    } finally {
+      setIsRefreshingCropLibrary(false);
+    }
+  }
+
+  function requestLegacyCropCleanup() {
+    setConfirmState({
+      title: "Remove legacy starter crops?",
+      message: "This removes only the old hard-coded starter crop templates and keeps Johnny's imports plus true manual entries.",
+      confirmLabel: "Remove legacy crops",
+      onConfirm: async () => {
+        try {
+          setIsCleaningLegacyCropLibrary(true);
+          const result: { message: string } = await fetchAuthed("/crop-templates/cleanup-legacy", {
+            method: "POST",
+          });
+          await loadCropTemplates(selectedCropName || undefined);
+          await loadCropTemplateSyncStatus(false);
+          pushNotice(result.message || "Legacy starter crops removed.", "success");
+        } catch (err: any) {
+          pushNotice(err?.message || "Unable to remove legacy starter crops.", "error");
+        } finally {
+          setIsCleaningLegacyCropLibrary(false);
+        }
+      },
+    });
   }
 
   async function createGarden(e: FormEvent<HTMLFormElement>) {
@@ -945,8 +1044,8 @@ function App() {
     for (const existing of bedPlacements) {
       const existingSpacing = cropMap.get(existing.crop_name)?.spacing_in || 12;
       const required = Math.max(newSpacing, existingSpacing);
-      const dx = (x - existing.grid_x) * 12;
-      const dy = (y - existing.grid_y) * 12;
+      const dx = (x - existing.grid_x) * 3;
+      const dy = (y - existing.grid_y) * 3;
       const distance = Math.sqrt(dx * dx + dy * dy);
       if (distance < required) {
         return `Too close to ${existing.crop_name}. Required spacing is ${required} inches.`;
@@ -964,12 +1063,18 @@ function App() {
   }
 
   useEffect(() => {
+    if (authParamsHandledRef.current) {
+      return;
+    }
+    authParamsHandledRef.current = true;
+
     const params = new URLSearchParams(window.location.search);
     const verifyToken = params.get("verify_token");
     const reset = params.get("reset_token");
     if (verifyToken) {
       verifyEmailToken(verifyToken)
         .then(() => {
+          setIsEmailVerified(true);
           pushNotice("Email verified. Password reset is now available.", "success");
         })
         .catch((err: any) => {
@@ -1003,8 +1108,25 @@ function App() {
       loadMe().catch(() => {
         pushNotice("Unable to load profile details.", "error");
       });
+      loadCropTemplateSyncStatus(false).catch(() => {
+        pushNotice("Unable to load crop sync status.", "error");
+      });
     }
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !cropTemplateSyncStatus?.is_running) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      loadCropTemplateSyncStatus().catch(() => undefined);
+    }, 5000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [token, cropTemplateSyncStatus?.is_running, selectedCropName]);
 
   useEffect(() => {
     if (token && selectedGarden) {
@@ -1113,15 +1235,20 @@ function App() {
                 </div>
                 <button type="submit">{loginMode === "register" ? "Create account" : "Sign in"}</button>
                 {loginMode === "signin" && (
-                  <button type="button" className="link-btn" onClick={() => setAuthPane("forgot")}>
-                    Forgot password?
-                  </button>
+                  <>
+                    <button type="button" className="link-btn" onClick={() => setAuthPane("forgot-password")}>
+                      Forgot password?
+                    </button>
+                    <button type="button" className="link-btn" onClick={() => setAuthPane("forgot-username")}>
+                      Forgot username?
+                    </button>
+                  </>
                 )}
               </form>
             </>
           )}
 
-          {authPane === "forgot" && (
+          {authPane === "forgot-password" && (
             <form onSubmit={handleForgotPassword} className="stack">
               <h3>Password reset</h3>
               <p className="subhead">Enter your verified account email to request a reset link.</p>
@@ -1130,6 +1257,19 @@ function App() {
                 <input id="forgot-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoComplete="email" />
               </div>
               <button type="submit">Send reset link</button>
+              <button type="button" className="link-btn" onClick={() => setAuthPane("login")}>Back to sign in</button>
+            </form>
+          )}
+
+          {authPane === "forgot-username" && (
+            <form onSubmit={handleForgotUsername} className="stack">
+              <h3>Recover username</h3>
+              <p className="subhead">Enter your verified account email to receive your username.</p>
+              <div className="stack compact">
+                <label className="field-label" htmlFor="forgot-username-email">Email</label>
+                <input id="forgot-username-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required autoComplete="email" />
+              </div>
+              <button type="submit">Send username</button>
               <button type="button" className="link-btn" onClick={() => setAuthPane("login")}>Back to sign in</button>
             </form>
           )}
@@ -1429,6 +1569,13 @@ function App() {
         {activePage === "crops" && (
           <CropsPanel
             cropTemplates={cropTemplates}
+            isRefreshingLibrary={isRefreshingCropLibrary}
+            isCleaningLegacyLibrary={isCleaningLegacyCropLibrary}
+            syncStatus={cropTemplateSyncStatus}
+            onRefreshLibrary={() => {
+              refreshCropTemplateDatabase().catch(() => undefined);
+            }}
+            onCleanupLegacyLibrary={requestLegacyCropCleanup}
             editingCropId={editingCropId}
             newCropName={newCropName}
             onNewCropNameChange={setNewCropName}

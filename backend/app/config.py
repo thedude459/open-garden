@@ -1,6 +1,9 @@
 import warnings
+import json
+from typing import Annotated
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 _INSECURE_KEYS = {"change-me", "replace-with-long-random-string"}
 
@@ -16,7 +19,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg2://opengarden:opengarden@db:5432/opengarden"
     weather_base_url: str = "https://api.open-meteo.com/v1/forecast"
-    allowed_origins: list[str] = [
+    allowed_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://localhost:4173",
     ]
@@ -39,6 +42,25 @@ class Settings(BaseSettings):
     auth_reset_limit_per_minute: int = 10
     auth_forgot_limit_per_hour: int = 8
     auth_resend_limit_per_hour: int = 12
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, value):
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+            if raw.startswith("["):
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
+                except json.JSONDecodeError:
+                    pass
+            return [item.strip() for item in raw.split(",") if item.strip()]
+        return value
 
 
 settings = Settings()

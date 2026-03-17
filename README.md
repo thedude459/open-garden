@@ -77,59 +77,27 @@ Optional fast start without forced no-cache rebuild:
 ./scripts/up.sh
 ```
 
-## Deploy on Render (recommended)
+## Local SMTP testing (Mailpit)
 
-This repo now includes a Render blueprint at [render.yaml](render.yaml).
+When `DATABASE_URL` is empty (local Docker mode), [docker-compose.localdb.yml](docker-compose.localdb.yml) starts a Mailpit SMTP catcher automatically.
 
-### 1. Connect repo and create services
+- SMTP host from API container: `mailpit`
+- SMTP port: `1025`
+- Mail UI on host: `http://localhost:8025`
 
-1. Push this repo to GitHub.
-2. In Render, click New + and choose Blueprint.
-3. Select this repo and apply [render.yaml](render.yaml).
+### End-to-end test flow
 
-Render will create:
+1. Start stack:
 
-- `open-garden-db` (managed Postgres)
-- `open-garden-api` (Docker web service from [backend/Dockerfile](backend/Dockerfile))
-- `open-garden-web` (static site from [frontend](frontend))
+```bash
+./scripts/rebuild.sh
+```
 
-### 2. Update production URLs after first deploy
+2. Register a new account or trigger forgot-password in the app.
+3. Open Mailpit inbox: `http://localhost:8025`
+4. Open the verification/reset links from captured emails.
 
-After Render assigns live service URLs, update environment values:
-
-- API service:
-	- `FRONTEND_BASE_URL=https://<your-frontend-domain>`
-	- `ALLOWED_ORIGINS=https://<your-frontend-domain>`
-- Static site:
-	- `VITE_API_URL=https://<your-api-domain>`
-
-Then trigger redeploys for both services.
-
-### 3. Configure SMTP for real emails
-
-In the API service environment, set:
-
-- `SMTP_HOST`
-- `SMTP_PORT`
-- `SMTP_USERNAME`
-- `SMTP_PASSWORD`
-- `SMTP_FROM_EMAIL`
-- `SMTP_USE_TLS=true`
-
-If `SMTP_HOST` is empty, the app logs verification/reset links instead of sending email.
-
-### 4. Smoke-check production
-
-1. Open API health endpoint: `https://<api-domain>/health`
-2. Open frontend and create a user with a real email.
-3. Verify email link flow.
-4. Trigger forgot-password and complete reset flow.
-
-### Notes
-
-- Keep `ENV=production` and a strong `SECRET_KEY` (blueprint auto-generates one).
-- If you add custom domains, re-check `ALLOWED_ORIGINS` and `FRONTEND_BASE_URL`.
-- Blueprint `DATABASE_URL` comes from Render Postgres automatically.
+To use a real SMTP provider locally instead of Mailpit, set `SMTP_HOST`, `SMTP_PORT`, and related SMTP variables in `.env`.
 
 ## Deploy on a NAS / home server
 
@@ -208,12 +176,12 @@ For NAS deployment, schedule `backup.sh` via cron and also snapshot Docker volum
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `1440` | JWT lifetime in minutes. |
 | `EMAIL_VERIFICATION_EXPIRE_MINUTES` | No | `60` | Verification link lifetime in minutes. |
 | `PASSWORD_RESET_EXPIRE_MINUTES` | No | `30` | Password reset link lifetime in minutes. |
-| `SMTP_HOST` | No | empty | SMTP server hostname. Leave empty to log links in API logs for local development. |
-| `SMTP_PORT` | No | `587` | SMTP server port. |
+| `SMTP_HOST` | No | empty | SMTP server hostname override. In local Docker mode it defaults to `mailpit` when unset. |
+| `SMTP_PORT` | No | `587` | SMTP server port override. In local Docker mode it defaults to `1025` when unset. |
 | `SMTP_USERNAME` | No | empty | SMTP auth username. |
 | `SMTP_PASSWORD` | No | empty | SMTP auth password. |
 | `SMTP_FROM_EMAIL` | No | `noreply@open-garden.local` | From address for verification/reset emails. |
-| `SMTP_USE_TLS` | No | `true` | Whether to use STARTTLS when sending SMTP email. |
+| `SMTP_USE_TLS` | No | `true` | Whether to use STARTTLS when sending SMTP email. Local Mailpit default is `false`. |
 | `GLOBAL_RATE_LIMIT_PER_MINUTE` | No | `180` | Per-process global request cap per IP per minute. |
 | `AUTH_LOGIN_LIMIT_PER_MINUTE` | No | `5` | Login attempts per IP+username per minute. |
 | `AUTH_REGISTER_LIMIT_PER_MINUTE` | No | `5` | Registration attempts per IP+username per minute. |

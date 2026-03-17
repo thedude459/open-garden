@@ -1,8 +1,13 @@
 import { FormEvent } from "react";
-import { CropTemplate } from "../types";
+import { CropTemplate, CropTemplateSyncStatus } from "../types";
 
 type CropsPanelProps = {
   cropTemplates: CropTemplate[];
+  isRefreshingLibrary: boolean;
+  isCleaningLegacyLibrary: boolean;
+  syncStatus: CropTemplateSyncStatus | null;
+  onRefreshLibrary: () => void;
+  onCleanupLegacyLibrary: () => void;
   editingCropId: number | null;
   newCropName: string;
   onNewCropNameChange: (value: string) => void;
@@ -32,6 +37,11 @@ type CropsPanelProps = {
 
 export function CropsPanel({
   cropTemplates,
+  isRefreshingLibrary,
+  isCleaningLegacyLibrary,
+  syncStatus,
+  onRefreshLibrary,
+  onCleanupLegacyLibrary,
   editingCropId,
   newCropName,
   onNewCropNameChange,
@@ -58,11 +68,36 @@ export function CropsPanel({
   onPopulateCropForm,
   cropBaseName,
 }: CropsPanelProps) {
+  const importedCount = cropTemplates.filter((crop) => crop.source === "johnnys-selected-seeds").length;
+  const manualCount = cropTemplates.length - importedCount;
+  const isSyncRunning = Boolean(syncStatus?.is_running);
+
   return (
     <div className="crops-layout">
       <section className="card">
         <h2>Crop Library</h2>
-        <p className="subhead">{cropTemplates.length} vegetable template{cropTemplates.length !== 1 ? "s" : ""} available for planting.</p>
+        <p className="subhead">
+          {cropTemplates.length} crop template{cropTemplates.length !== 1 ? "s" : ""} available.
+          {` ${importedCount} imported from Johnny's, ${manualCount} manual.`}
+        </p>
+        {syncStatus && (
+          <div className="hint crop-notes">
+            <strong>Catalog sync:</strong> {syncStatus.message}
+            {syncStatus.is_running ? " This runs in the background and may take about a minute." : ""}
+            {!syncStatus.is_running && syncStatus.last_finished_at && ` Last finished ${new Date(syncStatus.last_finished_at).toLocaleString()}.`}
+            {!syncStatus.is_running && syncStatus.status === "succeeded" && ` Added ${syncStatus.added}, updated ${syncStatus.updated}, failed ${syncStatus.failed}.`}
+            {!syncStatus.is_running && syncStatus.cleaned_legacy_count > 0 && ` Removed ${syncStatus.cleaned_legacy_count} legacy starter template${syncStatus.cleaned_legacy_count !== 1 ? "s" : ""}.`}
+            {syncStatus.error && ` Error: ${syncStatus.error}`}
+          </div>
+        )}
+        <div className="panel-actions">
+          <button type="button" className="secondary-btn" onClick={onRefreshLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
+            {isRefreshingLibrary || isSyncRunning ? "Syncing crop database..." : "Update Crop Database"}
+          </button>
+          <button type="button" className="secondary-btn" onClick={onCleanupLegacyLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
+            {isCleaningLegacyLibrary ? "Removing legacy starter crops..." : "Remove Legacy Starter Crops"}
+          </button>
+        </div>
         <div className="crops-grid">
           {cropTemplates.map((crop) => (
             <div key={crop.id} className="crop-card">
@@ -71,6 +106,7 @@ export function CropsPanel({
                   <strong>{cropBaseName(crop)}</strong>
                   {crop.variety && <span className="crop-tag variety">{crop.variety}</span>}
                   {crop.family && <span className="crop-tag family">{crop.family}</span>}
+                  <span className="crop-tag family">{crop.source === "johnnys-selected-seeds" ? "Johnny's" : "Manual"}</span>
                 </span>
                 <span>
                   {crop.frost_hardy
@@ -90,14 +126,14 @@ export function CropsPanel({
             </div>
           ))}
           {cropTemplates.length === 0 && (
-            <p className="hint">No crops yet. Add your first vegetable using the form.</p>
+            <p className="hint">No crops yet. Add your first crop using the form.</p>
           )}
         </div>
       </section>
 
       <form onSubmit={onUpsertCropTemplate} className="card stack compact">
-        <h2>{editingCropId ? "Edit Vegetable" : "Add Vegetable"}</h2>
-        <label className="field-label" htmlFor="crop-name">Vegetable Name</label>
+        <h2>{editingCropId ? "Edit Crop" : "Add Crop"}</h2>
+        <label className="field-label" htmlFor="crop-name">Crop Name</label>
         <input id="crop-name" value={newCropName} onChange={(e) => onNewCropNameChange(e.target.value)} placeholder="Broccoli" required />
         <div className="mini-row">
           <div className="stack compact">
@@ -140,7 +176,7 @@ export function CropsPanel({
         <label className="field-label" htmlFor="crop-notes">Care notes (optional)</label>
         <textarea id="crop-notes" className="notes-area" value={newCropNotes} onChange={(e) => onNewCropNotesChange(e.target.value)} placeholder="Watering, pest tips, harvest hints..." rows={3} />
         <div className="panel-actions">
-          <button type="submit">{editingCropId ? "Save vegetable" : "Add to crop list"}</button>
+          <button type="submit">{editingCropId ? "Save crop" : "Add to crop list"}</button>
           {editingCropId && (
             <button type="button" className="secondary-btn" onClick={onResetCropForm}>Cancel edit</button>
           )}

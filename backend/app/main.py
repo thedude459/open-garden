@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from hashlib import sha256
-from threading import Lock
+from threading import Lock, Thread
 from time import time
 
 from alembic.config import Config as AlembicConfig
@@ -23,7 +23,9 @@ from .config import settings
 from .database import Base, SessionLocal, engine, get_db
 from .models import Bed, CropTemplate, Garden, PestLog, Placement, Planting, SeedInventory, Task, User, UserAuthToken
 from .schemas import (
+    CropTemplateSyncStatusOut,
         ForgotPasswordPayload,
+        ForgotUsernamePayload,
         MessageOut,
     BedCreate,
     BedPositionUpdate,
@@ -52,13 +54,27 @@ from .schemas import (
     UserCreate,
     UserOut,
 )
-from .seed import seed_crop_templates
+from .seed import cleanup_legacy_starter_templates, seed_crop_templates
 from .weather import fetch_weather, fetch_zip_profile
 
 app = FastAPI(title="open-garden-api")
 
 _RATE_LIMIT_LOCK = Lock()
 _RATE_LIMIT_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
+_CROP_SYNC_LOCK = Lock()
+_CROP_SYNC_STATE = {
+    "status": "idle",
+    "is_running": False,
+    "message": "Johnny's crop sync has not run in this process yet.",
+    "last_started_at": None,
+    "last_finished_at": None,
+    "added": 0,
+    "updated": 0,
+    "skipped": 0,
+    "failed": 0,
+    "cleaned_legacy_count": 0,
+    "error": None,
+}
 
 app.add_middleware(
     CORSMiddleware,
@@ -189,6 +205,82 @@ def _send_email_or_log(to_email: str, subject: str, body_text: str) -> None:
         server.send_message(message)
 
 
+def _iso_utc(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    return value.astimezone(timezone.utc).isoformat()
+
+
+def _crop_sync_status_snapshot() -> dict:
+    with _CROP_SYNC_LOCK:
+        snapshot = dict(_CROP_SYNC_STATE)
+    snapshot["last_started_at"] = _iso_utc(snapshot["last_started_at"])
+    snapshot["last_finished_at"] = _iso_utc(snapshot["last_finished_at"])
+    return snapshot
+
+
+def _run_crop_sync(force_refresh: bool) -> None:
+    db = SessionLocal()
+    started_at = datetime.now(timezone.utc)
+    with _CROP_SYNC_LOCK:
+        _CROP_SYNC_STATE.update(
+            {
+                "status": "running",
+                "is_running": True,
+                "message": "Syncing Johnny's crop catalog in the background...",
+                "last_started_at": started_at,
+                "error": None,
+                "added": 0,
+                "updated": 0,
+                "skipped": 0,
+                "failed": 0,
+            }
+        )
+
+    try:
+        result = seed_crop_templates(db, force_refresh=force_refresh)
+    except Exception as exc:
+        finished_at = datetime.now(timezone.utc)
+        with _CROP_SYNC_LOCK:
+            _CROP_SYNC_STATE.update(
+                {
+                    "status": "failed",
+                    "is_running": False,
+                    "message": "Johnny's crop sync failed.",
+                    "last_finished_at": finished_at,
+                    "error": str(exc),
+                }
+            )
+        db.close()
+        return
+
+    finished_at = datetime.now(timezone.utc)
+    with _CROP_SYNC_LOCK:
+        _CROP_SYNC_STATE.update(
+            {
+                "status": "succeeded",
+                "is_running": False,
+                "message": "Johnny's crop sync completed successfully.",
+                "last_finished_at": finished_at,
+                "added": result["added"],
+                "updated": result["updated"],
+                "skipped": result["skipped"],
+                "failed": result["failed"],
+                "error": None,
+            }
+        )
+    db.close()
+
+
+def _start_crop_sync(force_refresh: bool) -> bool:
+    with _CROP_SYNC_LOCK:
+        if _CROP_SYNC_STATE["is_running"]:
+            return False
+        _CROP_SYNC_STATE["is_running"] = True
+    Thread(target=_run_crop_sync, args=(force_refresh,), daemon=True).start()
+    return True
+
+
 @app.on_event("startup")
 def startup() -> None:
     if settings.env == "production" and not settings.smtp_host:
@@ -202,9 +294,23 @@ def startup() -> None:
 
     db = SessionLocal()
     try:
-        seed_crop_templates(db)
+        existing_import_count = db.query(CropTemplate).filter(CropTemplate.source == "johnnys-selected-seeds").count()
     finally:
         db.close()
+
+    if existing_import_count == 0:
+        _start_crop_sync(force_refresh=False)
+    else:
+        with _CROP_SYNC_LOCK:
+            _CROP_SYNC_STATE.update(
+                {
+                    "status": "idle",
+                    "is_running": False,
+                    "message": "Johnny's crop catalog is already present.",
+                    "skipped": existing_import_count,
+                    "error": None,
+                }
+            )
 
 
 @app.get("/health")
@@ -258,6 +364,17 @@ def verify_email(payload: VerifyEmailPayload, request: Request, db: Session = De
         limit=settings.auth_verify_limit_per_minute,
         window_seconds=60,
     )
+
+    # Idempotency: if the token was already consumed and the user is verified,
+    # treat repeated clicks as success instead of an error.
+    existing = db.query(UserAuthToken).filter(
+        UserAuthToken.token_hash == _hash_token(payload.token),
+        UserAuthToken.purpose == "email_verify",
+    ).first()
+    if existing is not None and existing.used_at is not None:
+        user = db.query(User).filter(User.id == existing.user_id).first()
+        if user is not None and user.email_verified:
+            return {"message": "Email verified successfully."}
 
     token_row = _consume_user_token(db, payload.token, "email_verify")
     if token_row is None:
@@ -325,6 +442,30 @@ def forgot_password(payload: ForgotPasswordPayload, request: Request, db: Sessio
             ),
         )
     return {"message": "If an account exists, reset instructions have been sent."}
+
+
+@app.post("/auth/forgot-username", response_model=MessageOut)
+def forgot_username(payload: ForgotUsernamePayload, request: Request, db: Session = Depends(get_db)):
+    _enforce_rate_limit(
+        request,
+        bucket="auth-forgot-username",
+        limit=settings.auth_forgot_limit_per_hour,
+        window_seconds=3600,
+        identity=payload.email.lower(),
+    )
+
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is not None and user.email_verified:
+        _send_email_or_log(
+            user.email,
+            "Your open-garden username",
+            (
+                "You requested to recover your username.\n\n"
+                f"Your username is: {user.username}\n\n"
+                "Use this to sign in to your account."
+            ),
+        )
+    return {"message": "If an account exists, username recovery instructions have been sent."}
 
 
 @app.post("/auth/reset-password", response_model=MessageOut)
@@ -448,6 +589,32 @@ def list_crop_templates(db: Session = Depends(get_db), _: User = Depends(get_cur
     return db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
 
 
+@app.get("/crop-templates/sync-status", response_model=CropTemplateSyncStatusOut)
+def crop_template_sync_status(_: User = Depends(get_current_user)):
+    return _crop_sync_status_snapshot()
+
+
+@app.post("/crop-templates/refresh", response_model=MessageOut)
+def refresh_crop_templates(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    del db
+    started = _start_crop_sync(force_refresh=True)
+    if not started:
+        return {"message": "Crop database sync is already running."}
+    return {"message": "Crop database sync started in the background."}
+
+
+@app.post("/crop-templates/cleanup-legacy", response_model=MessageOut)
+def cleanup_legacy_crop_templates(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    with _CROP_SYNC_LOCK:
+        if _CROP_SYNC_STATE["is_running"]:
+            raise HTTPException(status_code=409, detail="Wait for the active crop sync to finish before cleaning up legacy templates.")
+
+    removed = cleanup_legacy_starter_templates(db)
+    with _CROP_SYNC_LOCK:
+        _CROP_SYNC_STATE["cleaned_legacy_count"] = removed
+    return {"message": f"Removed {removed} legacy starter crop template{'s' if removed != 1 else ''}."}
+
+
 def _crop_name_parts(crop_name: str, variety: str = "") -> tuple[str, str]:
     clean_variety = variety.strip()
     if clean_variety and crop_name.endswith(f" ({clean_variety})"):
@@ -472,6 +639,13 @@ def _crop_task_title(crop_name: str, action: str, variety: str = "") -> str:
     return f"{base_name}: {action}"
 
 
+def _canonical_crop_template_name(crop_name: str, variety: str = "") -> tuple[str, str]:
+    base_name, clean_variety = _crop_name_parts(crop_name, variety)
+    if clean_variety:
+        return f"{base_name} ({clean_variety})", clean_variety
+    return base_name, ""
+
+
 @app.post("/crop-templates", response_model=CropTemplateOut)
 def create_crop_template(payload: CropTemplateCreate, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     base_name = payload.name.strip()
@@ -479,7 +653,9 @@ def create_crop_template(payload: CropTemplateCreate, db: Session = Depends(get_
     if not base_name:
         raise HTTPException(status_code=400, detail="Crop name is required")
 
-    target_identity = _normalized_crop_identity(base_name, variety)
+    stored_name, stored_variety = _canonical_crop_template_name(base_name, variety)
+
+    target_identity = _normalized_crop_identity(stored_name, stored_variety)
     existing = next(
         (
             candidate
@@ -492,8 +668,11 @@ def create_crop_template(payload: CropTemplateCreate, db: Session = Depends(get_
         raise HTTPException(status_code=409, detail="Crop already exists")
 
     crop = CropTemplate(
-        name=base_name,
-        variety=variety,
+        name=stored_name,
+        variety=stored_variety,
+        source="manual",
+        source_url="",
+        external_product_id="",
         family=payload.family.strip(),
         spacing_in=max(1, payload.spacing_in),
         days_to_harvest=max(1, payload.days_to_harvest),
@@ -520,7 +699,9 @@ def update_crop_template(crop_id: int, payload: CropTemplateCreate, db: Session 
     if not base_name:
         raise HTTPException(status_code=400, detail="Crop name is required")
 
-    target_identity = _normalized_crop_identity(base_name, variety)
+    stored_name, stored_variety = _canonical_crop_template_name(base_name, variety)
+
+    target_identity = _normalized_crop_identity(stored_name, stored_variety)
     existing = next(
         (
             candidate
@@ -535,8 +716,8 @@ def update_crop_template(crop_id: int, payload: CropTemplateCreate, db: Session 
     old_name = crop.name
     old_planting_ids = [row.id for row in db.query(Planting.id).filter(Planting.crop_name == old_name).all()]
 
-    crop.name = base_name
-    crop.variety = variety
+    crop.name = stored_name
+    crop.variety = stored_variety
     crop.family = payload.family.strip()
     crop.spacing_in = max(1, payload.spacing_in)
     crop.days_to_harvest = max(1, payload.days_to_harvest)
@@ -546,15 +727,15 @@ def update_crop_template(crop_id: int, payload: CropTemplateCreate, db: Session 
     crop.weeks_to_transplant = max(1, payload.weeks_to_transplant)
     crop.notes = payload.notes.strip()
 
-    if old_name != base_name:
-        db.query(Placement).filter(Placement.crop_name == old_name).update({Placement.crop_name: base_name}, synchronize_session=False)
-        db.query(Planting).filter(Planting.crop_name == old_name).update({Planting.crop_name: base_name}, synchronize_session=False)
+    if old_name != stored_name:
+        db.query(Placement).filter(Placement.crop_name == old_name).update({Placement.crop_name: stored_name}, synchronize_session=False)
+        db.query(Planting).filter(Planting.crop_name == old_name).update({Planting.crop_name: stored_name}, synchronize_session=False)
 
         if old_planting_ids:
             tasks = db.query(Task).filter(Task.planting_id.in_(old_planting_ids)).all()
             for task in tasks:
                 action = task.title.split(": ", 1)[1] if ": " in task.title else task.title
-                task.title = _crop_task_title(base_name, action, variety)
+                task.title = _crop_task_title(stored_name, action, stored_variety)
                 db.add(task)
 
     db.add(crop)

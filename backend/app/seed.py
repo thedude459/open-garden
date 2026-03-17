@@ -1,238 +1,971 @@
+from __future__ import annotations
+
+import concurrent.futures
+import json
+import re
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from html import unescape
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+
 from .models import CropTemplate
 
-# Data curated from garden.plantatlas.ai — covers common edible crops with
-# spacing, timing, starting method, frost tolerance and care notes.
-STARTER_CROPS = [
-    # ── Solanaceae (warm-season; start indoors; NOT frost hardy) ──────────────
-    {
-        "name": "Tomato", "variety": "Roma", "family": "Solanaceae",
-        "spacing_in": 24, "days_to_harvest": 75,
-        "planting_window": "After last frost — soil must be >60 °F (zones 3-6: late May/June; zones 7-9: Apr-May)",
-        "direct_sow": False, "frost_hardy": False, "weeks_to_transplant": 8,
-        "notes": "Stake or cage plants. Water deeply 1–1.5 in/week at the base; mulch to reduce blight splash. "
-                 "Pinch suckers for indeterminate varieties. Watch for hornworms and early blight.",
-    },
-    {
-        "name": "Bell Pepper", "variety": "California Wonder", "family": "Solanaceae",
-        "spacing_in": 18, "days_to_harvest": 85,
-        "planting_window": "After last frost — soil >65 °F (zones 3-6: early June; zones 7-9: late Apr-May)",
-        "direct_sow": False, "frost_hardy": False, "weeks_to_transplant": 10,
-        "notes": "Slow to establish; requires warm nights. Stake in windy spots. Feed with low-nitrogen "
-                 "fertiliser once flowering begins. Aphids and pepper maggots are common pests.",
-    },
-    {
-        "name": "Eggplant", "variety": "Black Beauty", "family": "Solanaceae",
-        "spacing_in": 18, "days_to_harvest": 80,
-        "planting_window": "After last frost — needs warmth (best zones 6-10)",
-        "direct_sow": False, "frost_hardy": False, "weeks_to_transplant": 10,
-        "notes": "Loves heat; use black plastic mulch in cooler zones. Harvest when skin is glossy. "
-                 "Susceptible to flea beetles — row cover early on.",
-    },
-    # ── Cucurbitaceae (warm-season; direct sow; NOT frost hardy) ─────────────
-    {
-        "name": "Zucchini", "variety": "Black Beauty", "family": "Cucurbitaceae",
-        "spacing_in": 36, "days_to_harvest": 55,
-        "planting_window": "After last frost — soil >60 °F (zones 3-6: late May/June; zones 7+: May)",
-        "direct_sow": True, "frost_hardy": False, "weeks_to_transplant": 4,
-        "notes": "Very productive — harvest small (6–8 in) for best flavour. Water 1–2 in/week; avoid wetting "
-                 "foliage to prevent powdery mildew. Watch for squash vine borers in midsummer.",
-    },
-    {
-        "name": "Cucumber", "variety": "Marketmore", "family": "Cucurbitaceae",
-        "spacing_in": 12, "days_to_harvest": 60,
-        "planting_window": "After last frost — soil >60 °F; trellis to save space",
-        "direct_sow": True, "frost_hardy": False, "weeks_to_transplant": 3,
-        "notes": "Train up a trellis for straighter fruit and better airflow. Keep soil consistently moist; "
-                 "irregular watering causes bitter fruit. Check for cucumber beetles.",
-    },
-    {
-        "name": "Pumpkin", "variety": "Connecticut Field", "family": "Cucurbitaceae",
-        "spacing_in": 48, "days_to_harvest": 105,
-        "planting_window": "After last frost; count back from first fall frost for harvest date",
-        "direct_sow": True, "frost_hardy": False, "weeks_to_transplant": 3,
-        "notes": "Give plenty of space — vines can reach 15 ft. Plant on a slight mound for drainage. "
-                 "Hand-pollinate in poor bee years. Cure harvested pumpkins 10 days at 80 °F.",
-    },
-    # ── Brassicaceae (cool-season; frost hardy; transplants or direct) ────────
-    {
-        "name": "Broccoli", "variety": "Calabrese", "family": "Brassicaceae",
-        "spacing_in": 18, "days_to_harvest": 80,
-        "planting_window": "Start indoors 6 wks before last frost for spring; OR direct sow mid-summer for fall crop",
-        "direct_sow": False, "frost_hardy": True, "weeks_to_transplant": 6,
-        "notes": "Tolerates light frost (to 26 °F). Cut main head before flowers open; side shoots follow. "
-                 "Watch for cabbage worms and aphids. Stagger plantings every 2–3 weeks for longer harvest.",
-    },
-    {
-        "name": "Cabbage", "variety": "Golden Acre", "family": "Brassicaceae",
-        "spacing_in": 18, "days_to_harvest": 70,
-        "planting_window": "Spring: transplant 4 wks before last frost; Fall: transplant 8 wks before first frost",
-        "direct_sow": False, "frost_hardy": True, "weeks_to_transplant": 6,
-        "notes": "Consistent moisture prevents head cracking. Add lime if pH < 6.5 to reduce clubroot. "
-                 "Row covers deter moths early in the season.",
-    },
-    {
-        "name": "Kale", "variety": "Lacinato", "family": "Brassicaceae",
-        "spacing_in": 15, "days_to_harvest": 55,
-        "planting_window": "Early spring (6 wks before last frost) or late summer for fall/winter harvest",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 4,
-        "notes": "Flavour improves after light frost. Harvest outer leaves regularly. Very cold hardy (to 10 °F "
-                 "in zones 7+). Aphids can cluster on undersides — knock off with water spray.",
-    },
-    {
-        "name": "Radish", "variety": "Cherry Belle", "family": "Brassicaceae",
-        "spacing_in": 3, "days_to_harvest": 25,
-        "planting_window": "Direct sow as soon as soil is workable (spring and fall); avoid summer heat",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Fastest crop in the garden — great for interplanting. Bolt quickly in heat; sow every "
-                 "2 weeks for continuous supply. Thin promptly for good root development.",
-    },
-    # ── Apiaceae (cool-season; frost tolerant; direct sow mostly) ─────────────
-    {
-        "name": "Carrot", "variety": "Nantes", "family": "Apiaceae",
-        "spacing_in": 3, "days_to_harvest": 70,
-        "planting_window": "Direct sow 4–6 wks before last frost; soil 45–85 °F for germination",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Needs deep (12 in), loose, stone-free soil. Slow to germinate (14–21 days) — keep soil moist. "
-                 "Thin to 3 in apart. Sweetens after light frost. Mulch in fall to extend harvest.",
-    },
-    {
-        "name": "Celery", "variety": "Tall Utah", "family": "Apiaceae",
-        "spacing_in": 12, "days_to_harvest": 100,
-        "planting_window": "Start indoors 10–12 wks before last frost; needs long cool season",
-        "direct_sow": False, "frost_hardy": True, "weeks_to_transplant": 10,
-        "notes": "Moisture-hungry — needs 1–2 in/week. Mound soil around stalks to blanch and sweeten. "
-                 "Best in zones 5-7; challenging in zones 3-4 (short season) and zones 8+ (too hot).",
-    },
-    # ── Fabaceae (warm/cool depending on type; direct sow) ────────────────────
-    {
-        "name": "Green Bean", "variety": "Provider", "family": "Fabaceae",
-        "spacing_in": 6, "days_to_harvest": 55,
-        "planting_window": "After last frost — soil >60 °F; direct sow every 2 weeks for continuous harvest",
-        "direct_sow": True, "frost_hardy": False, "weeks_to_transplant": 0,
-        "notes": "Bush variety — no support needed. Improves soil via nitrogen fixation. Pick pods when pencil-thin. "
-                 "Avoid working around plants when wet to prevent disease spread.",
-    },
-    {
-        "name": "Pea", "variety": "Sugar Snap", "family": "Fabaceae",
-        "spacing_in": 6, "days_to_harvest": 65,
-        "planting_window": "Direct sow 4–6 wks before last frost; tolerates light frost once sprouted",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Provide trellis or netting (4–6 ft). Yields drop sharply in heat — time for harvest before "
-                 "summer arrives. Inoculate seeds with rhizobium for best nitrogen fixation.",
-    },
-    # ── Amaranthaceae (cool-season; frost hardy; direct sow) ─────────────────
-    {
-        "name": "Beet", "variety": "Detroit Dark Red", "family": "Amaranthaceae",
-        "spacing_in": 4, "days_to_harvest": 60,
-        "planting_window": "Direct sow 4 wks before last frost; also sow mid-summer for fall harvest",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Each 'seed' is actually a cluster — thin to 4 in for best roots. Both roots and greens are edible. "
-                 "Tolerates light frost; mulch for extended fall harvest. Add boron if leaves curl.",
-    },
-    {
-        "name": "Spinach", "variety": "Bloomsdale", "family": "Amaranthaceae",
-        "spacing_in": 6, "days_to_harvest": 40,
-        "planting_window": "Direct sow early spring or late summer; bolts quickly in heat (>75 °F)",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Short harvest window — harvest outer leaves or cut whole plant. Very cold hardy (to 15 °F with "
-                 "mulch). Needs fertile soil high in nitrogen. Downy mildew is the main disease risk.",
-    },
-    {
-        "name": "Swiss Chard", "variety": "Rainbow", "family": "Amaranthaceae",
-        "spacing_in": 12, "days_to_harvest": 60,
-        "planting_window": "Direct sow after last frost or 4 wks before; tolerates heat and light frost",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Cut-and-come-again crop. Tolerates heat better than spinach. Harvest outer stalks continuously. "
-                 "Watch for leaf miners — remove affected leaves immediately.",
-    },
-    # ── Alliaceae (long season; frost hardy) ─────────────────────────────────
-    {
-        "name": "Onion", "variety": "Walla Walla", "family": "Alliaceae",
-        "spacing_in": 4, "days_to_harvest": 100,
-        "planting_window": "Start indoors 10–12 wks before last frost; choose variety for your day-length (long/short-day)",
-        "direct_sow": False, "frost_hardy": True, "weeks_to_transplant": 10,
-        "notes": "Day-length drives bulbing — long-day for zones 6+, short-day for zones 7 and south. "
-                 "Cease watering when tops fall over. Cure in warm dry air 2–4 weeks before storage.",
-    },
-    {
-        "name": "Garlic", "variety": "Hardneck", "family": "Alliaceae",
-        "spacing_in": 6, "days_to_harvest": 240,
-        "planting_window": "Plant cloves in fall (Oct-Nov) for summer harvest; zones 3-6: before ground freezes",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Plant pointy side up, 2 in deep. Mulch heavily over winter. Remove scapes in early summer to "
-                 "boost bulb size. Harvest when bottom 1/3 of leaves are brown. Cure 4–6 weeks.",
-    },
-    # ── Asteraceae / Compositae ───────────────────────────────────────────────
-    {
-        "name": "Lettuce", "variety": "Butterhead", "family": "Asteraceae",
-        "spacing_in": 10, "days_to_harvest": 45,
-        "planting_window": "Direct sow from 4 wks before last frost; sow every 2 weeks; shade in summer",
-        "direct_sow": True, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Bolts in temperatures above 80 °F — choose heat-tolerant varieties for summer. "
-                 "Cut whole head or harvest outer leaves. Keep soil consistently moist for tender leaves.",
-    },
-    # ── Lamiaceae (herbs) ────────────────────────────────────────────────────
-    {
-        "name": "Basil", "variety": "Genovese", "family": "Lamiaceae",
-        "spacing_in": 12, "days_to_harvest": 60,
-        "planting_window": "After last frost; soil and air must be reliably warm (>55 °F nights)",
-        "direct_sow": False, "frost_hardy": False, "weeks_to_transplant": 6,
-        "notes": "Frost-sensitive — protect at even a whisper of frost. Pinch flower buds to extend leaf harvest. "
-                 "Grows well alongside tomatoes. Water at base; wet leaves invite disease.",
-    },
-    {
-        "name": "Mint", "variety": "Spearmint", "family": "Lamiaceae",
-        "spacing_in": 18, "days_to_harvest": 90,
-        "planting_window": "Transplant after last frost; contains in pots to prevent aggressive spreading",
-        "direct_sow": False, "frost_hardy": True, "weeks_to_transplant": 6,
-        "notes": "Highly invasive — grow in a buried pot or container to contain runners. "
-                 "Cut back hard mid-season for fresh bushy growth. Perennial in zones 5+.",
-    },
-    # ── Poaceae ──────────────────────────────────────────────────────────────
-    {
-        "name": "Sweet Corn", "variety": "Honey Select", "family": "Poaceae",
-        "spacing_in": 12, "days_to_harvest": 80,
-        "planting_window": "Direct sow after last frost; soil >60 °F; plant in blocks (4+ rows) for pollination",
-        "direct_sow": True, "frost_hardy": False, "weeks_to_transplant": 0,
-        "notes": "Wind-pollinated — must plant in blocks, not single rows. Side-dress with nitrogen when knee-high. "
-                 "Harvest when silks are dry and brown; kernels should squirt milky liquid when pierced.",
-    },
-    # ── Rosaceae (fruits) ────────────────────────────────────────────────────
-    {
-        "name": "Strawberry", "variety": "Honeoye", "family": "Rosaceae",
-        "spacing_in": 12, "days_to_harvest": 60,
-        "planting_window": "Transplant in early spring; June-bearers fruit in year 2; ever-bearers in year 1",
-        "direct_sow": False, "frost_hardy": True, "weeks_to_transplant": 0,
-        "notes": "Remove blossoms first year (June-bearers) to strengthen plants. Mulch with straw over winter. "
-                 "Renovate bed after harvest — mow foliage, thin runners. Watch for slugs and gray mold.",
-    },
-]
+JOHNNYS_SOURCE = "johnnys-selected-seeds"
+MANUAL_SOURCE = "manual"
+JOHNNYS_PRODUCT_SITEMAP = "https://www.johnnyseeds.com/sitemap_0-product.xml"
+REQUEST_TIMEOUT_SECONDS = 20
+REQUEST_USER_AGENT = "open-garden johnnys-sync/1.0"
+MAX_IMPORT_WORKERS = 12
+
+ALLOWED_ROOT_SEGMENTS = {"vegetables", "fruits", "flowers", "herbs"}
+EXCLUDED_PATH_SEGMENTS = {
+    "microgreens",
+    "shoots",
+    "sprouts",
+    "mushrooms",
+}
+EXCLUDED_TITLE_KEYWORDS = {
+    "pelleted",
+    "treated",
+    "microgreen",
+    "shoot",
+    "sprouting",
+    "collection",
+    "seed set",
+    "grow kit",
+    "spawn",
+}
+
+SINGULAR_OVERRIDES = {
+    "asparagus": "Asparagus",
+    "basil": "Basil",
+    "broccoli": "Broccoli",
+    "cabbage": "Cabbage",
+    "calendula": "Calendula",
+    "celery": "Celery",
+    "celosia": "Celosia",
+    "chard": "Chard",
+    "cilantro coriander": "Cilantro",
+    "cosmos": "Cosmos",
+    "dill": "Dill",
+    "endive": "Endive",
+    "eucalyptus": "Eucalyptus",
+    "fennel": "Fennel",
+    "garlic": "Garlic",
+    "greens": "Greens",
+    "kale": "Kale",
+    "lavender": "Lavender",
+    "lettuce": "Lettuce",
+    "mint": "Mint",
+    "okra": "Okra",
+    "oregano": "Oregano",
+    "parsley": "Parsley",
+    "rosemary": "Rosemary",
+    "sage": "Sage",
+    "spinach": "Spinach",
+    "squash": "Squash",
+    "stock": "Stock",
+    "swiss chard": "Swiss Chard",
+    "sweet corn": "Sweet Corn",
+    "sweet peas": "Sweet Pea",
+    "thyme": "Thyme",
+    "tomatillos": "Tomatillo",
+    "tomatoes": "Tomato",
+    "watermelons": "Watermelon",
+}
+
+FAMILY_OVERRIDES = {
+    "basil": "Lamiaceae",
+    "bean": "Fabaceae",
+    "beet": "Amaranthaceae",
+    "blackberry": "Rosaceae",
+    "blueberry": "Ericaceae",
+    "broccoli": "Brassicaceae",
+    "cabbage": "Brassicaceae",
+    "calendula": "Asteraceae",
+    "carrot": "Apiaceae",
+    "cauliflower": "Brassicaceae",
+    "celery": "Apiaceae",
+    "cilantro": "Apiaceae",
+    "corn": "Poaceae",
+    "cosmos": "Asteraceae",
+    "cucumber": "Cucurbitaceae",
+    "dill": "Apiaceae",
+    "eggplant": "Solanaceae",
+    "garlic": "Alliaceae",
+    "kale": "Brassicaceae",
+    "lavender": "Lamiaceae",
+    "leek": "Alliaceae",
+    "lettuce": "Asteraceae",
+    "marigold": "Asteraceae",
+    "melon": "Cucurbitaceae",
+    "mint": "Lamiaceae",
+    "nasturtium": "Tropaeolaceae",
+    "onion": "Alliaceae",
+    "parsley": "Apiaceae",
+    "pea": "Fabaceae",
+    "pepper": "Solanaceae",
+    "pumpkin": "Cucurbitaceae",
+    "radish": "Brassicaceae",
+    "raspberry": "Rosaceae",
+    "rosemary": "Lamiaceae",
+    "sage": "Lamiaceae",
+    "spinach": "Amaranthaceae",
+    "squash": "Cucurbitaceae",
+    "strawberry": "Rosaceae",
+    "sunflower": "Asteraceae",
+    "swiss chard": "Amaranthaceae",
+    "thyme": "Lamiaceae",
+    "tomatillo": "Solanaceae",
+    "tomato": "Solanaceae",
+    "watermelon": "Cucurbitaceae",
+    "zinnia": "Asteraceae",
+}
+
+SPACING_OVERRIDES = {
+    "artichoke": 36,
+    "asparagus": 18,
+    "basil": 12,
+    "bean": 6,
+    "beet": 4,
+    "blackberry": 36,
+    "blueberry": 48,
+    "broccoli": 18,
+    "brussels sprout": 20,
+    "cabbage": 18,
+    "calendula": 10,
+    "carrot": 3,
+    "cauliflower": 18,
+    "celery": 10,
+    "cilantro": 6,
+    "corn": 12,
+    "cosmos": 12,
+    "cucumber": 12,
+    "dill": 9,
+    "eggplant": 18,
+    "garlic": 6,
+    "kale": 15,
+    "lavender": 18,
+    "leek": 6,
+    "lettuce": 10,
+    "marigold": 8,
+    "melon": 30,
+    "mint": 18,
+    "nasturtium": 12,
+    "onion": 4,
+    "parsley": 8,
+    "pea": 6,
+    "pepper": 18,
+    "pumpkin": 48,
+    "radish": 3,
+    "raspberry": 30,
+    "rosemary": 18,
+    "sage": 16,
+    "spinach": 6,
+    "squash": 36,
+    "strawberry": 12,
+    "sunflower": 18,
+    "swiss chard": 12,
+    "thyme": 10,
+    "tomatillo": 24,
+    "tomato": 24,
+    "watermelon": 36,
+    "zinnia": 12,
+}
+
+TRANSPLANT_WEEKS_OVERRIDES = {
+    "artichoke": 8,
+    "asparagus": 6,
+    "basil": 6,
+    "broccoli": 6,
+    "brussels sprout": 6,
+    "cabbage": 6,
+    "cauliflower": 6,
+    "celery": 10,
+    "eggplant": 8,
+    "lavender": 8,
+    "leek": 10,
+    "onion": 10,
+    "pepper": 10,
+    "rosemary": 8,
+    "sage": 6,
+    "tomatillo": 8,
+    "tomato": 8,
+}
+
+DIRECT_SOW_FALSE_KEYWORDS = {
+    "artichoke",
+    "asparagus",
+    "basil",
+    "broccoli",
+    "brussels sprout",
+    "cabbage",
+    "cauliflower",
+    "celery",
+    "eggplant",
+    "lavender",
+    "leek",
+    "onion",
+    "pepper",
+    "rosemary",
+    "sage",
+    "strawberry",
+    "blueberry",
+    "raspberry",
+    "blackberry",
+    "tomatillo",
+    "tomato",
+}
+
+FROST_HARDY_KEYWORDS = {
+    "artichoke",
+    "asparagus",
+    "beet",
+    "blackberry",
+    "blueberry",
+    "broccoli",
+    "brussels sprout",
+    "cabbage",
+    "calendula",
+    "carrot",
+    "cauliflower",
+    "celery",
+    "cilantro",
+    "dill",
+    "garlic",
+    "kale",
+    "lavender",
+    "leek",
+    "lettuce",
+    "mint",
+    "onion",
+    "oregano",
+    "parsley",
+    "pea",
+    "radish",
+    "raspberry",
+    "rosemary",
+    "sage",
+    "spinach",
+    "strawberry",
+    "swiss chard",
+    "thyme",
+}
+
+FROST_TENDER_KEYWORDS = {
+    "basil",
+    "bean",
+    "celosia",
+    "corn",
+    "cosmos",
+    "cucumber",
+    "eggplant",
+    "marigold",
+    "melon",
+    "nasturtium",
+    "okra",
+    "pepper",
+    "pumpkin",
+    "squash",
+    "sunflower",
+    "tomatillo",
+    "tomato",
+    "watermelon",
+    "zinnia",
+}
 
 
-def seed_crop_templates(db):
-    def normalized_identity(name: str, variety: str = "") -> tuple[str, str]:
-        clean_name = name.strip()
-        clean_variety = variety.strip()
-        if not clean_variety and clean_name.endswith(")") and " (" in clean_name:
-            base, suffix = clean_name.rsplit(" (", 1)
-            clean_name = base.strip()
-            clean_variety = suffix[:-1].strip()
-        return clean_name.lower(), clean_variety.lower()
+@dataclass(slots=True)
+class JohnnysCropRecord:
+    external_product_id: str
+    source_url: str
+    crop_name: str
+    variety: str
+    family: str
+    spacing_in: int
+    planting_window: str
+    days_to_harvest: int
+    direct_sow: bool
+    frost_hardy: bool
+    weeks_to_transplant: int
+    notes: str
 
-    for crop_data in STARTER_CROPS:
-        target = normalized_identity(crop_data["name"], crop_data.get("variety", ""))
-        existing = next(
-            (
-                candidate
-                for candidate in db.query(CropTemplate).all()
-                if normalized_identity(candidate.name, candidate.variety) == target
-            ),
-            None,
-        )
+
+LEGACY_STARTER_SIGNATURES = {
+    (
+        payload["name"].strip().lower(),
+        payload.get("variety", "").strip().lower(),
+        payload["family"],
+        int(payload["spacing_in"]),
+        int(payload["days_to_harvest"]),
+        payload["planting_window"],
+        bool(payload["direct_sow"]),
+        bool(payload["frost_hardy"]),
+        int(payload["weeks_to_transplant"]),
+    )
+    for payload in [
+        {
+            "name": "Tomato",
+            "variety": "Roma",
+            "family": "Solanaceae",
+            "spacing_in": 24,
+            "days_to_harvest": 75,
+            "planting_window": "After last frost — soil must be >60 °F (zones 3-6: late May/June; zones 7-9: Apr-May)",
+            "direct_sow": False,
+            "frost_hardy": False,
+            "weeks_to_transplant": 8,
+        },
+        {
+            "name": "Bell Pepper",
+            "variety": "California Wonder",
+            "family": "Solanaceae",
+            "spacing_in": 18,
+            "days_to_harvest": 85,
+            "planting_window": "After last frost — soil >65 °F (zones 3-6: early June; zones 7-9: late Apr-May)",
+            "direct_sow": False,
+            "frost_hardy": False,
+            "weeks_to_transplant": 10,
+        },
+        {
+            "name": "Eggplant",
+            "variety": "Black Beauty",
+            "family": "Solanaceae",
+            "spacing_in": 18,
+            "days_to_harvest": 80,
+            "planting_window": "After last frost — needs warmth (best zones 6-10)",
+            "direct_sow": False,
+            "frost_hardy": False,
+            "weeks_to_transplant": 10,
+        },
+        {
+            "name": "Zucchini",
+            "variety": "Black Beauty",
+            "family": "Cucurbitaceae",
+            "spacing_in": 36,
+            "days_to_harvest": 55,
+            "planting_window": "After last frost — soil >60 °F (zones 3-6: late May/June; zones 7+: May)",
+            "direct_sow": True,
+            "frost_hardy": False,
+            "weeks_to_transplant": 4,
+        },
+        {
+            "name": "Cucumber",
+            "variety": "Marketmore",
+            "family": "Cucurbitaceae",
+            "spacing_in": 12,
+            "days_to_harvest": 60,
+            "planting_window": "After last frost — soil >60 °F; trellis to save space",
+            "direct_sow": True,
+            "frost_hardy": False,
+            "weeks_to_transplant": 3,
+        },
+        {
+            "name": "Pumpkin",
+            "variety": "Connecticut Field",
+            "family": "Cucurbitaceae",
+            "spacing_in": 48,
+            "days_to_harvest": 105,
+            "planting_window": "After last frost; count back from first fall frost for harvest date",
+            "direct_sow": True,
+            "frost_hardy": False,
+            "weeks_to_transplant": 3,
+        },
+        {
+            "name": "Broccoli",
+            "variety": "Calabrese",
+            "family": "Brassicaceae",
+            "spacing_in": 18,
+            "days_to_harvest": 80,
+            "planting_window": "Start indoors 6 wks before last frost for spring; OR direct sow mid-summer for fall crop",
+            "direct_sow": False,
+            "frost_hardy": True,
+            "weeks_to_transplant": 6,
+        },
+        {
+            "name": "Cabbage",
+            "variety": "Golden Acre",
+            "family": "Brassicaceae",
+            "spacing_in": 18,
+            "days_to_harvest": 70,
+            "planting_window": "Spring: transplant 4 wks before last frost; Fall: transplant 8 wks before first frost",
+            "direct_sow": False,
+            "frost_hardy": True,
+            "weeks_to_transplant": 6,
+        },
+        {
+            "name": "Kale",
+            "variety": "Lacinato",
+            "family": "Brassicaceae",
+            "spacing_in": 15,
+            "days_to_harvest": 55,
+            "planting_window": "Early spring (6 wks before last frost) or late summer for fall/winter harvest",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 4,
+        },
+        {
+            "name": "Radish",
+            "variety": "Cherry Belle",
+            "family": "Brassicaceae",
+            "spacing_in": 3,
+            "days_to_harvest": 25,
+            "planting_window": "Direct sow as soon as soil is workable (spring and fall); avoid summer heat",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Carrot",
+            "variety": "Nantes",
+            "family": "Apiaceae",
+            "spacing_in": 3,
+            "days_to_harvest": 70,
+            "planting_window": "Direct sow 4–6 wks before last frost; soil 45–85 °F for germination",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Celery",
+            "variety": "Tall Utah",
+            "family": "Apiaceae",
+            "spacing_in": 12,
+            "days_to_harvest": 100,
+            "planting_window": "Start indoors 10–12 wks before last frost; needs long cool season",
+            "direct_sow": False,
+            "frost_hardy": True,
+            "weeks_to_transplant": 10,
+        },
+        {
+            "name": "Green Bean",
+            "variety": "Provider",
+            "family": "Fabaceae",
+            "spacing_in": 6,
+            "days_to_harvest": 55,
+            "planting_window": "After last frost — soil >60 °F; direct sow every 2 weeks for continuous harvest",
+            "direct_sow": True,
+            "frost_hardy": False,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Pea",
+            "variety": "Sugar Snap",
+            "family": "Fabaceae",
+            "spacing_in": 6,
+            "days_to_harvest": 65,
+            "planting_window": "Direct sow 4–6 wks before last frost; tolerates light frost once sprouted",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Beet",
+            "variety": "Detroit Dark Red",
+            "family": "Amaranthaceae",
+            "spacing_in": 4,
+            "days_to_harvest": 60,
+            "planting_window": "Direct sow 4 wks before last frost; also sow mid-summer for fall harvest",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Spinach",
+            "variety": "Bloomsdale",
+            "family": "Amaranthaceae",
+            "spacing_in": 6,
+            "days_to_harvest": 40,
+            "planting_window": "Direct sow early spring or late summer; bolts quickly in heat (>75 °F)",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Swiss Chard",
+            "variety": "Rainbow",
+            "family": "Amaranthaceae",
+            "spacing_in": 12,
+            "days_to_harvest": 60,
+            "planting_window": "Direct sow after last frost or 4 wks before; tolerates heat and light frost",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Onion",
+            "variety": "Walla Walla",
+            "family": "Alliaceae",
+            "spacing_in": 4,
+            "days_to_harvest": 100,
+            "planting_window": "Start indoors 10–12 wks before last frost; choose variety for your day-length (long/short-day)",
+            "direct_sow": False,
+            "frost_hardy": True,
+            "weeks_to_transplant": 10,
+        },
+        {
+            "name": "Garlic",
+            "variety": "Hardneck",
+            "family": "Alliaceae",
+            "spacing_in": 6,
+            "days_to_harvest": 240,
+            "planting_window": "Plant cloves in fall (Oct-Nov) for summer harvest; zones 3-6: before ground freezes",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Lettuce",
+            "variety": "Butterhead",
+            "family": "Asteraceae",
+            "spacing_in": 10,
+            "days_to_harvest": 45,
+            "planting_window": "Direct sow from 4 wks before last frost; sow every 2 weeks; shade in summer",
+            "direct_sow": True,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Basil",
+            "variety": "Genovese",
+            "family": "Lamiaceae",
+            "spacing_in": 12,
+            "days_to_harvest": 60,
+            "planting_window": "After last frost; soil and air must be reliably warm (>55 °F nights)",
+            "direct_sow": False,
+            "frost_hardy": False,
+            "weeks_to_transplant": 6,
+        },
+        {
+            "name": "Mint",
+            "variety": "Spearmint",
+            "family": "Lamiaceae",
+            "spacing_in": 18,
+            "days_to_harvest": 90,
+            "planting_window": "Transplant after last frost; contains in pots to prevent aggressive spreading",
+            "direct_sow": False,
+            "frost_hardy": True,
+            "weeks_to_transplant": 6,
+        },
+        {
+            "name": "Sweet Corn",
+            "variety": "Honey Select",
+            "family": "Poaceae",
+            "spacing_in": 12,
+            "days_to_harvest": 80,
+            "planting_window": "Direct sow after last frost; soil >60 °F; plant in blocks (4+ rows) for pollination",
+            "direct_sow": True,
+            "frost_hardy": False,
+            "weeks_to_transplant": 0,
+        },
+        {
+            "name": "Strawberry",
+            "variety": "Honeoye",
+            "family": "Rosaceae",
+            "spacing_in": 12,
+            "days_to_harvest": 60,
+            "planting_window": "Transplant in early spring; June-bearers fruit in year 2; ever-bearers in year 1",
+            "direct_sow": False,
+            "frost_hardy": True,
+            "weeks_to_transplant": 0,
+        },
+    ]
+}
+
+
+def _collapse_whitespace(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _fetch_text(url: str) -> str:
+    request = Request(url, headers={"User-Agent": REQUEST_USER_AGENT})
+    with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+        return response.read().decode("utf-8", errors="ignore")
+
+
+def _extract_sitemap_urls(xml_text: str) -> list[str]:
+    namespace = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    root = ET.fromstring(xml_text)
+    return [
+        element.text.strip()
+        for element in root.findall("s:url/s:loc", namespace)
+        if element.text and element.text.strip()
+    ]
+
+
+def _singularize(label: str) -> str:
+    normalized = re.sub(r"[^a-z0-9 ]+", " ", label.lower()).strip()
+    normalized = _collapse_whitespace(normalized)
+    if normalized in SINGULAR_OVERRIDES:
+        return SINGULAR_OVERRIDES[normalized]
+    if normalized.endswith("ies"):
+        return f"{normalized[:-3]}y".title()
+    if normalized.endswith("ses"):
+        return normalized[:-2].title()
+    if normalized.endswith("s") and not normalized.endswith("ss"):
+        return normalized[:-1].title()
+    return normalized.title()
+
+
+def _normalized_keyword(value: str) -> str:
+    return _collapse_whitespace(re.sub(r"[^a-z0-9]+", " ", value.lower()))
+
+
+def _contains_keyword(value: str, keywords: set[str]) -> bool:
+    normalized = _normalized_keyword(value)
+    return any(keyword in normalized for keyword in keywords)
+
+
+def _extract_breadcrumbs(page_text: str) -> list[str]:
+    matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', page_text, re.IGNORECASE | re.DOTALL)
+    for raw_json in matches:
+        try:
+            parsed = json.loads(raw_json)
+        except json.JSONDecodeError:
+            continue
+        if parsed.get("@type") != "BreadcrumbList":
+            continue
+
+        items = parsed.get("itemListElement", [])
+        breadcrumbs: list[str] = []
+        for item in items:
+            name = item.get("item", {}).get("name")
+            if name:
+                breadcrumbs.append(_collapse_whitespace(unescape(name)))
+        if breadcrumbs:
+            return breadcrumbs
+    return []
+
+
+def _extract_product_title(page_text: str) -> str:
+    match = re.search(r"<h1[^>]*>(.*?)</h1>", page_text, re.IGNORECASE | re.DOTALL)
+    if not match:
+        raise ValueError("Missing product title")
+    return _collapse_whitespace(unescape(re.sub(r"<[^>]+>", " ", match.group(1))))
+
+
+def _extract_product_id(page_text: str) -> str:
+    match = re.search(r'<span class="master-product-id">([^<]+)</span>', page_text)
+    if not match:
+        raise ValueError("Missing product id")
+    return _collapse_whitespace(match.group(1))
+
+
+def _extract_quick_facts(page_text: str) -> dict[str, str]:
+    quick_facts: dict[str, str] = {}
+    section_match = re.search(r'<dl class="c-facts__list">(.*?)</dl>', page_text, re.IGNORECASE | re.DOTALL)
+    if not section_match:
+        return quick_facts
+
+    for match in re.finditer(
+        r"<dt[^>]*>.*?<h3(?:[^>]*title=\"([^\"]+)\")?[^>]*>(.*?)</h3>.*?</dt>\s*<dd[^>]*>(.*?)</dd>",
+        section_match.group(1),
+        re.IGNORECASE | re.DOTALL,
+    ):
+        raw_key = match.group(1) or match.group(2)
+        key = _collapse_whitespace(unescape(re.sub(r"<[^>]+>", " ", raw_key)))
+        value = _collapse_whitespace(unescape(re.sub(r"<[^>]+>", " ", match.group(3))))
+        if key and value:
+            quick_facts[key.lower()] = value
+    return quick_facts
+
+
+def _is_importable_url(url: str) -> bool:
+    parsed = urlparse(url)
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    if not segments or segments[0] not in ALLOWED_ROOT_SEGMENTS:
+        return False
+    if any(segment in EXCLUDED_PATH_SEGMENTS for segment in segments):
+        return False
+    if parsed.path.endswith("_ps.html"):
+        return False
+    return True
+
+
+def _clean_variety_name(variety: str) -> str:
+    cleaned = variety.strip(" -")
+    cleaned = re.sub(r"([A-Za-z])\(", r"\1 (", cleaned)
+    return _collapse_whitespace(cleaned)
+
+
+def _derive_crop_name(breadcrumbs: list[str], root_segment: str) -> str:
+    if len(breadcrumbs) >= 2:
+        return _singularize(breadcrumbs[1])
+    return _singularize(root_segment)
+
+
+def _derive_variety_name(title: str, crop_name: str) -> str:
+    cleaned_title = re.sub(r"\b(seed|seeds|plant|plants)\b", "", title, flags=re.IGNORECASE)
+    cleaned_title = _collapse_whitespace(cleaned_title)
+    crop_pattern = re.compile(rf"\b{re.escape(crop_name)}\b$", re.IGNORECASE)
+    variety = crop_pattern.sub("", cleaned_title).strip(" -")
+    if not variety:
+        variety = cleaned_title
+    return _clean_variety_name(variety)
+
+
+def _derive_family(crop_name: str, breadcrumbs: list[str], root_segment: str) -> str:
+    normalized_crop = _normalized_keyword(crop_name)
+    for keyword, family in FAMILY_OVERRIDES.items():
+        if keyword in normalized_crop:
+            return family
+    if len(breadcrumbs) >= 3:
+        return _singularize(breadcrumbs[2])
+    if len(breadcrumbs) >= 2:
+        return _singularize(breadcrumbs[1])
+    return _singularize(root_segment)
+
+
+def _derive_days_to_harvest(crop_name: str, root_segment: str, quick_facts: dict[str, str]) -> int:
+    days_value = quick_facts.get("days to maturity", "")
+    match = re.search(r"(\d{1,3})", days_value)
+    if match:
+        return max(1, int(match.group(1)))
+    if root_segment == "flowers":
+        return 70
+    if root_segment == "fruits":
+        return 90
+    return 60
+
+
+def _derive_direct_sow(crop_name: str, root_segment: str, life_cycle: str) -> bool:
+    normalized_crop = _normalized_keyword(crop_name)
+    if any(keyword in normalized_crop for keyword in DIRECT_SOW_FALSE_KEYWORDS):
+        return False
+    if root_segment == "fruits" and "annual" not in life_cycle.lower():
+        return False
+    return True
+
+
+def _derive_frost_hardy(crop_name: str, root_segment: str, life_cycle: str) -> bool:
+    normalized_crop = _normalized_keyword(crop_name)
+    if any(keyword in normalized_crop for keyword in FROST_TENDER_KEYWORDS):
+        return False
+    if any(keyword in normalized_crop for keyword in FROST_HARDY_KEYWORDS):
+        return True
+    if root_segment == "fruits" and "perennial" in life_cycle.lower():
+        return True
+    return root_segment == "herbs" and "annual" not in life_cycle.lower()
+
+
+def _derive_weeks_to_transplant(crop_name: str, direct_sow: bool) -> int:
+    if direct_sow:
+        return 0
+    normalized_crop = _normalized_keyword(crop_name)
+    for keyword, weeks in TRANSPLANT_WEEKS_OVERRIDES.items():
+        if keyword in normalized_crop:
+            return weeks
+    return 6
+
+
+def _derive_spacing_in(crop_name: str, root_segment: str) -> int:
+    normalized_crop = _normalized_keyword(crop_name)
+    for keyword, spacing in SPACING_OVERRIDES.items():
+        if keyword in normalized_crop:
+            return spacing
+    if root_segment == "flowers":
+        return 10
+    if root_segment == "fruits":
+        return 24
+    if root_segment == "herbs":
+        return 10
+    return 12
+
+
+def _derive_planting_window(direct_sow: bool, frost_hardy: bool, life_cycle: str) -> str:
+    lower_life_cycle = life_cycle.lower()
+    if "perennial" in lower_life_cycle and frost_hardy:
+        return "Plant in spring or fall while weather is mild"
+    if frost_hardy and direct_sow:
+        return "Direct sow in cool spring or late summer for a fall crop"
+    if frost_hardy and not direct_sow:
+        return "Start indoors or transplant in early spring; suitable for fall succession"
+    if direct_sow:
+        return "Direct sow after last frost once soil has warmed"
+    return "Start indoors and transplant after last frost"
+
+
+def _build_notes(
+    product_id: str,
+    breadcrumbs: list[str],
+    quick_facts: dict[str, str],
+) -> str:
+    details = ["Imported from Johnny's Selected Seeds."]
+    if breadcrumbs:
+        details.append(f"Category: {' > '.join(breadcrumbs)}.")
+
+    latin_name = quick_facts.get("latin name")
+    if latin_name:
+        details.append(f"Latin name: {latin_name}.")
+
+    life_cycle = quick_facts.get("life cycle")
+    if life_cycle:
+        details.append(f"Life cycle: {life_cycle}.")
+
+    hybrid_status = quick_facts.get("hybrid status")
+    if hybrid_status:
+        details.append(f"Hybrid status: {hybrid_status}.")
+
+    disease_resistance = quick_facts.get("disease resistance codes")
+    if disease_resistance:
+        details.append(f"Disease resistance: {disease_resistance}.")
+
+    details.append(f"Product ID: {product_id}.")
+    return " ".join(details)
+
+
+def _parse_product_page(url: str) -> JohnnysCropRecord | None:
+    page_text = _fetch_text(url)
+    title = _extract_product_title(page_text)
+    normalized_title = title.lower()
+    if any(keyword in normalized_title for keyword in EXCLUDED_TITLE_KEYWORDS):
+        return None
+
+    breadcrumbs = _extract_breadcrumbs(page_text)
+    root_segment = urlparse(url).path.split("/", 2)[1].lower()
+    crop_name = _derive_crop_name(breadcrumbs, root_segment)
+    variety = _derive_variety_name(title, crop_name)
+    family = _derive_family(crop_name, breadcrumbs, root_segment)
+    quick_facts = _extract_quick_facts(page_text)
+    life_cycle = quick_facts.get("life cycle", "")
+    direct_sow = _derive_direct_sow(crop_name, root_segment, life_cycle)
+    frost_hardy = _derive_frost_hardy(crop_name, root_segment, life_cycle)
+    product_id = _extract_product_id(page_text)
+
+    return JohnnysCropRecord(
+        external_product_id=product_id,
+        source_url=url,
+        crop_name=crop_name,
+        variety=variety,
+        family=family,
+        spacing_in=_derive_spacing_in(crop_name, root_segment),
+        planting_window=_derive_planting_window(direct_sow, frost_hardy, life_cycle),
+        days_to_harvest=_derive_days_to_harvest(crop_name, root_segment, quick_facts),
+        direct_sow=direct_sow,
+        frost_hardy=frost_hardy,
+        weeks_to_transplant=_derive_weeks_to_transplant(crop_name, direct_sow),
+        notes=_build_notes(product_id, breadcrumbs, quick_facts),
+    )
+
+
+def _canonical_crop_name(crop_name: str, variety: str) -> str:
+    if variety:
+        return f"{crop_name} ({variety})"
+    return crop_name
+
+
+def _fetch_johnnys_catalog() -> tuple[list[JohnnysCropRecord], int]:
+    sitemap_text = _fetch_text(JOHNNYS_PRODUCT_SITEMAP)
+    product_urls = [url for url in _extract_sitemap_urls(sitemap_text) if _is_importable_url(url)]
+
+    records: list[JohnnysCropRecord] = []
+    failed = 0
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_IMPORT_WORKERS) as executor:
+        futures = {executor.submit(_parse_product_page, url): url for url in product_urls}
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                record = future.result()
+            except Exception:
+                failed += 1
+                continue
+            if record is not None:
+                records.append(record)
+
+    records.sort(key=lambda record: (_canonical_crop_name(record.crop_name, record.variety), record.external_product_id))
+    return records, failed
+
+
+def seed_crop_templates(db, force_refresh: bool = False):
+    existing_imports = db.query(CropTemplate).filter(CropTemplate.source == JOHNNYS_SOURCE).all()
+    if existing_imports and not force_refresh:
+        return {
+            "added": 0,
+            "updated": 0,
+            "skipped": len(existing_imports),
+            "failed": 0,
+            "force_refresh": False,
+        }
+
+    try:
+        imported_records, failed = _fetch_johnnys_catalog()
+    except Exception as exc:
+        raise RuntimeError(f"Unable to reach Johnny's Selected Seeds catalog: {exc}") from exc
+
+    if not imported_records:
+        raise RuntimeError("Johnny's Selected Seeds returned no importable crop offerings")
+
+    existing_by_product_id = {
+        template.external_product_id: template
+        for template in db.query(CropTemplate).filter(CropTemplate.source == JOHNNYS_SOURCE).all()
+        if template.external_product_id
+    }
+
+    added = 0
+    updated = 0
+    for record in imported_records:
+        canonical_name = _canonical_crop_name(record.crop_name, record.variety)
+        existing = existing_by_product_id.get(record.external_product_id)
+        payload = {
+            "name": canonical_name,
+            "variety": record.variety,
+            "source": JOHNNYS_SOURCE,
+            "source_url": record.source_url,
+            "external_product_id": record.external_product_id,
+            "family": record.family,
+            "spacing_in": record.spacing_in,
+            "planting_window": record.planting_window,
+            "days_to_harvest": record.days_to_harvest,
+            "direct_sow": record.direct_sow,
+            "frost_hardy": record.frost_hardy,
+            "weeks_to_transplant": record.weeks_to_transplant,
+            "notes": record.notes,
+        }
+
         if existing is None:
-            db.add(CropTemplate(**crop_data))
-        else:
-            # Update all enriched fields so existing installs get the new data
-            for key, value in crop_data.items():
+            db.add(CropTemplate(**payload))
+            added += 1
+            continue
+
+        changed = False
+        for key, value in payload.items():
+            if getattr(existing, key) != value:
                 setattr(existing, key, value)
-    db.commit()
+                changed = True
+        if changed:
+            updated += 1
+
+    if added or updated:
+        db.commit()
+
+    return {
+        "added": added,
+        "updated": updated,
+        "skipped": 0,
+        "failed": failed,
+        "force_refresh": force_refresh,
+    }
+
+
+def cleanup_legacy_starter_templates(db) -> int:
+    removed = 0
+    candidates = db.query(CropTemplate).filter(CropTemplate.source == MANUAL_SOURCE).all()
+    for candidate in candidates:
+        signature = (
+            candidate.name.strip().lower(),
+            candidate.variety.strip().lower(),
+            candidate.family,
+            int(candidate.spacing_in),
+            int(candidate.days_to_harvest),
+            candidate.planting_window,
+            bool(candidate.direct_sow),
+            bool(candidate.frost_hardy),
+            int(candidate.weeks_to_transplant),
+        )
+        if signature not in LEGACY_STARTER_SIGNATURES:
+            continue
+        db.delete(candidate)
+        removed += 1
+
+    if removed:
+        db.commit()
+    return removed
