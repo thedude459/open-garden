@@ -2,7 +2,7 @@ import math
 import secrets
 import smtplib
 from collections import defaultdict, deque
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from email.message import EmailMessage
 from hashlib import sha256
 from threading import Lock, Thread
@@ -15,14 +15,34 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
+from .ai_coach import build_coach_context, generate_coach_response
 from .auth import create_access_token, get_admin_user, get_current_user, get_password_hash, verify_password
+from .climate_engine import build_climate_summary, build_dynamic_planting_windows
 from .config import settings
 from .database import Base, SessionLocal, engine, get_db
-from .models import Bed, CropTemplate, Garden, PestLog, Placement, Planting, SeedInventory, Task, User, UserAuthToken
+from .layout_engine import build_garden_sun_path
+from .models import Bed, CropTemplate, Garden, PestLog, Placement, Planting, SeedInventory, Sensor, SensorReading, Task, User, UserAuthToken
+from .planning_engine import build_planting_recommendations, build_seasonal_plan
+from .sensors import build_sensor_summary
+from .timeline_engine import build_unified_timeline
 from .schemas import (
+    AiCoachRequest,
+    AiCoachResponseOut,
+    ClimateRecommendationOut,
+    ClimateFactorOut,
+    ClimateForecastDayOut,
+    ClimatePlantingWindowOut,
+    CompanionInsightOut,
+    GardenClimateOut,
+    GardenClimatePlantingWindowsOut,
+    GardenSunPathOut,
+    GardenSeasonalPlanOut,
+    GardenSensorSummaryOut,
+    GardenTimelineOut,
+    GrowthStageOut,
     CropTemplateSyncStatusOut,
         ForgotPasswordPayload,
         ForgotUsernamePayload,
@@ -33,18 +53,33 @@ from .schemas import (
     CropTemplateCreate,
     CropTemplateOut,
     GardenCreate,
+    GardenMicroclimateUpdate,
     GardenYardUpdate,
     GardenOut,
+    MicroclimateSuggestionOut,
     PlacementCreate,
     PlacementMove,
     PlacementOut,
+    SensorDataBatchCreate,
+    SensorDataBatchOut,
+    SensorDataCreate,
+    SensorDataOut,
+    SensorOut,
+    SensorRegister,
+    PlantingActionOut,
     PestLogCreate,
     PestLogOut,
+    PlantingCompanionSummaryOut,
     PlantingCreate,
     PlantingOut,
+    PlantingRecommendationsOut,
+    PlantingSuccessionCandidateOut,
     PlantingHarvestUpdate,
+    RotationRecommendationOut,
     SeedInventoryCreate,
     SeedInventoryOut,
+    SuccessionRecommendationOut,
+    NextPlantingOut,
     TaskCreate,
     TaskOut,
     TaskUpdate,
@@ -55,7 +90,7 @@ from .schemas import (
     UserOut,
 )
 from .seed import cleanup_legacy_starter_templates, seed_crop_templates
-from .weather import fetch_weather, fetch_zip_profile
+from .weather import fetch_address_geocode, fetch_microclimate_signals, fetch_weather, fetch_zip_profile
 
 app = FastAPI(title="open-garden-api")
 
@@ -526,6 +561,10 @@ def delete_me(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         db.query(Task).filter(Task.garden_id == gid).delete()
         db.query(Planting).filter(Planting.garden_id == gid).delete()
         db.query(Placement).filter(Placement.garden_id == gid).delete()
+        sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == gid).all()]
+        if sensor_ids:
+            db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
+        db.query(Sensor).filter(Sensor.garden_id == gid).delete()
         db.delete(garden)
     db.query(SeedInventory).filter(SeedInventory.user_id == user_id).delete()
     db.query(UserAuthToken).filter(UserAuthToken.user_id == user_id).delete()
@@ -551,6 +590,12 @@ async def create_garden(payload: GardenCreate, db: Session = Depends(get_db), cu
         yard_length_ft=max(4, payload.yard_length_ft),
         latitude=location["latitude"],
         longitude=location["longitude"],
+        orientation=payload.orientation,
+        sun_exposure=payload.sun_exposure,
+        wind_exposure=payload.wind_exposure,
+        thermal_mass=payload.thermal_mass,
+        slope_position=payload.slope_position,
+        frost_pocket_risk=payload.frost_pocket_risk,
         address_private=payload.address_private,
         is_shared=payload.is_shared,
     )
@@ -567,7 +612,42 @@ def list_my_gardens(db: Session = Depends(get_db), current_user: User = Depends(
 
 @app.get("/gardens/public", response_model=list[GardenOut])
 def list_public_gardens(db: Session = Depends(get_db)):
-    return db.query(Garden).filter(Garden.is_shared.is_(True)).all()
+    gardens = db.query(Garden).filter(Garden.is_shared.is_(True)).all()
+    result = []
+    for g in gardens:
+        out = GardenOut.model_validate(g)
+        out.address_private = ""
+        result.append(out)
+    return result
+
+
+@app.patch("/gardens/{garden_id}/geocode", response_model=GardenOut)
+async def geocode_garden_address(
+    garden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    if not garden.address_private:
+        raise HTTPException(
+            status_code=400,
+            detail="No private address stored for this garden. Add one in the Climate & Site Profile and save first.",
+        )
+
+    try:
+        result = await fetch_address_geocode(garden.address_private)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    garden.latitude = result["latitude"]
+    garden.longitude = result["longitude"]
+    db.add(garden)
+    db.commit()
+    db.refresh(garden)
+    return garden
 
 
 @app.patch("/gardens/{garden_id}/yard", response_model=GardenOut)
@@ -582,6 +662,348 @@ def update_garden_yard(garden_id: int, payload: GardenYardUpdate, db: Session = 
     db.commit()
     db.refresh(garden)
     return garden
+
+
+@app.patch("/gardens/{garden_id}/microclimate", response_model=GardenOut)
+def update_garden_microclimate(
+    garden_id: int,
+    payload: GardenMicroclimateUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    for field, value in payload.model_dump(exclude_none=True).items():
+        setattr(garden, field, value)
+
+    db.add(garden)
+    db.commit()
+    db.refresh(garden)
+    return garden
+
+
+@app.get("/gardens/{garden_id}/microclimate/suggest", response_model=MicroclimateSuggestionOut)
+async def suggest_garden_microclimate(
+    garden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Analyse the garden's coordinates and suggest microclimate field values."""
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    try:
+        result = await fetch_microclimate_signals(garden.latitude, garden.longitude)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Unable to fetch location signals for suggestions.") from exc
+
+    suggestions = result["suggestions"]
+    notes = result["notes"]
+
+    def _signal(key: str) -> dict:
+        return {"value": suggestions.get(key), "note": notes.get(key, "")}
+
+    return MicroclimateSuggestionOut(
+        sun_exposure=_signal("sun_exposure"),
+        wind_exposure=_signal("wind_exposure"),
+        slope_position=_signal("slope_position"),
+        frost_pocket_risk=_signal("frost_pocket_risk"),
+        orientation={"value": None, "note": notes["orientation"]},
+        thermal_mass={"value": None, "note": notes["thermal_mass"]},
+    )
+
+
+@app.get("/gardens/{garden_id}/climate", response_model=GardenClimateOut)
+async def get_garden_climate(garden_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    try:
+        weather = await fetch_weather(garden.latitude, garden.longitude)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Unable to fetch forecast for climate analysis.") from exc
+
+    return build_climate_summary(garden, weather)
+
+
+@app.get("/gardens/{garden_id}/climate/planting-windows", response_model=GardenClimatePlantingWindowsOut)
+async def get_garden_climate_planting_windows(
+    garden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    try:
+        weather = await fetch_weather(garden.latitude, garden.longitude)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Unable to fetch forecast for planting windows.") from exc
+
+    crop_templates = db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    return build_dynamic_planting_windows(garden, weather, crop_templates)
+
+
+@app.get("/gardens/{garden_id}/layout/sun-path", response_model=GardenSunPathOut)
+def get_garden_layout_sun_path(
+    garden_id: int,
+    on_date: date | None = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    target_date = on_date or date.today()
+    return build_garden_sun_path(garden, target_date)
+
+
+@app.post("/sensors/register", response_model=SensorOut)
+def register_sensor(
+    payload: SensorRegister,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    if payload.bed_id is not None:
+        bed = db.query(Bed).filter(Bed.id == payload.bed_id, Bed.garden_id == payload.garden_id).first()
+        if bed is None:
+            raise HTTPException(status_code=404, detail="Bed not found")
+
+    sensor = Sensor(
+        garden_id=payload.garden_id,
+        bed_id=payload.bed_id,
+        name=payload.name.strip(),
+        sensor_kind=payload.sensor_kind,
+        unit=payload.unit.strip(),
+        location_label=payload.location_label.strip(),
+        hardware_id=payload.hardware_id.strip(),
+        is_active=True,
+    )
+    db.add(sensor)
+    db.commit()
+    db.refresh(sensor)
+    return sensor
+
+
+@app.post("/sensors/{sensor_id}/data", response_model=SensorDataOut)
+def ingest_sensor_data(
+    sensor_id: int,
+    payload: SensorDataCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sensor = db.query(Sensor).filter(Sensor.id == sensor_id).first()
+    if sensor is None:
+        raise HTTPException(status_code=404, detail="Sensor not found")
+
+    garden = db.query(Garden).filter(Garden.id == sensor.garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    captured_at = payload.captured_at or datetime.now(timezone.utc)
+    if captured_at.tzinfo is None:
+        captured_at = captured_at.replace(tzinfo=timezone.utc)
+
+    reading = SensorReading(
+        sensor_id=sensor.id,
+        value=payload.value,
+        captured_at=captured_at,
+    )
+    db.add(reading)
+    db.commit()
+    db.refresh(reading)
+    return reading
+
+
+@app.post("/sensors/{sensor_id}/data/batch", response_model=SensorDataBatchOut)
+def ingest_sensor_data_batch(
+    sensor_id: int,
+    payload: SensorDataBatchCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sensor = db.query(Sensor).filter(Sensor.id == sensor_id).first()
+    if sensor is None:
+        raise HTTPException(status_code=404, detail="Sensor not found")
+
+    garden = db.query(Garden).filter(Garden.id == sensor.garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    if len(payload.readings) > 500:
+        raise HTTPException(status_code=422, detail="Batch limited to 500 readings at a time.")
+
+    readings = []
+    for item in payload.readings:
+        captured_at = item.captured_at or datetime.now(timezone.utc)
+        if captured_at.tzinfo is None:
+            captured_at = captured_at.replace(tzinfo=timezone.utc)
+        readings.append(SensorReading(sensor_id=sensor.id, value=item.value, captured_at=captured_at))
+
+    db.add_all(readings)
+    db.commit()
+    return {"inserted": len(readings)}
+
+
+@app.get("/gardens/{garden_id}/sensors/summary", response_model=GardenSensorSummaryOut)
+def get_garden_sensor_summary(
+    garden_id: int,
+    hours: int = Query(default=48, ge=1, le=336),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    sensors = db.query(Sensor).filter(Sensor.garden_id == garden_id, Sensor.is_active.is_(True)).all()
+    sensor_ids = [sensor.id for sensor in sensors]
+    readings = []
+    if sensor_ids:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        readings = (
+            db.query(SensorReading)
+            .filter(
+                SensorReading.sensor_id.in_(sensor_ids),
+                SensorReading.captured_at >= cutoff,
+            )
+            .all()
+        )
+
+    return build_sensor_summary(garden_id=garden_id, sensors=sensors, readings=readings, horizon_hours=hours)
+
+
+@app.post("/ai/coach", response_model=AiCoachResponseOut)
+async def ai_coach(
+    payload: AiCoachRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    try:
+        weather = await fetch_weather(garden.latitude, garden.longitude)
+    except Exception:
+        weather = None
+
+    plantings = db.query(Planting).filter(Planting.garden_id == garden.id).all()
+    tasks = db.query(Task).filter(Task.garden_id == garden.id).all()
+
+    sensors = db.query(Sensor).filter(Sensor.garden_id == garden.id, Sensor.is_active.is_(True)).all()
+    sensor_ids = [sensor.id for sensor in sensors]
+    readings = []
+    if sensor_ids:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=72)
+        readings = (
+            db.query(SensorReading)
+            .filter(
+                SensorReading.sensor_id.in_(sensor_ids),
+                SensorReading.captured_at >= cutoff,
+            )
+            .all()
+        )
+    sensor_summary = build_sensor_summary(garden_id=garden.id, sensors=sensors, readings=readings, horizon_hours=72)
+
+    context = build_coach_context(
+        garden=garden,
+        weather=weather,
+        plantings=plantings,
+        tasks=tasks,
+        sensor_summary=sensor_summary,
+        user_message=payload.message,
+        scenario=(payload.scenario.model_dump() if payload.scenario else {}),
+    )
+
+    return generate_coach_response(context)
+
+
+@app.get("/gardens/{garden_id}/timeline", response_model=GardenTimelineOut)
+async def get_garden_timeline(
+    garden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    weather = None
+    try:
+        weather = await fetch_weather(garden.latitude, garden.longitude)
+    except Exception:
+        weather = None
+
+    tasks = db.query(Task).filter(Task.garden_id == garden.id).all()
+    plantings = db.query(Planting).filter(Planting.garden_id == garden.id).all()
+    crop_templates = db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+
+    planting_windows = build_dynamic_planting_windows(garden, weather or {}, crop_templates) if weather else {"windows": []}
+
+    sensors = db.query(Sensor).filter(Sensor.garden_id == garden.id, Sensor.is_active.is_(True)).all()
+    sensor_ids = [sensor.id for sensor in sensors]
+    readings = []
+    if sensor_ids:
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=72)
+        readings = (
+            db.query(SensorReading)
+            .filter(
+                SensorReading.sensor_id.in_(sensor_ids),
+                SensorReading.captured_at >= cutoff,
+            )
+            .all()
+        )
+    sensor_summary = build_sensor_summary(garden_id=garden.id, sensors=sensors, readings=readings, horizon_hours=72)
+
+    coach_context = build_coach_context(
+        garden=garden,
+        weather=weather,
+        plantings=plantings,
+        tasks=tasks,
+        sensor_summary=sensor_summary,
+        user_message="Generate timeline recommendations.",
+        scenario={},
+    )
+    coach_response = generate_coach_response(coach_context)
+
+    return build_unified_timeline(
+        tasks=tasks,
+        weather=weather,
+        planting_windows=planting_windows,
+        sensor_summary=sensor_summary,
+        coach_response=coach_response,
+    )
+
+
+@app.get("/gardens/{garden_id}/plan/seasonal", response_model=GardenSeasonalPlanOut)
+async def get_garden_seasonal_plan(
+    garden_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    try:
+        weather = await fetch_weather(garden.latitude, garden.longitude)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Unable to fetch forecast for seasonal planning.") from exc
+
+    crop_templates = db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    plantings = db.query(Planting).filter(Planting.garden_id == garden_id).all()
+    return build_seasonal_plan(garden, weather, crop_templates, plantings)
 
 
 @app.get("/crop-templates", response_model=list[CropTemplateOut])
@@ -656,11 +1078,18 @@ def create_crop_template(payload: CropTemplateCreate, db: Session = Depends(get_
     stored_name, stored_variety = _canonical_crop_template_name(base_name, variety)
 
     target_identity = _normalized_crop_identity(stored_name, stored_variety)
+    name_lower, variety_lower = target_identity
+    # Use SQL to narrow to at most 2 rows (canonical name + legacy embedded-variety form),
+    # then do the exact Python identity check on that tiny result set.
+    _candidate_names = [name_lower]
+    if variety_lower:
+        _candidate_names.append(f"{name_lower} ({variety_lower})")
     existing = next(
         (
-            candidate
-            for candidate in db.query(CropTemplate).all()
-            if _normalized_crop_identity(candidate.name, candidate.variety) == target_identity
+            c for c in db.query(CropTemplate)
+                          .filter(func.lower(CropTemplate.name).in_(_candidate_names))
+                          .all()
+            if _normalized_crop_identity(c.name, c.variety) == target_identity
         ),
         None,
     )
@@ -672,6 +1101,7 @@ def create_crop_template(payload: CropTemplateCreate, db: Session = Depends(get_
         variety=stored_variety,
         source="manual",
         source_url="",
+        image_url=payload.image_url.strip(),
         external_product_id="",
         family=payload.family.strip(),
         spacing_in=max(1, payload.spacing_in),
@@ -702,11 +1132,19 @@ def update_crop_template(crop_id: int, payload: CropTemplateCreate, db: Session 
     stored_name, stored_variety = _canonical_crop_template_name(base_name, variety)
 
     target_identity = _normalized_crop_identity(stored_name, stored_variety)
+    name_lower, variety_lower = target_identity
+    _candidate_names = [name_lower]
+    if variety_lower:
+        _candidate_names.append(f"{name_lower} ({variety_lower})")
     existing = next(
         (
-            candidate
-            for candidate in db.query(CropTemplate).filter(CropTemplate.id != crop_id).all()
-            if _normalized_crop_identity(candidate.name, candidate.variety) == target_identity
+            c for c in db.query(CropTemplate)
+                          .filter(
+                              func.lower(CropTemplate.name).in_(_candidate_names),
+                              CropTemplate.id != crop_id,
+                          )
+                          .all()
+            if _normalized_crop_identity(c.name, c.variety) == target_identity
         ),
         None,
     )
@@ -719,6 +1157,7 @@ def update_crop_template(crop_id: int, payload: CropTemplateCreate, db: Session 
     crop.name = stored_name
     crop.variety = stored_variety
     crop.family = payload.family.strip()
+    crop.image_url = payload.image_url.strip()
     crop.spacing_in = max(1, payload.spacing_in)
     crop.days_to_harvest = max(1, payload.days_to_harvest)
     crop.planting_window = payload.planting_window.strip() or "Spring"
@@ -751,16 +1190,59 @@ def _required_spacing(db: Session, crop_name: str) -> int:
     return max(1, template.spacing_in)
 
 
-def _validate_spacing(db: Session, *, garden_id: int, bed_id: int, crop_name: str, grid_x: int, grid_y: int, ignore_id: int | None = None) -> None:
-    candidate_spacing = _required_spacing(db, crop_name)
-    query = db.query(Placement).filter(Placement.garden_id == garden_id, Placement.bed_id == bed_id)
-    if ignore_id is not None:
-        query = query.filter(Placement.id != ignore_id)
+def _validate_spacing(
+    db: Session,
+    *,
+    garden: Garden,
+    bed: Bed,
+    crop_name: str,
+    grid_x: int,
+    grid_y: int,
+    ignore_id: int | None = None,
+) -> None:
+    # Check edge buffer constraint (each grid cell = 3 inches)
+    buffer_cells = max(0, (garden.edge_buffer_in + 2) // 3)
+    bed_cols = max(1, bed.width_in // 3)
+    bed_rows = max(1, bed.height_in // 3)
 
-    for existing in query.all():
-        existing_spacing = _required_spacing(db, existing.crop_name)
+    if (
+        grid_x < buffer_cells
+        or grid_x >= bed_cols - buffer_cells
+        or grid_y < buffer_cells
+        or grid_y >= bed_rows - buffer_cells
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Placement is too close to the bed edge. Required buffer is {garden.edge_buffer_in} inches.",
+        )
+
+    # Fetch all existing placements in one query
+    placement_query = db.query(Placement).filter(
+        Placement.garden_id == garden.id, Placement.bed_id == bed.id
+    )
+    if ignore_id is not None:
+        placement_query = placement_query.filter(Placement.id != ignore_id)
+
+    existing_placements = placement_query.all()
+    if not existing_placements:
+        return
+
+    # Batch-fetch spacing for all relevant crops in a single query (avoids N+1)
+    needed_names = {p.crop_name for p in existing_placements} | {crop_name}
+    spacing_map: dict[str, int] = {
+        row.name: max(1, row.spacing_in)
+        for row in db.query(CropTemplate.name, CropTemplate.spacing_in)
+                      .filter(CropTemplate.name.in_(needed_names))
+                      .all()
+    }
+    candidate_spacing = spacing_map.get(crop_name, 12)
+
+    for existing in existing_placements:
+        existing_spacing = spacing_map.get(existing.crop_name, 12)
         required_clearance = max(candidate_spacing, existing_spacing)
-        distance_in = math.sqrt(((grid_x - existing.grid_x) * 12) ** 2 + ((grid_y - existing.grid_y) * 12) ** 2)
+        distance_in = math.sqrt(
+            ((grid_x - existing.grid_x) * 12) ** 2 + ((grid_y - existing.grid_y) * 12) ** 2
+        )
         if distance_in < required_clearance:
             raise HTTPException(
                 status_code=409,
@@ -812,6 +1294,69 @@ def update_bed_position(bed_id: int, payload: BedPositionUpdate, db: Session = D
     return bed
 
 
+@app.patch("/beds/{bed_id}/rotate", response_model=BedOut)
+def rotate_bed_in_yard(bed_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    bed = db.query(Bed).filter(Bed.id == bed_id).first()
+    if bed is None:
+        raise HTTPException(status_code=404, detail="Bed not found")
+
+    garden = db.query(Garden).filter(Garden.id == bed.garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=404, detail="Garden not found")
+
+    rotated_width_in = bed.height_in
+    rotated_height_in = bed.width_in
+    rotated_width_ft = max(1, math.ceil(rotated_width_in / 12))
+    rotated_height_ft = max(1, math.ceil(rotated_height_in / 12))
+
+    if bed.grid_x + rotated_width_ft > garden.yard_width_ft or bed.grid_y + rotated_height_ft > garden.yard_length_ft:
+        raise HTTPException(status_code=409, detail="Bed cannot rotate at its current yard position. Move it away from the yard edge first.")
+
+    other_beds = db.query(Bed).filter(Bed.garden_id == garden.id, Bed.id != bed.id).all()
+    rotated_left = bed.grid_x
+    rotated_top = bed.grid_y
+    rotated_right = rotated_left + rotated_width_ft
+    rotated_bottom = rotated_top + rotated_height_ft
+    for other in other_beds:
+        other_width_ft = max(1, math.ceil(other.width_in / 12))
+        other_height_ft = max(1, math.ceil(other.height_in / 12))
+        other_left = other.grid_x
+        other_top = other.grid_y
+        other_right = other_left + other_width_ft
+        other_bottom = other_top + other_height_ft
+        intersects = rotated_left < other_right and rotated_right > other_left and rotated_top < other_bottom and rotated_bottom > other_top
+        if intersects:
+            raise HTTPException(
+                status_code=409,
+                detail="Bed cannot rotate because it would overlap another bed in the yard.",
+            )
+
+    original_cols = max(1, math.ceil(bed.width_in / 3))
+    original_rows = max(1, math.ceil(bed.height_in / 3))
+    placements = db.query(Placement).filter(Placement.bed_id == bed.id).all()
+    for placement in placements:
+        if placement.grid_x < 0 or placement.grid_y < 0 or placement.grid_x >= original_cols or placement.grid_y >= original_rows:
+            raise HTTPException(
+                status_code=409,
+                detail="Bed cannot rotate because one or more placements are outside the current bed bounds.",
+            )
+
+    # Rotate placements 90 degrees clockwise inside the bed grid.
+    for placement in placements:
+        old_x = placement.grid_x
+        old_y = placement.grid_y
+        placement.grid_x = original_rows - 1 - old_y
+        placement.grid_y = old_x
+        db.add(placement)
+
+    bed.width_in = rotated_width_in
+    bed.height_in = rotated_height_in
+    db.add(bed)
+    db.commit()
+    db.refresh(bed)
+    return bed
+
+
 @app.delete("/beds/{bed_id}")
 def delete_bed(bed_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     bed = db.query(Bed).filter(Bed.id == bed_id).first()
@@ -824,6 +1369,7 @@ def delete_bed(bed_id: int, db: Session = Depends(get_db), current_user: User = 
 
     db.query(Placement).filter(Placement.bed_id == bed_id).delete()
     db.query(Planting).filter(Planting.bed_id == bed_id).delete()
+    db.query(Sensor).filter(Sensor.bed_id == bed_id).update({Sensor.bed_id: None}, synchronize_session=False)
     db.delete(bed)
     db.commit()
     return {"status": "deleted"}
@@ -839,6 +1385,10 @@ def delete_garden(garden_id: int, db: Session = Depends(get_db), current_user: U
     db.query(Task).filter(Task.garden_id == garden_id).delete()
     db.query(Planting).filter(Planting.garden_id == garden_id).delete()
     db.query(Placement).filter(Placement.garden_id == garden_id).delete()
+    sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == garden_id).all()]
+    if sensor_ids:
+        db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
+    db.query(Sensor).filter(Sensor.garden_id == garden_id).delete()
     # beds FK-cascade is handled by ORM relationship cascade
     db.delete(garden)
     db.commit()
@@ -870,8 +1420,8 @@ def create_placement(payload: PlacementCreate, db: Session = Depends(get_db), cu
 
     _validate_spacing(
         db,
-        garden_id=payload.garden_id,
-        bed_id=payload.bed_id,
+        garden=garden,
+        bed=bed,
         crop_name=payload.crop_name,
         grid_x=payload.grid_x,
         grid_y=payload.grid_y,
@@ -926,8 +1476,8 @@ def move_placement(placement_id: int, payload: PlacementMove, db: Session = Depe
 
     _validate_spacing(
         db,
-        garden_id=placement.garden_id,
-        bed_id=payload.bed_id,
+        garden=garden,
+        bed=target_bed,
         crop_name=placement.crop_name,
         grid_x=payload.grid_x,
         grid_y=payload.grid_y,
@@ -1130,6 +1680,30 @@ def log_harvest(planting_id: int, payload: PlantingHarvestUpdate, db: Session = 
     return planting
 
 
+@app.get("/plantings/{planting_id}/recommendations", response_model=PlantingRecommendationsOut)
+async def get_planting_recommendations(
+    planting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    planting = db.query(Planting).filter(Planting.id == planting_id).first()
+    if planting is None:
+        raise HTTPException(status_code=404, detail="Planting not found")
+
+    garden = db.query(Garden).filter(Garden.id == planting.garden_id, Garden.owner_id == current_user.id).first()
+    if garden is None:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    try:
+        weather = await fetch_weather(garden.latitude, garden.longitude)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Unable to fetch forecast for planting recommendations.") from exc
+
+    crop_templates = db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    plantings = db.query(Planting).filter(Planting.garden_id == garden.id).all()
+    return build_planting_recommendations(planting, garden, weather, crop_templates, plantings)
+
+
 @app.post("/tasks", response_model=TaskOut)
 def create_task(payload: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     garden = db.query(Garden).filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id).first()
@@ -1238,13 +1812,19 @@ def delete_pest_log(pest_log_id: int, db: Session = Depends(get_db), current_use
 
 
 @app.get("/weather")
-async def get_weather(latitude: float, longitude: float):
+async def get_weather(request: Request, latitude: float, longitude: float):
+    _enforce_rate_limit(request, "weather", 20, 60)
     return await fetch_weather(latitude, longitude)
 
 
 @app.get("/admin/users", response_model=list[UserOut])
-def list_users_admin(db: Session = Depends(get_db), _: User = Depends(get_admin_user)):
-    return db.query(User).all()
+def list_users_admin(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_admin_user),
+):
+    return db.query(User).offset(skip).limit(limit).all()
 
 
 @app.post("/admin/users/{user_id}/disable", response_model=UserOut)

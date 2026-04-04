@@ -29,6 +29,15 @@ type CropsPanelProps = {
   onNewCropWeeksToTransplantChange: (value: number) => void;
   newCropNotes: string;
   onNewCropNotesChange: (value: string) => void;
+  newCropImageUrl: string;
+  onNewCropImageUrlChange: (value: string) => void;
+  cropErrors: {
+    name: string;
+    spacing: string;
+    days: string;
+    planting_window: string;
+    weeks_to_transplant: string;
+  };
   onUpsertCropTemplate: (e: FormEvent<HTMLFormElement>) => void;
   onResetCropForm: () => void;
   onPopulateCropForm: (crop: CropTemplate) => void;
@@ -63,6 +72,9 @@ export function CropsPanel({
   onNewCropWeeksToTransplantChange,
   newCropNotes,
   onNewCropNotesChange,
+  newCropImageUrl,
+  onNewCropImageUrlChange,
+  cropErrors,
   onUpsertCropTemplate,
   onResetCropForm,
   onPopulateCropForm,
@@ -101,6 +113,7 @@ export function CropsPanel({
         <div className="crops-grid">
           {cropTemplates.map((crop) => (
             <div key={crop.id} className="crop-card">
+              {crop.image_url && <img className="crop-photo" src={crop.image_url} alt={`${cropBaseName(crop)} reference`} loading="lazy" />}
               <div className="crop-card-row">
                 <span>
                   <strong>{cropBaseName(crop)}</strong>
@@ -134,7 +147,8 @@ export function CropsPanel({
       <form onSubmit={onUpsertCropTemplate} className="card stack compact">
         <h2>{editingCropId ? "Edit Crop" : "Add Crop"}</h2>
         <label className="field-label" htmlFor="crop-name">Crop Name</label>
-        <input id="crop-name" value={newCropName} onChange={(e) => onNewCropNameChange(e.target.value)} placeholder="Broccoli" required />
+        <input id="crop-name" value={newCropName} onChange={(e) => onNewCropNameChange(e.target.value)} placeholder="Broccoli" aria-invalid={Boolean(cropErrors.name)} aria-describedby={cropErrors.name ? "crop-name-error" : undefined} required />
+        {cropErrors.name && <p id="crop-name-error" className="field-error">{cropErrors.name}</p>}
         <div className="mini-row">
           <div className="stack compact">
             <label className="field-label" htmlFor="crop-variety">Variety</label>
@@ -148,15 +162,20 @@ export function CropsPanel({
         <div className="mini-row">
           <div className="stack compact">
             <label className="field-label" htmlFor="crop-spacing">Spacing (in)</label>
-            <input id="crop-spacing" value={newCropSpacing} onChange={(e) => onNewCropSpacingChange(Number(e.target.value))} type="number" min="1" placeholder="18" required />
+            <input id="crop-spacing" value={newCropSpacing} onChange={(e) => onNewCropSpacingChange(Number(e.target.value))} type="number" min="1" placeholder="18" aria-invalid={Boolean(cropErrors.spacing)} aria-describedby={cropErrors.spacing ? "crop-spacing-error" : undefined} required />
+            {cropErrors.spacing && <p id="crop-spacing-error" className="field-error">{cropErrors.spacing}</p>}
           </div>
           <div className="stack compact">
             <label className="field-label" htmlFor="crop-days">Days to Harvest</label>
-            <input id="crop-days" value={newCropDays} onChange={(e) => onNewCropDaysChange(Number(e.target.value))} type="number" min="1" placeholder="70" required />
+            <input id="crop-days" value={newCropDays} onChange={(e) => onNewCropDaysChange(Number(e.target.value))} type="number" min="1" placeholder="70" aria-invalid={Boolean(cropErrors.days)} aria-describedby={cropErrors.days ? "crop-days-error" : undefined} required />
+            {cropErrors.days && <p id="crop-days-error" className="field-error">{cropErrors.days}</p>}
           </div>
         </div>
         <label className="field-label" htmlFor="crop-window">When to Plant</label>
-        <input id="crop-window" value={newCropPlantingWindow} onChange={(e) => onNewCropPlantingWindowChange(e.target.value)} placeholder="Early spring" required />
+        <input id="crop-window" value={newCropPlantingWindow} onChange={(e) => onNewCropPlantingWindowChange(e.target.value)} placeholder="Early spring" aria-invalid={Boolean(cropErrors.planting_window)} aria-describedby={cropErrors.planting_window ? "crop-window-error" : undefined} required />
+        {cropErrors.planting_window && <p id="crop-window-error" className="field-error">{cropErrors.planting_window}</p>}
+        <label className="field-label" htmlFor="crop-image-url">Photo URL (optional)</label>
+        <input id="crop-image-url" value={newCropImageUrl} onChange={(e) => onNewCropImageUrlChange(e.target.value)} placeholder="https://.../tomato.jpg" />
         <div className="inline-checks">
           <label className="inline">
             <input type="checkbox" checked={newCropDirectSow} onChange={(e) => onNewCropDirectSowChange(e.target.checked)} />
@@ -170,7 +189,8 @@ export function CropsPanel({
         {!newCropDirectSow && (
           <>
             <label className="field-label" htmlFor="crop-wtt">Weeks to start indoors before transplant</label>
-            <input id="crop-wtt" value={newCropWeeksToTransplant} onChange={(e) => onNewCropWeeksToTransplantChange(Number(e.target.value))} type="number" min="1" max="16" />
+            <input id="crop-wtt" value={newCropWeeksToTransplant} onChange={(e) => onNewCropWeeksToTransplantChange(Number(e.target.value))} type="number" min="1" max="16" aria-invalid={Boolean(cropErrors.weeks_to_transplant)} aria-describedby={cropErrors.weeks_to_transplant ? "crop-wtt-error" : undefined} />
+            {cropErrors.weeks_to_transplant && <p id="crop-wtt-error" className="field-error">{cropErrors.weeks_to_transplant}</p>}
           </>
         )}
         <label className="field-label" htmlFor="crop-notes">Care notes (optional)</label>

@@ -1,5 +1,5 @@
 import { FormEvent, KeyboardEvent, useState } from "react";
-import { Bed, CalendarEvent, CropTemplate } from "../types";
+import { Bed, CalendarEvent, ClimatePlantingWindow, CropTemplate } from "../types";
 
 type CalendarPanelProps = {
   selectedGardenName?: string;
@@ -28,6 +28,8 @@ type CalendarPanelProps = {
   onSelectCrop: (crop: CropTemplate) => void;
   cropBaseName: (crop: CropTemplate) => string;
   selectedCrop?: CropTemplate;
+  selectedCropWindow?: ClimatePlantingWindow;
+  isLoadingPlantingWindows: boolean;
   onToggleTaskDone: (taskId: number, done: boolean) => void;
   onDeleteTask: (taskId: number) => void;
   onEditTask: (taskId: number, update: { title?: string; due_on?: string; notes?: string }) => void;
@@ -76,6 +78,8 @@ export function CalendarPanel({
   onSelectCrop,
   cropBaseName,
   selectedCrop,
+  selectedCropWindow,
+  isLoadingPlantingWindows,
   onToggleTaskDone,
   onDeleteTask,
   onEditTask,
@@ -87,6 +91,8 @@ export function CalendarPanel({
   const [taskEditDraft, setTaskEditDraft] = useState({ title: "", due_on: "", notes: "" });
   const [harvestEditId, setHarvestEditId] = useState<number | null>(null);
   const [harvestDraft, setHarvestDraft] = useState({ harvested_on: "", yield_notes: "" });
+  const [taskFormErrors, setTaskFormErrors] = useState<{ title: string; due_on: string }>({ title: "", due_on: "" });
+  const [plantingFormErrors, setPlantingFormErrors] = useState<{ bed_id: string; crop_name: string; planted_on: string }>({ bed_id: "", crop_name: "", planted_on: "" });
 
   const hasTasks = selectedDayEvents.some((e) => e.kind === "task");
   const filteredDayEvents = selectedDayEvents.filter((event) => {
@@ -95,6 +101,60 @@ export function CalendarPanel({
     if (taskDoneFilter === "done") return event.is_done;
     return true;
   });
+
+  function validateTaskField(field: "title" | "due_on", value: string) {
+    if (field === "title") {
+      return value.trim() ? "" : "Task title is required.";
+    }
+    return value.trim() ? "" : "Due date is required.";
+  }
+
+  function validatePlantingField(field: "bed_id" | "crop_name" | "planted_on", value: string) {
+    if (field === "bed_id") {
+      return value.trim() ? "" : "Choose a bed for this planting.";
+    }
+    if (field === "crop_name") {
+      return value.trim() ? "" : "Choose a vegetable before adding a planting.";
+    }
+    return value.trim() ? "" : "Planting date is required.";
+  }
+
+  function handleTaskFieldBlur(field: "title" | "due_on", value: string) {
+    setTaskFormErrors((current) => ({ ...current, [field]: validateTaskField(field, value) }));
+  }
+
+  function handlePlantingFieldBlur(field: "bed_id" | "crop_name" | "planted_on", value: string) {
+    setPlantingFormErrors((current) => ({ ...current, [field]: validatePlantingField(field, value) }));
+  }
+
+  function handleTaskSubmit(e: FormEvent<HTMLFormElement>) {
+    const fd = new FormData(e.currentTarget);
+    const nextErrors = {
+      title: validateTaskField("title", String(fd.get("title") || "")),
+      due_on: validateTaskField("due_on", String(fd.get("due_on") || "")),
+    };
+    setTaskFormErrors(nextErrors);
+    if (nextErrors.title || nextErrors.due_on) {
+      e.preventDefault();
+      return;
+    }
+    onCreateTask(e);
+  }
+
+  function handlePlantingSubmit(e: FormEvent<HTMLFormElement>) {
+    const fd = new FormData(e.currentTarget);
+    const nextErrors = {
+      bed_id: validatePlantingField("bed_id", String(fd.get("bed_id") || "")),
+      crop_name: validatePlantingField("crop_name", selectedCropName),
+      planted_on: validatePlantingField("planted_on", String(fd.get("planted_on") || "")),
+    };
+    setPlantingFormErrors(nextErrors);
+    if (nextErrors.bed_id || nextErrors.crop_name || nextErrors.planted_on) {
+      e.preventDefault();
+      return;
+    }
+    onCreatePlanting(e);
+  }
 
   return (
     <article className="card calendar-card">
@@ -183,18 +243,20 @@ export function CalendarPanel({
                         aria-label={`Mark "${event.title}" as ${event.is_done ? "incomplete" : "complete"}`}
                       />
                       <span className="event-pill-title">{event.title}</span>
-                      <button
-                        type="button"
-                        className="event-pill-action"
-                        aria-label="Edit task"
-                        onClick={() => { setTaskEditId(event.taskId!); setTaskEditDraft({ title: event.title, due_on: event.date, notes: event.notes || "" }); }}
-                      >&#9998;</button>
-                      <button
-                        type="button"
-                        className="event-pill-action delete"
-                        aria-label="Delete task"
-                        onClick={() => onDeleteTask(event.taskId!)}
-                      >&#10005;</button>
+                      <span className="event-pill-actions">
+                        <button
+                          type="button"
+                          className="event-pill-action"
+                          aria-label="Edit task"
+                          onClick={() => { setTaskEditId(event.taskId!); setTaskEditDraft({ title: event.title, due_on: event.date, notes: event.notes || "" }); }}
+                        >&#9998;</button>
+                        <button
+                          type="button"
+                          className="event-pill-action delete"
+                          aria-label="Delete task"
+                          onClick={() => onDeleteTask(event.taskId!)}
+                        >&#10005;</button>
+                      </span>
                     </>
                   )
                 ) : event.kind === "harvest" && event.plantingId !== undefined ? (
@@ -219,14 +281,18 @@ export function CalendarPanel({
                       <span className="event-pill-title">{event.title}</span>
                       {event.harvested_on ? (
                         <>
-                          <span className="harvest-logged">&#10003; {event.harvested_on}</span>
-                          {event.yield_notes && <span className="harvest-yield-notes">{event.yield_notes}</span>}
-                          <button
-                            type="button"
-                            className="event-pill-action"
-                            aria-label="Edit harvest"
-                            onClick={() => { setHarvestEditId(event.plantingId!); setHarvestDraft({ harvested_on: event.harvested_on!, yield_notes: event.yield_notes || "" }); }}
-                          >&#9998;</button>
+                          <span className="event-pill-meta">
+                            <span className="harvest-logged">&#10003; {event.harvested_on}</span>
+                            {event.yield_notes && <span className="harvest-yield-notes">{event.yield_notes}</span>}
+                          </span>
+                          <span className="event-pill-actions">
+                            <button
+                              type="button"
+                              className="event-pill-action"
+                              aria-label="Edit harvest"
+                              onClick={() => { setHarvestEditId(event.plantingId!); setHarvestDraft({ harvested_on: event.harvested_on!, yield_notes: event.yield_notes || "" }); }}
+                            >&#9998;</button>
+                          </span>
                         </>
                       ) : (
                         <button
@@ -250,14 +316,16 @@ export function CalendarPanel({
             <input id="task-filter-query" value={taskQuery} onChange={(e) => onTaskQueryChange(e.target.value)} placeholder="Filter tasks" />
           </div>
           {isLoadingTasks && <p className="hint">Refreshing task list...</p>}
-          <form onSubmit={onCreateTask} className="stack compact">
+          <form onSubmit={handleTaskSubmit} className="stack compact">
             <div className="stack compact">
               <label className="field-label" htmlFor="task-title">Task Title</label>
-              <input id="task-title" name="title" placeholder="Task title" required />
+              <input id="task-title" name="title" placeholder="Task title" aria-invalid={Boolean(taskFormErrors.title)} aria-describedby={taskFormErrors.title ? "task-title-error" : undefined} onBlur={(event) => handleTaskFieldBlur("title", event.currentTarget.value)} required />
+              {taskFormErrors.title && <p id="task-title-error" className="field-error">{taskFormErrors.title}</p>}
             </div>
             <div className="stack compact">
               <label className="field-label" htmlFor="task-due-on">Due Date</label>
-              <input id="task-due-on" name="due_on" type="date" defaultValue={selectedDate} required />
+              <input id="task-due-on" name="due_on" type="date" defaultValue={selectedDate} aria-invalid={Boolean(taskFormErrors.due_on)} aria-describedby={taskFormErrors.due_on ? "task-due-error" : undefined} onBlur={(event) => handleTaskFieldBlur("due_on", event.currentTarget.value)} required />
+              {taskFormErrors.due_on && <p id="task-due-error" className="field-error">{taskFormErrors.due_on}</p>}
             </div>
             <div className="stack compact">
               <label className="field-label" htmlFor="task-notes">Task Notes</label>
@@ -267,16 +335,17 @@ export function CalendarPanel({
           </form>
 
           <h4>Add Planting</h4>
-          <form onSubmit={onCreatePlanting} className="stack compact">
+          <form onSubmit={handlePlantingSubmit} className="stack compact">
             <div className="stack compact">
               <label className="field-label" htmlFor="planting-bed">Bed</label>
-              <select id="planting-bed" name="bed_id" defaultValue={beds[0]?.id || ""} required>
+              <select id="planting-bed" name="bed_id" defaultValue={beds[0]?.id || ""} aria-invalid={Boolean(plantingFormErrors.bed_id)} aria-describedby={plantingFormErrors.bed_id ? "planting-bed-error" : undefined} onBlur={(event) => handlePlantingFieldBlur("bed_id", event.currentTarget.value)} required>
                 {beds.map((bed) => (
                   <option key={bed.id} value={bed.id}>
                     {bed.name}
                   </option>
                 ))}
               </select>
+              {plantingFormErrors.bed_id && <p id="planting-bed-error" className="field-error">{plantingFormErrors.bed_id}</p>}
             </div>
             <input type="hidden" name="crop_name" value={selectedCropName} />
             <div className="crop-picker">
@@ -286,6 +355,7 @@ export function CalendarPanel({
                 value={cropSearchQuery}
                 onChange={(e) => onCropSearchQueryChange(e.target.value)}
                 onKeyDown={onCropSearchKeyDown}
+                onBlur={() => handlePlantingFieldBlur("crop_name", selectedCropName)}
                 placeholder="Search by vegetable, variety, or family"
                 role="combobox"
                 aria-autocomplete="list"
@@ -295,7 +365,7 @@ export function CalendarPanel({
                 aria-activedescendant={hasCalendarCropOptions && filteredCropTemplates[cropSearchActiveIndex] ? `calendar-crop-option-${filteredCropTemplates[cropSearchActiveIndex].id}` : undefined}
               />
               <div id="calendar-crop-list" className="crop-picker-list" role="listbox" aria-label="Vegetable search results">
-                {filteredCropTemplates.slice(0, 8).map((crop, index) => (
+                {filteredCropTemplates.slice(0, 15).map((crop, index) => (
                   (() => {
                     const isSelected = selectedCropName === crop.name;
                     const isFocused = cropSearchActiveIndex === index;
@@ -307,7 +377,10 @@ export function CalendarPanel({
                     role="option"
                     aria-selected={isSelected}
                     className={`crop-option${isSelected ? " active" : ""}${!isSelected && isFocused ? " focused" : ""}`}
-                    onClick={() => onSelectCrop(crop)}
+                    onClick={() => {
+                      onSelectCrop(crop);
+                      setPlantingFormErrors((current) => ({ ...current, crop_name: "" }));
+                    }}
                   >
                     <strong>{cropBaseName(crop)}</strong>
                     <small>{crop.variety || crop.family || "Vegetable"}</small>
@@ -317,6 +390,7 @@ export function CalendarPanel({
                 ))}
                 {filteredCropTemplates.length === 0 && <p className="hint">No vegetables match that search.</p>}
               </div>
+              {plantingFormErrors.crop_name && <p className="field-error">{plantingFormErrors.crop_name}</p>}
             </div>
             {selectedCrop && (
               <div className="crop-card">
@@ -332,13 +406,29 @@ export function CalendarPanel({
                   </span>
                 </div>
                 <p className="hint"><strong>When to plant:</strong> {selectedCrop.planting_window}</p>
+                {isLoadingPlantingWindows && <p className="hint">Loading dynamic window...</p>}
+                {selectedCropWindow && (
+                  <>
+                    <p className="hint">
+                      <strong>Dynamic window:</strong> {selectedCropWindow.window_start} to {selectedCropWindow.window_end} {" "}
+                      <span className={`status-pill ${selectedCropWindow.status}`}>{selectedCropWindow.status}</span>
+                    </p>
+                    {selectedCropWindow.indoor_seed_start && selectedCropWindow.indoor_seed_end && (
+                      <p className="hint">
+                        <strong>Indoor start:</strong> {selectedCropWindow.indoor_seed_start} to {selectedCropWindow.indoor_seed_end}
+                      </p>
+                    )}
+                    <p className="hint">{selectedCropWindow.reason}</p>
+                  </>
+                )}
                 <p className="hint">Spacing {selectedCrop.spacing_in} in &middot; Harvest in ~{selectedCrop.days_to_harvest} days</p>
                 {selectedCrop.notes && <p className="hint crop-notes">{selectedCrop.notes}</p>}
               </div>
             )}
             <div className="stack compact">
               <label className="field-label" htmlFor="planting-date">Planting Date</label>
-              <input id="planting-date" name="planted_on" type="date" defaultValue={selectedDate} required />
+              <input id="planting-date" name="planted_on" type="date" defaultValue={selectedDate} aria-invalid={Boolean(plantingFormErrors.planted_on)} aria-describedby={plantingFormErrors.planted_on ? "planting-date-error" : undefined} onBlur={(event) => handlePlantingFieldBlur("planted_on", event.currentTarget.value)} required />
+              {plantingFormErrors.planted_on && <p id="planting-date-error" className="field-error">{plantingFormErrors.planted_on}</p>}
             </div>
             <div className="stack compact">
               <label className="field-label" htmlFor="planting-source">Source</label>

@@ -280,6 +280,7 @@ FROST_TENDER_KEYWORDS = {
 class JohnnysCropRecord:
     external_product_id: str
     source_url: str
+    image_url: str
     crop_name: str
     variety: str
     family: str
@@ -831,10 +832,13 @@ def _parse_product_page(url: str) -> JohnnysCropRecord | None:
     direct_sow = _derive_direct_sow(crop_name, root_segment, life_cycle)
     frost_hardy = _derive_frost_hardy(crop_name, root_segment, life_cycle)
     product_id = _extract_product_id(page_text)
+    image_match = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', page_text, re.IGNORECASE)
+    image_url = unescape(image_match.group(1)).strip() if image_match else ""
 
     return JohnnysCropRecord(
         external_product_id=product_id,
         source_url=url,
+        image_url=image_url,
         crop_name=crop_name,
         variety=variety,
         family=family,
@@ -910,6 +914,7 @@ def seed_crop_templates(db, force_refresh: bool = False):
             "variety": record.variety,
             "source": JOHNNYS_SOURCE,
             "source_url": record.source_url,
+            "image_url": record.image_url,
             "external_product_id": record.external_product_id,
             "family": record.family,
             "spacing_in": record.spacing_in,

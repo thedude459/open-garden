@@ -33,8 +33,15 @@ class Garden(Base):
     yard_length_ft: Mapped[int] = mapped_column(Integer, default=20)
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
+    orientation: Mapped[str] = mapped_column(String(16), default="south")
+    sun_exposure: Mapped[str] = mapped_column(String(20), default="part_sun")
+    wind_exposure: Mapped[str] = mapped_column(String(20), default="moderate")
+    thermal_mass: Mapped[str] = mapped_column(String(20), default="moderate")
+    slope_position: Mapped[str] = mapped_column(String(12), default="mid")
+    frost_pocket_risk: Mapped[str] = mapped_column(String(20), default="low")
     address_private: Mapped[str] = mapped_column(String(255), default="")
     is_shared: Mapped[bool] = mapped_column(Boolean, default=False)
+    edge_buffer_in: Mapped[int] = mapped_column(Integer, default=6)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     beds = relationship("Bed", back_populates="garden", cascade="all, delete-orphan")
@@ -62,6 +69,7 @@ class CropTemplate(Base):
     variety: Mapped[str] = mapped_column(String(120), default="")
     source: Mapped[str] = mapped_column(String(60), default="manual", index=True)
     source_url: Mapped[str] = mapped_column(String(500), default="")
+    image_url: Mapped[str] = mapped_column(String(500), default="")
     external_product_id: Mapped[str] = mapped_column(String(64), default="", index=True)
     family: Mapped[str] = mapped_column(String(120), default="")
     spacing_in: Mapped[int] = mapped_column(Integer, default=12)
@@ -131,6 +139,31 @@ class Placement(Base):
     grid_y: Mapped[int] = mapped_column(Integer)
     color: Mapped[str] = mapped_column(String(20), default="#57a773")
     planted_on: Mapped[date] = mapped_column(Date)
+
+
+class Sensor(Base):
+    __tablename__ = "sensors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    garden_id: Mapped[int] = mapped_column(ForeignKey("gardens.id"), index=True)
+    bed_id: Mapped[int | None] = mapped_column(ForeignKey("beds.id"), index=True, nullable=True)
+    name: Mapped[str] = mapped_column(String(120))
+    sensor_kind: Mapped[str] = mapped_column(String(40), index=True)
+    unit: Mapped[str] = mapped_column(String(24), default="")
+    location_label: Mapped[str] = mapped_column(String(120), default="")
+    hardware_id: Mapped[str] = mapped_column(String(120), default="", index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class SensorReading(Base):
+    __tablename__ = "sensor_readings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sensor_id: Mapped[int] = mapped_column(ForeignKey("sensors.id"), index=True)
+    value: Mapped[float] = mapped_column(Float)
+    captured_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
 class UserAuthToken(Base):

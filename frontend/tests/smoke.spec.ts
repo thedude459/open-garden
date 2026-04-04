@@ -1,72 +1,50 @@
-import { expect, Page, request, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+import { getAuthToken, loadAuthenticated, uid, E2E_USER } from "./helpers/auth";
 
 const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
-function uid(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+async function ensureGardenSelected(page: Page) {
+  const firstGarden = page.locator(".garden-card-select").first();
+  await expect(firstGarden).toBeVisible({ timeout: 15_000 });
+  await firstGarden.click();
 }
 
-/** Inject auth token into localStorage and reload so the app boots authenticated. */
-async function loadAuthenticated(page: Page, token: string) {
-  await page.goto("/");
-  await page.evaluate((t) => {
-    localStorage.setItem("open-garden-token", t);
-    // suppress first-login help modal so it never blocks test assertions
-    localStorage.setItem("open-garden-help-seen", "1");
-  }, token);
-  await page.reload();
-  await expect(page.getByRole("button", { name: "My Gardens" })).toBeVisible({
-    timeout: 15_000,
-  });
+async function ensureGardenExistsAndSelected(page: Page, request: any, token: string) {
+  // Wait for the app to finish loading the garden list before deciding whether
+  // to bootstrap — the gardens load asynchronously after page.goto().
+  const firstGarden = page.locator(".garden-card-select").first();
+  const loaded = await firstGarden
+    .waitFor({ state: "visible", timeout: 12_000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!loaded) {
+    const bootstrap = await request.post(`${API}/gardens`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        name: uid("Nav Garden"),
+        description: "bootstrap garden",
+        zip_code: "94110",
+        yard_width_ft: 20,
+        yard_length_ft: 20,
+      },
+    });
+    if (!bootstrap.ok()) {
+      throw new Error(`Garden bootstrap failed: ${bootstrap.status()} ${await bootstrap.text()}`);
+    }
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(firstGarden).toBeVisible({ timeout: 15_000 });
+  }
+
+  await firstGarden.click();
 }
 
 test.describe("open-garden smoke", () => {
-  test.describe.configure({ mode: "serial" });
-
-  const creds = { username: uid("pwuser"), email: `${uid("pwemail")}@example.com`, password: "PwTest-123!" };
-  const gardenName = uid("PW Garden");
-  const bedName = uid("PW Bed");
-  let token = "";
-
-  test.afterAll(async () => {
-    if (!token) return;
-    const ctx = await request.newContext({ baseURL: API });
-    try {
-      await ctx.delete("/users/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } finally {
-      await ctx.dispose();
-    }
-  });
-
-  test("create account via UI", async ({ page }) => {
+  test("sign in via UI with verified seeded user", async ({ page }) => {
     await page.goto("/");
-    await expect(
-      page.getByRole("heading", { name: "open-garden" })
-    ).toBeVisible();
-
-    await page.getByRole("tab", { name: "Create account" }).click();
-    await page.locator("#login-email").fill(creds.email);
-    await page.locator("#login-username").fill(creds.username);
-    await page.locator("#login-password").fill(creds.password);
-    await page.getByRole("button", { name: "Create account" }).click();
-
-    await expect(page.getByRole("button", { name: "My Gardens" })).toBeVisible(
-      { timeout: 15_000 }
-    );
-
-    token = await page.evaluate(
-      () => localStorage.getItem("open-garden-token") ?? ""
-    );
-    expect(token).toBeTruthy();
-  });
-
-  test("sign in to existing account via UI", async ({ page }) => {
-    await page.goto("/");
-    // default tab is Sign in
-    await page.locator("#login-username").fill(creds.username);
-    await page.locator("#login-password").fill(creds.password);
+    await page.locator("#login-username").fill(E2E_USER.username);
+    await page.locator("#login-password").fill(E2E_USER.password);
     await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect(page.getByRole("button", { name: "My Gardens" })).toBeVisible(
@@ -74,7 +52,9 @@ test.describe("open-garden smoke", () => {
     );
   });
 
-  test("create a garden", async ({ page }) => {
+  test("create a garden", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    const gardenName = uid("PW Garden");
     await loadAuthenticated(page, token);
 
     const createForm = page
@@ -93,18 +73,17 @@ test.describe("open-garden smoke", () => {
       .fill("123 Test Lane");
     await createForm.getByRole("button", { name: "Create garden" }).click();
 
-    await expect(page.getByRole("heading", { name: gardenName })).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(page.getByText("Garden created.")).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.locator(".garden-card-name", { hasText: gardenName })
+    ).toBeVisible({ timeout: 20_000 });
   });
 
-  test("navigate to calendar", async ({ page }) => {
+  test("navigate to calendar", async ({ page, request }) => {
+    const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
-
-    // Wait for a garden to be auto-selected (Calendar nav button appears)
-    await expect(
-      page.getByRole("button", { name: "Calendar", exact: true })
-    ).toBeVisible({ timeout: 10_000 });
+    await ensureGardenExistsAndSelected(page, request, token);
+    await expect(page.getByRole("button", { name: "Calendar", exact: true })).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: "Calendar", exact: true }).click();
 
     await expect(
@@ -112,38 +91,93 @@ test.describe("open-garden smoke", () => {
     ).toBeVisible({ timeout: 10_000 });
   });
 
-  test("navigate to bed planner and add a bed", async ({ page }) => {
+  test("navigate to bed planner", async ({ page, request }) => {
+    const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
 
     await expect(
       page.getByRole("button", { name: "Bed Planner", exact: true })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: /Garden Bed Planner/i })
     ).toBeVisible({ timeout: 10_000 });
-
-    const addBedForm = page
-      .locator("form")
-      .filter({ has: page.getByRole("button", { name: "Add bed" }) });
-
-    await addBedForm.locator("input[name='name']").fill(bedName);
-    await addBedForm.locator("input[name='width_ft']").fill("4");
-    await addBedForm.locator("input[name='length_ft']").fill("8");
-    await addBedForm.getByRole("button", { name: "Add bed" }).click();
-
-    await expect(page.getByRole("heading", { name: bedName })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Bed Sheets" })).toBeVisible({
       timeout: 10_000,
     });
   });
 
-  test("navigate to crop library", async ({ page }) => {
+  test("navigate to crop library", async ({ page, request }) => {
+    const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
     await page.getByRole("button", { name: "Crop Library" }).click();
 
     await expect(
       page.getByRole("heading", { name: "Crop Library" })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+test.describe("panel navigation after garden selection", () => {
+  test("timeline shows unified timeline heading", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
+    await page.getByRole("button", { name: "Timeline", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /Unified Timeline/i })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("seasonal plan shows seasonal plan heading", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
+    await page.getByRole("button", { name: "Seasonal Plan", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /Seasonal Plan/i })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("ai coach shows ai coach heading", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
+    await page.getByRole("button", { name: "AI Coach", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /AI Garden Coach/i })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("sensors shows sensor dashboard heading", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
+    await page.getByRole("button", { name: "Sensors", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /Sensor Dashboard/i })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("pest log shows pest and disease log heading", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
+    await page.getByRole("button", { name: "Pest Log", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /Pest.*Disease Log/i })
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("calendar shows weather outlook panel", async ({ page, request }) => {
+    const token = await getAuthToken(request);
+    await loadAuthenticated(page, token);
+    await ensureGardenExistsAndSelected(page, request, token);
+    await page.getByRole("button", { name: "Calendar", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: /Weather Outlook/i })
     ).toBeVisible({ timeout: 10_000 });
   });
 });

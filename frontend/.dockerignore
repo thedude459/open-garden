@@ -1,0 +1,11 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+coverage/
+.env
+.git
+.gitignore
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
