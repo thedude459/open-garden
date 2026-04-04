@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { GardenSeasonalPlan, NextPlanting, PlantingRecommendations } from "../types";
+import { NextPlanting } from "../types";
+import { useSeasonalPlanContext } from "./SeasonalPlanContext";
 
 function baseVegetableName(cropName: string): string {
   const name = cropName.trim();
@@ -19,57 +20,79 @@ function isDateWithinInclusiveRange(value: string, start: string, end: string): 
   return valueTime >= startTime && valueTime <= endTime;
 }
 
-type SeasonalPlanPanelProps = {
-  selectedGardenName?: string;
-  plan: GardenSeasonalPlan | null;
-  isLoading: boolean;
-  selectedPlantingId: number | null;
-  plantingRecommendation: PlantingRecommendations | null;
-  isLoadingPlantingRecommendation: boolean;
-  onSelectPlanting: (plantingId: number) => void;
-  onRefresh: () => void;
-};
+export function SeasonalPlanPanel() {
+  const {
+    selectedGardenName,
+    seasonalPlan,
+    isLoadingSeasonalPlan,
+    selectedRecommendationPlantingId,
+    plantingRecommendation,
+    isLoadingPlantingRecommendation,
+    setSelectedRecommendationPlantingId,
+    refreshSeasonalPlan,
+  } = useSeasonalPlanContext();
 
-export function SeasonalPlanPanel({
-  selectedGardenName,
-  plan,
-  isLoading,
-  selectedPlantingId,
-  plantingRecommendation,
-  isLoadingPlantingRecommendation,
-  onSelectPlanting,
-  onRefresh,
-}: SeasonalPlanPanelProps) {
   const [selectedVarietyIdx, setSelectedVarietyIdx] = useState<Record<string, number>>({});
   const todayIso = new Date().toISOString().slice(0, 10);
+  const MAX_FEATURED_PER_CATEGORY = 5;
+
+  function isDirectToGround(item: NextPlanting): boolean {
+    return item.method === "direct_sow" || (item.method === "transplant" && !item.indoor_seed_start && !item.indoor_seed_end);
+  }
+
+  function isSeedStartNow(item: NextPlanting): boolean {
+    return (
+      item.method === "transplant"
+      && !!item.indoor_seed_start
+      && !!item.indoor_seed_end
+      && isDateWithinInclusiveRange(todayIso, item.indoor_seed_start, item.indoor_seed_end)
+    );
+  }
 
   const nextPlantingGroups = useMemo<VegetableGroup[]>(() => {
-    if (!plan) return [];
+    if (!seasonalPlan) return [];
     const groups = new Map<string, NextPlanting[]>();
-    for (const item of plan.recommended_next_plantings) {
+    for (const item of seasonalPlan.recommended_next_plantings) {
       const base = baseVegetableName(item.crop_name);
       if (!groups.has(base)) groups.set(base, []);
       groups.get(base)!.push(item);
     }
     return Array.from(groups.entries()).map(([baseName, varieties]) => ({ baseName, varieties }));
-  }, [plan]);
+  }, [seasonalPlan]);
 
-  const directSowGroups = useMemo(
-    () => nextPlantingGroups.filter(({ varieties }) => varieties.some((item) => item.method === "direct_sow")),
+  const directToGroundCandidateGroups = useMemo(
+    () => nextPlantingGroups.filter(({ varieties }) => varieties.some((item) => (
+      isDirectToGround(item) && (item.status === "open" || item.status === "watch")
+    ))),
     [nextPlantingGroups],
   );
 
-  const seedStartNowGroups = useMemo(
-    () => nextPlantingGroups.filter(({ varieties }) => varieties.some((item) => (
-      item.method === "transplant"
-      && item.indoor_seed_start
-      && item.indoor_seed_end
-      && isDateWithinInclusiveRange(todayIso, item.indoor_seed_start, item.indoor_seed_end)
-    ))),
-    [nextPlantingGroups, todayIso],
+  const seedStartCandidateGroups = useMemo(
+    () => nextPlantingGroups.filter(({ varieties }) => varieties.some((item) => isSeedStartNow(item))),
+    [nextPlantingGroups],
   );
 
-  const hasCategorySuggestions = directSowGroups.length > 0 || seedStartNowGroups.length > 0;
+  const directToGroundNowGroups = useMemo(
+    () => directToGroundCandidateGroups.slice(0, MAX_FEATURED_PER_CATEGORY),
+    [directToGroundCandidateGroups],
+  );
+
+  const seedStartNowGroups = useMemo(
+    () => seedStartCandidateGroups.slice(0, MAX_FEATURED_PER_CATEGORY),
+    [seedStartCandidateGroups],
+  );
+
+  const featuredBaseNames = useMemo(
+    () => new Set([...directToGroundNowGroups, ...seedStartNowGroups].map((group) => group.baseName)),
+    [directToGroundNowGroups, seedStartNowGroups],
+  );
+
+  const additionalSuggestionGroups = useMemo(
+    () => nextPlantingGroups.filter(({ baseName }) => !featuredBaseNames.has(baseName)),
+    [featuredBaseNames, nextPlantingGroups],
+  );
+
+  const hasCategorySuggestions = directToGroundNowGroups.length > 0 || seedStartNowGroups.length > 0 || additionalSuggestionGroups.length > 0;
 
   function renderGroup(baseName: string, varieties: NextPlanting[]) {
     const idx = selectedVarietyIdx[baseName] ?? 0;
@@ -93,6 +116,8 @@ export function SeasonalPlanPanel({
         )}
         {item.method === "direct_sow" ? (
           <p className="hint">Direct sow outdoors: {item.window_start} – {item.window_end}</p>
+        ) : !item.indoor_seed_start && !item.indoor_seed_end ? (
+          <p className="hint">Plant directly outdoors (crowns/starts): {item.window_start} – {item.window_end}</p>
         ) : (
           <>
             {item.indoor_seed_start && (
@@ -114,31 +139,31 @@ export function SeasonalPlanPanel({
           <h2>Seasonal Plan {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
           <p className="subhead">Succession, rotation, companion, and growth-stage intelligence for current conditions.</p>
         </div>
-        <button type="button" className="secondary-btn" onClick={onRefresh}>Refresh Plan</button>
+        <button type="button" className="secondary-btn" onClick={() => refreshSeasonalPlan().catch(() => undefined)}>Refresh Plan</button>
       </div>
 
-      {isLoading && <p className="hint">Building seasonal plan...</p>}
-      {!isLoading && !plan && <p className="hint">No seasonal plan data yet.</p>}
+      {isLoadingSeasonalPlan && <p className="hint">Building seasonal plan...</p>}
+      {!isLoadingSeasonalPlan && !seasonalPlan && <p className="hint">No seasonal plan data yet.</p>}
 
-      {plan && (
+      {seasonalPlan && (
         <div className="seasonal-layout">
           <section className="card seasonal-metrics">
             <h3>Current Signals</h3>
             <div className="home-summary-stats">
               <div className="planner-stat">
-                <strong>{plan.microclimate_band}</strong>
+                <strong>{seasonalPlan.microclimate_band}</strong>
                 <span>Microclimate</span>
               </div>
               <div className="planner-stat">
-                <strong>{plan.soil_temperature_estimate_f}F</strong>
+                <strong>{seasonalPlan.soil_temperature_estimate_f}F</strong>
                 <span>Estimated soil temperature</span>
               </div>
               <div className="planner-stat">
-                <strong>{plan.frost_risk_next_10_days}</strong>
+                <strong>{seasonalPlan.frost_risk_next_10_days}</strong>
                 <span>10-day frost risk</span>
               </div>
               <div className="planner-stat">
-                <strong>{plan.growth_stages.length}</strong>
+                <strong>{seasonalPlan.growth_stages.length}</strong>
                 <span>Total plantings</span>
               </div>
             </div>
@@ -147,44 +172,52 @@ export function SeasonalPlanPanel({
           <section className="card seasonal-next-plantings">
             <h3>Recommended Next Plantings</h3>
             {!hasCategorySuggestions && <p className="hint">No immediate next plantings suggested yet.</p>}
+            {hasCategorySuggestions && (
+              <p className="hint">
+                Showing top {MAX_FEATURED_PER_CATEGORY} immediate options per category, plus {additionalSuggestionGroups.length} more suggestions in Up Next.
+              </p>
+            )}
 
-            {directSowGroups.length > 0 && (
+            {directToGroundNowGroups.length > 0 && (
               <>
-                <h4>Direct Sow Options</h4>
+                <h4>Plant Outdoors Now ({directToGroundNowGroups.length}{directToGroundCandidateGroups.length > directToGroundNowGroups.length ? ` of ${directToGroundCandidateGroups.length}` : ""})</h4>
                 <ul>
-                  {directSowGroups.map(({ baseName, varieties }) => renderGroup(baseName, varieties))}
+                  {directToGroundNowGroups.map(({ baseName, varieties }) => renderGroup(baseName, varieties))}
                 </ul>
               </>
             )}
 
             {seedStartNowGroups.length > 0 && (
               <>
-                <h4>Start Seeds Now for Post-Frost Transplant</h4>
+                <h4>Start Seeds Now for Post-Frost Transplant ({seedStartNowGroups.length}{seedStartCandidateGroups.length > seedStartNowGroups.length ? ` of ${seedStartCandidateGroups.length}` : ""})</h4>
                 <ul>
                   {seedStartNowGroups.map(({ baseName, varieties }) => renderGroup(baseName, varieties))}
                 </ul>
               </>
             )}
 
-            <h4>All Next Planting Suggestions</h4>
-            <ul>
-              {nextPlantingGroups.length === 0 && <li className="hint">No additional suggestions available yet.</li>}
-              {nextPlantingGroups.map(({ baseName, varieties }) => renderGroup(baseName, varieties))}
-            </ul>
+            {additionalSuggestionGroups.length > 0 && (
+              <>
+                <h4>Up Next</h4>
+                <ul>
+                  {additionalSuggestionGroups.map(({ baseName, varieties }) => renderGroup(baseName, varieties))}
+                </ul>
+              </>
+            )}
           </section>
 
           <section className="card seasonal-growth-stages">
             <h3>Growth Stage Tracking</h3>
             <ul>
-              {plan.growth_stages.length === 0 && <li className="hint">No plantings found for this garden yet.</li>}
-              {plan.growth_stages.map((stage) => (
+              {seasonalPlan.growth_stages.length === 0 && <li className="hint">No plantings found for this garden yet.</li>}
+              {seasonalPlan.growth_stages.map((stage) => (
                 <li key={stage.planting_id} className="seasonal-growth-row">
                   <div>
                     <strong>{stage.crop_name}</strong>
                     <p className="hint">Bed {stage.bed_id} · Stage {stage.stage.replace("_", " ")} · {stage.progress_pct}%</p>
                     <p className="hint">Expected harvest {stage.expected_harvest_on}</p>
                   </div>
-                  <button type="button" className={selectedPlantingId === stage.planting_id ? "active" : "secondary-btn"} onClick={() => onSelectPlanting(stage.planting_id)}>
+                  <button type="button" className={selectedRecommendationPlantingId === stage.planting_id ? "active" : "secondary-btn"} onClick={() => setSelectedRecommendationPlantingId(stage.planting_id)}>
                     Recommendations
                   </button>
                 </li>
@@ -195,8 +228,8 @@ export function SeasonalPlanPanel({
           <section className="card seasonal-rotation">
             <h3>Crop Rotation Guidance</h3>
             <ul>
-              {plan.rotation_recommendations.length === 0 && <li className="hint">No rotation guidance yet. Add plantings to start rotation planning.</li>}
-              {plan.rotation_recommendations.map((item) => (
+              {seasonalPlan.rotation_recommendations.length === 0 && <li className="hint">No rotation guidance yet. Add plantings to start rotation planning.</li>}
+              {seasonalPlan.rotation_recommendations.map((item) => (
                 <li key={item.bed_id} className="climate-signal">
                   <strong>Bed {item.bed_id}: rotate after {item.last_crop}</strong>
                   <p className="hint">Avoid family {item.avoid_family || "unknown"}. Suggested families: {item.recommended_families.join(", ") || "none"}.</p>
@@ -208,8 +241,8 @@ export function SeasonalPlanPanel({
           <section className="card seasonal-companion">
             <h3>Companion Insights</h3>
             <ul>
-              {plan.companion_insights.length === 0 && <li className="hint">No companion pairings detected yet.</li>}
-              {plan.companion_insights.map((item, index) => (
+              {seasonalPlan.companion_insights.length === 0 && <li className="hint">No companion pairings detected yet.</li>}
+              {seasonalPlan.companion_insights.map((item, index) => (
                 <li key={`${item.bed_id}-${item.crop}-${index}`} className="climate-signal">
                   <strong>Bed {item.bed_id}: {item.crop}</strong>
                   <p className="hint">Good with: {item.good_matches.join(", ") || "none"}</p>
@@ -221,7 +254,7 @@ export function SeasonalPlanPanel({
 
           <section className="card seasonal-planting-recs">
             <h3>Selected Planting Recommendations</h3>
-            {!selectedPlantingId && <p className="hint">Select a planting from Growth Stage Tracking to view targeted recommendations.</p>}
+            {!selectedRecommendationPlantingId && <p className="hint">Select a planting from Growth Stage Tracking to view targeted recommendations.</p>}
             {isLoadingPlantingRecommendation && <p className="hint">Loading planting recommendations...</p>}
             {plantingRecommendation && (
               <div className="stack compact">

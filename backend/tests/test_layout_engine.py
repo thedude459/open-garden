@@ -1,7 +1,7 @@
 from datetime import date
 from types import SimpleNamespace
 
-from app.layout_engine import build_garden_sun_path
+from app.engines.layout import build_garden_sun_path
 
 
 def test_build_garden_sun_path_returns_daylight_points_for_summer():

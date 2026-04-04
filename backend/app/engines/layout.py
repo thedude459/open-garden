@@ -1,7 +1,7 @@
 import math
 from datetime import date
 
-from .models import Garden
+from ..models import Garden
 
 
 def _day_of_year(value: date) -> int:

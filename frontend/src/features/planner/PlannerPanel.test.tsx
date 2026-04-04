@@ -126,6 +126,7 @@ function renderPlanner(options?: {
       onBlockedPlacementMove={vi.fn()}
       placementSpacingConflict={vi.fn().mockReturnValue(null)}
       isCellBlockedForSelectedCrop={vi.fn().mockReturnValue(false)}
+      isCellInBuffer={vi.fn().mockReturnValue(false)}
     />,
   );
 

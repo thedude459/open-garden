@@ -7,9 +7,11 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from html import unescape
 from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from .models import CropTemplate
+from ..models import CropTemplate
+from ..core.logging_utils import get_logger
 
 JOHNNYS_SOURCE = "johnnys-selected-seeds"
 MANUAL_SOURCE = "manual"
@@ -17,6 +19,7 @@ JOHNNYS_PRODUCT_SITEMAP = "https://www.johnnyseeds.com/sitemap_0-product.xml"
 REQUEST_TIMEOUT_SECONDS = 20
 REQUEST_USER_AGENT = "open-garden johnnys-sync/1.0"
 MAX_IMPORT_WORKERS = 12
+logger = get_logger(__name__)
 
 ALLOWED_ROOT_SEGMENTS = {"vegetables", "fruits", "flowers", "herbs"}
 EXCLUDED_PATH_SEGMENTS = {
@@ -869,7 +872,8 @@ def _fetch_johnnys_catalog() -> tuple[list[JohnnysCropRecord], int]:
         for future in concurrent.futures.as_completed(futures):
             try:
                 record = future.result()
-            except Exception:
+            except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+                logger.warning("johnnys product parse failed", extra={"error": str(exc)})
                 failed += 1
                 continue
             if record is not None:
@@ -892,7 +896,7 @@ def seed_crop_templates(db, force_refresh: bool = False):
 
     try:
         imported_records, failed = _fetch_johnnys_catalog()
-    except Exception as exc:
+    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
         raise RuntimeError(f"Unable to reach Johnny's Selected Seeds catalog: {exc}") from exc
 
     if not imported_records:

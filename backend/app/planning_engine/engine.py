@@ -1,7 +1,7 @@
 from collections import Counter
 from datetime import date, timedelta
 
-from ..climate_engine import build_dynamic_planting_windows
+from ..engines.climate import build_dynamic_planting_windows
 
 
 _COMPANION_RULES = {

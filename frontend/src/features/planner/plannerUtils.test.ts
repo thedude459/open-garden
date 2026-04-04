@@ -88,19 +88,23 @@ describe("planner helpers", () => {
       [
         {
           id: 9,
+          garden_id: 1,
           bed_id: 2,
           crop_name: "Carrot",
           planted_on: "2026-03-10",
           grid_x: 2,
           grid_y: 1,
+          color: "#66aa66",
         },
       ] as Array<{
         id: number;
+        garden_id: number;
         bed_id: number;
         crop_name: string;
         planted_on: string;
         grid_x: number;
         grid_y: number;
+        color: string;
       }>,
       [
         {
@@ -109,6 +113,7 @@ describe("planner helpers", () => {
           variety: "Napoli",
           source: "manual",
           source_url: "",
+          image_url: "",
           external_product_id: "",
           family: "Apiaceae",
           spacing_in: 6,

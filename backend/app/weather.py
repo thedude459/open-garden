@@ -3,6 +3,11 @@ import math
 import httpx
 
 from .config import settings
+from .core.exceptions import ValidationServiceError
+from .core.logging_utils import get_logger
+
+
+logger = get_logger(__name__)
 
 
 # Fallback coordinates/zones used when upstream ZIP services are unavailable.
@@ -49,22 +54,23 @@ async def fetch_zip_profile(zip_code: str) -> dict:
     async with httpx.AsyncClient(timeout=10) as client:
         try:
             geo_resp = await client.get(f"https://api.zippopotam.us/us/{normalized_zip}")
-        except Exception as exc:
+        except (httpx.RequestError, httpx.TimeoutException) as exc:
+            logger.warning("zip lookup request failed", extra={"zip_code": normalized_zip, "error": str(exc)})
             fallback = fallback_profile()
             if fallback:
                 return fallback
-            raise ValueError("ZIP code lookup service is temporarily unavailable") from exc
+            raise ValidationServiceError("ZIP code lookup service is temporarily unavailable") from exc
 
         if geo_resp.status_code != 200:
             fallback = fallback_profile()
             if fallback:
                 return fallback
-            raise ValueError("ZIP code lookup failed")
+            raise ValidationServiceError("ZIP code lookup failed")
 
         geo_payload = geo_resp.json()
         places = geo_payload.get("places") or []
         if not places:
-            raise ValueError("ZIP code lookup returned no location data")
+            raise ValidationServiceError("ZIP code lookup returned no location data")
 
         first_place = places[0]
         latitude = float(first_place["latitude"])
@@ -77,7 +83,7 @@ async def fetch_zip_profile(zip_code: str) -> dict:
                 zone_payload = zone_resp.json()
                 if zone_payload.get("zone"):
                     zone = str(zone_payload["zone"])
-        except Exception:
+        except (httpx.RequestError, httpx.TimeoutException):
             # Zone enrichment is optional; return location data even if this API is unavailable.
             pass
 
@@ -92,7 +98,7 @@ async def fetch_zip_profile(zip_code: str) -> dict:
 async def fetch_address_geocode(address: str) -> dict:
     """Use Nominatim (OpenStreetMap) to get precise lat/lon for a street address."""
     if not address.strip():
-        raise ValueError("Address is required")
+        raise ValidationServiceError("Address is required")
 
     headers = {"User-Agent": "open-garden-app/1.0 (garden planning application)"}
     params = {"q": address.strip(), "format": "json", "limit": 1}
@@ -100,11 +106,11 @@ async def fetch_address_geocode(address: str) -> dict:
     async with httpx.AsyncClient(timeout=10, headers=headers) as client:
         resp = await client.get("https://nominatim.openstreetmap.org/search", params=params)
         if resp.status_code != 200:
-            raise ValueError("Address geocoding service unavailable")
+            raise ValidationServiceError("Address geocoding service unavailable")
 
         results = resp.json()
         if not results:
-            raise ValueError("Address not found. Try including a city, state, or ZIP code.")
+            raise ValidationServiceError("Address not found. Try including a city, state, or ZIP code.")
 
         first = results[0]
         return {
@@ -127,7 +133,7 @@ async def _fetch_elevation_usgs(client: httpx.AsyncClient, lat: float, lon: floa
             val = data.get("value")
             if val and str(val).upper() not in ("", "-1000000", "NODATA"):
                 return float(val)  # feet
-    except Exception:
+    except (httpx.RequestError, httpx.TimeoutException, ValueError):
         pass
     return None
 
@@ -192,8 +198,8 @@ async def fetch_microclimate_signals(latitude: float, longitude: float) -> dict:
                     else:
                         suggestions["wind_exposure"] = "exposed"
                         notes["wind_exposure"] = f"14-day average max wind of {avg_wind:.0f} km/h → Exposed."
-        except Exception:
-            pass
+        except (httpx.RequestError, httpx.TimeoutException, ValueError) as exc:
+            logger.warning("microclimate weather signal fetch failed", extra={"error": str(exc)})
 
         # ── 2. USGS EPQS: elevation at garden + 4 points ~400 m away ───
         # ~0.0036° ≈ 400 m at mid-latitudes (rough but sufficient)

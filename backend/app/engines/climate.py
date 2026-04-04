@@ -253,6 +253,24 @@ def _window_status(today: date, start: date, end: date, soil_ok: bool) -> str:
     return "open"
 
 
+_DIRECT_GROUND_TRANSPLANT_KEYWORDS = {
+    "asparagus",
+    "strawberry",
+    "blueberry",
+    "raspberry",
+    "blackberry",
+}
+
+
+def _is_direct_ground_transplant(crop) -> bool:
+    if crop.direct_sow:
+        return False
+    normalized_name = crop.name.strip().lower()
+    if normalized_name.endswith(")") and "(" in normalized_name:
+        normalized_name = normalized_name.rsplit("(", 1)[0].strip()
+    return normalized_name in _DIRECT_GROUND_TRANSPLANT_KEYWORDS
+
+
 def build_dynamic_planting_windows(garden, weather: dict, crop_templates: list) -> dict:
     climate_summary = build_climate_summary(garden, weather)
     today = date.today()
@@ -281,8 +299,13 @@ def build_dynamic_planting_windows(garden, weather: dict, crop_templates: list) 
             base_start = adjusted_last_frost + timedelta(days=transplant_offset_days)
             base_end = adjusted_first_fall_frost - timedelta(days=max(14, crop.days_to_harvest))
             window_start, window_end = _clamp_date_window(base_start, base_end)
-            indoor_seed_start = window_start - timedelta(weeks=max(1, crop.weeks_to_transplant))
-            indoor_seed_end = window_end - timedelta(weeks=max(1, crop.weeks_to_transplant))
+            if _is_direct_ground_transplant(crop):
+                # Crown and bare-root style crops are planted directly outdoors, not seed-started indoors.
+                indoor_seed_start = None
+                indoor_seed_end = None
+            else:
+                indoor_seed_start = window_start - timedelta(weeks=max(1, crop.weeks_to_transplant))
+                indoor_seed_end = window_end - timedelta(weeks=max(1, crop.weeks_to_transplant))
             method = "transplant"
 
         status = _window_status(today, window_start, window_end, soil_ok)

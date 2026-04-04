@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 
 def _as_date(value: str | date) -> date:
@@ -98,6 +98,8 @@ def _planting_window_events(planting_windows: dict) -> list[dict]:
                 f"Start indoors {indoor_start} – {indoor_end}; "
                 f"transplant outdoors {window['window_start']} – {window['window_end']} ({window['status']})."
             )
+        elif window["method"] == "transplant":
+            detail = f"Plant outdoors (crowns/starts) {window['window_start']} – {window['window_end']} ({window['status']})."
         else:
             detail = f"Direct sow outdoors {window['window_start']} – {window['window_end']} ({window['status']})."
         events.append(
@@ -126,7 +128,7 @@ def _planting_window_events(planting_windows: dict) -> list[dict]:
 
 def _sensor_alert_events(sensor_summary: dict) -> list[dict]:
     events: list[dict] = []
-    now = datetime.utcnow().date()
+    now = datetime.now(UTC).date()
 
     for suggestion in sensor_summary.get("irrigation_suggestions", []):
         severity = "medium"
@@ -151,7 +153,7 @@ def _sensor_alert_events(sensor_summary: dict) -> list[dict]:
 
 
 def _coach_recommendation_events(coach_response: dict) -> list[dict]:
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     events: list[dict] = []
 
     for action in coach_response.get("suggested_actions", [])[:8]:
@@ -198,7 +200,7 @@ def build_unified_timeline(
     events.sort(key=lambda item: (item["event_date"], item["category"], item["title"]))
 
     return {
-        "generated_at": datetime.utcnow(),
+        "generated_at": datetime.now(UTC),
         "events": events,
         "counts_by_category": {
             "task": sum(1 for event in events if event["category"] == "task"),

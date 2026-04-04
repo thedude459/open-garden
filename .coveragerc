@@ -1,0 +1,18 @@
+[run]
+branch = True
+omit =
+    # Package markers only.
+    */__init__.py
+    # Runtime bootstrap and environment wiring (exercised indirectly by integration startup).
+    backend/app/config.py
+    backend/app/database.py
+    backend/app/main.py
+    # Declarative data shape files with minimal executable logic.
+    backend/app/models.py
+    backend/app/schemas.py
+    # External seed dataset bootstrap path (validated by seed/sync tests at service layer).
+    backend/app/services/seed.py
+
+[report]
+skip_covered = True
+show_missing = True

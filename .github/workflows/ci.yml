@@ -3,43 +3,116 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**/*.md'
   pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Create release: push images, create git tag, and publish GitHub release"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOCKERHUB_REPOSITORY: thedude459/open-garden
 
 jobs:
-  # Fast static checks — no Docker required, runs in parallel with e2e.
-  checks:
+  backend-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: Frontend typecheck
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Run backend tests with coverage
+        run: |
+          pytest backend/tests -q
+          python -m coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-coverage-report
+          path: |
+            backend/coverage.xml
+            backend/htmlcov/
+          retention-days: 7
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci
-      - run: cd frontend && npx tsc --noEmit
 
-      - name: Backend import check
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install -r backend/requirements.txt
-      - name: Verify backend imports cleanly
-        run: cd backend && python -c "from app.main import app; print('Backend import OK')"
-        env:
-          DATABASE_URL: "postgresql+psycopg2://user:pass@localhost/db"
-          SECRET_KEY: "ci-check-only-not-for-production"
-          ALLOWED_ORIGINS: "http://localhost:5173"
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npm run test:unit
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
   e2e:
+    needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
 
       - name: Set up environment
         run: |
@@ -73,20 +146,7 @@ jobs:
             echo "Attempt $i: Frontend not ready yet, retrying in 3s..."
             sleep 3
           done
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Install Playwright browsers
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
+          curl -sf http://localhost:5173 > /dev/null
 
       - name: Run Playwright tests
         working-directory: frontend
@@ -96,10 +156,169 @@ jobs:
           PLAYWRIGHT_API_URL: http://localhost:8000
           CI: "true"
 
-      - name: Upload test results on failure
-        uses: actions/upload-artifact@v4
-        if: failure()
+      - name: Upload Playwright results
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
         with:
           name: playwright-test-results
-          path: frontend/test-results/
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
           retention-days: 7
+
+      - name: Stop containers
+        if: always()
+        run: |
+          set -a
+          source .env
+          set +a
+          if [[ -n "${DATABASE_URL:-}" ]]; then
+            docker compose down -v --remove-orphans
+          else
+            docker compose -f docker-compose.yml -f docker-compose.localdb.yml down -v --remove-orphans
+          fi
+
+  docker-images:
+    name: Build and Publish Docker Images
+    needs: [backend-tests, frontend-tests, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: prod
+    outputs:
+      should_release: ${{ steps.release_flags.outputs.should_release }}
+      release_tag: ${{ steps.release_flags.outputs.release_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Detect changed service paths
+        id: changes
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        with:
+          filters: |
+            api:
+              - 'backend/**'
+              - 'docker-compose*.yml'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'frontend/**'
+              - 'docker-compose*.yml'
+              - '.github/workflows/ci.yml'
+
+      - name: Resolve release flags
+        id: release_flags
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_INPUT: ${{ github.event.inputs.release || 'false' }}
+        run: |
+          should_release=false
+          release_tag=
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$RELEASE_INPUT" == "true" ]]; then
+            should_release=true
+            release_tag="v$(date -u +%Y.%m.%d)-${GITHUB_RUN_NUMBER}"
+          fi
+
+          echo "should_release=${should_release}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to Docker Hub
+        if: ${{ steps.release_flags.outputs.should_release == 'true' }}
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: thedude459
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Docker metadata (api)
+        id: meta_api
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.DOCKERHUB_REPOSITORY }}
+          tags: |
+            type=sha,prefix=api-
+            type=raw,value=api-latest,enable={{is_default_branch}}
+            type=raw,value=api-${{ steps.release_flags.outputs.release_tag }},enable=${{ steps.release_flags.outputs.should_release == 'true' }}
+
+      - name: Build and optionally push API image
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.changes.outputs.api == 'true' }}
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: ${{ steps.release_flags.outputs.should_release == 'true' }}
+          tags: ${{ steps.meta_api.outputs.tags }}
+          labels: ${{ steps.meta_api.outputs.labels }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Docker metadata (web)
+        id: meta_web
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.DOCKERHUB_REPOSITORY }}
+          tags: |
+            type=sha,prefix=web-
+            type=raw,value=web-latest,enable={{is_default_branch}}
+            type=raw,value=web-${{ steps.release_flags.outputs.release_tag }},enable=${{ steps.release_flags.outputs.should_release == 'true' }}
+
+      - name: Build and optionally push Web image
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.changes.outputs.web == 'true' }}
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: ${{ steps.release_flags.outputs.should_release == 'true' }}
+          tags: ${{ steps.meta_web.outputs.tags }}
+          labels: ${{ steps.meta_web.outputs.labels }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  release:
+    name: Create Tag and GitHub Release
+    needs: [docker-images]
+    if: ${{ needs.docker-images.outputs.should_release == 'true' }}
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      contents: write
+    steps:
+      - name: Create git tag and GitHub release
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          RELEASE_TAG: ${{ needs.docker-images.outputs.release_tag }}
+          DOCKER_REPO: ${{ env.DOCKERHUB_REPOSITORY }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const targetSha = context.sha;
+            const tag = process.env.RELEASE_TAG;
+
+            await github.rest.git.createRef({
+              owner,
+              repo,
+              ref: `refs/tags/${tag}`,
+              sha: targetSha,
+            });
+
+            const body = [
+              `Docker images published to ${process.env.DOCKER_REPO}.`,
+              '',
+              'Release images:',
+              `- ${process.env.DOCKER_REPO}:api-${tag}`,
+              `- ${process.env.DOCKER_REPO}:web-${tag}`,
+            ].join('\n');
+
+            await github.rest.repos.createRelease({
+              owner,
+              repo,
+              tag_name: tag,
+              target_commitish: targetSha,
+              name: `Release ${tag}`,
+              body,
+              generate_release_notes: true,
+            });
