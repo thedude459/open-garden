@@ -58,8 +58,6 @@ def test_alembic_upgrade_head_creates_core_tables():
     reason=_POSTGRES_ONLY_REASON,
 )
 def test_alembic_upgrade_head_is_idempotent():
-    database_url = settings.database_url
-
     cfg = _alembic_config()
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")

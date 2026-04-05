@@ -30,3 +30,47 @@ applyTo: "backend/app/**/*.py, frontend/src/**/*.{ts,tsx,css}, scripts/**/*.sh"
 - If a change touches crop templates, planting generation, or ownership-sensitive routes, include at least one smoke test that exercises the changed behavior end to end.
 - CI should continue to publish backend coverage in the job summary and artifacts (`backend/coverage.xml`, `backend/htmlcov/`) for review.
 - If you could not rebuild or verify behavior, say so explicitly in the final response.
+
+## Frontend unit test requirements per area
+
+### Custom hooks (`features/*/hooks/`)
+Every custom hook file must have a co-located `.test.ts(x)` file covering:
+- All distinct state transitions (each meaningful `setState` call path)
+- Validation logic: blank/invalid inputs produce the correct error message; valid inputs clear errors
+- Submit handlers: blocked with errors on invalid input; delegate to the action callback on valid input
+- All filter/derived state values (`useMemo`) at the boundary conditions that change output
+- Any `useEffect` side effects toggled by prop/state changes
+- Callbacks that do nothing when a guard condition is not met (e.g. null ID, null pending state)
+
+### Planner overlay and engine hooks
+- `usePlannerOverlayState`: test each `setOverlayPreset` value produces mutual exclusion; test `sunHour` initialisation from `gardenSunPath`; test derived grid dimensions
+- `usePlannerRotationPreview`: test `requestRotatePreview` computes swapped dimensions and `fitsCurrent`/`hasBedOverlap` flags; test `confirmRotate` calls `onRotateBed` and clears state; test cancel path via `setPendingRotation(null)`
+
+### Pure computation engines (`features/planner/engine/`)
+When adding or modifying an engine function (`shadeMap`, `sunModel`, `growthSim`, `plannerGeometry`, `plannerUtils`), add tests for:
+- Null/empty inputs return safe defaults (guard clauses)
+- Output values are clamped within their documented range (0–1 for intensities/shade, non-negative for dimensions)
+- Placements or beds that reference IDs not in the corresponding map are silently skipped rather than crashing
+
+### Presentational components with conditional branches
+When a component has conditional rendering based on props (e.g. `editingCropId`, `direct_sow`, `syncStatus`):
+- Test the heading/button label change between add-mode and edit-mode
+- Test each field error prop renders the expected error element
+- Test each conditional field appearance/disappearance (e.g. weeks-to-transplant hidden when `direct_sow=true`)
+- Test `onClick` callbacks on interactive elements (Edit, Delete, Cancel buttons) are invoked with the expected argument
+- Test disabled states on buttons during async operations
+
+### Calendar agenda state
+- `useCalendarAgendaState` tests must cover all three `taskDoneFilter` states and verify non-task events are never filtered out
+- `hasTasks` must be tested for true (task present) and false (no tasks, planting-only, empty) cases
+- Every `handleXFieldBlur` must be tested for blank → error and non-blank → cleared-error transitions
+- Both submit handlers must be tested: invalid input blocks the action callback; valid input calls it
+
+## E2E test requirements (Playwright)
+
+The E2E suite lives in `frontend/tests/`. When adding a significant new planner or calendar workflow, add a matching spec file:
+- **Planner bed lifecycle**: create bed → verify it appears → delete it → verify removal. File: `planner-bed-placement.spec.ts`
+- **Planner placement lifecycle**: place a crop in a bed via UI → verify placement chip → remove it → verify chip disappears
+- **Calendar task lifecycle** (covered in `calendar-workflow.spec.ts`): add task, filter, complete, delete
+- **Crop library lifecycle** (covered in `crop-library.spec.ts`): create, edit-rehydrate
+- Any new core product surface (auth screens, seasonal plan panel, sensor CRUD, garden deletion) needs at least one E2E happy-path test before the feature is considered complete

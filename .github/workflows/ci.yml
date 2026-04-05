@@ -70,6 +70,23 @@ jobs:
       - name: Run backend unit tests
         run: ./scripts/test-backend-unit.sh
 
+      - name: Publish backend unit coverage summary
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse("backend/coverage-unit.xml").getroot()
+          line_pct = float(root.attrib["line-rate"]) * 100
+          branch_pct = float(root.attrib["branch-rate"]) * 100
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Backend Unit Coverage\n\n")
+              summary.write(f"- Line coverage: {line_pct:.2f}%\n")
+              summary.write(f"- Branch coverage: {branch_pct:.2f}%\n")
+              summary.write("- Coverage XML: backend/coverage-unit.xml\n")
+          PY
+
       - name: Publish unit randomization seed
         run: |
           {
@@ -77,6 +94,14 @@ jobs:
             echo
             echo "- pytest-randomly seed: ${RANDOMLY_SEED}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend unit coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-unit-coverage-report
+          path: backend/coverage-unit.xml
+          retention-days: 7
 
   backend-integration-tests:
     needs: [precommit-lint]
@@ -91,6 +116,23 @@ jobs:
       - name: Run backend integration tests
         run: ./scripts/test-backend-integration.sh
 
+      - name: Publish backend integration coverage summary
+        run: |
+          python - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          root = ET.parse("backend/coverage-integration.xml").getroot()
+          line_pct = float(root.attrib["line-rate"]) * 100
+          branch_pct = float(root.attrib["branch-rate"]) * 100
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Backend Integration Coverage\n\n")
+              summary.write(f"- Line coverage: {line_pct:.2f}%\n")
+              summary.write(f"- Branch coverage: {branch_pct:.2f}%\n")
+              summary.write("- Coverage XML: backend/coverage-integration.xml\n")
+          PY
+
       - name: Publish integration randomization seed
         run: |
           {
@@ -98,6 +140,14 @@ jobs:
             echo
             echo "- pytest-randomly seed: ${RANDOMLY_SEED}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend integration coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-integration-coverage-report
+          path: backend/coverage-integration.xml
+          retention-days: 7
 
   backend-coverage-gate:
     needs: [backend-unit-tests, backend-integration-tests]
