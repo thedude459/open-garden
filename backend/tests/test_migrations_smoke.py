@@ -6,6 +6,7 @@ from alembic.config import Config as AlembicConfig
 from sqlalchemy import create_engine, inspect
 
 from app.config import settings
+from app.database import Base
 
 
 pytestmark = pytest.mark.integration
@@ -21,12 +22,22 @@ def _alembic_config() -> AlembicConfig:
     return cfg
 
 
+def _bootstrap_base_schema(database_url: str) -> None:
+    engine = create_engine(database_url, future=True)
+    try:
+        Base.metadata.create_all(bind=engine)
+    finally:
+        engine.dispose()
+
+
 @pytest.mark.skipif(
     not settings.database_url.startswith("postgresql+"),
     reason=_POSTGRES_ONLY_REASON,
 )
 def test_alembic_upgrade_head_creates_core_tables():
     database_url = settings.database_url
+
+    _bootstrap_base_schema(database_url)
 
     cfg = _alembic_config()
     command.upgrade(cfg, "head")
@@ -48,7 +59,7 @@ def test_alembic_upgrade_head_creates_core_tables():
         "sensors",
         "sensor_readings",
         "user_auth_tokens",
-        "crop_sync_state",
+        "background_job_states",
     }
     assert expected_tables.issubset(table_names)
 
@@ -58,6 +69,8 @@ def test_alembic_upgrade_head_creates_core_tables():
     reason=_POSTGRES_ONLY_REASON,
 )
 def test_alembic_upgrade_head_is_idempotent():
+    _bootstrap_base_schema(settings.database_url)
+
     cfg = _alembic_config()
     command.upgrade(cfg, "head")
     command.upgrade(cfg, "head")

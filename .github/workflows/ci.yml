@@ -45,7 +45,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -66,6 +66,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Restore pip cache for backend test containers
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-backend-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-pip-
 
       - name: Run backend unit tests
         run: ./scripts/test-backend-unit.sh
@@ -113,6 +121,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Restore pip cache for backend test containers
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-backend-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-pip-
+
       - name: Run backend integration tests
         run: ./scripts/test-backend-integration.sh
 
@@ -159,6 +175,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Restore pip cache for backend test containers
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-backend-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-pip-
 
       - name: Run backend tests with coverage gate
         run: ./scripts/test-backend.sh
@@ -225,7 +249,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Detect backend-related changes
+        id: postgres_scope
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        with:
+          filters: |
+            backend_ci:
+              - 'backend/**'
+              - 'scripts/test-backend*.sh'
+              - 'docker-compose*.yml'
+              - '.github/workflows/ci.yml'
+
+      - name: Skip Postgres smoke tests when backend is unchanged
+        if: ${{ github.event_name != 'workflow_dispatch' && steps.postgres_scope.outputs.backend_ci != 'true' }}
+        run: |
+          {
+            echo "## Backend Postgres Smoke Tests"
+            echo
+            echo "- Skipped: no backend-related file changes detected."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Set up Python
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.postgres_scope.outputs.backend_ci == 'true' }}
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
@@ -233,18 +279,32 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install backend dependencies
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.postgres_scope.outputs.backend_ci == 'true' }}
         run: |
           pip install -r backend/requirements.txt
           pip install pytest-randomly==3.16.0
 
       - name: Run Postgres-backed backend smoke tests
+        if: ${{ github.event_name == 'workflow_dispatch' || steps.postgres_scope.outputs.backend_ci == 'true' }}
         run: |
           pytest \
             backend/tests/test_main_app_integration.py \
             backend/tests/test_migrations_smoke.py \
             backend/tests/test_postgres_smoke.py \
+            --maxfail=1 \
+            -o addopts="" \
+            --junitxml=backend/test-results/backend-postgres-smoke.junit.xml \
             --randomly-seed="${{ github.run_number }}" \
             -q
+
+      - name: Upload backend Postgres smoke JUnit report
+        if: ${{ always() && (github.event_name == 'workflow_dispatch' || steps.postgres_scope.outputs.backend_ci == 'true') }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-postgres-junit-report
+          path: backend/test-results/backend-postgres-smoke.junit.xml
+          if-no-files-found: warn
+          retention-days: 7
 
   frontend-tests:
     needs: [precommit-lint]
@@ -257,7 +317,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -269,9 +329,17 @@ jobs:
         working-directory: frontend
         run: npx tsc --noEmit
 
-      - name: Run frontend unit tests
+      - name: Run frontend unit tests with coverage
         working-directory: frontend
-        run: npm run test:unit
+        run: npm run test:unit:coverage
+
+      - name: Upload frontend coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          retention-days: 7
 
       - name: Build frontend
         working-directory: frontend
@@ -289,7 +357,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 

@@ -5,8 +5,10 @@ import pytest
 from alembic import command
 from alembic.config import Config as AlembicConfig
 from sqlalchemy import text
+from sqlalchemy import create_engine
 
 from app.config import settings
+from app.database import Base
 from app.database import SessionLocal
 from app.models import Garden, User
 
@@ -19,6 +21,14 @@ def _alembic_config() -> AlembicConfig:
     cfg = AlembicConfig(str(root / "backend" / "alembic.ini"))
     cfg.set_main_option("script_location", str(root / "backend" / "alembic"))
     return cfg
+
+
+def _bootstrap_base_schema(database_url: str) -> None:
+    engine = create_engine(database_url, future=True)
+    try:
+        Base.metadata.create_all(bind=engine)
+    finally:
+        engine.dispose()
 
 
 @pytest.mark.skipif(
@@ -45,6 +55,8 @@ def test_postgres_round_trip_query():
     reason="Postgres smoke test only runs when DATABASE_URL points to PostgreSQL.",
 )
 def test_postgres_migration_and_crud_round_trip():
+    _bootstrap_base_schema(settings.database_url)
+
     cfg = _alembic_config()
     command.upgrade(cfg, "head")
 
