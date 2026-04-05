@@ -36,7 +36,7 @@ function upsertVerifiedUserViaApiContainer() {
   const script = `
 from datetime import datetime
 
-from app.auth import get_password_hash
+from app.core.auth import get_password_hash
 from app.database import SessionLocal
 from app.models import User
 
