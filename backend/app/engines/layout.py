@@ -18,9 +18,7 @@ def build_garden_sun_path(garden: Garden, target_date: date) -> dict:
     latitude_rad = math.radians(garden.latitude)
     declination_rad = _declination_radians(day)
 
-    ha_sunrise = math.acos(
-        max(-1.0, min(1.0, -math.tan(latitude_rad) * math.tan(declination_rad)))
-    )
+    ha_sunrise = math.acos(max(-1.0, min(1.0, -math.tan(latitude_rad) * math.tan(declination_rad))))
     day_length_hours = (2 * math.degrees(ha_sunrise)) / 15
     sunrise_hour = 12 - (day_length_hours / 2)
     sunset_hour = 12 + (day_length_hours / 2)
@@ -29,10 +27,9 @@ def build_garden_sun_path(garden: Garden, target_date: date) -> dict:
     for hour in range(5, 21):
         hour_angle = math.radians(15 * (hour - 12))
 
-        sin_altitude = (
-            math.sin(latitude_rad) * math.sin(declination_rad)
-            + math.cos(latitude_rad) * math.cos(declination_rad) * math.cos(hour_angle)
-        )
+        sin_altitude = math.sin(latitude_rad) * math.sin(declination_rad) + math.cos(
+            latitude_rad
+        ) * math.cos(declination_rad) * math.cos(hour_angle)
         sin_altitude = max(-1.0, min(1.0, sin_altitude))
         altitude_rad = math.asin(sin_altitude)
         altitude_deg = max(0.0, math.degrees(altitude_rad))

@@ -5,10 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
-    "build": "vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "npm run lint -- --fix",
+    "lint:docs": "markdownlint-cli2 --config ../.markdownlint-cli2.jsonc \"../README.md\" \"../.github/**/*.md\"",
+    "lint:docs:fix": "markdownlint-cli2 --fix --config ../.markdownlint-cli2.jsonc \"../README.md\" \"../.github/**/*.md\"",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
+    "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:ui": "playwright test --ui",
@@ -19,6 +24,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.35.0",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -26,7 +32,13 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.35.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.4.0",
     "jsdom": "^27.0.1",
+    "markdownlint-cli2": "^0.18.1",
+    "typescript-eslint": "^8.41.0",
     "typescript": "^5.8.2",
     "vite": "^6.2.0",
     "vitest": "^3.2.4"

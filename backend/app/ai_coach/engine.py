@@ -3,7 +3,9 @@ from datetime import date
 
 def _task_counts(tasks: list) -> dict:
     open_count = sum(1 for task in tasks if not task.is_done)
-    due_soon = sum(1 for task in tasks if not task.is_done and (task.due_on - date.today()).days <= 3)
+    due_soon = sum(
+        1 for task in tasks if not task.is_done and (task.due_on - date.today()).days <= 3
+    )
     return {"open": open_count, "due_soon": max(0, due_soon)}
 
 
@@ -24,7 +26,9 @@ def _sensor_snapshot(sensor_summary: dict | None) -> dict:
         "sensor_count": len(sensor_summary.get("sensors") or []),
         "latest_soil_moisture": moisture[-1]["value"] if moisture else None,
         "latest_soil_temperature": temperature[-1]["value"] if temperature else None,
-        "irrigation_signal": irrigation_suggestions[0]["status"] if irrigation_suggestions else "unknown",
+        "irrigation_signal": irrigation_suggestions[0]["status"]
+        if irrigation_suggestions
+        else "unknown",
     }
 
 

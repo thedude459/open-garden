@@ -104,7 +104,9 @@ def _planting_window_events(planting_windows: dict) -> list[dict]:
             detail = f"Direct sow outdoors {window['window_start']} – {window['window_end']} ({window['status']})."
         events.append(
             {
-                "event_date": indoor_start if (window["method"] == "transplant" and indoor_start) else window["window_start"],
+                "event_date": indoor_start
+                if (window["method"] == "transplant" and indoor_start)
+                else window["window_start"],
                 "title": f"Planting window: {window['crop_name']}",
                 "detail": detail,
                 "category": "planting_window",
@@ -207,6 +209,8 @@ def build_unified_timeline(
             "weather": sum(1 for event in events if event["category"] == "weather"),
             "planting_window": sum(1 for event in events if event["category"] == "planting_window"),
             "sensor_alert": sum(1 for event in events if event["category"] == "sensor_alert"),
-            "ai_recommendation": sum(1 for event in events if event["category"] == "ai_recommendation"),
+            "ai_recommendation": sum(
+                1 for event in events if event["category"] == "ai_recommendation"
+            ),
         },
     }

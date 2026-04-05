@@ -1,5 +1,5 @@
-import { CropTemplate } from "../types";
-import { palette } from "./constants";
+import { CropTemplate } from "../../types";
+import { palette } from "../constants";
 
 export function cropBaseName(crop: CropTemplate) {
   if (crop.variety && crop.name.endsWith(`(${crop.variety})`)) {

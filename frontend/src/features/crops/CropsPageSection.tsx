@@ -1,14 +1,16 @@
-import { cropBaseName } from "../app/cropUtils";
+import { cropBaseName } from "../app/utils/cropUtils";
+import { useCropFormState } from "../app/hooks/useCropFormState";
 import { CropsPanel } from "./CropsPanel";
+import { CropTemplate, CropTemplateSyncStatus } from "../types";
 
 type CropsPageSectionProps = {
-  cropTemplates: any[];
+  cropTemplates: CropTemplate[];
   isRefreshingCropLibrary: boolean;
   isCleaningLegacyCropLibrary: boolean;
-  cropTemplateSyncStatus: any;
+  cropTemplateSyncStatus: CropTemplateSyncStatus | null;
   refreshCropTemplateDatabase: () => Promise<void>;
   requestLegacyCropCleanup: () => void;
-  cropFormState: any;
+  cropFormState: ReturnType<typeof useCropFormState>;
 };
 
 export function CropsPageSection({

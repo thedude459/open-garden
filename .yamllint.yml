@@ -1,0 +1,20 @@
+extends: default
+
+ignore: |
+  frontend/node_modules/
+  frontend/dist/
+  frontend/coverage/
+  backend/htmlcov/
+
+rules:
+  comments: disable
+  document-start: disable
+  empty-lines:
+    max: 2
+    max-end: 1
+    max-start: 0
+  line-length:
+    max: 160
+    level: warning
+  truthy:
+    check-keys: false

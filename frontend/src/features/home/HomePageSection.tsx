@@ -3,23 +3,27 @@ import { GardenListSidebar } from "./GardenListSidebar";
 import { HomeHero } from "./HomeHero";
 import { MicroclimateProfileCard } from "./MicroclimateProfileCard";
 import { AppPage } from "../app/types";
-import { Garden, GardenClimate } from "../types";
+import { Bed, Garden, GardenClimate, Placement } from "../types";
+import { useDerivedGardenState } from "../app/hooks/useDerivedGardenState";
+import { useGardenActions } from "../app/hooks/useGardenActions";
+import { usePlannerActions } from "../app/hooks/usePlannerActions";
+import { useTaskActions } from "../app/hooks/useTaskActions";
 
 type HomePageSectionProps = {
   selectedGarden: number | null;
   selectedGardenRecord: Garden | undefined;
   gardens: Garden[];
   publicGardens: Garden[];
-  beds: { id: number }[];
-  placements: { id: number }[];
+  beds: Bed[];
+  placements: Placement[];
   cropTemplatesCount: number;
   gardenClimate: GardenClimate | null;
   isLoadingWeather: boolean;
   isLoadingClimate: boolean;
-  derived: any;
-  taskActions: any;
-  gardenActions: any;
-  plannerActions: any;
+  derived: ReturnType<typeof useDerivedGardenState>;
+  taskActions: ReturnType<typeof useTaskActions>;
+  gardenActions: ReturnType<typeof useGardenActions>;
+  plannerActions: ReturnType<typeof usePlannerActions>;
   setSelectedGarden: (id: number) => void;
   onNavigate: (page: AppPage) => void;
 };
@@ -92,7 +96,7 @@ export function HomePageSection({
               isSuggestingMicroclimate={gardenActions.isSuggestingMicroclimate}
               onSubmit={gardenActions.saveMicroclimateProfile}
               onGeocode={gardenActions.geocodeGardenAddress}
-              onSuggest={gardenActions.suggestMicrocliamateProfile}
+                onSuggest={gardenActions.suggestMicroclimateProfile}
             />
           )}
         </div>

@@ -11,7 +11,9 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-def _aggregate_series(readings: list, sensors_by_id: dict[int, object], kind: str, horizon_hours: int) -> list[dict]:
+def _aggregate_series(
+    readings: list, sensors_by_id: dict[int, object], kind: str, horizon_hours: int
+) -> list[dict]:
     cutoff = _utc_now() - timedelta(hours=max(1, horizon_hours))
     points = []
     for reading in readings:
@@ -39,7 +41,11 @@ def compute_irrigation_suggestions(summary: dict) -> list[dict]:
     moisture = summary["soil_moisture_series"]
     temp = summary["soil_temperature_series"]
 
-    avg_moisture = sum(point["value"] for point in moisture[-8:]) / max(1, len(moisture[-8:])) if moisture else None
+    avg_moisture = (
+        sum(point["value"] for point in moisture[-8:]) / max(1, len(moisture[-8:]))
+        if moisture
+        else None
+    )
     recent_temp = temp[-1]["value"] if temp else None
 
     if avg_moisture is None:
@@ -89,8 +95,12 @@ def compute_irrigation_suggestions(summary: dict) -> list[dict]:
     return suggestions
 
 
-def build_sensor_summary(garden_id: int, sensors: list, readings: list, horizon_hours: int = 48) -> dict:
-    sensors_sorted = sorted(sensors, key=lambda item: (item.sensor_kind, item.name.lower(), item.id))
+def build_sensor_summary(
+    garden_id: int, sensors: list, readings: list, horizon_hours: int = 48
+) -> dict:
+    sensors_sorted = sorted(
+        sensors, key=lambda item: (item.sensor_kind, item.name.lower(), item.id)
+    )
     sensors_by_id = {sensor.id: sensor for sensor in sensors_sorted}
 
     latest_by_sensor: dict[int, object] = {}
@@ -118,8 +128,12 @@ def build_sensor_summary(garden_id: int, sensors: list, readings: list, horizon_
             }
         )
 
-    soil_moisture_series = _aggregate_series(readings, sensors_by_id, "soil_moisture", horizon_hours)
-    soil_temperature_series = _aggregate_series(readings, sensors_by_id, "soil_temperature", horizon_hours)
+    soil_moisture_series = _aggregate_series(
+        readings, sensors_by_id, "soil_moisture", horizon_hours
+    )
+    soil_temperature_series = _aggregate_series(
+        readings, sensors_by_id, "soil_temperature", horizon_hours
+    )
 
     payload = {
         "generated_at": _utc_now(),

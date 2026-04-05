@@ -5,6 +5,7 @@
 - Keep backend changes aligned across `backend/app/models.py`, `backend/app/schemas.py`, and the domain routers in `backend/app/routers/`.
 - Follow existing backend patterns: SQLAlchemy 2 `Mapped[...]` models, Pydantic v2 schemas with `ConfigDict(from_attributes=True)`, and FastAPI dependency injection with `Depends(...)`.
 - Follow existing frontend patterns: `frontend/src/App.tsx` as composition/orchestration, feature logic in `frontend/src/features/**`, shared app hooks in `frontend/src/features/app/hooks/`, and straightforward fetch-based API calls rather than adding a new state-management layer.
+- Within each feature directory, use subdirectories by concern once a feature grows beyond ~8 files: `hooks/` for React hooks, `utils/` for pure helpers, and named component subdirs (e.g. `bed/`, `yard/`, `engine/`). The `app/`, `planner/`, and `calendar/` features are the reference model.
 - Keep CSS changes consistent with `frontend/src/styles.css`: responsive grid/flex layouts, shared utility classes, and minimal visual churn outside the requested area.
 
 ## Architecture

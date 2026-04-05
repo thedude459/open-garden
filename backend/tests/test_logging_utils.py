@@ -17,7 +17,9 @@ def test_get_logger_configures_only_when_handlers_are_missing(monkeypatch):
         return original_get_logger(name)
 
     monkeypatch.setattr("app.core.logging_utils.logging.getLogger", fake_get_logger)
-    monkeypatch.setattr("app.core.logging_utils.logging.basicConfig", lambda **kwargs: calls.append(kwargs))
+    monkeypatch.setattr(
+        "app.core.logging_utils.logging.basicConfig", lambda **kwargs: calls.append(kwargs)
+    )
 
     assert get_logger("empty") is first
     assert get_logger("configured") is second

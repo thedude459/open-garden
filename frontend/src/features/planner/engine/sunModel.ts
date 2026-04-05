@@ -1,4 +1,4 @@
-import { Garden, GardenSunPath } from "../types";
+import { Garden, GardenSunPath } from "../../types";
 
 export type SunVectorSample = {
   hourLocal: number;

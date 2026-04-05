@@ -7,7 +7,7 @@ import {
   createContext,
   useContext,
 } from "react";
-import { Bed, CropTemplate, ClimatePlantingWindow, GardenClimate, Task, CalendarEvent } from "../../types";
+import { Bed, CropTemplate, ClimatePlantingWindow, GardenClimate, Task, CalendarEvent } from "../types";
 
 export interface TaskActions {
   tasks: Task[];

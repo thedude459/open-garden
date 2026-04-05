@@ -4,7 +4,18 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.models import Base, Bed, CropTemplate, Garden, Placement, Planting, Sensor, SensorReading, Task, User
+from app.models import (
+    Base,
+    Bed,
+    CropTemplate,
+    Garden,
+    Placement,
+    Planting,
+    Sensor,
+    SensorReading,
+    Task,
+    User,
+)
 
 
 @pytest.fixture()
@@ -156,7 +167,9 @@ def companion_crop_template(db_session: Session) -> CropTemplate:
 
 
 @pytest.fixture()
-def placement(db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate) -> Placement:
+def placement(
+    db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate
+) -> Placement:
     item = Placement(
         garden_id=garden.id,
         bed_id=bed.id,
@@ -173,7 +186,9 @@ def placement(db_session: Session, garden: Garden, bed: Bed, crop_template: Crop
 
 
 @pytest.fixture()
-def planting(db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate) -> Planting:
+def planting(
+    db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate
+) -> Planting:
     planted_on = date.today() - timedelta(days=10)
     item = Planting(
         garden_id=garden.id,

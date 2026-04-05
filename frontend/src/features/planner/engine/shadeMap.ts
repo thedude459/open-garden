@@ -1,4 +1,4 @@
-import { Bed } from "../types";
+import { Bed } from "../../types";
 import { SunVectorSample } from "./sunModel";
 
 export type ShadeCell = {

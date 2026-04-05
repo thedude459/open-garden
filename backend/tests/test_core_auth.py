@@ -5,7 +5,6 @@ from fastapi import HTTPException
 from jose import jwt
 
 from app.core import auth
-from app.models import User
 
 
 def test_password_hash_round_trip():

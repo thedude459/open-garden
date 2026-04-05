@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext } from "react";
-import { GardenSeasonalPlan, PlantingRecommendations } from "../../types";
+import { GardenSeasonalPlan, PlantingRecommendations } from "../types";
 
 export interface SeasonalPlanContextType {
   // Data

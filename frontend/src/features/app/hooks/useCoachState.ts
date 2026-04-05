@@ -1,8 +1,9 @@
 import { useCallback, useState } from "react";
+import { FetchAuthed } from "../types";
 import { AiCoachResponse, AiCoachScenario, CoachMessage, Garden } from "../../types";
 
 interface UseCoachStateParams {
-  fetchAuthed: (url: string, options?: RequestInit) => Promise<any>;
+  fetchAuthed: FetchAuthed;
   selectedGardenRecord: Garden | undefined;
 }
 

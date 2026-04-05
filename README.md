@@ -204,8 +204,39 @@ docker compose exec api alembic revision --autogenerate -m "describe your change
 
 Migrations run automatically at startup via `alembic upgrade head`.
 
-## Suggested next steps
+## Linting
 
-- Add role-based moderation workflows
-- Add photo upload endpoint and object storage option
-- Add scheduled in-app notification digest job
+Use the following strategy to keep backend, frontend, docs, and YAML consistent:
+
+1. Backend Python linting and formatting checks with Ruff.
+2. Frontend React/TypeScript linting with ESLint.
+3. Documentation linting with markdownlint.
+4. YAML linting with yamllint.
+5. Unified enforcement via pre-commit.
+
+Install lint dependencies:
+
+```bash
+pip install -r backend/requirements-dev.txt
+cd frontend && npm ci
+```
+
+Run all lint checks through pre-commit (recommended):
+
+```bash
+pre-commit run --all-files
+```
+
+Install and enable the pre-commit hook so all linting runs before each commit:
+
+```bash
+pre-commit install
+```
+
+Run the same pre-commit lint checks manually at any time:
+
+```bash
+pre-commit run --all-files
+```
+
+CI runs the same pre-commit lint suite in `.github/workflows/lint.yml` and as a required job in `.github/workflows/ci.yml`.

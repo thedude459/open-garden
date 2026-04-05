@@ -49,7 +49,11 @@ class _FakeElevationClient:
 
 
 def test_fetch_weather_returns_payload(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([_FakeResponse(payload={"daily": {"time": []}})]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([_FakeResponse(payload={"daily": {"time": []}})]),
+    )
 
     result = asyncio.run(weather.fetch_weather(37.7, -122.4))
 
@@ -57,7 +61,11 @@ def test_fetch_weather_returns_payload(monkeypatch):
 
 
 def test_fetch_zip_profile_uses_fallback_on_request_error(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([httpx.RequestError("boom")]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([httpx.RequestError("boom")]),
+    )
 
     result = asyncio.run(weather.fetch_zip_profile("94110"))
 
@@ -70,7 +78,11 @@ def test_fetch_zip_profile_rejects_blank_zip():
 
 
 def test_fetch_zip_profile_uses_fallback_on_non_200(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([_FakeResponse(status_code=404)]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([_FakeResponse(status_code=404)]),
+    )
 
     result = asyncio.run(weather.fetch_zip_profile("94110"))
 
@@ -78,14 +90,22 @@ def test_fetch_zip_profile_uses_fallback_on_non_200(monkeypatch):
 
 
 def test_fetch_zip_profile_non_200_without_fallback_raises(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([_FakeResponse(status_code=404)]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([_FakeResponse(status_code=404)]),
+    )
 
     with pytest.raises(ValidationServiceError):
         asyncio.run(weather.fetch_zip_profile("00000"))
 
 
 def test_fetch_zip_profile_rejects_when_no_places(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([_FakeResponse(payload={"places": []})]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([_FakeResponse(payload={"places": []})]),
+    )
 
     with pytest.raises(ValidationServiceError):
         asyncio.run(weather.fetch_zip_profile("99999"))
@@ -126,7 +146,11 @@ def test_fetch_zip_profile_returns_unknown_zone_on_enrichment_error(monkeypatch)
 
 
 def test_fetch_zip_profile_rejects_unavailable_non_fallback_zip(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([httpx.RequestError("boom")]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([httpx.RequestError("boom")]),
+    )
 
     with pytest.raises(ValidationServiceError):
         asyncio.run(weather.fetch_zip_profile("00000"))
@@ -138,14 +162,22 @@ def test_fetch_address_geocode_validates_blank_input():
 
 
 def test_fetch_address_geocode_rejects_empty_results(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([_FakeResponse(payload=[])]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([_FakeResponse(payload=[])]),
+    )
 
     with pytest.raises(ValidationServiceError):
         asyncio.run(weather.fetch_address_geocode("123 Main St"))
 
 
 def test_fetch_address_geocode_rejects_unavailable_service(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([_FakeResponse(status_code=503)]))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([_FakeResponse(status_code=503)]),
+    )
 
     with pytest.raises(ValidationServiceError):
         asyncio.run(weather.fetch_address_geocode("123 Main St"))
@@ -155,7 +187,9 @@ def test_fetch_address_geocode_returns_coordinates(monkeypatch):
     monkeypatch.setattr(
         weather.httpx,
         "AsyncClient",
-        lambda *args, **kwargs: _FakeClient([_FakeResponse(payload=[{"lat": "40.1", "lon": "-74.2", "display_name": "Addr"}])]),
+        lambda *args, **kwargs: _FakeClient(
+            [_FakeResponse(payload=[{"lat": "40.1", "lon": "-74.2", "display_name": "Addr"}])]
+        ),
     )
 
     result = asyncio.run(weather.fetch_address_geocode("123 Main St"))
@@ -164,15 +198,27 @@ def test_fetch_address_geocode_returns_coordinates(monkeypatch):
 
 
 def test_fetch_elevation_usgs_handles_success_and_sentinels():
-    ok = asyncio.run(weather._fetch_elevation_usgs(_FakeElevationClient(_FakeResponse(payload={"value": 1234})), 37.7, -122.4))
-    nodata = asyncio.run(weather._fetch_elevation_usgs(_FakeElevationClient(_FakeResponse(payload={"value": "NODATA"})), 37.7, -122.4))
+    ok = asyncio.run(
+        weather._fetch_elevation_usgs(
+            _FakeElevationClient(_FakeResponse(payload={"value": 1234})), 37.7, -122.4
+        )
+    )
+    nodata = asyncio.run(
+        weather._fetch_elevation_usgs(
+            _FakeElevationClient(_FakeResponse(payload={"value": "NODATA"})), 37.7, -122.4
+        )
+    )
 
     assert ok == 1234.0
     assert nodata is None
 
 
 def test_fetch_elevation_usgs_handles_request_error():
-    result = asyncio.run(weather._fetch_elevation_usgs(_FakeElevationClient(httpx.RequestError("boom")), 37.7, -122.4))
+    result = asyncio.run(
+        weather._fetch_elevation_usgs(
+            _FakeElevationClient(httpx.RequestError("boom")), 37.7, -122.4
+        )
+    )
 
     assert result is None
 
@@ -181,9 +227,18 @@ def test_fetch_microclimate_signals_derives_sun_wind_and_slope(monkeypatch):
     monkeypatch.setattr(
         weather.httpx,
         "AsyncClient",
-        lambda *args, **kwargs: _FakeClient([
-            _FakeResponse(payload={"daily": {"sunshine_duration": [25200, 28800], "wind_speed_10m_max": [10, 12]}}),
-        ]),
+        lambda *args, **kwargs: _FakeClient(
+            [
+                _FakeResponse(
+                    payload={
+                        "daily": {
+                            "sunshine_duration": [25200, 28800],
+                            "wind_speed_10m_max": [10, 12],
+                        }
+                    }
+                ),
+            ]
+        ),
     )
     elevations = iter([100.0, 110.0, 108.0, 109.0, 111.0])
 
@@ -201,8 +256,14 @@ def test_fetch_microclimate_signals_derives_sun_wind_and_slope(monkeypatch):
 
 
 def test_fetch_microclimate_signals_handles_weather_failure_and_missing_elevation(monkeypatch):
-    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: _FakeClient([httpx.RequestError("boom")]))
-    monkeypatch.setattr(weather, "_fetch_elevation_usgs", lambda *args, **kwargs: asyncio.sleep(0, result=None))
+    monkeypatch.setattr(
+        weather.httpx,
+        "AsyncClient",
+        lambda *args, **kwargs: _FakeClient([httpx.RequestError("boom")]),
+    )
+    monkeypatch.setattr(
+        weather, "_fetch_elevation_usgs", lambda *args, **kwargs: asyncio.sleep(0, result=None)
+    )
 
     result = asyncio.run(weather.fetch_microclimate_signals(37.7, -122.4))
 
@@ -214,7 +275,13 @@ def test_fetch_microclimate_signals_handles_surroundings_unavailable(monkeypatch
     monkeypatch.setattr(
         weather.httpx,
         "AsyncClient",
-        lambda *args, **kwargs: _FakeClient([_FakeResponse(payload={"daily": {"sunshine_duration": [7200], "wind_speed_10m_max": [22]}})]),
+        lambda *args, **kwargs: _FakeClient(
+            [
+                _FakeResponse(
+                    payload={"daily": {"sunshine_duration": [7200], "wind_speed_10m_max": [22]}}
+                )
+            ]
+        ),
     )
     elevations = iter([100.0, None, None, None, None])
 
@@ -234,7 +301,13 @@ def test_fetch_microclimate_signals_high_ground_and_exposed(monkeypatch):
     monkeypatch.setattr(
         weather.httpx,
         "AsyncClient",
-        lambda *args, **kwargs: _FakeClient([_FakeResponse(payload={"daily": {"sunshine_duration": [3600], "wind_speed_10m_max": [40]}})]),
+        lambda *args, **kwargs: _FakeClient(
+            [
+                _FakeResponse(
+                    payload={"daily": {"sunshine_duration": [3600], "wind_speed_10m_max": [40]}}
+                )
+            ]
+        ),
     )
     elevations = iter([120.0, 100.0, 99.0, 101.0, 100.0])
 

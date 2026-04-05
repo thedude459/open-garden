@@ -1,7 +1,8 @@
 import { PestLogPanel } from "./PestLogPanel";
+import { usePestLogActions } from "../app/hooks/usePestLogActions";
 
 type PestsPageSectionProps = {
-  pestLogActions: any;
+  pestLogActions: ReturnType<typeof usePestLogActions>;
   selectedDate: string;
 };
 

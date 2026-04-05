@@ -58,9 +58,9 @@ function SensorLineChart({ title, points, color }: { title: string; points: { ca
       ) : (
         <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title} className="sensor-chart-svg">
           <rect x={0} y={0} width={width} height={height} fill="#f8fbf6" />
-          {plotted.ticks.map((tick) => {
+          {plotted.ticks.map((tick, index) => {
             const y = height - pad - ((tick - plotted.min) / Math.max(1e-6, plotted.max - plotted.min)) * (height - pad * 2);
-            return <line key={tick} x1={pad} y1={y} x2={width - pad} y2={y} stroke="#d2e0d1" strokeWidth={1} />;
+            return <line key={`${tick}-${index}`} x1={pad} y1={y} x2={width - pad} y2={y} stroke="#d2e0d1" strokeWidth={1} />;
           })}
           <path d={plotted.path} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
           <text x={pad} y={height - 6} fill="#4b5f4c" fontSize={10}>{formatSeriesLabel(points[0].captured_at)}</text>

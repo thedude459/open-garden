@@ -8,3 +8,11 @@ export function isoDate(value: Date) {
 export function hasValidationErrors(errors: Record<string, string>) {
   return Object.values(errors).some(Boolean);
 }
+
+export function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+export function toFeet(inches: number) {
+  return `${(inches / 12).toFixed(1)} ft`;
+}

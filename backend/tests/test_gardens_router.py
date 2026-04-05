@@ -36,13 +36,21 @@ def test_create_garden_translates_zip_lookup_validation_error(monkeypatch, db_se
     monkeypatch.setattr(gardens_router, "fetch_zip_profile", fake_fetch_zip_profile)
 
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(gardens_router.create_garden(GardenCreate(name="Home", zip_code="00000"), db=db_session, current_user=user))
+        asyncio.run(
+            gardens_router.create_garden(
+                GardenCreate(name="Home", zip_code="00000"), db=db_session, current_user=user
+            )
+        )
 
     assert exc.value.status_code == 400
 
 
 def test_update_garden_microclimate_updates_only_passed_fields(db_session, garden):
-    updated = gardens_router.update_garden_microclimate(GardenMicroclimateUpdate(sun_exposure="full_sun", edge_buffer_in=9), db=db_session, garden=garden)
+    updated = gardens_router.update_garden_microclimate(
+        GardenMicroclimateUpdate(sun_exposure="full_sun", edge_buffer_in=9),
+        db=db_session,
+        garden=garden,
+    )
 
     assert updated.sun_exposure == "full_sun"
     assert updated.edge_buffer_in == 9
@@ -199,7 +207,9 @@ def test_geocode_garden_address_translates_validation_error(monkeypatch, db_sess
 
 
 def test_update_garden_yard_applies_minimum_dimensions(db_session, garden):
-    updated = gardens_router.update_garden_yard(GardenYardUpdate(yard_width_ft=1, yard_length_ft=2), db=db_session, garden=garden)
+    updated = gardens_router.update_garden_yard(
+        GardenYardUpdate(yard_width_ft=1, yard_length_ft=2), db=db_session, garden=garden
+    )
 
     assert updated.yard_width_ft == 4
     assert updated.yard_length_ft == 4
@@ -224,7 +234,9 @@ def test_suggest_garden_microclimate_success(monkeypatch, garden):
             },
         }
 
-    monkeypatch.setattr(gardens_router, "fetch_microclimate_signals", fake_fetch_microclimate_signals)
+    monkeypatch.setattr(
+        gardens_router, "fetch_microclimate_signals", fake_fetch_microclimate_signals
+    )
 
     result = asyncio.run(gardens_router.suggest_garden_microclimate(garden=garden))
 
@@ -237,7 +249,9 @@ def test_suggest_garden_microclimate_translates_errors(monkeypatch, garden):
     async def fake_fetch_microclimate_signals(latitude, longitude):
         raise httpx.RequestError("boom")
 
-    monkeypatch.setattr(gardens_router, "fetch_microclimate_signals", fake_fetch_microclimate_signals)
+    monkeypatch.setattr(
+        gardens_router, "fetch_microclimate_signals", fake_fetch_microclimate_signals
+    )
 
     with pytest.raises(HTTPException) as exc:
         asyncio.run(gardens_router.suggest_garden_microclimate(garden=garden))
@@ -250,7 +264,11 @@ def test_get_garden_climate_returns_summary(monkeypatch, garden):
         return {"daily": {}}
 
     monkeypatch.setattr(gardens_router, "fetch_weather", fake_fetch_weather)
-    monkeypatch.setattr(gardens_router, "build_climate_summary", lambda garden, weather: {"zone": garden.growing_zone, "ok": True})
+    monkeypatch.setattr(
+        gardens_router,
+        "build_climate_summary",
+        lambda garden, weather: {"zone": garden.growing_zone, "ok": True},
+    )
 
     result = asyncio.run(gardens_router.get_garden_climate(garden=garden))
 
@@ -262,9 +280,15 @@ def test_get_planting_windows_success_and_failure(monkeypatch, db_session, garde
         return {"daily": {}}
 
     monkeypatch.setattr(gardens_router, "fetch_weather", fake_fetch_weather)
-    monkeypatch.setattr(gardens_router, "build_dynamic_planting_windows", lambda garden, weather, crop_templates: {"windows": [{"crop_name": "Lettuce"}]})
+    monkeypatch.setattr(
+        gardens_router,
+        "build_dynamic_planting_windows",
+        lambda garden, weather, crop_templates: {"windows": [{"crop_name": "Lettuce"}]},
+    )
 
-    success = asyncio.run(gardens_router.get_garden_climate_planting_windows(db=db_session, garden=garden))
+    success = asyncio.run(
+        gardens_router.get_garden_climate_planting_windows(db=db_session, garden=garden)
+    )
 
     assert success["windows"][0]["crop_name"] == "Lettuce"
 
@@ -273,24 +297,42 @@ def test_get_planting_windows_success_and_failure(monkeypatch, db_session, garde
 
     monkeypatch.setattr(gardens_router, "fetch_weather", failing_fetch_weather)
     with pytest.raises(HTTPException) as exc:
-        asyncio.run(gardens_router.get_garden_climate_planting_windows(db=db_session, garden=garden))
+        asyncio.run(
+            gardens_router.get_garden_climate_planting_windows(db=db_session, garden=garden)
+        )
 
     assert exc.value.status_code == 502
 
 
 def test_get_garden_layout_sun_path_uses_default_and_explicit_date(monkeypatch, garden):
-    monkeypatch.setattr(gardens_router, "build_garden_sun_path", lambda g, target_date: {"garden_id": g.id, "target_date": target_date})
+    monkeypatch.setattr(
+        gardens_router,
+        "build_garden_sun_path",
+        lambda g, target_date: {"garden_id": g.id, "target_date": target_date},
+    )
 
     default_result = gardens_router.get_garden_layout_sun_path(garden=garden)
-    explicit_result = gardens_router.get_garden_layout_sun_path(on_date=date(2026, 4, 4), garden=garden)
+    explicit_result = gardens_router.get_garden_layout_sun_path(
+        on_date=date(2026, 4, 4), garden=garden
+    )
 
     assert "target_date" in default_result
     assert explicit_result["target_date"] == date(2026, 4, 4)
 
 
-def test_delete_garden_cleans_related_rows(db_session, garden, planting, placement, task, sensor, sensor_reading):
+def test_delete_garden_cleans_related_rows(
+    db_session, garden, planting, placement, task, sensor, sensor_reading
+):
     reading_id = sensor_reading.id
-    db_session.add(PestLog(garden_id=garden.id, title="Aphids", observed_on=date.today(), treatment="Soap", photo_path=""))
+    db_session.add(
+        PestLog(
+            garden_id=garden.id,
+            title="Aphids",
+            observed_on=date.today(),
+            treatment="Soap",
+            photo_path="",
+        )
+    )
     db_session.commit()
 
     result = gardens_router.delete_garden(db=db_session, garden=garden)

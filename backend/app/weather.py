@@ -1,5 +1,3 @@
-import math
-
 import httpx
 
 from .config import settings
@@ -55,11 +53,15 @@ async def fetch_zip_profile(zip_code: str) -> dict:
         try:
             geo_resp = await client.get(f"https://api.zippopotam.us/us/{normalized_zip}")
         except (httpx.RequestError, httpx.TimeoutException) as exc:
-            logger.warning("zip lookup request failed", extra={"zip_code": normalized_zip, "error": str(exc)})
+            logger.warning(
+                "zip lookup request failed", extra={"zip_code": normalized_zip, "error": str(exc)}
+            )
             fallback = fallback_profile()
             if fallback:
                 return fallback
-            raise ValidationServiceError("ZIP code lookup service is temporarily unavailable") from exc
+            raise ValidationServiceError(
+                "ZIP code lookup service is temporarily unavailable"
+            ) from exc
 
         if geo_resp.status_code != 200:
             fallback = fallback_profile()
@@ -110,7 +112,9 @@ async def fetch_address_geocode(address: str) -> dict:
 
         results = resp.json()
         if not results:
-            raise ValidationServiceError("Address not found. Try including a city, state, or ZIP code.")
+            raise ValidationServiceError(
+                "Address not found. Try including a city, state, or ZIP code."
+            )
 
         first = results[0]
         return {
@@ -146,8 +150,10 @@ async def fetch_microclimate_signals(latitude: float, longitude: float) -> dict:
     Returns a dict of suggested values and explanatory notes for each field.
     """
     suggestions: dict[str, str | None] = {
-        "sun_exposure": None, "wind_exposure": None,
-        "slope_position": None, "frost_pocket_risk": None,
+        "sun_exposure": None,
+        "wind_exposure": None,
+        "slope_position": None,
+        "frost_pocket_risk": None,
     }
     notes: dict[str, str] = {}
 
@@ -174,16 +180,24 @@ async def fetch_microclimate_signals(latitude: float, longitude: float) -> dict:
                     avg_sunshine_hrs = sum(sunshine_vals) / len(sunshine_vals) / 3600.0
                     if avg_sunshine_hrs >= 6:
                         suggestions["sun_exposure"] = "full_sun"
-                        notes["sun_exposure"] = f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Full sun (6+ hrs)."
+                        notes["sun_exposure"] = (
+                            f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Full sun (6+ hrs)."
+                        )
                     elif avg_sunshine_hrs >= 4:
                         suggestions["sun_exposure"] = "part_sun"
-                        notes["sun_exposure"] = f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Part sun (4–6 hrs)."
+                        notes["sun_exposure"] = (
+                            f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Part sun (4–6 hrs)."
+                        )
                     elif avg_sunshine_hrs >= 2:
                         suggestions["sun_exposure"] = "part_shade"
-                        notes["sun_exposure"] = f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Part shade (2–4 hrs)."
+                        notes["sun_exposure"] = (
+                            f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Part shade (2–4 hrs)."
+                        )
                     else:
                         suggestions["sun_exposure"] = "full_shade"
-                        notes["sun_exposure"] = f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Full shade (<2 hrs)."
+                        notes["sun_exposure"] = (
+                            f"14-day average of {avg_sunshine_hrs:.1f} hrs sunshine/day → Full shade (<2 hrs)."
+                        )
 
                 # Wind: daily max wind speed km/h → average
                 wind_vals = [w for w in (daily.get("wind_speed_10m_max") or []) if w is not None]
@@ -191,13 +205,19 @@ async def fetch_microclimate_signals(latitude: float, longitude: float) -> dict:
                     avg_wind = sum(wind_vals) / len(wind_vals)
                     if avg_wind < 15:
                         suggestions["wind_exposure"] = "sheltered"
-                        notes["wind_exposure"] = f"14-day average max wind of {avg_wind:.0f} km/h → Sheltered."
+                        notes["wind_exposure"] = (
+                            f"14-day average max wind of {avg_wind:.0f} km/h → Sheltered."
+                        )
                     elif avg_wind < 30:
                         suggestions["wind_exposure"] = "moderate"
-                        notes["wind_exposure"] = f"14-day average max wind of {avg_wind:.0f} km/h → Moderate."
+                        notes["wind_exposure"] = (
+                            f"14-day average max wind of {avg_wind:.0f} km/h → Moderate."
+                        )
                     else:
                         suggestions["wind_exposure"] = "exposed"
-                        notes["wind_exposure"] = f"14-day average max wind of {avg_wind:.0f} km/h → Exposed."
+                        notes["wind_exposure"] = (
+                            f"14-day average max wind of {avg_wind:.0f} km/h → Exposed."
+                        )
         except (httpx.RequestError, httpx.TimeoutException, ValueError) as exc:
             logger.warning("microclimate weather signal fetch failed", extra={"error": str(exc)})
 
@@ -225,31 +245,53 @@ async def fetch_microclimate_signals(latitude: float, longitude: float) -> dict:
                 if diff <= -3:
                     suggestions["slope_position"] = "low"
                     suggestions["frost_pocket_risk"] = "high"
-                    notes["slope_position"] = f"Garden is {abs(diff):.0f} ft below surrounding terrain — low spot."
-                    notes["frost_pocket_risk"] = f"Low spot by {abs(diff):.0f} ft — cold air pools here, raising frost risk."
+                    notes["slope_position"] = (
+                        f"Garden is {abs(diff):.0f} ft below surrounding terrain — low spot."
+                    )
+                    notes["frost_pocket_risk"] = (
+                        f"Low spot by {abs(diff):.0f} ft — cold air pools here, raising frost risk."
+                    )
                 elif diff >= 3:
                     suggestions["slope_position"] = "high"
                     suggestions["frost_pocket_risk"] = "low"
-                    notes["slope_position"] = f"Garden is {diff:.0f} ft above surrounding terrain — high ground."
-                    notes["frost_pocket_risk"] = "High ground sheds cold air — low frost pocket risk."
+                    notes["slope_position"] = (
+                        f"Garden is {diff:.0f} ft above surrounding terrain — high ground."
+                    )
+                    notes["frost_pocket_risk"] = (
+                        "High ground sheds cold air — low frost pocket risk."
+                    )
                 else:
                     suggestions["slope_position"] = "mid"
                     suggestions["frost_pocket_risk"] = "low"
-                    notes["slope_position"] = f"Garden elevation is within 3 ft of surrounding terrain — mid-slope."
-                    notes["frost_pocket_risk"] = "No significant low-spot signature detected — low frost pocket risk."
+                    notes["slope_position"] = (
+                        "Garden elevation is within 3 ft of surrounding terrain — mid-slope."
+                    )
+                    notes["frost_pocket_risk"] = (
+                        "No significant low-spot signature detected — low frost pocket risk."
+                    )
             else:
                 # USGS returned garden elevation but no surrounding points (edge case)
                 suggestions["slope_position"] = "mid"
                 suggestions["frost_pocket_risk"] = "low"
-                notes["slope_position"] = "Could not sample nearby terrain — defaulting to mid-slope."
+                notes["slope_position"] = (
+                    "Could not sample nearby terrain — defaulting to mid-slope."
+                )
                 notes["frost_pocket_risk"] = "Could not confirm; defaulting to low."
         else:
             # USGS unavailable (non-US location or service down)
-            notes["slope_position"] = "Elevation data unavailable for this location (USGS covers the US). Check visually using the satellite view."
-            notes["frost_pocket_risk"] = "Elevation data unavailable. If your garden is in a valley or at the base of a slope, set this to High."
+            notes["slope_position"] = (
+                "Elevation data unavailable for this location (USGS covers the US). Check visually using the satellite view."
+            )
+            notes["frost_pocket_risk"] = (
+                "Elevation data unavailable. If your garden is in a valley or at the base of a slope, set this to High."
+            )
 
     # Fields that cannot be derived from coordinates
-    notes["orientation"] = "Cannot be determined from your address — look at the satellite view to see which direction your garden faces."
-    notes["thermal_mass"] = "Cannot be determined remotely — check whether patios, driveways, brick walls, or stone are adjacent to your garden."
+    notes["orientation"] = (
+        "Cannot be determined from your address — look at the satellite view to see which direction your garden faces."
+    )
+    notes["thermal_mass"] = (
+        "Cannot be determined remotely — check whether patios, driveways, brick walls, or stone are adjacent to your garden."
+    )
 
     return {"suggestions": suggestions, "notes": notes}

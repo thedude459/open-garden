@@ -64,73 +64,90 @@ function renderPlanner(options?: {
   yardWidthFt?: number;
   yardLengthFt?: number;
   onRotateBed?: ReturnType<typeof vi.fn>;
+  onNudgePlacement?: ReturnType<typeof vi.fn>;
+  onMovePlacement?: ReturnType<typeof vi.fn>;
+  onBlockedPlacementMove?: ReturnType<typeof vi.fn>;
+  placementSpacingConflict?: ReturnType<typeof vi.fn>;
 }) {
   const onRotateBed = options?.onRotateBed || vi.fn().mockResolvedValue(undefined);
+  const onNudgePlacement = options?.onNudgePlacement || vi.fn();
+  const onMovePlacement = options?.onMovePlacement || vi.fn();
+  const onBlockedPlacementMove = options?.onBlockedPlacementMove || vi.fn();
+  const placementSpacingConflict = options?.placementSpacingConflict || vi.fn().mockReturnValue(null);
 
   render(
     <PlannerPanel
-      isLoadingGardenData={false}
-      beds={options?.beds || [makeBed()]}
-      placements={options?.placements || []}
-      cropTemplates={options?.cropTemplates || [makeCrop()]}
-      bedName=""
-      bedWidthFt={4}
-      bedLengthFt={8}
-      yardWidthFt={options?.yardWidthFt ?? 20}
-      yardLengthFt={options?.yardLengthFt ?? 20}
-      yardWidthDraft={20}
-      yardLengthDraft={20}
-      onBedNameChange={vi.fn()}
-      onBedWidthFtChange={vi.fn()}
-      onBedLengthFtChange={vi.fn()}
-      onYardWidthDraftChange={vi.fn()}
-      onYardLengthDraftChange={vi.fn()}
-      bedErrors={{ name: "", width_ft: "", length_ft: "" }}
-      yardErrors={{ yard_width_ft: "", yard_length_ft: "" }}
-      onCreateBed={vi.fn()}
-      onUpdateYardSize={vi.fn()}
-      onGoToCrops={vi.fn()}
-      cropSearchQuery=""
-      onCropSearchQueryChange={vi.fn()}
-      onCropSearchKeyDown={vi.fn()}
-      filteredCropTemplates={options?.cropTemplates || [makeCrop()]}
-      cropSearchActiveIndex={0}
-      selectedCropName="Tomato"
-      selectedCrop={makeCrop()}
-      selectedCropWindow={undefined}
-      isLoadingPlantingWindows={false}
-      gardenSunPath={null}
-      isLoadingSunPath={false}
-      gardenOrientation="south"
-      onSelectCrop={vi.fn()}
-      cropBaseName={(crop) => crop.name}
-      placementBedId={null}
-      onPlacementBedIdChange={vi.fn()}
-      yardGridRef={createRef<HTMLDivElement>()}
-      yardCellPx={24}
-      toFeet={(inches) => `${(inches / 12).toFixed(1)} ft`}
-      onMoveBedInYard={vi.fn()}
-      onNudgeBed={vi.fn()}
-      onRotateBed={onRotateBed}
-      onDeleteBed={vi.fn()}
-      onAddPlacement={vi.fn()}
-      onMovePlacement={vi.fn()}
-      onNudgePlacement={vi.fn()}
-      onBulkMovePlacements={vi.fn()}
-      onBulkRemovePlacements={vi.fn()}
-      canUndoPlanner={false}
-      canRedoPlanner={false}
-      onUndoPlanner={vi.fn()}
-      onRedoPlanner={vi.fn()}
-      onRequestRemovePlacement={vi.fn()}
-      onBlockedPlacementMove={vi.fn()}
-      placementSpacingConflict={vi.fn().mockReturnValue(null)}
-      isCellBlockedForSelectedCrop={vi.fn().mockReturnValue(false)}
-      isCellInBuffer={vi.fn().mockReturnValue(false)}
+      layout={{
+        isLoadingGardenData: false,
+        beds: options?.beds || [makeBed()],
+        placements: options?.placements || [],
+        cropTemplates: options?.cropTemplates || [makeCrop()],
+        yardWidthFt: options?.yardWidthFt ?? 20,
+        yardLengthFt: options?.yardLengthFt ?? 20,
+        gardenSunPath: null,
+        isLoadingSunPath: false,
+        isLoadingPlantingWindows: false,
+        gardenOrientation: "south",
+      }}
+      forms={{
+        bedName: "",
+        bedWidthFt: 4,
+        bedLengthFt: 8,
+        yardWidthDraft: 20,
+        yardLengthDraft: 20,
+        bedErrors: { name: "", width_ft: "", length_ft: "" },
+        yardErrors: { yard_width_ft: "", yard_length_ft: "" },
+        onBedNameChange: vi.fn(),
+        onBedWidthFtChange: vi.fn(),
+        onBedLengthFtChange: vi.fn(),
+        onYardWidthDraftChange: vi.fn(),
+        onYardLengthDraftChange: vi.fn(),
+        onCreateBed: vi.fn(),
+        onUpdateYardSize: vi.fn(),
+        onGoToCrops: vi.fn(),
+      }}
+      crop={{
+        cropSearchQuery: "",
+        onCropSearchQueryChange: vi.fn(),
+        onCropSearchKeyDown: vi.fn(),
+        filteredCropTemplates: options?.cropTemplates || [makeCrop()],
+        cropSearchActiveIndex: 0,
+        selectedCropName: "Tomato",
+        selectedCrop: makeCrop(),
+        selectedCropWindow: undefined,
+        onSelectCrop: vi.fn(),
+        cropBaseName: (crop) => crop.name,
+      }}
+      planner={{
+        placementBedId: null,
+        onPlacementBedIdChange: vi.fn(),
+        yardGridRef: createRef<HTMLDivElement>(),
+        yardCellPx: 24,
+        onMoveBedInYard: vi.fn(),
+        onNudgeBed: vi.fn(),
+        onRotateBed,
+        onDeleteBed: vi.fn(),
+        onAddPlacement: vi.fn(),
+        onMovePlacement,
+        onNudgePlacement,
+        onBulkMovePlacements: vi.fn(),
+        onBulkRemovePlacements: vi.fn(),
+        onRequestRemovePlacement: vi.fn(),
+        onBlockedPlacementMove,
+        placementSpacingConflict,
+        isCellBlockedForSelectedCrop: vi.fn().mockReturnValue(false),
+        isCellInBuffer: vi.fn().mockReturnValue(false),
+      }}
+      history={{
+        canUndoPlanner: false,
+        canRedoPlanner: false,
+        onUndoPlanner: vi.fn(),
+        onRedoPlanner: vi.fn(),
+      }}
     />,
   );
 
-  return { onRotateBed };
+  return { onRotateBed, onNudgePlacement, onMovePlacement, onBlockedPlacementMove };
 }
 
 describe("PlannerPanel", () => {
@@ -176,5 +193,41 @@ describe("PlannerPanel", () => {
     const legend = screen.getAllByLabelText("North Bed crop legend")[0];
     expect(within(legend).getByText("Tomato (1)")).toBeInTheDocument();
     expect(within(legend).getByText("🍅")).toBeInTheDocument();
+  });
+
+  it("supports keyboard nudge for placement chips", () => {
+    const placement = makePlacement({ crop_name: "Tomato" });
+    const { onNudgePlacement } = renderPlanner({ placements: [placement] });
+
+    const chip = screen.getByRole("button", {
+      name: /Tomato at column 1, row 1\. Arrow keys move; Enter removes\./i,
+    });
+    fireEvent.keyDown(chip, { key: "ArrowRight" });
+
+    expect(onNudgePlacement).toHaveBeenCalledWith(101, 1, 0);
+  });
+
+  it("blocks drag-drop moves when spacing conflict exists", () => {
+    const placement = makePlacement({ crop_name: "Tomato" });
+    const placementSpacingConflict = vi.fn().mockImplementation((bedId: number, x: number, y: number) => {
+      if (bedId === 10 && x === 1 && y === 0) return "Too close";
+      return null;
+    });
+    const { onBlockedPlacementMove, onMovePlacement } = renderPlanner({
+      placements: [placement],
+      placementSpacingConflict,
+    });
+
+    const targetCell = screen.getByLabelText("Empty square column 2, row 1");
+    fireEvent.dragOver(targetCell);
+    fireEvent.drop(targetCell, {
+      dataTransfer: {
+        getData: (type: string) =>
+          type === "application/json" ? JSON.stringify({ placementId: 101 }) : "",
+      },
+    });
+
+    expect(onBlockedPlacementMove).toHaveBeenCalledWith("Tomato");
+    expect(onMovePlacement).not.toHaveBeenCalled();
   });
 });

@@ -1,45 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AppNavbar } from "./components/AppNavbar";
-import { ConfirmDialog } from "./components/ConfirmDialog";
-import { HelpModal } from "./components/HelpModal";
-import { ToastRegion } from "./components/ToastRegion";
-import { AppPage, ConfirmState } from "./features/app/types";
+import { useMemo, useState } from "react";
 import { useAuthFlow } from "./features/app/hooks/useAuthFlow";
 import { useAuthedFetch } from "./features/app/hooks/useAuthedFetch";
 import { useCoachState } from "./features/app/hooks/useCoachState";
+import { useConfirmAction } from "./features/app/hooks/useConfirmAction";
 import { useCropFormState } from "./features/app/hooks/useCropFormState";
 import { useDerivedGardenState } from "./features/app/hooks/useDerivedGardenState";
 import { useGardenActions } from "./features/app/hooks/useGardenActions";
 import { useGardenDataFlow } from "./features/app/hooks/useGardenDataFlow";
 import { useNotices } from "./features/app/hooks/useNotices";
-import { usePageRouter, GARDEN_REQUIRED_PAGES } from "./features/app/hooks/usePageRouter";
+import { usePageDataEffects } from "./features/app/hooks/usePageDataEffects";
+import { usePageRouter } from "./features/app/hooks/usePageRouter";
 import { usePestLogActions } from "./features/app/hooks/usePestLogActions";
 import { usePlannerActions } from "./features/app/hooks/usePlannerActions";
 import { usePlannerHistory } from "./features/app/hooks/usePlannerHistory";
 import { useTaskActions } from "./features/app/hooks/useTaskActions";
-import { isoDate } from "./features/app/utils";
-import { EmailVerificationNotice } from "./features/app/sections/EmailVerificationNotice";
-import { GardenRequiredNotice } from "./features/app/sections/GardenRequiredNotice";
+import { isoDate } from "./features/app/utils/appUtils";
+import { AppPageRouter } from "./features/app/sections/AppPageRouter";
 import { AuthScreen } from "./features/auth/AuthScreen";
-import { HomePageSection } from "./features/home/HomePageSection";
-import { CalendarProvider } from "./features/calendar/CalendarContext";
-import { CalendarWeatherSection } from "./features/calendar/CalendarWeatherSection";
-import { CoachPageSection } from "./features/coach/CoachPageSection";
-import { CropsPageSection } from "./features/crops/CropsPageSection";
-import { PestsPageSection } from "./features/pests/PestsPageSection";
-import { SeasonalPlanProvider } from "./features/planning/SeasonalPlanContext";
-import { SeasonalPageSection } from "./features/planning/SeasonalPageSection";
-import { PlannerProvider } from "./features/planner/PlannerContext";
-import { PlannerPageSection } from "./features/planner/PlannerPageSection";
-import { SensorsPageSection } from "./features/sensors/SensorsPageSection";
-import { TimelinePageSection } from "./features/timeline/TimelinePageSection";
 
 function App() {
   const today = useMemo(() => isoDate(new Date()), []);
 
   const [token, setToken] = useState<string>(localStorage.getItem("open-garden-token") || "");
-  const [isConfirmingAction, setIsConfirmingAction] = useState(false);
-  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   const { notices, dismissNotice, pushNotice } = useNotices();
   const { authHeaders, fetchAuthed } = useAuthedFetch(token, setToken);
@@ -48,128 +30,117 @@ function App() {
     plannerUndoCount, plannerRedoCount,
     pushPlannerHistory, undoPlannerChange, redoPlannerChange, resetPlannerHistory,
   } = usePlannerHistory((message, kind) => pushNotice(message, kind));
+  const { confirmState, setConfirmState, isConfirmingAction, runConfirmedAction } = useConfirmAction({ pushNotice });
 
-  const yardGridRef = useRef<HTMLDivElement>(null);
-
-  const {
-    gardens, setGardens, publicGardens,
-    selectedGarden, setSelectedGarden,
-    beds, setBeds, plantings, setPlantings, placements, setPlacements,
-    cropTemplates, weather, gardenClimate, plantingWindows, gardenSunPath,
-    seasonalPlan, sensorSummary, gardenTimeline,
-    plantingRecommendation, selectedRecommendationPlantingId, setSelectedRecommendationPlantingId,
-    cropTemplateSyncStatus, isRefreshingCropLibrary, isCleaningLegacyCropLibrary,
-    isLoadingGardenData, isLoadingWeather, isLoadingClimate, isLoadingPlantingWindows,
-    isLoadingSunPath, isLoadingSeasonalPlan, isLoadingSensorSummary,
-    isLoadingTimeline, isLoadingPlantingRecommendation,
-    selectedCropName, setSelectedCropName,
-    loadGardens, loadCropTemplates, loadGardenData,
-    loadClimateForGarden, loadPlantingWindowsForGarden, loadSunPathForGarden,
-    loadSeasonalPlanForGarden, loadSensorSummaryForGarden, loadTimelineForGarden,
-    loadPlantingRecommendation,
-    refreshCropTemplateDatabase, requestLegacyCropCleanup, refreshSeasonalPlan,
-    invalidateGardenInsightCaches, invalidateSensorCaches, invalidateSeasonalPlanCache,
-    noticeUnlessExpired,
-  } = useGardenDataFlow({ token, fetchAuthed, pushNotice, setIsEmailVerified: authFlow.setIsEmailVerified, setConfirmState });
+  const gardenData = useGardenDataFlow({
+    token,
+    fetchAuthed,
+    pushNotice,
+    setIsEmailVerified: authFlow.setIsEmailVerified,
+    setConfirmState,
+  });
 
   const pageRouter = usePageRouter({
     token,
     authFlow,
     pushNotice,
-    selectedGarden,
+    selectedGarden: gardenData.selectedGarden,
   });
 
   const { activePage, setActivePage, navigateTo, isNavOpen, setIsNavOpen, isHelpOpen, setIsHelpOpen, monthCursor, setMonthCursor, selectedDate, setSelectedDate, placementBedId, setPlacementBedId } = pageRouter;
 
   const selectedGardenRecord = useMemo(
-    () => gardens.find((g) => g.id === selectedGarden),
-    [gardens, selectedGarden],
+    () => gardenData.gardens.find((g) => g.id === gardenData.selectedGarden),
+    [gardenData.gardens, gardenData.selectedGarden],
   );
 
   const taskActions = useTaskActions({
-    fetchAuthed, pushNotice, token, selectedGarden,
-    beds, cropTemplates, setPlantings,
-    invalidateSeasonalPlanCache, loadGardenData, setSelectedCropName,
+    fetchAuthed, pushNotice, token, selectedGarden: gardenData.selectedGarden,
+    beds: gardenData.beds, cropTemplates: gardenData.cropTemplates, setPlantings: gardenData.setPlantings,
+    invalidateSeasonalPlanCache: gardenData.invalidateSeasonalPlanCache,
+    loadGardenData: gardenData.loadGardenData,
+    setSelectedCropName: gardenData.setSelectedCropName,
   });
 
   const gardenActions = useGardenActions({
-    fetchAuthed, pushNotice, selectedGarden, selectedGardenRecord,
-    loadGardens, loadGardenData, invalidateGardenInsightCaches,
-    loadClimateForGarden, loadPlantingWindowsForGarden, loadSunPathForGarden,
-    setGardens, invalidateSensorCaches, loadSensorSummaryForGarden, setBeds,
+    fetchAuthed, pushNotice, selectedGarden: gardenData.selectedGarden, selectedGardenRecord,
+    loadGardens: gardenData.loadGardens,
+    loadGardenData: gardenData.loadGardenData,
+    invalidateGardenInsightCaches: gardenData.invalidateGardenInsightCaches,
+    loadClimateForGarden: gardenData.loadClimateForGarden,
+    loadPlantingWindowsForGarden: gardenData.loadPlantingWindowsForGarden,
+    loadSunPathForGarden: gardenData.loadSunPathForGarden,
+    setGardens: gardenData.setGardens,
+    invalidateSensorCaches: gardenData.invalidateSensorCaches,
+    loadSensorSummaryForGarden: gardenData.loadSensorSummaryForGarden,
+    setBeds: gardenData.setBeds,
   });
 
   const cropFormState = useCropFormState({
-    fetchAuthed, pushNotice, selectedCropName, setSelectedCropName,
-    loadCropTemplates, selectedGarden, loadGardenData, cropTemplates,
+    fetchAuthed,
+    pushNotice,
+    selectedCropName: gardenData.selectedCropName,
+    setSelectedCropName: gardenData.setSelectedCropName,
+    loadCropTemplates: gardenData.loadCropTemplates,
+    selectedGarden: gardenData.selectedGarden,
+    loadGardenData: gardenData.loadGardenData,
+    cropTemplates: gardenData.cropTemplates,
     refreshTasks: taskActions.refreshTasks,
   });
 
   const derived = useDerivedGardenState({
-    today, tasks: taskActions.tasks, plantings, monthCursor, selectedDate,
-    cropTemplates, plantingWindows, weather, gardenClimate,
-    selectedCropName, selectedGardenRecord,
+    today, tasks: taskActions.tasks, plantings: gardenData.plantings, monthCursor, selectedDate,
+    cropTemplates: gardenData.cropTemplates,
+    plantingWindows: gardenData.plantingWindows,
+    weather: gardenData.weather,
+    gardenClimate: gardenData.gardenClimate,
+    selectedCropName: gardenData.selectedCropName,
+    selectedGardenRecord,
   });
 
   const plannerActions = usePlannerActions({
-    fetchAuthed, pushNotice, setBeds, setPlacements,
-    beds, placements, selectedGarden, selectedGardenRecord,
+    fetchAuthed,
+    pushNotice,
+    setBeds: gardenData.setBeds,
+    setPlacements: gardenData.setPlacements,
+    beds: gardenData.beds,
+    placements: gardenData.placements,
+    selectedGarden: gardenData.selectedGarden,
+    selectedGardenRecord,
     yardWidthFt: derived.yardWidthFt, yardLengthFt: derived.yardLengthFt,
-    cropMap: derived.cropMap, selectedCropName, selectedDate, pushPlannerHistory,
-    setConfirmState, loadGardens, loadGardenData,
-    setSelectedGarden, setTasks: taskActions.setTasks, setPlantings,
+    cropMap: derived.cropMap,
+    selectedCropName: gardenData.selectedCropName,
+    selectedDate,
+    pushPlannerHistory,
+    setConfirmState,
+    loadGardens: gardenData.loadGardens,
+    loadGardenData: gardenData.loadGardenData,
+    setSelectedGarden: gardenData.setSelectedGarden,
+    setTasks: taskActions.setTasks,
+    setPlantings: gardenData.setPlantings,
   });
 
   const coachState = useCoachState({ fetchAuthed, selectedGardenRecord });
 
   const pestLogActions = usePestLogActions({
-    fetchAuthed, pushNotice, token, selectedGarden,
+    fetchAuthed, pushNotice, token, selectedGarden: gardenData.selectedGarden,
     activePage, setConfirmState,
   });
 
-  const runConfirmedAction = useCallback(async () => {
-    if (!confirmState) return;
-    try {
-      setIsConfirmingAction(true);
-      await confirmState.onConfirm();
-    } catch (err: any) {
-      pushNotice(err?.message || "Unable to complete action.", "error");
-    } finally {
-      setIsConfirmingAction(false);
-      setConfirmState(null);
-    }
-  }, [confirmState, pushNotice]);
-
-  function toFeet(inches: number) {
-    return `${(inches / 12).toFixed(1)} ft`;
-  }
-
-  // Page data loading effects
-  useEffect(() => {
-    if (!token || !selectedGardenRecord || activePage !== "timeline") return;
-    loadTimelineForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load unified timeline."));
-  }, [token, selectedGardenRecord, activePage, loadTimelineForGarden, noticeUnlessExpired]);
-
-  useEffect(() => {
-    if (!token || !selectedGardenRecord || activePage !== "seasonal") return;
-    loadSeasonalPlanForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load seasonal plan."));
-  }, [token, selectedGardenRecord, activePage, loadSeasonalPlanForGarden, noticeUnlessExpired]);
-
-  useEffect(() => {
-    if (!token || !selectedGardenRecord || activePage !== "sensors") return;
-    loadSensorSummaryForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load sensor telemetry."));
-  }, [token, selectedGardenRecord, activePage, loadSensorSummaryForGarden, noticeUnlessExpired]);
-
-  useEffect(() => {
-    if (!token || activePage !== "seasonal" || !selectedRecommendationPlantingId) return;
-    loadPlantingRecommendation(selectedRecommendationPlantingId).catch(() => pushNotice("Unable to load planting recommendations.", "error"));
-  }, [token, activePage, selectedRecommendationPlantingId, loadPlantingRecommendation, pushNotice]);
-
-  // Reset coach state and planner history when garden changes
-  useEffect(() => {
-    coachState.resetCoach();
-    resetPlannerHistory();
-  }, [selectedGarden, coachState, resetPlannerHistory]);
+  usePageDataEffects({
+    token,
+    selectedGarden: gardenData.selectedGarden,
+    selectedGardenRecord,
+    activePage,
+    selectedRecommendationPlantingId: gardenData.selectedRecommendationPlantingId,
+    loadTimelineForGarden: gardenData.loadTimelineForGarden,
+    loadSeasonalPlanForGarden: gardenData.loadSeasonalPlanForGarden,
+    loadSensorSummaryForGarden: gardenData.loadSensorSummaryForGarden,
+    loadPlantingRecommendation: gardenData.loadPlantingRecommendation,
+    noticeUnlessExpired: gardenData.noticeUnlessExpired,
+    pushNotice,
+    resetCoach: coachState.resetCoach, resetPlannerHistory,
+  });
 
   if (!token) {
     return (
@@ -192,209 +163,106 @@ function App() {
   }
 
   return (
-    <main className="shell">
-      <a className="skip-link" href="#main-content">Skip to main content</a>
-      <AppNavbar
-        activePage={activePage}
-        selectedGarden={selectedGarden}
-        selectedGardenRecord={selectedGardenRecord}
-        isNavOpen={isNavOpen}
-        setIsNavOpen={setIsNavOpen}
-        onNavigate={navigateTo}
-        onLogout={() => { localStorage.removeItem("open-garden-token"); setToken(""); }}
-        onHelpOpen={() => { setIsNavOpen(false); setIsHelpOpen(true); }}
-      />
-
-      <div className="page-body" id="main-content" tabIndex={-1}>
-        {authFlow.isEmailVerified === false && (
-          <EmailVerificationNotice
-            onResend={() => {
-              authFlow.resendVerificationEmail()
-                .then(() => pushNotice("Verification email sent.", "success"))
-                .catch((err: any) => pushNotice(err?.message || "Unable to resend verification email.", "error"));
-            }}
-          />
-        )}
-
-        {!selectedGarden && GARDEN_REQUIRED_PAGES.includes(activePage) && (
-          <GardenRequiredNotice onGoHome={() => setActivePage("home")} />
-        )}
-
-        {activePage === "timeline" && selectedGarden && (
-          <TimelinePageSection
-            selectedGardenRecord={selectedGardenRecord}
-            selectedGardenName={derived.selectedGardenName}
-            timeline={gardenTimeline}
-            isLoading={isLoadingTimeline}
-            loadTimelineForGarden={loadTimelineForGarden}
-          />
-        )}
-
-        {activePage === "home" && (
-          <HomePageSection
-            selectedGarden={selectedGarden}
-            selectedGardenRecord={selectedGardenRecord}
-            gardens={gardens}
-            publicGardens={publicGardens}
-            beds={beds}
-            placements={placements}
-            cropTemplatesCount={cropTemplates.length}
-            gardenClimate={gardenClimate}
-            isLoadingWeather={isLoadingWeather}
-            isLoadingClimate={isLoadingClimate}
-            derived={derived}
-            taskActions={taskActions}
-            gardenActions={gardenActions}
-            plannerActions={plannerActions}
-            setSelectedGarden={setSelectedGarden}
-            onNavigate={navigateTo}
-          />
-        )}
-
-        {activePage === "calendar" && selectedGarden && (
-          <CalendarProvider
-            value={{
-              monthCursor,
-              setMonthCursor,
-              selectedDate,
-              setSelectedDate,
-              today,
-              beds,
-              weather,
-              gardenClimate,
-              taskActions,
-              cropFormState,
-              derived,
-              selectedCropName,
-              isLoadingPlantingWindows,
-              isLoadingClimate,
-              isLoadingWeather,
-              pushNotice,
-            }}
-          >
-            <CalendarWeatherSection />
-          </CalendarProvider>
-        )}
-
-        {activePage === "planner" && selectedGarden && (
-          <PlannerProvider
-            value={{
-              beds,
-              placements,
-              cropTemplates,
-              selectedCropName,
-              selectedGardenRecord,
-              gardenSunPath,
-              yardGridRef,
-              derived,
-              cropFormState,
-              gardenActions,
-              plannerActions,
-              placementBedId,
-              setPlacementBedId,
-              plannerUndoCount,
-              plannerRedoCount,
-              undoPlannerChange,
-              redoPlannerChange,
-              isLoadingGardenData,
-              isLoadingSunPath,
-              isLoadingPlantingWindows,
-              pushNotice,
-              setConfirmState,
-              toFeet,
-              onGoToCrops: () => setActivePage("crops"),
-            }}
-          >
-            <PlannerPageSection />
-          </PlannerProvider>
-        )}
-
-        {activePage === "seasonal" && selectedGarden && (
-          <SeasonalPlanProvider
-            value={{
-              selectedGardenName: derived.selectedGardenName,
-              seasonalPlan,
-              selectedRecommendationPlantingId,
-              plantingRecommendation,
-              setSelectedRecommendationPlantingId,
-              refreshSeasonalPlan,
-              isLoadingSeasonalPlan,
-              isLoadingPlantingRecommendation,
-              pushNotice,
-            }}
-          >
-            <SeasonalPageSection />
-          </SeasonalPlanProvider>
-        )}
-
-        {activePage === "sensors" && selectedGarden && (
-          <SensorsPageSection
-            selectedGardenName={derived.selectedGardenName}
-            selectedGardenRecord={selectedGardenRecord}
-            beds={beds}
-            summary={sensorSummary}
-            isLoading={isLoadingSensorSummary}
-            loadSensorSummaryForGarden={loadSensorSummaryForGarden}
-            gardenActions={gardenActions}
-            pushNotice={pushNotice}
-          />
-        )}
-
-        {activePage === "coach" && selectedGarden && (
-          <CoachPageSection
-            selectedGardenName={derived.selectedGardenName}
-            coachState={coachState}
-            pushNotice={pushNotice}
-          />
-        )}
-
-        {activePage === "crops" && (
-          <CropsPageSection
-            cropTemplates={cropTemplates}
-            isRefreshingCropLibrary={isRefreshingCropLibrary}
-            isCleaningLegacyCropLibrary={isCleaningLegacyCropLibrary}
-            cropTemplateSyncStatus={cropTemplateSyncStatus}
-            refreshCropTemplateDatabase={refreshCropTemplateDatabase}
-            requestLegacyCropCleanup={requestLegacyCropCleanup}
-            cropFormState={cropFormState}
-          />
-        )}
-
-        {activePage === "pests" && selectedGarden && (
-          <PestsPageSection
-            pestLogActions={pestLogActions}
-            selectedDate={selectedDate}
-          />
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={Boolean(confirmState)}
-        title={confirmState?.title || "Confirm action"}
-        message={confirmState?.message || "Are you sure?"}
-        confirmLabel={isConfirmingAction ? "Working..." : confirmState?.confirmLabel || "Confirm"}
-        onConfirm={() => { if (!isConfirmingAction) runConfirmedAction(); }}
-        onCancel={() => { if (!isConfirmingAction) setConfirmState(null); }}
-      />
-
-      <HelpModal
-        isOpen={isHelpOpen}
-        onClose={(remember) => {
-          setIsHelpOpen(false);
-          if (remember) localStorage.setItem("open-garden-help-seen", "1");
-        }}
-      />
-
-      <ToastRegion
-        notices={notices}
-        onDismiss={dismissNotice}
-        onAction={(id) => {
-          const n = notices.find((notice) => notice.id === id);
-          if (n?.onAction) n.onAction();
-          dismissNotice(id);
-        }}
-      />
-    </main>
+    <AppPageRouter
+      routing={{
+        activePage,
+        setActivePage,
+        navigateTo,
+      }}
+      shell={{
+        isNavOpen,
+        setIsNavOpen,
+        isHelpOpen,
+        setIsHelpOpen,
+        onLogout: () => { localStorage.removeItem("open-garden-token"); setToken(""); },
+      }}
+      auth={{
+        isEmailVerified: authFlow.isEmailVerified,
+        onResendVerificationEmail: () => {
+          authFlow.resendVerificationEmail()
+            .then(() => pushNotice("Verification email sent.", "success"))
+            .catch((err: unknown) => pushNotice(err instanceof Error ? err.message : "Unable to resend verification email.", "error"));
+        },
+      }}
+      garden={{
+        selectedGarden: gardenData.selectedGarden,
+        setSelectedGarden: gardenData.setSelectedGarden,
+        selectedGardenRecord,
+        gardens: gardenData.gardens,
+        publicGardens: gardenData.publicGardens,
+        beds: gardenData.beds,
+        placements: gardenData.placements,
+        cropTemplates: gardenData.cropTemplates,
+      }}
+      calendar={{
+        today,
+        monthCursor,
+        setMonthCursor,
+        selectedDate,
+        setSelectedDate,
+        selectedCropName: gardenData.selectedCropName,
+      }}
+      insights={{
+        weather: gardenData.weather,
+        gardenClimate: gardenData.gardenClimate,
+        gardenSunPath: gardenData.gardenSunPath,
+        seasonalPlan: gardenData.seasonalPlan,
+        selectedRecommendationPlantingId: gardenData.selectedRecommendationPlantingId,
+        setSelectedRecommendationPlantingId: gardenData.setSelectedRecommendationPlantingId,
+        plantingRecommendation: gardenData.plantingRecommendation,
+        refreshSeasonalPlan: gardenData.refreshSeasonalPlan,
+        sensorSummary: gardenData.sensorSummary,
+        gardenTimeline: gardenData.gardenTimeline,
+        loadTimelineForGarden: gardenData.loadTimelineForGarden,
+        loadSensorSummaryForGarden: gardenData.loadSensorSummaryForGarden,
+      }}
+      cropLibrary={{
+        cropTemplateSyncStatus: gardenData.cropTemplateSyncStatus,
+        isRefreshingCropLibrary: gardenData.isRefreshingCropLibrary,
+        isCleaningLegacyCropLibrary: gardenData.isCleaningLegacyCropLibrary,
+        refreshCropTemplateDatabase: gardenData.refreshCropTemplateDatabase,
+        requestLegacyCropCleanup: gardenData.requestLegacyCropCleanup,
+      }}
+      loading={{
+        isLoadingGardenData: gardenData.isLoadingGardenData,
+        isLoadingWeather: gardenData.isLoadingWeather,
+        isLoadingClimate: gardenData.isLoadingClimate,
+        isLoadingPlantingWindows: gardenData.isLoadingPlantingWindows,
+        isLoadingSunPath: gardenData.isLoadingSunPath,
+        isLoadingSeasonalPlan: gardenData.isLoadingSeasonalPlan,
+        isLoadingSensorSummary: gardenData.isLoadingSensorSummary,
+        isLoadingTimeline: gardenData.isLoadingTimeline,
+        isLoadingPlantingRecommendation: gardenData.isLoadingPlantingRecommendation,
+      }}
+      plannerUi={{
+        placementBedId,
+        setPlacementBedId,
+        plannerUndoCount,
+        plannerRedoCount,
+        undoPlannerChange,
+        redoPlannerChange,
+      }}
+      actions={{
+        taskActions,
+        gardenActions,
+        cropFormState,
+        plannerActions,
+        coachState,
+        pestLogActions,
+        derived,
+      }}
+      confirm={{
+        confirmState,
+        setConfirmState,
+        isConfirmingAction,
+        runConfirmedAction,
+      }}
+      notices={{
+        notices,
+        dismissNotice,
+        pushNotice,
+      }}
+    />
   );
 }
 

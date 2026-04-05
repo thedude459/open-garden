@@ -1,7 +1,16 @@
 import { GardenClimate, Task } from "../types";
 
+type WeatherData = {
+  daily?: {
+    time: string[];
+    temperature_2m_min: number[];
+    temperature_2m_max: number[];
+    precipitation_sum: number[];
+  };
+};
+
 type WeatherPanelProps = {
-  weather: any;
+  weather: WeatherData | null;
   climate: GardenClimate | null;
   tasks: Task[];
   isLoadingClimate: boolean;
@@ -43,7 +52,7 @@ export function WeatherPanel({ climate, weather, tasks, isLoadingClimate, isLoad
         <ul>
           {weather.daily.time.slice(0, 5).map((day: string, idx: number) => (
             <li key={day}>
-              {day}: {weather.daily.temperature_2m_min[idx]}F to {weather.daily.temperature_2m_max[idx]}F, rain {weather.daily.precipitation_sum[idx]} in
+              {day}: {weather.daily!.temperature_2m_min[idx]}F to {weather.daily!.temperature_2m_max[idx]}F, rain {weather.daily!.precipitation_sum[idx]} in
             </li>
           ))}
         </ul>

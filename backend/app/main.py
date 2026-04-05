@@ -13,7 +13,16 @@ from .database import Base, SessionLocal, engine
 from .logging_utils import get_logger
 from .models import CropTemplate
 from .core.rate_limit import enforce_rate_limit, global_rate_limit_hit
-from .routers import admin_router, auth_router, crops_router, gardens_router, insights_router, planner_router, sensors_router, tasks_router
+from .routers import (
+    admin_router,
+    auth_router,
+    crops_router,
+    gardens_router,
+    insights_router,
+    planner_router,
+    sensors_router,
+    tasks_router,
+)
 from .routers.crops import start_crop_sync
 from .services import ensure_crop_sync_state, update_crop_sync_state
 from .weather import fetch_weather
@@ -38,7 +47,9 @@ async def lifespan(application: FastAPI):
     db = SessionLocal()
     try:
         ensure_crop_sync_state(db)
-        existing_import_count = db.query(CropTemplate).filter(CropTemplate.source == "johnnys-selected-seeds").count()
+        existing_import_count = (
+            db.query(CropTemplate).filter(CropTemplate.source == "johnnys-selected-seeds").count()
+        )
         if existing_import_count == 0:
             start_crop_sync(force_refresh=False)
         else:
@@ -109,4 +120,3 @@ def health() -> dict:
 async def get_weather(request: Request, latitude: float, longitude: float):
     enforce_rate_limit(request, "weather", 20, 60)
     return await fetch_weather(latitude, longitude)
-

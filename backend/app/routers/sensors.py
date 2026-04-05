@@ -27,12 +27,20 @@ def register_sensor(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    garden = db.query(Garden).filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
 
     if payload.bed_id is not None:
-        bed = db.query(Bed).filter(Bed.id == payload.bed_id, Bed.garden_id == payload.garden_id).first()
+        bed = (
+            db.query(Bed)
+            .filter(Bed.id == payload.bed_id, Bed.garden_id == payload.garden_id)
+            .first()
+        )
         if bed is None:
             raise HTTPException(status_code=404, detail="Bed not found")
 
@@ -87,7 +95,9 @@ def ingest_sensor_data_batch(
         captured_at = item.captured_at or datetime.now(timezone.utc)
         if captured_at.tzinfo is None:
             captured_at = captured_at.replace(tzinfo=timezone.utc)
-        readings.append(SensorReading(sensor_id=sensor.id, value=item.value, captured_at=captured_at))
+        readings.append(
+            SensorReading(sensor_id=sensor.id, value=item.value, captured_at=captured_at)
+        )
 
     db.add_all(readings)
     db.commit()
@@ -100,7 +110,9 @@ def get_garden_sensor_summary(
     db: Session = Depends(get_db),
     garden: Garden = Depends(get_owned_garden),
 ):
-    sensors = db.query(Sensor).filter(Sensor.garden_id == garden.id, Sensor.is_active.is_(True)).all()
+    sensors = (
+        db.query(Sensor).filter(Sensor.garden_id == garden.id, Sensor.is_active.is_(True)).all()
+    )
     sensor_ids = [sensor.id for sensor in sensors]
     readings = []
     if sensor_ids:
@@ -114,4 +126,6 @@ def get_garden_sensor_summary(
             .all()
         )
 
-    return build_sensor_summary(garden_id=garden.id, sensors=sensors, readings=readings, horizon_hours=hours)
+    return build_sensor_summary(
+        garden_id=garden.id, sensors=sensors, readings=readings, horizon_hours=hours
+    )

@@ -621,7 +621,9 @@ def _contains_keyword(value: str, keywords: set[str]) -> bool:
 
 
 def _extract_breadcrumbs(page_text: str) -> list[str]:
-    matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', page_text, re.IGNORECASE | re.DOTALL)
+    matches = re.findall(
+        r'<script type="application/ld\+json">(.*?)</script>', page_text, re.IGNORECASE | re.DOTALL
+    )
     for raw_json in matches:
         try:
             parsed = json.loads(raw_json)
@@ -657,7 +659,9 @@ def _extract_product_id(page_text: str) -> str:
 
 def _extract_quick_facts(page_text: str) -> dict[str, str]:
     quick_facts: dict[str, str] = {}
-    section_match = re.search(r'<dl class="c-facts__list">(.*?)</dl>', page_text, re.IGNORECASE | re.DOTALL)
+    section_match = re.search(
+        r'<dl class="c-facts__list">(.*?)</dl>', page_text, re.IGNORECASE | re.DOTALL
+    )
     if not section_match:
         return quick_facts
 
@@ -835,7 +839,11 @@ def _parse_product_page(url: str) -> JohnnysCropRecord | None:
     direct_sow = _derive_direct_sow(crop_name, root_segment, life_cycle)
     frost_hardy = _derive_frost_hardy(crop_name, root_segment, life_cycle)
     product_id = _extract_product_id(page_text)
-    image_match = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', page_text, re.IGNORECASE)
+    image_match = re.search(
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        page_text,
+        re.IGNORECASE,
+    )
     image_url = unescape(image_match.group(1)).strip() if image_match else ""
 
     return JohnnysCropRecord(
@@ -879,7 +887,12 @@ def _fetch_johnnys_catalog() -> tuple[list[JohnnysCropRecord], int]:
             if record is not None:
                 records.append(record)
 
-    records.sort(key=lambda record: (_canonical_crop_name(record.crop_name, record.variety), record.external_product_id))
+    records.sort(
+        key=lambda record: (
+            _canonical_crop_name(record.crop_name, record.variety),
+            record.external_product_id,
+        )
+    )
     return records, failed
 
 

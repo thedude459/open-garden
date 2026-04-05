@@ -1,4 +1,8 @@
-from app.services import ensure_crop_sync_state, get_crop_sync_state_snapshot, update_crop_sync_state
+from app.services import (
+    ensure_crop_sync_state,
+    get_crop_sync_state_snapshot,
+    update_crop_sync_state,
+)
 
 
 def test_crop_sync_state_persists_updates(db_session):

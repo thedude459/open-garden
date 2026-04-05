@@ -5,16 +5,37 @@ from app.ai_coach.engine import build_coach_context, generate_coach_response
 
 
 def test_build_coach_context_summarizes_garden_inputs():
-    garden = SimpleNamespace(id=1, name="Backyard", growing_zone="10b", yard_width_ft=10, yard_length_ft=20, orientation="south", sun_exposure="full_sun")
-    planting = SimpleNamespace(crop_name="Tomato", expected_harvest_on=date.today() + timedelta(days=30), harvested_on=None)
+    garden = SimpleNamespace(
+        id=1,
+        name="Backyard",
+        growing_zone="10b",
+        yard_width_ft=10,
+        yard_length_ft=20,
+        orientation="south",
+        sun_exposure="full_sun",
+    )
+    planting = SimpleNamespace(
+        crop_name="Tomato", expected_harvest_on=date.today() + timedelta(days=30), harvested_on=None
+    )
     task = SimpleNamespace(is_done=False, due_on=date.today() + timedelta(days=1))
 
     context = build_coach_context(
         garden=garden,
-        weather={"daily": {"temperature_2m_max": [82, 84], "temperature_2m_min": [55, 56], "precipitation_sum": [0.1, 0.0]}},
+        weather={
+            "daily": {
+                "temperature_2m_max": [82, 84],
+                "temperature_2m_min": [55, 56],
+                "precipitation_sum": [0.1, 0.0],
+            }
+        },
         plantings=[planting],
         tasks=[task],
-        sensor_summary={"sensors": [{"id": 1}], "soil_moisture_series": [{"value": 31}], "soil_temperature_series": [{"value": 68}], "irrigation_suggestions": [{"status": "watch"}]},
+        sensor_summary={
+            "sensors": [{"id": 1}],
+            "soil_moisture_series": [{"value": 31}],
+            "soil_temperature_series": [{"value": 68}],
+            "irrigation_suggestions": [{"status": "watch"}],
+        },
         user_message=" What should I do next? ",
         scenario={"days_ahead": 14, "rain_outlook": "dry", "labor_hours": 1},
     )

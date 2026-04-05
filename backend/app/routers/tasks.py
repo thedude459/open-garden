@@ -20,8 +20,16 @@ router = APIRouter(tags=["tasks"])
 
 
 @router.post("/tasks", response_model=TaskOut)
-def create_task(payload: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    garden = db.query(Garden).filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id).first()
+def create_task(
+    payload: TaskCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
 
@@ -33,8 +41,15 @@ def create_task(payload: TaskCreate, db: Session = Depends(get_db), current_user
 
 
 @router.get("/tasks", response_model=list[TaskOut])
-def list_tasks(garden_id: int, q: str = Query("", min_length=0), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+def list_tasks(
+    garden_id: int,
+    q: str = Query("", min_length=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = (
+        db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
 
@@ -46,7 +61,9 @@ def list_tasks(garden_id: int, q: str = Query("", min_length=0), db: Session = D
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskOut)
-def update_task(payload: TaskUpdate, db: Session = Depends(get_db), task: Task = Depends(get_owned_task)):
+def update_task(
+    payload: TaskUpdate, db: Session = Depends(get_db), task: Task = Depends(get_owned_task)
+):
     if payload.is_done is not None:
         task.is_done = payload.is_done
     if payload.title is not None:
@@ -68,7 +85,11 @@ def delete_task(db: Session = Depends(get_db), task: Task = Depends(get_owned_ta
 
 
 @router.post("/seed-inventory", response_model=SeedInventoryOut)
-def add_seed_inventory(payload: SeedInventoryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def add_seed_inventory(
+    payload: SeedInventoryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     item = SeedInventory(user_id=current_user.id, **payload.model_dump())
     db.add(item)
     db.commit()
@@ -77,13 +98,23 @@ def add_seed_inventory(payload: SeedInventoryCreate, db: Session = Depends(get_d
 
 
 @router.get("/seed-inventory", response_model=list[SeedInventoryOut])
-def list_seed_inventory(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def list_seed_inventory(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     return db.query(SeedInventory).filter(SeedInventory.user_id == current_user.id).all()
 
 
 @router.post("/pest-logs", response_model=PestLogOut)
-def create_pest_log(payload: PestLogCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    garden = db.query(Garden).filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id).first()
+def create_pest_log(
+    payload: PestLogCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
     item = PestLog(**payload.model_dump())
@@ -94,19 +125,29 @@ def create_pest_log(payload: PestLogCreate, db: Session = Depends(get_db), curre
 
 
 @router.get("/pest-logs", response_model=list[PestLogOut])
-def list_pest_logs(garden_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+def list_pest_logs(
+    garden_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    garden = (
+        db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
     return db.query(PestLog).filter(PestLog.garden_id == garden_id).all()
 
 
 @router.delete("/pest-logs/{pest_log_id}")
-def delete_pest_log(pest_log_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def delete_pest_log(
+    pest_log_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
     pest_log = db.query(PestLog).filter(PestLog.id == pest_log_id).first()
     if pest_log is None:
         raise HTTPException(status_code=404, detail="Pest log entry not found")
-    garden = db.query(Garden).filter(Garden.id == pest_log.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == pest_log.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=403, detail="Not authorized")
     db.delete(pest_log)

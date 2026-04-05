@@ -114,8 +114,8 @@ class GardenMicroclimateUpdate(BaseModel):
 
 
 class MicroclimateSignalNote(BaseModel):
-    value: str | None = None   # the suggested value (None if cannot determine)
-    note: str                  # explanation of how it was derived
+    value: str | None = None  # the suggested value (None if cannot determine)
+    note: str  # explanation of how it was derived
 
 
 class MicroclimateSuggestionOut(BaseModel):

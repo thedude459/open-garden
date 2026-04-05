@@ -1,11 +1,12 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { AppPage, ConfirmState } from "../types";
+import { AppPage, ConfirmState, FetchAuthed } from "../types";
+import { getErrorMessage } from "../utils/appUtils";
 import { PestLog } from "../../types";
 
 type NoticeKind = "info" | "success" | "error";
 
 interface UsePestLogActionsParams {
-  fetchAuthed: (url: string, options?: RequestInit) => Promise<any>;
+  fetchAuthed: FetchAuthed;
   pushNotice: (message: string, kind: NoticeKind) => void;
   token: string;
   selectedGarden: number | null;
@@ -64,8 +65,8 @@ export function usePestLogActions({
         form.reset();
         await loadPestLogs(selectedGarden);
         pushNotice("Observation logged.", "success");
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to log observation.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to log observation."), "error");
       }
     },
     [fetchAuthed, selectedGarden, loadPestLogs, pushNotice],

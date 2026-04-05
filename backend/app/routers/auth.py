@@ -1,4 +1,5 @@
 """Auth routes: registration, email verification, password reset, login, and user account."""
+
 import secrets
 import smtplib
 from datetime import datetime, timedelta, timezone
@@ -15,8 +16,16 @@ from ..config import settings
 from ..database import get_db
 from ..core.logging_utils import get_logger
 from ..models import (
-    Garden, PestLog, Placement, Planting, Sensor, SensorReading,
-    SeedInventory, Task, User, UserAuthToken,
+    Garden,
+    PestLog,
+    Placement,
+    Planting,
+    Sensor,
+    SensorReading,
+    SeedInventory,
+    Task,
+    User,
+    UserAuthToken,
 )
 from ..core.rate_limit import enforce_rate_limit
 from ..schemas import (
@@ -37,6 +46,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _hash_token(raw_token: str) -> str:
     return sha256(raw_token.encode("utf-8")).hexdigest()
@@ -103,6 +113,7 @@ def _send_email_or_log(to_email: str, subject: str, body_text: str) -> None:
 # Auth routes
 # ---------------------------------------------------------------------------
 
+
 @router.post("/auth/register", response_model=UserOut)
 def register_user(payload: UserCreate, request: Request, db: Session = Depends(get_db)):
     enforce_rate_limit(
@@ -113,7 +124,11 @@ def register_user(payload: UserCreate, request: Request, db: Session = Depends(g
         identity=payload.username.lower(),
     )
 
-    if db.query(User).filter(or_(User.email == payload.email, User.username == payload.username)).first():
+    if (
+        db.query(User)
+        .filter(or_(User.email == payload.email, User.username == payload.username))
+        .first()
+    ):
         raise HTTPException(status_code=400, detail="User already exists")
 
     user = User(
@@ -126,7 +141,9 @@ def register_user(payload: UserCreate, request: Request, db: Session = Depends(g
     db.commit()
     db.refresh(user)
 
-    verify_token = _issue_user_token(db, user.id, "email_verify", settings.email_verification_expire_minutes)
+    verify_token = _issue_user_token(
+        db, user.id, "email_verify", settings.email_verification_expire_minutes
+    )
     verify_link = f"{settings.frontend_base_url}?verify_token={verify_token}"
     _send_email_or_log(
         user.email,
@@ -152,10 +169,14 @@ def verify_email(payload: VerifyEmailPayload, request: Request, db: Session = De
 
     # Idempotency: if the token was already consumed and the user is verified,
     # treat repeated clicks as success instead of an error.
-    existing = db.query(UserAuthToken).filter(
-        UserAuthToken.token_hash == _hash_token(payload.token),
-        UserAuthToken.purpose == "email_verify",
-    ).first()
+    existing = (
+        db.query(UserAuthToken)
+        .filter(
+            UserAuthToken.token_hash == _hash_token(payload.token),
+            UserAuthToken.purpose == "email_verify",
+        )
+        .first()
+    )
     if existing is not None and existing.used_at is not None:
         user = db.query(User).filter(User.id == existing.user_id).first()
         if user is not None and user.email_verified:
@@ -192,7 +213,9 @@ def resend_verification(
 
     if current_user.email_verified:
         return {"message": "Email is already verified."}
-    verify_token = _issue_user_token(db, current_user.id, "email_verify", settings.email_verification_expire_minutes)
+    verify_token = _issue_user_token(
+        db, current_user.id, "email_verify", settings.email_verification_expire_minutes
+    )
     verify_link = f"{settings.frontend_base_url}?verify_token={verify_token}"
     _send_email_or_log(
         current_user.email,
@@ -207,7 +230,9 @@ def resend_verification(
 
 
 @router.post("/auth/forgot-password", response_model=MessageOut)
-def forgot_password(payload: ForgotPasswordPayload, request: Request, db: Session = Depends(get_db)):
+def forgot_password(
+    payload: ForgotPasswordPayload, request: Request, db: Session = Depends(get_db)
+):
     enforce_rate_limit(
         request,
         bucket="auth-forgot",
@@ -218,7 +243,9 @@ def forgot_password(payload: ForgotPasswordPayload, request: Request, db: Sessio
 
     user = db.query(User).filter(User.email == payload.email).first()
     if user is not None and user.email_verified:
-        reset_token = _issue_user_token(db, user.id, "password_reset", settings.password_reset_expire_minutes)
+        reset_token = _issue_user_token(
+            db, user.id, "password_reset", settings.password_reset_expire_minutes
+        )
         reset_link = f"{settings.frontend_base_url}?reset_token={reset_token}"
         _send_email_or_log(
             user.email,
@@ -234,7 +261,9 @@ def forgot_password(payload: ForgotPasswordPayload, request: Request, db: Sessio
 
 
 @router.post("/auth/forgot-username", response_model=MessageOut)
-def forgot_username(payload: ForgotUsernamePayload, request: Request, db: Session = Depends(get_db)):
+def forgot_username(
+    payload: ForgotUsernamePayload, request: Request, db: Session = Depends(get_db)
+):
     enforce_rate_limit(
         request,
         bucket="auth-forgot-username",
@@ -283,7 +312,11 @@ def reset_password(payload: ResetPasswordPayload, request: Request, db: Session 
 
 
 @router.post("/auth/login", response_model=Token)
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
     enforce_rate_limit(
         request,
         bucket="auth-login",
@@ -303,6 +336,7 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
 # User account routes
 # ---------------------------------------------------------------------------
 
+
 @router.get("/users/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
@@ -321,7 +355,9 @@ def delete_me(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         db.query(Placement).filter(Placement.garden_id == gid).delete()
         sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == gid).all()]
         if sensor_ids:
-            db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
+            db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(
+                synchronize_session=False
+            )
         db.query(Sensor).filter(Sensor.garden_id == gid).delete()
         db.delete(garden)
     db.query(SeedInventory).filter(SeedInventory.user_id == user_id).delete()

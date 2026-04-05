@@ -3,11 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlannerProvider, PlannerContextType } from "./PlannerContext";
 import { PlannerPageSection } from "./PlannerPageSection";
-import { Bed, CropTemplate, Garden, Placement } from "../../types";
+import { Bed, CropTemplate, Garden, Placement } from "../types";
 
 vi.mock("./PlannerPanel", () => ({
-  PlannerPanel: ({ selectedCropName, beds }: { selectedCropName: string; beds: Bed[] }) => (
-    <div data-testid="planner-panel">crop:{selectedCropName};beds:{beds.length}</div>
+  PlannerPanel: ({ crop, layout }: { crop: { selectedCropName: string }; layout: { beds: Bed[] } }) => (
+    <div data-testid="planner-panel">crop:{crop.selectedCropName};beds:{layout.beds.length}</div>
   ),
 }));
 
@@ -118,7 +118,6 @@ function buildPlannerContextValue(): PlannerContextType {
     isLoadingPlantingWindows: false,
     pushNotice: vi.fn(),
     setConfirmState: vi.fn(),
-    toFeet: (inches: number) => `${(inches / 12).toFixed(1)} ft`,
     onGoToCrops: vi.fn(),
   };
 }

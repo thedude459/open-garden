@@ -63,7 +63,9 @@ def _template_lookup_by_name(crop_templates: list) -> tuple[dict[str, object], d
     return by_name, by_id
 
 
-def _growth_stage(days_since_planting: int, days_to_harvest: int, harvested_on: date | None) -> tuple[str, int]:
+def _growth_stage(
+    days_since_planting: int, days_to_harvest: int, harvested_on: date | None
+) -> tuple[str, int]:
     if harvested_on is not None:
         return "harvested", 100
 
@@ -80,7 +82,9 @@ def _growth_stage(days_since_planting: int, days_to_harvest: int, harvested_on: 
     return stage, progress_pct
 
 
-def _rotation_recommendations(plantings: list, crop_templates_by_name: dict[str, object]) -> list[dict]:
+def _rotation_recommendations(
+    plantings: list, crop_templates_by_name: dict[str, object]
+) -> list[dict]:
     by_bed: dict[int, list] = {}
     for planting in plantings:
         by_bed.setdefault(planting.bed_id, []).append(planting)
@@ -90,7 +94,11 @@ def _rotation_recommendations(plantings: list, crop_templates_by_name: dict[str,
         ordered = sorted(bed_plantings, key=lambda item: item.planted_on, reverse=True)
         latest = ordered[0]
         latest_template = crop_templates_by_name.get(latest.crop_name)
-        latest_family = _slug_family(latest_template.family) if latest_template and latest_template.family else "unknown"
+        latest_family = (
+            _slug_family(latest_template.family)
+            if latest_template and latest_template.family
+            else "unknown"
+        )
 
         recent_families = []
         for planting in ordered[:4]:
@@ -113,7 +121,9 @@ def _rotation_recommendations(plantings: list, crop_templates_by_name: dict[str,
     return sorted(recommendations, key=lambda item: item["bed_id"])
 
 
-def _companion_insights(active_plantings: list, crop_templates_by_name: dict[str, object]) -> list[dict]:
+def _companion_insights(
+    active_plantings: list, crop_templates_by_name: dict[str, object]
+) -> list[dict]:
     if not active_plantings:
         return []
 
@@ -131,8 +141,12 @@ def _companion_insights(active_plantings: list, crop_templates_by_name: dict[str
             if rule is None:
                 continue
 
-            positives = sorted(name for name in unique_names if name != crop_name and name in rule["good_with"])
-            risks = sorted(name for name in unique_names if name != crop_name and name in rule["avoid"])
+            positives = sorted(
+                name for name in unique_names if name != crop_name and name in rule["good_with"]
+            )
+            risks = sorted(
+                name for name in unique_names if name != crop_name and name in rule["avoid"]
+            )
 
             if not positives and not risks:
                 continue
@@ -172,7 +186,11 @@ def _succession_recommendations(
     suggestions: list[dict] = []
     for planting in sorted(upcoming_harvests, key=lambda item: item.expected_harvest_on):
         current_template = crop_templates_by_name.get(planting.crop_name)
-        current_family = _slug_family(current_template.family) if current_template and current_template.family else ""
+        current_family = (
+            _slug_family(current_template.family)
+            if current_template and current_template.family
+            else ""
+        )
 
         bed_recent_families = []
         for candidate in plantings:
@@ -185,7 +203,11 @@ def _succession_recommendations(
         candidate_window = None
         for window in open_or_upcoming_windows:
             candidate_template = crop_templates_by_name.get(window["crop_name"])
-            candidate_family = _slug_family(candidate_template.family) if candidate_template and candidate_template.family else ""
+            candidate_family = (
+                _slug_family(candidate_template.family)
+                if candidate_template and candidate_template.family
+                else ""
+            )
             if current_family and candidate_family == current_family:
                 continue
             if candidate_family and candidate_family in bed_recent_families[:2]:
@@ -214,7 +236,9 @@ def _succession_recommendations(
     return suggestions
 
 
-def _recommended_next_plantings(climate_windows: dict, crop_templates_by_name: dict[str, object], active_plantings: list) -> list[dict]:
+def _recommended_next_plantings(
+    climate_windows: dict, crop_templates_by_name: dict[str, object], active_plantings: list
+) -> list[dict]:
     active_crop_names = {_base_crop_name(planting.crop_name) for planting in active_plantings}
     today = date.today()
 
@@ -242,7 +266,9 @@ def _recommended_next_plantings(climate_windows: dict, crop_templates_by_name: d
             priority += 1
             if window["status"] in {"open", "watch"}:
                 priority += 1
-        elif indoor_seed_start and indoor_seed_end and indoor_seed_start <= today <= indoor_seed_end:
+        elif (
+            indoor_seed_start and indoor_seed_end and indoor_seed_start <= today <= indoor_seed_end
+        ):
             # Favor transplants that should be started indoors now so they are ready after frost.
             priority += 3
 
@@ -267,11 +293,7 @@ def _recommended_next_plantings(climate_windows: dict, crop_templates_by_name: d
 
     candidates.sort(key=_candidate_sort_key)
 
-    direct_sow_candidates = [
-        item
-        for item in candidates
-        if item["method"] == "direct_sow"
-    ]
+    direct_sow_candidates = [item for item in candidates if item["method"] == "direct_sow"]
     seed_start_now_candidates = [
         item
         for item in candidates
@@ -338,8 +360,12 @@ def build_seasonal_plan(garden, weather: dict, crop_templates: list, plantings: 
 
     rotation = _rotation_recommendations(plantings, crop_templates_by_name)
     companion = _companion_insights(active_plantings, crop_templates_by_name)
-    succession = _succession_recommendations(plantings, climate_windows, crop_templates_by_name, active_plantings)
-    recommended_next = _recommended_next_plantings(climate_windows, crop_templates_by_name, active_plantings)
+    succession = _succession_recommendations(
+        plantings, climate_windows, crop_templates_by_name, active_plantings
+    )
+    recommended_next = _recommended_next_plantings(
+        climate_windows, crop_templates_by_name, active_plantings
+    )
 
     stage_counts = Counter(stage["stage"] for stage in growth_stages)
 
@@ -376,7 +402,9 @@ def build_planting_recommendations(
 
     climate_windows = build_dynamic_planting_windows(garden, weather, crop_templates)
 
-    active_plantings = [item for item in plantings if item.harvested_on is None and item.id != planting.id]
+    active_plantings = [
+        item for item in plantings if item.harvested_on is None and item.id != planting.id
+    ]
     active_base_names = {_base_crop_name(item.crop_name) for item in active_plantings}
 
     target_base = _base_crop_name(planting.crop_name)
@@ -384,13 +412,19 @@ def build_planting_recommendations(
     good_matches = sorted(name for name in active_base_names if name in companion_rule["good_with"])
     risk_matches = sorted(name for name in active_base_names if name in companion_rule["avoid"])
 
-    current_family = _slug_family(target_template.family) if target_template and target_template.family else ""
+    current_family = (
+        _slug_family(target_template.family) if target_template and target_template.family else ""
+    )
     succession_candidates = []
     for window in climate_windows["windows"]:
         if window["status"] not in {"open", "watch", "upcoming"}:
             continue
         candidate_template = crop_templates_by_name.get(window["crop_name"])
-        candidate_family = _slug_family(candidate_template.family) if candidate_template and candidate_template.family else ""
+        candidate_family = (
+            _slug_family(candidate_template.family)
+            if candidate_template and candidate_template.family
+            else ""
+        )
         if current_family and candidate_family == current_family:
             continue
         succession_candidates.append(

@@ -15,6 +15,7 @@ describe("usePageRouter", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.removeItem("open-garden-help-seen");
+    window.history.replaceState(null, "", "/");
   });
 
   it("should initialize with default page (home) and state", () => {
@@ -60,7 +61,7 @@ describe("usePageRouter", () => {
           pushNotice: mockPushNotice,
           selectedGarden,
         }),
-      { initialProps: { selectedGarden: 1 } }
+      { initialProps: { selectedGarden: 1 as number | null } }
     );
 
     act(() => {
@@ -168,5 +169,98 @@ describe("usePageRouter", () => {
     });
 
     expect(result.current.isNavOpen).toBe(false);
+  });
+
+  it("handles email verification tokens in the URL", async () => {
+    mockAuthFlow.verifyEmailToken.mockResolvedValueOnce(undefined);
+    window.history.replaceState(null, "", "/?verify_token=abc123");
+
+    renderHook(() =>
+      usePageRouter({
+        token: "test-token",
+        authFlow: mockAuthFlow,
+        pushNotice: mockPushNotice,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockAuthFlow.verifyEmailToken).toHaveBeenCalledWith("abc123");
+    });
+
+    expect(mockAuthFlow.setIsEmailVerified).toHaveBeenCalledWith(true);
+    expect(mockPushNotice).toHaveBeenCalledWith(
+      "Email verified. Password reset is now available.",
+      "success"
+    );
+    expect(window.location.search).toBe("");
+  });
+
+  it("handles reset tokens in the URL", async () => {
+    window.history.replaceState(null, "", "/?reset_token=reset-456");
+
+    renderHook(() =>
+      usePageRouter({
+        token: "",
+        authFlow: mockAuthFlow,
+        pushNotice: mockPushNotice,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockAuthFlow.setResetToken).toHaveBeenCalledWith("reset-456");
+    });
+
+    expect(mockAuthFlow.setAuthPane).toHaveBeenCalledWith("reset");
+    expect(window.location.search).toBe("");
+  });
+
+  it("surfaces verification errors from the URL token flow", async () => {
+    mockAuthFlow.verifyEmailToken.mockRejectedValueOnce(new Error("Link expired"));
+    window.history.replaceState(null, "", "/?verify_token=expired-token");
+
+    renderHook(() =>
+      usePageRouter({
+        token: "test-token",
+        authFlow: mockAuthFlow,
+        pushNotice: mockPushNotice,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockPushNotice).toHaveBeenCalledWith("Link expired", "error");
+    });
+
+    expect(window.location.search).toBe("");
+  });
+
+  it("keeps help modal closed after the first-login hint has been seen", () => {
+    localStorage.setItem("open-garden-help-seen", "1");
+
+    const { result } = renderHook(() =>
+      usePageRouter({
+        token: "test-token",
+        authFlow: mockAuthFlow,
+        pushNotice: mockPushNotice,
+      })
+    );
+
+    expect(result.current.isHelpOpen).toBe(false);
+  });
+
+  it("allows crop library navigation without a selected garden", () => {
+    const { result } = renderHook(() =>
+      usePageRouter({
+        token: "test-token",
+        authFlow: mockAuthFlow,
+        pushNotice: mockPushNotice,
+        selectedGarden: null,
+      })
+    );
+
+    act(() => {
+      result.current.navigateTo("crops");
+    });
+
+    expect(result.current.activePage).toBe("crops");
   });
 });

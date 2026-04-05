@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react";
 import { AppPage } from "../types";
-import { isoDate } from "../utils";
+import { isoDate } from "../utils/appUtils";
 
 export const GARDEN_REQUIRED_PAGES: AppPage[] = [
   "timeline", "calendar", "seasonal", "planner", "coach", "pests", "sensors",
@@ -8,7 +8,7 @@ export const GARDEN_REQUIRED_PAGES: AppPage[] = [
 
 interface UsePageRouterParams {
   token: string;
-  authFlow: { setIsEmailVerified: (value: boolean) => void; setResetToken: (token: string) => void; setAuthPane: (pane: string) => void; verifyEmailToken?: (token: string) => Promise<void> };
+  authFlow: { setIsEmailVerified: (value: boolean) => void; setResetToken: (token: string) => void; setAuthPane: (pane: "login" | "forgot-password" | "forgot-username" | "reset") => void; verifyEmailToken?: (token: string) => Promise<void> };
   pushNotice: (message: string, kind: "info" | "success" | "error") => void;
   selectedGarden?: number | null;
 }
@@ -22,7 +22,7 @@ interface UsePageRouterReturn {
   isHelpOpen: boolean;
   setIsHelpOpen: (open: boolean) => void;
   monthCursor: Date;
-  setMonthCursor: (date: Date) => void;
+  setMonthCursor: Dispatch<SetStateAction<Date>>;
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   placementBedId: number | null;
@@ -64,9 +64,11 @@ export function usePageRouter({
           authFlow.setIsEmailVerified(true);
           pushNotice("Email verified. Password reset is now available.", "success");
         })
-        .catch((err: any) =>
+        .catch((err: unknown) =>
           pushNotice(
-            err?.message || "Verification link is invalid or expired.",
+            err instanceof Error && err.message
+              ? err.message
+              : "Verification link is invalid or expired.",
             "error"
           )
         )

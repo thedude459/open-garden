@@ -1,4 +1,5 @@
 """Crop template CRUD and sync management."""
+
 from threading import Thread
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,7 +12,12 @@ from ..core.logging_utils import get_logger
 from ..models import CropTemplate, Placement, Planting, Task
 from ..schemas import CropTemplateCreate, CropTemplateSyncStatusOut, CropTemplateOut, MessageOut
 from ..services.seed import cleanup_legacy_starter_templates, seed_crop_templates
-from ..services import ensure_crop_sync_state, get_crop_sync_state_snapshot, update_crop_sync_state, utc_now
+from ..services import (
+    ensure_crop_sync_state,
+    get_crop_sync_state_snapshot,
+    update_crop_sync_state,
+    utc_now,
+)
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -20,6 +26,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 # Name normalisation helpers (also used by planner when renaming crops)
 # ---------------------------------------------------------------------------
+
 
 def crop_name_parts(crop_name: str, variety: str = "") -> tuple[str, str]:
     clean_variety = variety.strip()
@@ -55,6 +62,7 @@ def crop_task_title(crop_name: str, action: str, variety: str = "") -> str:
 # ---------------------------------------------------------------------------
 # Background sync helpers
 # ---------------------------------------------------------------------------
+
 
 def _run_crop_sync(force_refresh: bool) -> None:
     db = SessionLocal()
@@ -117,9 +125,12 @@ def start_crop_sync(force_refresh: bool) -> bool:
 # Routes
 # ---------------------------------------------------------------------------
 
+
 @router.get("/crop-templates", response_model=list[CropTemplateOut])
 def list_crop_templates(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    return (
+        db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    )
 
 
 @router.get("/crop-templates/sync-status", response_model=CropTemplateSyncStatusOut)
@@ -146,7 +157,9 @@ def cleanup_legacy_crop_templates(db: Session = Depends(get_db), _=Depends(get_c
         )
     removed = cleanup_legacy_starter_templates(db)
     update_crop_sync_state(db, cleaned_legacy_count=removed)
-    return {"message": f"Removed {removed} legacy starter crop template{'s' if removed != 1 else ''}."}
+    return {
+        "message": f"Removed {removed} legacy starter crop template{'s' if removed != 1 else ''}."
+    }
 
 
 @router.post("/crop-templates", response_model=CropTemplateOut)
@@ -169,9 +182,10 @@ def create_crop_template(
         _candidate_names.append(f"{name_lower} ({variety_lower})")
     existing = next(
         (
-            c for c in db.query(CropTemplate)
-                          .filter(func.lower(CropTemplate.name).in_(_candidate_names))
-                          .all()
+            c
+            for c in db.query(CropTemplate)
+            .filter(func.lower(CropTemplate.name).in_(_candidate_names))
+            .all()
             if normalized_crop_identity(c.name, c.variety) == target_identity
         ),
         None,
@@ -226,12 +240,13 @@ def update_crop_template(
         _candidate_names.append(f"{name_lower} ({variety_lower})")
     existing = next(
         (
-            c for c in db.query(CropTemplate)
-                          .filter(
-                              func.lower(CropTemplate.name).in_(_candidate_names),
-                              CropTemplate.id != crop_id,
-                          )
-                          .all()
+            c
+            for c in db.query(CropTemplate)
+            .filter(
+                func.lower(CropTemplate.name).in_(_candidate_names),
+                CropTemplate.id != crop_id,
+            )
+            .all()
             if normalized_crop_identity(c.name, c.variety) == target_identity
         ),
         None,
@@ -240,7 +255,9 @@ def update_crop_template(
         raise HTTPException(status_code=409, detail="Crop already exists")
 
     old_name = crop.name
-    old_planting_ids = [row.id for row in db.query(Planting.id).filter(Planting.crop_name == old_name).all()]
+    old_planting_ids = [
+        row.id for row in db.query(Planting.id).filter(Planting.crop_name == old_name).all()
+    ]
 
     crop.name = stored_name
     crop.variety = stored_variety

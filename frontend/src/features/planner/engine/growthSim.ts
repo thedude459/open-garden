@@ -1,4 +1,4 @@
-import { Bed, CropTemplate, Placement } from "../types";
+import { Bed, CropTemplate, Placement } from "../../types";
 
 export type CanopyShape = {
   placementId: number;

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { API } from "../constants";
 import { AuthPane, LoginMode, TokenResponse } from "../types";
+import { getErrorMessage } from "../utils/appUtils";
 
 type NoticeKind = "info" | "success" | "error";
 
@@ -145,8 +146,8 @@ export function useAuthFlow({ setToken, authHeaders, pushNotice }: UseAuthFlowPa
       setResetToken(null);
       setAuthPane("login");
       pushNotice("Password reset successful. Please sign in.", "success");
-    } catch (err: any) {
-      pushNotice(err?.message || "Unable to reset password.", "error");
+    } catch (err: unknown) {
+      pushNotice(getErrorMessage(err, "Unable to reset password."), "error");
     }
   }
 
@@ -160,8 +161,8 @@ export function useAuthFlow({ setToken, authHeaders, pushNotice }: UseAuthFlowPa
       await requestPasswordReset(email);
       pushNotice("If the account exists, reset instructions were sent.", "success");
       setAuthPane("login");
-    } catch (err: any) {
-      pushNotice(err?.message || "Unable to request password reset.", "error");
+    } catch (err: unknown) {
+      pushNotice(getErrorMessage(err, "Unable to request password reset."), "error");
     }
   }
 
@@ -175,8 +176,8 @@ export function useAuthFlow({ setToken, authHeaders, pushNotice }: UseAuthFlowPa
       await requestUsernameRecovery(email);
       pushNotice("If the account exists, username recovery instructions were sent.", "success");
       setAuthPane("login");
-    } catch (err: any) {
-      pushNotice(err?.message || "Unable to request username.", "error");
+    } catch (err: unknown) {
+      pushNotice(getErrorMessage(err, "Unable to request username."), "error");
     }
   }
 

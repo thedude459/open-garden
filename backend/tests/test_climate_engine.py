@@ -1,7 +1,13 @@
 from datetime import date, timedelta
 from types import SimpleNamespace
 
-from app.engines.climate import _forecast_days, _normalize_zone, _soil_status, build_climate_summary, build_dynamic_planting_windows
+from app.engines.climate import (
+    _forecast_days,
+    _normalize_zone,
+    _soil_status,
+    build_climate_summary,
+    build_dynamic_planting_windows,
+)
 
 
 def make_garden(**overrides):
@@ -102,7 +108,14 @@ def test_build_dynamic_planting_windows_handles_direct_ground_transplants():
         make_garden(growing_zone="6a"),
         make_weather(low_f=45, high_f=65),
         [
-            make_crop(id=3, name="Strawberry", variety="Honeoye", direct_sow=False, frost_hardy=True, weeks_to_transplant=0),
+            make_crop(
+                id=3,
+                name="Strawberry",
+                variety="Honeoye",
+                direct_sow=False,
+                frost_hardy=True,
+                weeks_to_transplant=0,
+            ),
         ],
     )["windows"]
 
@@ -114,7 +127,14 @@ def test_build_dynamic_planting_windows_handles_direct_ground_transplants():
 
 def test_build_climate_summary_handles_cool_weather_and_moderate_frost_risk():
     summary = build_climate_summary(
-        make_garden(orientation="north", sun_exposure="full_shade", wind_exposure="exposed", thermal_mass="low", slope_position="low", frost_pocket_risk="moderate"),
+        make_garden(
+            orientation="north",
+            sun_exposure="full_shade",
+            wind_exposure="exposed",
+            thermal_mass="low",
+            slope_position="low",
+            frost_pocket_risk="moderate",
+        ),
         make_weather(low_f=35, high_f=48),
     )
 

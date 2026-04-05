@@ -22,41 +22,141 @@ _ZONE_FROST_WINDOWS: dict[str, tuple[tuple[int, int], tuple[int, int]]] = {
 }
 
 _ORIENTATION_EFFECTS = {
-    "north": {"spring": 4, "fall": -4, "soil": -2, "label": "North-facing exposure stays cooler and delays warm-up."},
-    "east": {"spring": 1, "fall": -1, "soil": 0, "label": "East exposure warms steadily but avoids peak afternoon heat."},
-    "south": {"spring": -3, "fall": 3, "soil": 2, "label": "South exposure captures more sun and usually warms faster."},
-    "west": {"spring": -2, "fall": 2, "soil": 1, "label": "West exposure holds extra afternoon heat."},
+    "north": {
+        "spring": 4,
+        "fall": -4,
+        "soil": -2,
+        "label": "North-facing exposure stays cooler and delays warm-up.",
+    },
+    "east": {
+        "spring": 1,
+        "fall": -1,
+        "soil": 0,
+        "label": "East exposure warms steadily but avoids peak afternoon heat.",
+    },
+    "south": {
+        "spring": -3,
+        "fall": 3,
+        "soil": 2,
+        "label": "South exposure captures more sun and usually warms faster.",
+    },
+    "west": {
+        "spring": -2,
+        "fall": 2,
+        "soil": 1,
+        "label": "West exposure holds extra afternoon heat.",
+    },
 }
 
 _SUN_EXPOSURE_EFFECTS = {
-    "full_sun": {"spring": -3, "fall": 3, "soil": 4, "label": "Full sun improves soil warm-up and extends the heat window."},
-    "part_sun": {"spring": -1, "fall": 1, "soil": 1, "label": "Part sun keeps the site close to regional norms."},
-    "part_shade": {"spring": 3, "fall": -3, "soil": -2, "label": "Part shade slows warm-up and shortens warm-season capacity."},
-    "full_shade": {"spring": 6, "fall": -6, "soil": -4, "label": "Full shade behaves like a materially cooler microclimate."},
+    "full_sun": {
+        "spring": -3,
+        "fall": 3,
+        "soil": 4,
+        "label": "Full sun improves soil warm-up and extends the heat window.",
+    },
+    "part_sun": {
+        "spring": -1,
+        "fall": 1,
+        "soil": 1,
+        "label": "Part sun keeps the site close to regional norms.",
+    },
+    "part_shade": {
+        "spring": 3,
+        "fall": -3,
+        "soil": -2,
+        "label": "Part shade slows warm-up and shortens warm-season capacity.",
+    },
+    "full_shade": {
+        "spring": 6,
+        "fall": -6,
+        "soil": -4,
+        "label": "Full shade behaves like a materially cooler microclimate.",
+    },
 }
 
 _WIND_EXPOSURE_EFFECTS = {
-    "sheltered": {"spring": -2, "fall": 2, "soil": 1, "label": "Sheltered areas retain heat overnight more effectively."},
-    "moderate": {"spring": 0, "fall": 0, "soil": 0, "label": "Moderate wind exposure is near baseline."},
-    "exposed": {"spring": 3, "fall": -3, "soil": -1, "label": "Wind-exposed sites lose heat quickly and dry out faster."},
+    "sheltered": {
+        "spring": -2,
+        "fall": 2,
+        "soil": 1,
+        "label": "Sheltered areas retain heat overnight more effectively.",
+    },
+    "moderate": {
+        "spring": 0,
+        "fall": 0,
+        "soil": 0,
+        "label": "Moderate wind exposure is near baseline.",
+    },
+    "exposed": {
+        "spring": 3,
+        "fall": -3,
+        "soil": -1,
+        "label": "Wind-exposed sites lose heat quickly and dry out faster.",
+    },
 }
 
 _THERMAL_MASS_EFFECTS = {
-    "low": {"spring": 1, "fall": -1, "soil": -1, "label": "Low thermal mass cools quickly after sunset."},
-    "moderate": {"spring": 0, "fall": 0, "soil": 0, "label": "Moderate thermal mass tracks the regional average."},
-    "high": {"spring": -4, "fall": 4, "soil": 2, "label": "High thermal mass smooths temperature swings and buffers frost."},
+    "low": {
+        "spring": 1,
+        "fall": -1,
+        "soil": -1,
+        "label": "Low thermal mass cools quickly after sunset.",
+    },
+    "moderate": {
+        "spring": 0,
+        "fall": 0,
+        "soil": 0,
+        "label": "Moderate thermal mass tracks the regional average.",
+    },
+    "high": {
+        "spring": -4,
+        "fall": 4,
+        "soil": 2,
+        "label": "High thermal mass smooths temperature swings and buffers frost.",
+    },
 }
 
 _SLOPE_POSITION_EFFECTS = {
-    "low": {"spring": 5, "fall": -5, "soil": -2, "label": "Low spots collect cold air and are more frost-prone."},
-    "mid": {"spring": 0, "fall": 0, "soil": 0, "label": "Mid-slope positions are generally balanced."},
-    "high": {"spring": -2, "fall": 2, "soil": 1, "label": "Higher positions drain cold air more effectively."},
+    "low": {
+        "spring": 5,
+        "fall": -5,
+        "soil": -2,
+        "label": "Low spots collect cold air and are more frost-prone.",
+    },
+    "mid": {
+        "spring": 0,
+        "fall": 0,
+        "soil": 0,
+        "label": "Mid-slope positions are generally balanced.",
+    },
+    "high": {
+        "spring": -2,
+        "fall": 2,
+        "soil": 1,
+        "label": "Higher positions drain cold air more effectively.",
+    },
 }
 
 _FROST_POCKET_EFFECTS = {
-    "low": {"spring": 0, "fall": 0, "soil": 0, "label": "Low frost-pocket risk keeps the site close to zone averages."},
-    "moderate": {"spring": 2, "fall": -2, "soil": -1, "label": "Moderate frost-pocket risk increases overnight cold pooling."},
-    "high": {"spring": 6, "fall": -6, "soil": -3, "label": "High frost-pocket risk materially shortens the frost-free window."},
+    "low": {
+        "spring": 0,
+        "fall": 0,
+        "soil": 0,
+        "label": "Low frost-pocket risk keeps the site close to zone averages.",
+    },
+    "moderate": {
+        "spring": 2,
+        "fall": -2,
+        "soil": -1,
+        "label": "Moderate frost-pocket risk increases overnight cold pooling.",
+    },
+    "high": {
+        "spring": 6,
+        "fall": -6,
+        "soil": -3,
+        "label": "High frost-pocket risk materially shortens the frost-free window.",
+    },
 }
 
 
@@ -97,12 +197,36 @@ def _forecast_days(weather: dict) -> list[dict]:
 
 def _microclimate_adjustments(garden) -> dict:
     factors = [
-        ("orientation", "Orientation", _ORIENTATION_EFFECTS.get(garden.orientation, _ORIENTATION_EFFECTS["south"])),
-        ("sun_exposure", "Sun Exposure", _SUN_EXPOSURE_EFFECTS.get(garden.sun_exposure, _SUN_EXPOSURE_EFFECTS["part_sun"])),
-        ("wind_exposure", "Wind Exposure", _WIND_EXPOSURE_EFFECTS.get(garden.wind_exposure, _WIND_EXPOSURE_EFFECTS["moderate"])),
-        ("thermal_mass", "Thermal Mass", _THERMAL_MASS_EFFECTS.get(garden.thermal_mass, _THERMAL_MASS_EFFECTS["moderate"])),
-        ("slope_position", "Slope Position", _SLOPE_POSITION_EFFECTS.get(garden.slope_position, _SLOPE_POSITION_EFFECTS["mid"])),
-        ("frost_pocket_risk", "Frost Pocket Risk", _FROST_POCKET_EFFECTS.get(garden.frost_pocket_risk, _FROST_POCKET_EFFECTS["low"])),
+        (
+            "orientation",
+            "Orientation",
+            _ORIENTATION_EFFECTS.get(garden.orientation, _ORIENTATION_EFFECTS["south"]),
+        ),
+        (
+            "sun_exposure",
+            "Sun Exposure",
+            _SUN_EXPOSURE_EFFECTS.get(garden.sun_exposure, _SUN_EXPOSURE_EFFECTS["part_sun"]),
+        ),
+        (
+            "wind_exposure",
+            "Wind Exposure",
+            _WIND_EXPOSURE_EFFECTS.get(garden.wind_exposure, _WIND_EXPOSURE_EFFECTS["moderate"]),
+        ),
+        (
+            "thermal_mass",
+            "Thermal Mass",
+            _THERMAL_MASS_EFFECTS.get(garden.thermal_mass, _THERMAL_MASS_EFFECTS["moderate"]),
+        ),
+        (
+            "slope_position",
+            "Slope Position",
+            _SLOPE_POSITION_EFFECTS.get(garden.slope_position, _SLOPE_POSITION_EFFECTS["mid"]),
+        ),
+        (
+            "frost_pocket_risk",
+            "Frost Pocket Risk",
+            _FROST_POCKET_EFFECTS.get(garden.frost_pocket_risk, _FROST_POCKET_EFFECTS["low"]),
+        ),
     ]
 
     spring_shift = sum(item[2]["spring"] for item in factors)
@@ -142,17 +266,25 @@ def _soil_status(soil_temperature_estimate_f: float) -> str:
 def build_climate_summary(garden, weather: dict) -> dict:
     today = date.today()
     normalized_zone = _normalize_zone(garden.growing_zone)
-    baseline_last_frost_month_day, baseline_first_fall_month_day = _ZONE_FROST_WINDOWS[normalized_zone]
+    baseline_last_frost_month_day, baseline_first_fall_month_day = _ZONE_FROST_WINDOWS[
+        normalized_zone
+    ]
     baseline_last_spring_frost = date(today.year, *baseline_last_frost_month_day)
     baseline_first_fall_frost = date(today.year, *baseline_first_fall_month_day)
 
     adjustments = _microclimate_adjustments(garden)
-    adjusted_last_spring_frost = baseline_last_spring_frost + timedelta(days=adjustments["spring_shift"])
-    adjusted_first_fall_frost = baseline_first_fall_frost + timedelta(days=adjustments["fall_shift"])
+    adjusted_last_spring_frost = baseline_last_spring_frost + timedelta(
+        days=adjustments["spring_shift"]
+    )
+    adjusted_first_fall_frost = baseline_first_fall_frost + timedelta(
+        days=adjustments["fall_shift"]
+    )
 
     forecast = _forecast_days(weather)
     forecast_window = forecast[:10]
-    next_frost_date = next((day["date"] for day in forecast_window if day["temperature_min_f"] <= 32), None)
+    next_frost_date = next(
+        (day["date"] for day in forecast_window if day["temperature_min_f"] <= 32), None
+    )
     if next_frost_date is not None:
         frost_risk = "high"
     elif any(day["temperature_min_f"] <= 36 for day in forecast_window):
@@ -162,7 +294,9 @@ def build_climate_summary(garden, weather: dict) -> dict:
 
     soil_samples = forecast[:5] or forecast
     if soil_samples:
-        average_air_temperature = sum((day["temperature_min_f"] + day["temperature_max_f"]) / 2 for day in soil_samples) / len(soil_samples)
+        average_air_temperature = sum(
+            (day["temperature_min_f"] + day["temperature_max_f"]) / 2 for day in soil_samples
+        ) / len(soil_samples)
     else:
         average_air_temperature = 50.0
 
@@ -170,7 +304,10 @@ def build_climate_summary(garden, weather: dict) -> dict:
     soil_temperature_status = _soil_status(soil_temperature_estimate_f)
 
     recommendations: list[dict] = []
-    cool_season_open = today >= adjusted_last_spring_frost - timedelta(days=21) and soil_temperature_estimate_f >= 40
+    cool_season_open = (
+        today >= adjusted_last_spring_frost - timedelta(days=21)
+        and soil_temperature_estimate_f >= 40
+    )
     recommendations.append(
         {
             "key": "cool-season",
@@ -184,7 +321,11 @@ def build_climate_summary(garden, weather: dict) -> dict:
         }
     )
 
-    warm_season_open = today >= adjusted_last_spring_frost and soil_temperature_estimate_f >= 60 and frost_risk == "low"
+    warm_season_open = (
+        today >= adjusted_last_spring_frost
+        and soil_temperature_estimate_f >= 60
+        and frost_risk == "low"
+    )
     recommendations.append(
         {
             "key": "warm-season",
@@ -200,7 +341,9 @@ def build_climate_summary(garden, weather: dict) -> dict:
 
     if frost_risk == "high":
         protection_status = "act"
-        protection_detail = "A hard frost is in the near-term forecast. Protect tender crops or delay planting."
+        protection_detail = (
+            "A hard frost is in the near-term forecast. Protect tender crops or delay planting."
+        )
     elif frost_risk == "moderate":
         protection_status = "watch"
         protection_detail = "Overnight lows are near frost range. Keep row cover or cloches ready."
@@ -230,7 +373,9 @@ def build_climate_summary(garden, weather: dict) -> dict:
         "soil_temperature_status": soil_temperature_status,
         "frost_risk_next_10_days": frost_risk,
         "next_frost_date": next_frost_date,
-        "growing_season_days": max(0, (adjusted_first_fall_frost - adjusted_last_spring_frost).days),
+        "growing_season_days": max(
+            0, (adjusted_first_fall_frost - adjusted_last_spring_frost).days
+        ),
         "factors": adjustments["factors"],
         "recommendations": recommendations,
         "forecast": forecast[:5],
@@ -315,11 +460,15 @@ def build_dynamic_planting_windows(garden, weather: dict, crop_templates: list) 
         if status == "open":
             reason = "Conditions are in range for active planting."
         elif status == "watch":
-            reason = "Calendar window is open, but soil warmth or near-term frost risk suggests caution."
+            reason = (
+                "Calendar window is open, but soil warmth or near-term frost risk suggests caution."
+            )
         elif status == "upcoming":
             reason = "Window has not opened yet for this crop and method."
         else:
-            reason = "Primary window is ending or has passed; consider succession or fall alternatives."
+            reason = (
+                "Primary window is ending or has passed; consider succession or fall alternatives."
+            )
 
         windows.append(
             {

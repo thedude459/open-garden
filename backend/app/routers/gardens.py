@@ -10,7 +10,17 @@ from ..database import get_db
 from ..core.dependencies import get_owned_garden
 from ..core.exceptions import ValidationServiceError
 from ..engines.layout import build_garden_sun_path
-from ..models import CropTemplate, Garden, PestLog, Placement, Planting, Sensor, SensorReading, Task, User
+from ..models import (
+    CropTemplate,
+    Garden,
+    PestLog,
+    Placement,
+    Planting,
+    Sensor,
+    SensorReading,
+    Task,
+    User,
+)
 from ..schemas import (
     GardenClimateOut,
     GardenClimatePlantingWindowsOut,
@@ -21,13 +31,22 @@ from ..schemas import (
     GardenYardUpdate,
     MicroclimateSuggestionOut,
 )
-from ..weather import fetch_address_geocode, fetch_microclimate_signals, fetch_weather, fetch_zip_profile
+from ..weather import (
+    fetch_address_geocode,
+    fetch_microclimate_signals,
+    fetch_weather,
+    fetch_zip_profile,
+)
 
 router = APIRouter(tags=["gardens"])
 
 
 @router.post("/gardens", response_model=GardenOut)
-async def create_garden(payload: GardenCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def create_garden(
+    payload: GardenCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     try:
         location = await fetch_zip_profile(payload.zip_code)
     except ValidationServiceError as exc:
@@ -75,7 +94,9 @@ def list_public_gardens(db: Session = Depends(get_db)):
 
 
 @router.patch("/gardens/{garden_id}/geocode", response_model=GardenOut)
-async def geocode_garden_address(garden: Garden = Depends(get_owned_garden), db: Session = Depends(get_db)):
+async def geocode_garden_address(
+    garden: Garden = Depends(get_owned_garden), db: Session = Depends(get_db)
+):
     if not garden.address_private:
         raise HTTPException(
             status_code=400,
@@ -129,7 +150,9 @@ async def suggest_garden_microclimate(garden: Garden = Depends(get_owned_garden)
     try:
         result = await fetch_microclimate_signals(garden.latitude, garden.longitude)
     except (httpx.RequestError, httpx.HTTPStatusError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail="Unable to fetch location signals for suggestions.") from exc
+        raise HTTPException(
+            status_code=502, detail="Unable to fetch location signals for suggestions."
+        ) from exc
 
     suggestions = result["suggestions"]
     notes = result["notes"]
@@ -152,12 +175,16 @@ async def get_garden_climate(garden: Garden = Depends(get_owned_garden)):
     try:
         weather = await fetch_weather(garden.latitude, garden.longitude)
     except (httpx.RequestError, httpx.HTTPStatusError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail="Unable to fetch forecast for climate analysis.") from exc
+        raise HTTPException(
+            status_code=502, detail="Unable to fetch forecast for climate analysis."
+        ) from exc
 
     return build_climate_summary(garden, weather)
 
 
-@router.get("/gardens/{garden_id}/climate/planting-windows", response_model=GardenClimatePlantingWindowsOut)
+@router.get(
+    "/gardens/{garden_id}/climate/planting-windows", response_model=GardenClimatePlantingWindowsOut
+)
 async def get_garden_climate_planting_windows(
     db: Session = Depends(get_db),
     garden: Garden = Depends(get_owned_garden),
@@ -165,9 +192,13 @@ async def get_garden_climate_planting_windows(
     try:
         weather = await fetch_weather(garden.latitude, garden.longitude)
     except (httpx.RequestError, httpx.HTTPStatusError, ValueError) as exc:
-        raise HTTPException(status_code=502, detail="Unable to fetch forecast for planting windows.") from exc
+        raise HTTPException(
+            status_code=502, detail="Unable to fetch forecast for planting windows."
+        ) from exc
 
-    crop_templates = db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    crop_templates = (
+        db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
+    )
     return build_dynamic_planting_windows(garden, weather, crop_templates)
 
 
@@ -188,10 +219,11 @@ def delete_garden(db: Session = Depends(get_db), garden: Garden = Depends(get_ow
     db.query(Placement).filter(Placement.garden_id == garden.id).delete()
     sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == garden.id).all()]
     if sensor_ids:
-        db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
+        db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(
+            synchronize_session=False
+        )
     db.query(Sensor).filter(Sensor.garden_id == garden.id).delete()
     # beds FK-cascade is handled by ORM relationship cascade
     db.delete(garden)
     db.commit()
     return {"status": "deleted"}
-

@@ -1,11 +1,13 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue";
+import { FetchAuthed } from "../types";
+import { getErrorMessage } from "../utils/appUtils";
 import { Planting, Task } from "../../types";
 
 type NoticeKind = "info" | "success" | "error";
 
 interface UseTaskActionsParams {
-  fetchAuthed: (url: string, options?: RequestInit) => Promise<any>;
+  fetchAuthed: FetchAuthed;
   pushNotice: (message: string, kind: NoticeKind) => void;
   token: string;
   selectedGarden: number | null;
@@ -80,8 +82,8 @@ export function useTaskActions({
         form.reset();
         await loadTasks(selectedGarden, debouncedTaskQuery);
         pushNotice("Task added.", "success");
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to create task.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to create task."), "error");
       }
     },
     [fetchAuthed, selectedGarden, loadTasks, debouncedTaskQuery, pushNotice],
@@ -95,8 +97,8 @@ export function useTaskActions({
           body: JSON.stringify({ is_done: done }),
         });
         setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to update task.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to update task."), "error");
       }
     },
     [fetchAuthed, pushNotice],
@@ -107,8 +109,8 @@ export function useTaskActions({
       try {
         await fetchAuthed(`/tasks/${taskId}`, { method: "DELETE" });
         setTasks((prev) => prev.filter((t) => t.id !== taskId));
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to delete task.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to delete task."), "error");
       }
     },
     [fetchAuthed, pushNotice],
@@ -122,8 +124,8 @@ export function useTaskActions({
           body: JSON.stringify(update),
         });
         setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to update task.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to update task."), "error");
       }
     },
     [fetchAuthed, pushNotice],
@@ -141,8 +143,8 @@ export function useTaskActions({
           invalidateSeasonalPlanCache(selectedGarden);
         }
         pushNotice("Harvest logged!", "success");
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to log harvest.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to log harvest."), "error");
       }
     },
     [fetchAuthed, setPlantings, selectedGarden, invalidateSeasonalPlanCache, pushNotice],
@@ -173,8 +175,8 @@ export function useTaskActions({
         await loadTasks(selectedGarden, debouncedTaskQuery);
         invalidateSeasonalPlanCache(selectedGarden);
         pushNotice(`Planting added: ${cropName}.`, "success");
-      } catch (err: any) {
-        pushNotice(err?.message || "Unable to create planting.", "error");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to create planting."), "error");
       }
     },
     [

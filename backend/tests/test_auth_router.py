@@ -1,5 +1,3 @@
-import asyncio
-from datetime import date
 from types import SimpleNamespace
 
 import pytest
@@ -9,7 +7,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.core.auth import get_password_hash, verify_password
 from app.models import SeedInventory, User, UserAuthToken
 from app.routers import auth as auth_router
-from app.schemas import ForgotPasswordPayload, ForgotUsernamePayload, ResetPasswordPayload, UserCreate, VerifyEmailPayload
+from app.schemas import (
+    ForgotPasswordPayload,
+    ForgotUsernamePayload,
+    ResetPasswordPayload,
+    UserCreate,
+    VerifyEmailPayload,
+)
 
 
 def _request(ip="127.0.0.1"):
@@ -41,7 +45,9 @@ def test_register_user_creates_unverified_user(db_session):
 def test_register_user_rejects_duplicate_username(db_session, user):
     with pytest.raises(HTTPException) as exc:
         auth_router.register_user(
-            payload=UserCreate(email="else@example.com", username=user.username, password="password123"),
+            payload=UserCreate(
+                email="else@example.com", username=user.username, password="password123"
+            ),
             request=_request(),
             db=db_session,
         )
@@ -78,7 +84,9 @@ def test_verify_email_rejects_invalid_token(db_session):
 
 
 def test_forgot_password_is_non_enumerating(db_session):
-    result = auth_router.forgot_password(ForgotPasswordPayload(email="missing@example.com"), _request(), db_session)
+    result = auth_router.forgot_password(
+        ForgotPasswordPayload(email="missing@example.com"), _request(), db_session
+    )
 
     assert result == {"message": "If an account exists, reset instructions have been sent."}
 
@@ -94,16 +102,27 @@ def test_forgot_password_issues_token_for_verified_user(db_session):
     db_session.commit()
     db_session.refresh(user)
 
-    result = auth_router.forgot_password(ForgotPasswordPayload(email=user.email), _request(), db_session)
+    result = auth_router.forgot_password(
+        ForgotPasswordPayload(email=user.email), _request(), db_session
+    )
 
     assert result == {"message": "If an account exists, reset instructions have been sent."}
-    assert db_session.query(UserAuthToken).filter(UserAuthToken.user_id == user.id, UserAuthToken.purpose == "password_reset").count() == 1
+    assert (
+        db_session.query(UserAuthToken)
+        .filter(UserAuthToken.user_id == user.id, UserAuthToken.purpose == "password_reset")
+        .count()
+        == 1
+    )
 
 
 def test_forgot_username_is_non_enumerating(db_session):
-    result = auth_router.forgot_username(ForgotUsernamePayload(email="missing@example.com"), _request(), db_session)
+    result = auth_router.forgot_username(
+        ForgotUsernamePayload(email="missing@example.com"), _request(), db_session
+    )
 
-    assert result == {"message": "If an account exists, username recovery instructions have been sent."}
+    assert result == {
+        "message": "If an account exists, username recovery instructions have been sent."
+    }
 
 
 def test_reset_password_updates_hash(db_session):
@@ -131,7 +150,9 @@ def test_reset_password_updates_hash(db_session):
 
 def test_reset_password_rejects_short_password(db_session):
     with pytest.raises(HTTPException) as exc:
-        auth_router.reset_password(ResetPasswordPayload(token="bad", new_password="short"), _request(), db_session)
+        auth_router.reset_password(
+            ResetPasswordPayload(token="bad", new_password="short"), _request(), db_session
+        )
 
     assert exc.value.status_code == 400
 
@@ -148,7 +169,14 @@ def test_login_returns_bearer_token(db_session):
 
     result = auth_router.login(
         request=_request(),
-        form_data=OAuth2PasswordRequestForm(username="loginuser", password="valid-password", scope="", grant_type=None, client_id=None, client_secret=None),
+        form_data=OAuth2PasswordRequestForm(
+            username="loginuser",
+            password="valid-password",
+            scope="",
+            grant_type=None,
+            client_id=None,
+            client_secret=None,
+        ),
         db=db_session,
     )
 
@@ -169,7 +197,14 @@ def test_login_rejects_bad_password(db_session):
     with pytest.raises(HTTPException) as exc:
         auth_router.login(
             request=_request(),
-            form_data=OAuth2PasswordRequestForm(username="badlogin", password="wrong-password", scope="", grant_type=None, client_id=None, client_secret=None),
+            form_data=OAuth2PasswordRequestForm(
+                username="badlogin",
+                password="wrong-password",
+                scope="",
+                grant_type=None,
+                client_id=None,
+                client_secret=None,
+            ),
             db=db_session,
         )
 
@@ -182,21 +217,34 @@ def test_get_me_returns_current_user(user):
 
 def test_reset_password_rejects_invalid_token(db_session):
     with pytest.raises(HTTPException) as exc:
-        auth_router.reset_password(ResetPasswordPayload(token="missing-token", new_password="long-enough"), _request(), db_session)
+        auth_router.reset_password(
+            ResetPasswordPayload(token="missing-token", new_password="long-enough"),
+            _request(),
+            db_session,
+        )
 
     assert exc.value.status_code == 400
 
 
-def test_delete_me_removes_user_and_related_rows(db_session, user, garden, bed, planting, placement, sensor):
+def test_delete_me_removes_user_and_related_rows(
+    db_session, user, garden, bed, planting, placement, sensor
+):
     token = auth_router._issue_user_token(db_session, user.id, "email_verify", 30)
-    db_session.add(SeedInventory(user_id=user.id, crop_name="Carrot", supplier="", quantity_packets=1))
+    db_session.add(
+        SeedInventory(user_id=user.id, crop_name="Carrot", supplier="", quantity_packets=1)
+    )
     db_session.commit()
 
     result = auth_router.delete_me(db=db_session, current_user=user)
 
     assert result == {"status": "deleted"}
     assert db_session.query(User).filter(User.id == user.id).first() is None
-    assert db_session.query(UserAuthToken).filter(UserAuthToken.token_hash == auth_router._hash_token(token)).first() is None
+    assert (
+        db_session.query(UserAuthToken)
+        .filter(UserAuthToken.token_hash == auth_router._hash_token(token))
+        .first()
+        is None
+    )
 
 
 def test_resend_verification_returns_already_verified_for_verified_users(db_session, user):
@@ -219,7 +267,12 @@ def test_resend_verification_issues_new_token_for_unverified_user(db_session):
     result = auth_router.resend_verification(request=_request(), current_user=user, db=db_session)
 
     assert result == {"message": "Verification email sent."}
-    assert db_session.query(UserAuthToken).filter(UserAuthToken.user_id == user.id, UserAuthToken.purpose == "email_verify").count() == 1
+    assert (
+        db_session.query(UserAuthToken)
+        .filter(UserAuthToken.user_id == user.id, UserAuthToken.purpose == "email_verify")
+        .count()
+        == 1
+    )
 
 
 @pytest.mark.real_email

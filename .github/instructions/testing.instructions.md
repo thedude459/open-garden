@@ -8,7 +8,7 @@ applyTo: "backend/app/**/*.py, frontend/src/**/*.{ts,tsx,css}, scripts/**/*.sh"
 
 - This repo has an automated backend unit test suite. Backend changes should include or update unit tests when behavior changes.
 - Backend coverage policy: keep total backend coverage at `>= 90%` (matching `pytest.ini` / CI gate). Do not merge backend feature work that drops this threshold.
-- Frontend coverage policy: keep total frontend unit-test coverage at `>= 90%` and enforce it via CI coverage thresholds.
+- Frontend coverage policy: keep total frontend unit-test coverage at `>= 90%` and enforce it via CI coverage thresholds. Do not go below `80%` as a minimum floor in local validation or CI.
 - Every backend module with executable business logic should have unit tests in `backend/tests/`.
 - If a backend module is added under `backend/app/`, add a corresponding test module (or extend an existing focused module) in the same PR.
 - When adding a new backend feature (router endpoint, service behavior, engine logic, auth/ownership path), add focused tests for success, expected failures, and important edge cases.
@@ -25,7 +25,7 @@ applyTo: "backend/app/**/*.py, frontend/src/**/*.{ts,tsx,css}, scripts/**/*.sh"
 - For backend feature changes, prefer direct API smoke tests with authenticated `curl` calls instead of only checking the UI.
 - For backend feature changes, run backend tests locally (`pytest backend/tests -q`) and ensure coverage remains `>= 90%` before finishing.
 - For frontend feature changes, confirm both rendering and the backing API flow when applicable. Do not treat a successful build alone as behavior verification.
-- For frontend feature changes, add/update unit tests and run frontend coverage locally (`npm run test:unit -- --coverage`) before finishing.
+- For frontend feature changes, add/update unit tests and run the active phase coverage command from `frontend/COVERAGE_ROADMAP.md` (`npm run test:unit:coverage`, `:phase1`, `:phase2`, or `:full`) before finishing.
 - When you create temporary smoke-test data such as gardens, beds, crops, or plantings, clean it up before finishing unless the user asked to keep it.
 - If a change touches crop templates, planting generation, or ownership-sensitive routes, include at least one smoke test that exercises the changed behavior end to end.
 - CI should continue to publish backend coverage in the job summary and artifacts (`backend/coverage.xml`, `backend/htmlcov/`) for review.

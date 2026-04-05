@@ -15,7 +15,9 @@ def utc_now() -> datetime:
 
 
 def ensure_crop_sync_state(db: Session) -> BackgroundJobState:
-    state = db.query(BackgroundJobState).filter(BackgroundJobState.job_key == CROP_SYNC_JOB_KEY).first()
+    state = (
+        db.query(BackgroundJobState).filter(BackgroundJobState.job_key == CROP_SYNC_JOB_KEY).first()
+    )
     if state is None:
         state = BackgroundJobState(
             job_key=CROP_SYNC_JOB_KEY,
@@ -36,8 +38,12 @@ def get_crop_sync_state_snapshot(db: Session) -> dict:
             "status": state.status,
             "is_running": state.is_running,
             "message": state.message,
-            "last_started_at": state.last_started_at.astimezone(timezone.utc).isoformat() if state.last_started_at else None,
-            "last_finished_at": state.last_finished_at.astimezone(timezone.utc).isoformat() if state.last_finished_at else None,
+            "last_started_at": state.last_started_at.astimezone(timezone.utc).isoformat()
+            if state.last_started_at
+            else None,
+            "last_finished_at": state.last_finished_at.astimezone(timezone.utc).isoformat()
+            if state.last_finished_at
+            else None,
             "added": state.added,
             "updated": state.updated,
             "skipped": state.skipped,

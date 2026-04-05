@@ -8,7 +8,7 @@ import {
   createContext,
   useContext,
 } from "react";
-import { Bed, CropTemplate, Garden, Placement } from "../../types";
+import { Bed, CropTemplate, Garden, Placement } from "../types";
 import { ClimatePlantingWindow } from "../types";
 import { ConfirmState } from "../app/types";
 import { GardenSunPath } from "../types";
@@ -85,8 +85,8 @@ export interface PlannerContextType {
   // History
   plannerUndoCount: number;
   plannerRedoCount: number;
-  undoPlannerChange: () => void;
-  redoPlannerChange: () => void;
+  undoPlannerChange: () => Promise<void>;
+  redoPlannerChange: () => Promise<void>;
   
   // Loading states
   isLoadingGardenData: boolean;
@@ -96,7 +96,6 @@ export interface PlannerContextType {
   // Utilities
   pushNotice: (message: string, kind: "info" | "success" | "error") => void;
   setConfirmState: Dispatch<SetStateAction<ConfirmState | null>>;
-  toFeet: (inches: number) => string;
   onGoToCrops: () => void;
 }
 

@@ -49,3 +49,5 @@ export type PlannerHistoryEntry = {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
 };
+
+export type FetchAuthed = <T = unknown>(url: string, options?: RequestInit) => Promise<T>;

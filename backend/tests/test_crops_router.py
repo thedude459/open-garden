@@ -21,7 +21,9 @@ def test_crop_name_helpers_split_and_normalize():
 
 def test_create_crop_template_persists_manual_crop(db_session, user):
     created = crops.create_crop_template(
-        payload=CropTemplateCreate(name="Pepper", variety="California Wonder", family="Solanaceae", spacing_in=18),
+        payload=CropTemplateCreate(
+            name="Pepper", variety="California Wonder", family="Solanaceae", spacing_in=18
+        ),
         db=db_session,
         _=user,
     )
@@ -60,26 +62,53 @@ def test_update_crop_template_renames_related_rows(db_session, crop_template, ga
     db_session.add(planting)
     db_session.commit()
     db_session.refresh(planting)
-    db_session.add(Placement(garden_id=garden.id, bed_id=bed.id, crop_name=crop_template.name, grid_x=2, grid_y=2, planted_on=date.today(), color="#57a773"))
-    db_session.add(Task(garden_id=garden.id, planting_id=planting.id, title="Tomato: Harvest", due_on=date.today(), notes=""))
+    db_session.add(
+        Placement(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=2,
+            grid_y=2,
+            planted_on=date.today(),
+            color="#57a773",
+        )
+    )
+    db_session.add(
+        Task(
+            garden_id=garden.id,
+            planting_id=planting.id,
+            title="Tomato: Harvest",
+            due_on=date.today(),
+            notes="",
+        )
+    )
     db_session.commit()
 
     updated = crops.update_crop_template(
         crop_id=crop_template.id,
-        payload=CropTemplateCreate(name="Tomato", variety="San Marzano", family="Solanaceae", spacing_in=20),
+        payload=CropTemplateCreate(
+            name="Tomato", variety="San Marzano", family="Solanaceae", spacing_in=20
+        ),
         db=db_session,
         _=user,
     )
 
     assert updated.name == "Tomato (San Marzano)"
-    assert db_session.query(Placement).filter(Placement.crop_name == "Tomato (San Marzano)").count() == 1
-    assert db_session.query(Planting).filter(Planting.crop_name == "Tomato (San Marzano)").count() == 1
+    assert (
+        db_session.query(Placement).filter(Placement.crop_name == "Tomato (San Marzano)").count()
+        == 1
+    )
+    assert (
+        db_session.query(Planting).filter(Planting.crop_name == "Tomato (San Marzano)").count() == 1
+    )
     assert db_session.query(Task).filter(Task.title == "Tomato • San Marzano: Harvest").count() == 1
 
 
 def test_update_crop_template_rejects_missing_crop(db_session, user):
     with pytest.raises(HTTPException) as exc:
-        crops.update_crop_template(crop_id=999, payload=CropTemplateCreate(name="Pepper"), db=db_session, _=user)
+        crops.update_crop_template(
+            crop_id=999, payload=CropTemplateCreate(name="Pepper"), db=db_session, _=user
+        )
 
     assert exc.value.status_code == 404
 
@@ -101,7 +130,9 @@ def test_refresh_crop_templates_reports_started_job(db_session, user, monkeypatc
 
 
 def test_cleanup_legacy_crop_templates_blocks_while_sync_is_running(db_session, user, monkeypatch):
-    monkeypatch.setattr(crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": True})())
+    monkeypatch.setattr(
+        crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": True})()
+    )
 
     with pytest.raises(HTTPException) as exc:
         crops.cleanup_legacy_crop_templates(db=db_session, _=user)
@@ -110,10 +141,14 @@ def test_cleanup_legacy_crop_templates_blocks_while_sync_is_running(db_session, 
 
 
 def test_cleanup_legacy_crop_templates_reports_removed_count(db_session, user, monkeypatch):
-    monkeypatch.setattr(crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": False})())
+    monkeypatch.setattr(
+        crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": False})()
+    )
     monkeypatch.setattr(crops, "cleanup_legacy_starter_templates", lambda db: 3)
     updated = {}
-    monkeypatch.setattr(crops, "update_crop_sync_state", lambda db, **kwargs: updated.update(kwargs))
+    monkeypatch.setattr(
+        crops, "update_crop_sync_state", lambda db, **kwargs: updated.update(kwargs)
+    )
 
     result = crops.cleanup_legacy_crop_templates(db=db_session, _=user)
 
@@ -122,7 +157,11 @@ def test_cleanup_legacy_crop_templates_reports_removed_count(db_session, user, m
 
 
 def test_crop_template_sync_status_reads_snapshot(db_session, user, monkeypatch):
-    monkeypatch.setattr(crops, "get_crop_sync_state_snapshot", lambda db: {"status": "idle", "is_running": False, "message": "ok"})
+    monkeypatch.setattr(
+        crops,
+        "get_crop_sync_state_snapshot",
+        lambda db: {"status": "idle", "is_running": False, "message": "ok"},
+    )
 
     result = crops.crop_template_sync_status(_=user, db=db_session)
 
@@ -138,9 +177,17 @@ def test_run_crop_sync_updates_failed_state(monkeypatch):
 
     dummy_db = DummySession()
     monkeypatch.setattr(crops, "SessionLocal", lambda: dummy_db)
-    monkeypatch.setattr(crops, "seed_crop_templates", lambda db, force_refresh: (_ for _ in ()).throw(RuntimeError("boom")))
-    monkeypatch.setattr(crops, "update_crop_sync_state", lambda db, **kwargs: calls.append(("update", kwargs)))
-    monkeypatch.setattr(crops.logger, "exception", lambda *args, **kwargs: calls.append(("exception",)))
+    monkeypatch.setattr(
+        crops,
+        "seed_crop_templates",
+        lambda db, force_refresh: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+    monkeypatch.setattr(
+        crops, "update_crop_sync_state", lambda db, **kwargs: calls.append(("update", kwargs))
+    )
+    monkeypatch.setattr(
+        crops.logger, "exception", lambda *args, **kwargs: calls.append(("exception",))
+    )
 
     crops._run_crop_sync(force_refresh=True)
 
@@ -155,7 +202,9 @@ def test_start_crop_sync_returns_false_when_state_is_running(monkeypatch):
             return None
 
     monkeypatch.setattr(crops, "SessionLocal", lambda: DummySession())
-    monkeypatch.setattr(crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": True})())
+    monkeypatch.setattr(
+        crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": True})()
+    )
 
     assert crops.start_crop_sync(force_refresh=False) is False
 
@@ -175,15 +224,23 @@ def test_start_crop_sync_starts_background_thread(monkeypatch):
             calls.append("start")
 
     monkeypatch.setattr(crops, "SessionLocal", lambda: DummySession())
-    monkeypatch.setattr(crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": False})())
-    monkeypatch.setattr(crops, "update_crop_sync_state", lambda db, **kwargs: calls.append(("update", kwargs)))
+    monkeypatch.setattr(
+        crops, "ensure_crop_sync_state", lambda db: type("State", (), {"is_running": False})()
+    )
+    monkeypatch.setattr(
+        crops, "update_crop_sync_state", lambda db, **kwargs: calls.append(("update", kwargs))
+    )
     monkeypatch.setattr(crops, "Thread", DummyThread)
 
     started = crops.start_crop_sync(force_refresh=True)
 
     assert started is True
     assert ("update", {"is_running": True}) in calls
-    assert any(entry[0] == "thread" and entry[2] == (True,) and entry[3] is True for entry in calls if isinstance(entry, tuple))
+    assert any(
+        entry[0] == "thread" and entry[2] == (True,) and entry[3] is True
+        for entry in calls
+        if isinstance(entry, tuple)
+    )
     assert "start" in calls
 
 
@@ -196,18 +253,61 @@ def test_run_crop_sync_updates_success_state(monkeypatch):
 
     dummy_db = DummySession()
     monkeypatch.setattr(crops, "SessionLocal", lambda: dummy_db)
-    monkeypatch.setattr(crops, "seed_crop_templates", lambda db, force_refresh: {"added": 2, "updated": 1, "skipped": 0, "failed": 0})
-    monkeypatch.setattr(crops, "update_crop_sync_state", lambda db, **kwargs: calls.append(("update", kwargs)))
+    monkeypatch.setattr(
+        crops,
+        "seed_crop_templates",
+        lambda db, force_refresh: {"added": 2, "updated": 1, "skipped": 0, "failed": 0},
+    )
+    monkeypatch.setattr(
+        crops, "update_crop_sync_state", lambda db, **kwargs: calls.append(("update", kwargs))
+    )
 
     crops._run_crop_sync(force_refresh=False)
 
     assert calls[0][1]["status"] == "running"
-    assert any(call[0] == "update" and call[1]["status"] == "succeeded" and call[1]["added"] == 2 for call in calls)
+    assert any(
+        call[0] == "update" and call[1]["status"] == "succeeded" and call[1]["added"] == 2
+        for call in calls
+    )
 
 
 def test_list_crop_templates_returns_sorted_rows(db_session, user):
-    db_session.add(CropTemplate(name="Zucchini", variety="", source="manual", source_url="", image_url="", external_product_id="", family="Cucurbitaceae", spacing_in=24, planting_window="Spring", days_to_harvest=55, direct_sow=True, frost_hardy=False, weeks_to_transplant=2, notes=""))
-    db_session.add(CropTemplate(name="Bean", variety="", source="manual", source_url="", image_url="", external_product_id="", family="Fabaceae", spacing_in=6, planting_window="Spring", days_to_harvest=50, direct_sow=True, frost_hardy=False, weeks_to_transplant=1, notes=""))
+    db_session.add(
+        CropTemplate(
+            name="Zucchini",
+            variety="",
+            source="manual",
+            source_url="",
+            image_url="",
+            external_product_id="",
+            family="Cucurbitaceae",
+            spacing_in=24,
+            planting_window="Spring",
+            days_to_harvest=55,
+            direct_sow=True,
+            frost_hardy=False,
+            weeks_to_transplant=2,
+            notes="",
+        )
+    )
+    db_session.add(
+        CropTemplate(
+            name="Bean",
+            variety="",
+            source="manual",
+            source_url="",
+            image_url="",
+            external_product_id="",
+            family="Fabaceae",
+            spacing_in=6,
+            planting_window="Spring",
+            days_to_harvest=50,
+            direct_sow=True,
+            frost_hardy=False,
+            weeks_to_transplant=1,
+            notes="",
+        )
+    )
     db_session.commit()
 
     items = crops.list_crop_templates(db=db_session, _=user)

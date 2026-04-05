@@ -28,7 +28,37 @@ env:
   DOCKERHUB_REPOSITORY: thedude459/open-garden
 
 jobs:
+  precommit-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install lint dependencies
+        run: |
+          pip install -r backend/requirements-dev.txt
+          npm --prefix frontend ci
+
+      - name: Run pre-commit lint suite
+        run: pre-commit run --all-files
+
   backend-tests:
+    needs: [precommit-lint]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -61,6 +91,7 @@ jobs:
           retention-days: 7
 
   frontend-tests:
+    needs: [precommit-lint]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:

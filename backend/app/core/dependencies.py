@@ -11,7 +11,9 @@ def get_owned_garden(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Garden:
-    garden = db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
     return garden
@@ -26,7 +28,11 @@ def get_owned_bed(
     if bed is None:
         raise HTTPException(status_code=404, detail="Bed not found")
 
-    garden = db.query(Garden).filter(Garden.id == bed.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == bed.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
     return bed
@@ -41,7 +47,11 @@ def get_owned_placement(
     if placement is None:
         raise HTTPException(status_code=404, detail="Placement not found")
 
-    garden = db.query(Garden).filter(Garden.id == placement.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == placement.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
     return placement
@@ -56,7 +66,11 @@ def get_owned_task(
     if task is None:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    garden = db.query(Garden).filter(Garden.id == task.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == task.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=403, detail="Not authorized")
     return task
@@ -71,7 +85,11 @@ def get_owned_sensor(
     if sensor is None:
         raise HTTPException(status_code=404, detail="Sensor not found")
 
-    garden = db.query(Garden).filter(Garden.id == sensor.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == sensor.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=403, detail="Forbidden")
     return sensor
@@ -86,7 +104,11 @@ def get_owned_planting(
     if planting is None:
         raise HTTPException(status_code=404, detail="Planting not found")
 
-    garden = db.query(Garden).filter(Garden.id == planting.garden_id, Garden.owner_id == current_user.id).first()
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == planting.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
     if garden is None:
         raise HTTPException(status_code=403, detail="Forbidden")
     return planting

@@ -1,10 +1,10 @@
-import { Garden } from "../types";
+import { Garden, GardenTimeline } from "../types";
 import { TimelinePanel } from "./TimelinePanel";
 
 type TimelinePageSectionProps = {
   selectedGardenRecord: Garden | undefined;
   selectedGardenName?: string;
-  timeline: any;
+  timeline: GardenTimeline | null;
   isLoading: boolean;
   loadTimelineForGarden: (garden: Garden, forceRefresh?: boolean) => Promise<void>;
 };

@@ -1,8 +1,9 @@
 import { CoachPanel } from "./CoachPanel";
+import { useCoachState } from "../app/hooks/useCoachState";
 
 type CoachPageSectionProps = {
   selectedGardenName?: string;
-  coachState: any;
+  coachState: ReturnType<typeof useCoachState>;
   pushNotice: (message: string, kind: "info" | "success" | "error") => void;
 };
 
@@ -24,8 +25,9 @@ export function CoachPageSection({
       onAskCoach={async (msg, scenario) => {
         try {
           await coachState.askCoach(msg, scenario);
-        } catch (err: any) {
-          pushNotice(err?.message || "Unable to get coach response.", "error");
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Unable to get coach response.";
+          pushNotice(message, "error");
         }
       }}
     />

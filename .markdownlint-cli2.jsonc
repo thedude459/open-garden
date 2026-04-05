@@ -1,0 +1,23 @@
+{
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD033": false,
+    "MD041": false,
+    "MD029": false,
+    "MD034": false,
+    "MD047": false
+  },
+  "globs": [
+    "README.md",
+    ".github/**/*.md"
+  ],
+  "ignores": [
+    "frontend/node_modules/**",
+    "frontend/dist/**",
+    "frontend/coverage/**",
+    "backend/htmlcov/**",
+    ".github/skills/**",
+    ".github/instructions/**"
+  ]
+}
