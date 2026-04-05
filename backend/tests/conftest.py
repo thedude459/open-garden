@@ -18,6 +18,17 @@ from app.models import (
 )
 
 
+TEST_TODAY = date(2026, 4, 5)
+TEST_NOW_UTC = datetime(2026, 4, 5, 12, 0, tzinfo=timezone.utc)
+
+
+def pytest_collection_modifyitems(items):
+    classified_markers = {"unit", "integration"}
+    for item in items:
+        if not any(marker.name in classified_markers for marker in item.iter_markers()):
+            item.add_marker(pytest.mark.unit)
+
+
 @pytest.fixture()
 def db_session() -> Session:
     engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
@@ -29,6 +40,16 @@ def db_session() -> Session:
     finally:
         session.close()
         engine.dispose()
+
+
+@pytest.fixture()
+def fixed_today() -> date:
+    return TEST_TODAY
+
+
+@pytest.fixture()
+def fixed_now_utc() -> datetime:
+    return TEST_NOW_UTC
 
 
 @pytest.fixture()
@@ -177,7 +198,7 @@ def placement(
         grid_x=3,
         grid_y=3,
         color="#57a773",
-        planted_on=date.today(),
+        planted_on=TEST_TODAY,
     )
     db_session.add(item)
     db_session.commit()
@@ -189,7 +210,7 @@ def placement(
 def planting(
     db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate
 ) -> Planting:
-    planted_on = date.today() - timedelta(days=10)
+    planted_on = TEST_TODAY - timedelta(days=10)
     item = Planting(
         garden_id=garden.id,
         bed_id=bed.id,
@@ -210,7 +231,7 @@ def task(db_session: Session, garden: Garden, planting: Planting) -> Task:
         garden_id=garden.id,
         planting_id=planting.id,
         title="Check moisture",
-        due_on=date.today(),
+        due_on=TEST_TODAY,
         is_done=False,
         notes="",
     )
@@ -243,7 +264,7 @@ def sensor_reading(db_session: Session, sensor: Sensor) -> SensorReading:
     item = SensorReading(
         sensor_id=sensor.id,
         value=28.0,
-        captured_at=datetime.now(timezone.utc),
+        captured_at=TEST_NOW_UTC,
     )
     db_session.add(item)
     db_session.commit()

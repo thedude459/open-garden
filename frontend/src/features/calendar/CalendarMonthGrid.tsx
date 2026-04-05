@@ -27,7 +27,7 @@ export function CalendarMonthGrid({
   monthTitle,
 }: CalendarMonthGridProps) {
   return (
-    <>
+    <div>
       <div className="calendar-head">
         <h2>{title}</h2>
         <div className="month-nav">
@@ -60,6 +60,6 @@ export function CalendarMonthGrid({
           );
         })}
       </div>
-    </>
+    </div>
   );
 }

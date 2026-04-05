@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, Response
 
 from .config import settings
 from .database import Base, SessionLocal, engine
-from .logging_utils import get_logger
+from .core.logging_utils import get_logger
 from .models import CropTemplate
 from .core.rate_limit import enforce_rate_limit, global_rate_limit_hit
 from .routers import (

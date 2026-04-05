@@ -57,10 +57,120 @@ jobs:
       - name: Run pre-commit lint suite
         run: pre-commit run --all-files
 
-  backend-tests:
+  backend-unit-tests:
+    needs: [precommit-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      RANDOMLY_SEED: ${{ github.run_number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Run backend unit tests
+        run: ./scripts/test-backend-unit.sh
+
+      - name: Publish unit randomization seed
+        run: |
+          {
+            echo "## Backend Unit Tests"
+            echo
+            echo "- pytest-randomly seed: ${RANDOMLY_SEED}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  backend-integration-tests:
+    needs: [precommit-lint]
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      RANDOMLY_SEED: ${{ github.run_number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Run backend integration tests
+        run: ./scripts/test-backend-integration.sh
+
+      - name: Publish integration randomization seed
+        run: |
+          {
+            echo "## Backend Integration Tests"
+            echo
+            echo "- pytest-randomly seed: ${RANDOMLY_SEED}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  backend-coverage-gate:
+    needs: [backend-unit-tests, backend-integration-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BRANCH_COVERAGE_MIN: "86"
+      RANDOMLY_SEED: ${{ github.run_number }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Run backend tests with coverage gate
+        run: ./scripts/test-backend.sh
+
+      - name: Publish backend coverage summary
+        run: |
+          line_rate="$(grep -o 'line-rate="[0-9.]*"' backend/coverage.xml | head -n1 | cut -d'"' -f2)"
+          branch_rate="$(grep -o 'branch-rate="[0-9.]*"' backend/coverage.xml | head -n1 | cut -d'"' -f2)"
+          coverage_pct="$(awk "BEGIN {printf \"%.2f\", ${line_rate} * 100}")"
+          branch_pct="$(awk "BEGIN {printf \"%.2f\", ${branch_rate} * 100}")"
+          {
+            echo "## Backend Coverage"
+            echo
+            echo "- Total line coverage: ${coverage_pct}%"
+            echo "- Total branch coverage: ${branch_pct}%"
+            echo "- Coverage XML: backend/coverage.xml"
+            echo "- Coverage HTML: backend/htmlcov/index.html"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce backend branch coverage threshold
+        run: |
+          branch_rate="$(grep -o 'branch-rate="[0-9.]*"' backend/coverage.xml | head -n1 | cut -d'"' -f2)"
+          branch_pct="$(awk "BEGIN {printf \"%.2f\", ${branch_rate} * 100}")"
+          if awk "BEGIN {exit !(${branch_pct} >= ${BRANCH_COVERAGE_MIN})}"; then
+            echo "Branch coverage ${branch_pct}% meets threshold ${BRANCH_COVERAGE_MIN}%"
+          else
+            echo "Branch coverage ${branch_pct}% is below threshold ${BRANCH_COVERAGE_MIN}%"
+            exit 1
+          fi
+
+      - name: Upload backend coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-coverage-report
+          path: |
+            backend/coverage.xml
+            backend/htmlcov/
+          retention-days: 7
+
+  backend-tests-postgres:
     needs: [precommit-lint]
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: opengarden
+          POSTGRES_PASSWORD: opengarden
+          POSTGRES_DB: opengarden_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U opengarden -d opengarden_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: postgresql+psycopg2://opengarden:opengarden@localhost:5432/opengarden_ci
+      SECRET_KEY: ci-only-not-for-production-use-replace-me
+      PYTHONPATH: backend
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -73,22 +183,18 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install backend dependencies
-        run: pip install -r backend/requirements.txt
-
-      - name: Run backend tests with coverage
         run: |
-          pytest backend/tests -q
-          python -m coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"
+          pip install -r backend/requirements.txt
+          pip install pytest-randomly==3.16.0
 
-      - name: Upload backend coverage report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: always()
-        with:
-          name: backend-coverage-report
-          path: |
-            backend/coverage.xml
-            backend/htmlcov/
-          retention-days: 7
+      - name: Run Postgres-backed backend smoke tests
+        run: |
+          pytest \
+            backend/tests/test_main_app_integration.py \
+            backend/tests/test_migrations_smoke.py \
+            backend/tests/test_postgres_smoke.py \
+            --randomly-seed="${{ github.run_number }}" \
+            -q
 
   frontend-tests:
     needs: [precommit-lint]
@@ -122,7 +228,7 @@ jobs:
         run: npm run build
 
   e2e:
-    needs: [backend-tests, frontend-tests]
+    needs: [backend-unit-tests, backend-integration-tests, backend-coverage-gate, backend-tests-postgres, frontend-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -211,7 +317,7 @@ jobs:
 
   docker-images:
     name: Build and Publish Docker Images
-    needs: [backend-tests, frontend-tests, e2e]
+    needs: [backend-unit-tests, backend-integration-tests, backend-coverage-gate, backend-tests-postgres, frontend-tests, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: prod

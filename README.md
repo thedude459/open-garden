@@ -240,3 +240,49 @@ pre-commit run --all-files
 ```
 
 CI runs the same pre-commit lint suite in `.github/workflows/lint.yml` and as a required job in `.github/workflows/ci.yml`.
+
+## Backend tests
+
+Run backend tests locally with a Dockerized Python 3.12 runner (works even if your host Python version differs):
+
+```bash
+./scripts/test-backend.sh
+```
+
+Run only backend unit tests:
+
+```bash
+./scripts/test-backend-unit.sh
+```
+
+Run only backend integration tests:
+
+```bash
+./scripts/test-backend-integration.sh
+```
+
+Test split and markers:
+
+- Unit tests are fast, isolated tests.
+- Integration tests validate multi-module behavior, app wiring, middleware, migrations, or database flows.
+- Tests without an explicit marker are auto-classified as `unit` during collection.
+
+This command runs `pytest backend/tests -q` with coverage and writes:
+
+- `backend/coverage.xml`
+- `backend/htmlcov/`
+
+`scripts/test-backend.sh` executes two phases in order:
+
+1. Unit tests (`-m unit`)
+2. Integration tests (`-m integration`)
+
+Coverage is combined across both phases and branch coverage is enforced.
+
+CI safety checks:
+
+- Backend unit and integration jobs run as separate checks.
+- A coverage gate job enforces line and branch thresholds after both phases.
+- CI uses randomized test order with a reported `pytest-randomly` seed to catch order dependencies.
+
+The CI backend test job in `.github/workflows/ci.yml` uses the same script.
