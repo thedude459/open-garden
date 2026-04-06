@@ -325,6 +325,8 @@ class CropTemplateCreate(BaseModel):
     family: str = ""
     image_url: str = ""
     spacing_in: int = 12
+    row_spacing_in: int = 18
+    in_row_spacing_in: int = 12
     days_to_harvest: int = 60
     planting_window: str = "Spring"
     direct_sow: bool = True
@@ -343,6 +345,8 @@ class CropTemplateOut(BaseModel):
     external_product_id: str
     family: str
     spacing_in: int
+    row_spacing_in: int
+    in_row_spacing_in: int
     days_to_harvest: int
     planting_window: str
     direct_sow: bool
@@ -351,6 +355,23 @@ class CropTemplateOut(BaseModel):
     notes: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CropSourceConfigOut(BaseModel):
+    id: int
+    source_key: str
+    display_name: str
+    is_primary: bool
+    is_enabled: bool
+    priority: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CropSourceConfigUpdate(BaseModel):
+    is_primary: bool | None = None
+    is_enabled: bool | None = None
+    priority: int | None = None
 
 
 class BedCreate(BaseModel):
@@ -381,6 +402,10 @@ class GardenYardUpdate(BaseModel):
 class BedPositionUpdate(BaseModel):
     grid_x: int
     grid_y: int
+
+
+class BedRenameUpdate(BaseModel):
+    name: str
 
 
 class PlantingCreate(BaseModel):

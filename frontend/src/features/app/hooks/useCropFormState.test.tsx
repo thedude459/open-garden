@@ -13,6 +13,8 @@ const crops = [
     external_product_id: "",
     family: "Nightshade",
     spacing_in: 12,
+    row_spacing_in: 18,
+    in_row_spacing_in: 12,
     days_to_harvest: 70,
     planting_window: "Spring",
     direct_sow: false,

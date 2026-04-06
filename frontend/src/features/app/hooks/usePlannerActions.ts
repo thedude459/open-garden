@@ -128,6 +128,7 @@ export function usePlannerActions({
     moveBedInYard: bedActions.moveBedInYard,
     nudgeBedByDelta: bedActions.nudgeBedByDelta,
     rotateBedInYard: bedActions.rotateBedInYard,
+    renameBed: bedActions.renameBed,
     deleteBed: bedActions.deleteBed,
     deleteGarden: bedActions.deleteGarden,
   };

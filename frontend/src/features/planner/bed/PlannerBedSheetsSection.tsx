@@ -22,6 +22,7 @@ type PlannerBedSheetsSectionProps = {
   onUndoPlanner: () => void;
   onRedoPlanner: () => void;
   requestRotatePreview: (bed: Bed) => void;
+  onRenameBed: (bedId: number, nextName: string) => Promise<void> | void;
   onDeleteBed: (bedId: number) => void;
   onBlockedPlacementMove: (cropName: string) => void;
   placementSpacingConflict: (bedId: number, x: number, y: number, cropName: string, ignorePlacementId?: number) => string | null;
@@ -29,7 +30,7 @@ type PlannerBedSheetsSectionProps = {
   onAddPlacement: (bedId: number, x: number, y: number) => void;
   isCellBlockedForSelectedCrop: (bedId: number, x: number, y: number, occupant: Placement | undefined) => boolean;
   isCellInBuffer: (bedId: number, x: number, y: number) => boolean;
-  cropVisual: (cropName: string) => { imageUrl: string; icon: string };
+  cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number };
   onNudgePlacement: (placementId: number, dx: number, dy: number) => void;
   onRequestRemovePlacement: (placementId: number, cropName: string) => void;
 };
@@ -55,6 +56,7 @@ export function PlannerBedSheetsSection({
   onUndoPlanner,
   onRedoPlanner,
   requestRotatePreview,
+  onRenameBed,
   onDeleteBed,
   onBlockedPlacementMove,
   placementSpacingConflict,
@@ -142,6 +144,7 @@ export function PlannerBedSheetsSection({
               onNudgePlacement={onNudgePlacement}
               onRequestRemovePlacement={onRequestRemovePlacement}
               requestRotatePreview={requestRotatePreview}
+              onRenameBed={onRenameBed}
               onDeleteBed={onDeleteBed}
             />
           );

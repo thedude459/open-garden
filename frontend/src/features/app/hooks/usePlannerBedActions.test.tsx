@@ -30,6 +30,10 @@ function renderBedActions(overrides: Partial<Parameters<typeof usePlannerBedActi
     if (path === "/beds/10/rotate") {
       return { ...beds[0], width_in: beds[0].height_in, height_in: beds[0].width_in } satisfies Bed;
     }
+    if (path === "/beds/10") {
+      const payload = JSON.parse(String(options?.body ?? "{}"));
+      return { ...beds[0], name: payload.name } satisfies Bed;
+    }
     return undefined;
   });
   const setBeds = vi.fn((update: Bed[] | ((prev: Bed[]) => Bed[])) => {
@@ -204,6 +208,41 @@ describe("usePlannerBedActions", () => {
     expect(fetchAuthed).toHaveBeenCalledWith("/beds/10", { method: "DELETE" });
     expect(loadGardenData).toHaveBeenCalledTimes(1);
     expect(pushNotice).toHaveBeenCalledWith("Bed deleted.", "info");
+  });
+
+  it("renames a bed and records rename history", async () => {
+    const { result, fetchAuthed, pushNotice, historyEntryRef } = renderBedActions();
+
+    await act(async () => {
+      await result.current.renameBed(10, "Kitchen Bed");
+    });
+
+    expect(fetchAuthed).toHaveBeenCalledWith(
+      "/beds/10",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ name: "Kitchen Bed" }) }),
+    );
+    expect(pushNotice).toHaveBeenCalledWith("Renamed bed to Kitchen Bed.", "success");
+    expect(historyEntryRef()?.label).toBe("Rename Bed A");
+
+    await act(async () => {
+      await historyEntryRef()?.undo();
+    });
+
+    expect(fetchAuthed).toHaveBeenCalledWith(
+      "/beds/10",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ name: "Bed A" }) }),
+    );
+  });
+
+  it("rejects blank rename input", async () => {
+    const { result, fetchAuthed, pushNotice } = renderBedActions();
+
+    await act(async () => {
+      await result.current.renameBed(10, "   ");
+    });
+
+    expect(fetchAuthed).not.toHaveBeenCalledWith("/beds/10", expect.anything());
+    expect(pushNotice).toHaveBeenCalledWith("Bed name cannot be empty.", "error");
   });
 
   it("configures delete garden confirmation and clears local state on confirm", async () => {

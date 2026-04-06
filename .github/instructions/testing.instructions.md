@@ -24,8 +24,14 @@ applyTo: "backend/app/**/*.py, frontend/src/**/*.{ts,tsx,css}, scripts/**/*.sh"
   - API docs: `http://localhost:8000/docs`
 - For backend feature changes, prefer direct API smoke tests with authenticated `curl` calls instead of only checking the UI.
 - For backend feature changes, run backend tests locally (`pytest backend/tests -q`) and ensure coverage remains `>= 90%` before finishing.
+- For any backend code change, add or update backend unit tests in `backend/tests/` for the touched behavior.
+- For new backend features, add integration tests where needed to validate end-to-end behavior.
+- For any backend code change, check backend unit-test coverage output and confirm it remains compliant with project thresholds.
 - For frontend feature changes, confirm both rendering and the backing API flow when applicable. Do not treat a successful build alone as behavior verification.
+- For any frontend code change, run `npm run build` in `frontend/` before finishing.
 - For frontend feature changes, add/update unit tests and run the active phase coverage command from `frontend/COVERAGE_ROADMAP.md` (`npm run test:unit:coverage`, `:phase1`, `:phase2`, or `:full`) before finishing.
+- For any frontend code change, check the active coverage output and confirm thresholds remain compliant.
+- For any new frontend feature, add or update at least one E2E Playwright test in `frontend/tests/` covering the primary happy path.
 - When you create temporary smoke-test data such as gardens, beds, crops, or plantings, clean it up before finishing unless the user asked to keep it.
 - If a change touches crop templates, planting generation, or ownership-sensitive routes, include at least one smoke test that exercises the changed behavior end to end.
 - CI should continue to publish backend coverage in the job summary and artifacts (`backend/coverage.xml`, `backend/htmlcov/`) for review.
@@ -74,3 +80,4 @@ The E2E suite lives in `frontend/tests/`. When adding a significant new planner 
 - **Calendar task lifecycle** (covered in `calendar-workflow.spec.ts`): add task, filter, complete, delete
 - **Crop library lifecycle** (covered in `crop-library.spec.ts`): create, edit-rehydrate
 - Any new core product surface (auth screens, seasonal plan panel, sensor CRUD, garden deletion) needs at least one E2E happy-path test before the feature is considered complete
+- Any new frontend feature should include at least one E2E happy-path test; new core product surfaces (auth screens, seasonal plan panel, sensor CRUD, garden deletion) are mandatory.

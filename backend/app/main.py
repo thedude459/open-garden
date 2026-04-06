@@ -48,7 +48,7 @@ async def lifespan(application: FastAPI):
     try:
         ensure_crop_sync_state(db)
         existing_import_count = (
-            db.query(CropTemplate).filter(CropTemplate.source == "johnnys-selected-seeds").count()
+            db.query(CropTemplate).filter(CropTemplate.source != "manual").count()
         )
         if existing_import_count == 0:
             start_crop_sync(force_refresh=False)
@@ -57,7 +57,7 @@ async def lifespan(application: FastAPI):
                 db,
                 status="idle",
                 is_running=False,
-                message="Johnny's crop catalog is already present.",
+                message="Crop catalog data is already present.",
                 skipped=existing_import_count,
                 error=None,
             )

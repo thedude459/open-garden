@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from threading import Lock
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..models import BackgroundJobState
@@ -23,11 +24,23 @@ def ensure_crop_sync_state(db: Session) -> BackgroundJobState:
             job_key=CROP_SYNC_JOB_KEY,
             status="idle",
             is_running=False,
-            message="Johnny's crop sync has not run in this process yet.",
+            message="Crop catalog sync has not run in this process yet.",
         )
         db.add(state)
-        db.commit()
-        db.refresh(state)
+        try:
+            db.commit()
+            db.refresh(state)
+            return state
+        except IntegrityError:
+            # Another worker/process created the same singleton row first.
+            db.rollback()
+            state = (
+                db.query(BackgroundJobState)
+                .filter(BackgroundJobState.job_key == CROP_SYNC_JOB_KEY)
+                .first()
+            )
+            if state is None:
+                raise
     return state
 
 

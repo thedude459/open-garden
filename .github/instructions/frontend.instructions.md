@@ -33,7 +33,10 @@ applyTo: "frontend/src/**/*.{ts,tsx,css}"
 - Keep destructive actions explicit and confirmed in the UI.
 - If frontend API payloads change, make the corresponding backend schema and route updates rather than patching around mismatches in the client.
 - For every new frontend feature or behavior change, add or update unit tests in `frontend/src/**/*.test.{ts,tsx}` and keep frontend coverage at or above 90% (hard floor: 80% in local and CI checks).
+- For any frontend code change (including TS/TSX/CSS refactors), run `npm run build` in `frontend/` before finishing.
+- For any frontend code change, run the active unit-test coverage command from `frontend/COVERAGE_ROADMAP.md` and verify coverage remains compliant.
+- For any new frontend feature, add or update at least one relevant E2E Playwright test in `frontend/tests/` that exercises the feature's happy path.
 - Use the phased coverage rollout in `frontend/COVERAGE_ROADMAP.md` and advance coverage scope over time (`core` -> `phase1` -> `phase2` -> `full`) rather than permanently narrowing coverage includes.
 - If a PR touches files in the active phase, add/adjust tests for those touched files in the same PR.
 - For new context providers, add at least one provider-section integration test that renders the section inside its provider and verifies core wiring.
-- Before merging frontend architecture changes, run `npm run test:unit`, the active phase coverage command from `frontend/COVERAGE_ROADMAP.md`, and `npm run build` in `frontend/`.
+- Before merging any frontend changes, run `npm run test:unit`, the active phase coverage command from `frontend/COVERAGE_ROADMAP.md`, and `npm run build` in `frontend/`.

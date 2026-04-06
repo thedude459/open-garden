@@ -20,6 +20,7 @@ from ..schemas import (
     BedCreate,
     BedOut,
     BedPositionUpdate,
+    BedRenameUpdate,
     PlacementCreate,
     PlacementMove,
     PlacementOut,
@@ -129,6 +130,20 @@ def update_bed_position(
 
     bed.grid_x = min(max(0, payload.grid_x), max_x)
     bed.grid_y = min(max(0, payload.grid_y), max_y)
+    db.add(bed)
+    db.commit()
+    db.refresh(bed)
+    return bed
+
+
+@router.patch("/beds/{bed_id}", response_model=BedOut)
+def rename_bed(
+    payload: BedRenameUpdate, db: Session = Depends(get_db), bed: Bed = Depends(get_owned_bed)
+):
+    next_name = payload.name.strip()
+    if not next_name:
+        raise HTTPException(status_code=422, detail="Bed name cannot be empty")
+    bed.name = next_name
     db.add(bed)
     db.commit()
     db.refresh(bed)

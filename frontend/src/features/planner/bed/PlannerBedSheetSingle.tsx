@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Bed, DragPayload, Placement } from "../../types";
 
 type PlannerBedSheetSingleProps = {
@@ -18,10 +19,11 @@ type PlannerBedSheetSingleProps = {
   onAddPlacement: (bedId: number, x: number, y: number) => void;
   isCellBlockedForSelectedCrop: (bedId: number, x: number, y: number, occupant: Placement | undefined) => boolean;
   isCellInBuffer: (bedId: number, x: number, y: number) => boolean;
-  cropVisual: (cropName: string) => { imageUrl: string; icon: string };
+  cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number };
   onNudgePlacement: (placementId: number, dx: number, dy: number) => void;
   onRequestRemovePlacement: (placementId: number, cropName: string) => void;
   requestRotatePreview: (bed: Bed) => void;
+  onRenameBed: (bedId: number, nextName: string) => Promise<void> | void;
   onDeleteBed: (bedId: number) => void;
   allPlacements: Placement[];
 };
@@ -48,20 +50,83 @@ export function PlannerBedSheetSingle({
   onNudgePlacement,
   onRequestRemovePlacement,
   requestRotatePreview,
+  onRenameBed,
   onDeleteBed,
   allPlacements,
 }: PlannerBedSheetSingleProps) {
   const cols = Math.max(1, Math.ceil(bed.width_in / 3));
   const rows = Math.max(1, Math.ceil(bed.height_in / 3));
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameDraft, setRenameDraft] = useState(bed.name);
+  const [isSavingRename, setIsSavingRename] = useState(false);
+
+  useEffect(() => {
+    setRenameDraft(bed.name);
+  }, [bed.name]);
+
+  const placementIndexes = useMemo(() => {
+    const runningCounts = new Map<string, number>();
+    const indexByPlacementId = new Map<number, number>();
+    placements.forEach((placement) => {
+      const next = (runningCounts.get(placement.crop_name) || 0) + 1;
+      runningCounts.set(placement.crop_name, next);
+      indexByPlacementId.set(placement.id, next);
+    });
+    return indexByPlacementId;
+  }, [placements]);
 
   return (
     <section key={bed.id} className="bed-sheet">
       <header>
-        <h4>{bed.name}</h4>
+        {isRenaming ? (
+          <form
+            className="bed-rename-form"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              if (isSavingRename) return;
+              if (!renameDraft.trim()) {
+                return;
+              }
+              setIsSavingRename(true);
+              await onRenameBed(bed.id, renameDraft);
+              setIsSavingRename(false);
+              setIsRenaming(false);
+            }}
+          >
+            <input
+              type="text"
+              value={renameDraft}
+              maxLength={80}
+              onChange={(event) => setRenameDraft(event.target.value)}
+              aria-label={`Rename ${bed.name}`}
+            />
+            <button type="submit" className="secondary-btn" disabled={isSavingRename}>
+              Save
+            </button>
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => {
+                setRenameDraft(bed.name);
+                setIsRenaming(false);
+              }}
+              disabled={isSavingRename}
+            >
+              Cancel
+            </button>
+          </form>
+        ) : (
+          <h4>{bed.name}</h4>
+        )}
         <small>
           {cols} x {rows} squares
         </small>
         <small className="bed-scale-legend">3 in / square · 4 squares = 1 ft</small>
+        {!isRenaming && (
+          <button className="secondary-btn" title="Rename bed" onClick={() => setIsRenaming(true)}>
+            Rename
+          </button>
+        )}
         <button className="secondary-btn" title="Preview rotate bed 90 degrees" onClick={() => requestRotatePreview(bed)}>
           Rotate 90°
         </button>
@@ -133,14 +198,7 @@ export function PlannerBedSheetSingle({
               {occupant
                 ? (() => {
                     const visual = cropVisual(occupant.crop_name);
-                    if (visual.imageUrl) {
-                      return <img className="plot-cell-photo" src={visual.imageUrl} alt="" title={occupant.crop_name} loading="lazy" />;
-                    }
-                    return (
-                      <span className="plot-cell-icon" role="img" aria-hidden="true" title={occupant.crop_name}>
-                        {visual.icon}
-                      </span>
-                    );
+                    return <img className="plot-cell-photo" src={visual.imageUrl} alt="" title={occupant.crop_name} loading="lazy" />;
                   })()
                 : ""}
             </button>
@@ -155,8 +213,9 @@ export function PlannerBedSheetSingle({
           const visual = cropVisual(cropName);
           return (
             <span key={`${bed.id}-${cropName}`} className="bed-legend-item">
-              {visual.imageUrl ? <img className="legend-photo" src={visual.imageUrl} alt="" loading="lazy" /> : <span className="legend-icon" aria-hidden="true">{visual.icon}</span>}
+              <img className="legend-photo" src={visual.imageUrl} alt="" loading="lazy" />
               <span>{cropName} ({count})</span>
+              <span className="hint">Row {visual.rowSpacingIn} in · In-row {visual.inRowSpacingIn} in</span>
             </span>
           );
         })}
@@ -188,8 +247,11 @@ export function PlannerBedSheetSingle({
             >
               {selectedPlacement && selectedPlacement.id === placement.id
                 ? `Tap a square for ${placement.crop_name}`
-                : `${placement.crop_name} (${placement.grid_x + 1},${placement.grid_y + 1})`}
+                : `${placement.crop_name}${(placementIndexes.get(placement.id) || 0) > 1 ? ` #${placementIndexes.get(placement.id)}` : ""}`}
             </button>
+            <p className="hint chip-spacing-hint">
+              Row {cropVisual(placement.crop_name).rowSpacingIn} in · In-row {cropVisual(placement.crop_name).inRowSpacingIn} in
+            </p>
             <div className="chip-actions">
               <button type="button" className="secondary-btn chip-action-btn" onClick={() => onNudgePlacement(placement.id, -1, 0)} aria-label={`Move ${placement.crop_name} left`}>←</button>
               <button type="button" className="secondary-btn chip-action-btn" onClick={() => onNudgePlacement(placement.id, 0, -1)} aria-label={`Move ${placement.crop_name} up`}>↑</button>

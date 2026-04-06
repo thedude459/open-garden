@@ -12,12 +12,17 @@ from urllib.request import Request, urlopen
 
 from ..models import CropTemplate
 from ..core.logging_utils import get_logger
+from .crop_source_providers import NormalizedCropRecord
+from .crop_source_registry import crop_source_registry
+from .spacing_providers import SpacingProvider, get_default_spacing_provider
 
 JOHNNYS_SOURCE = "johnnys-selected-seeds"
+HIGH_MOWING_SOURCE = "high-mowing-seeds"
 MANUAL_SOURCE = "manual"
 JOHNNYS_PRODUCT_SITEMAP = "https://www.johnnyseeds.com/sitemap_0-product.xml"
+HIGH_MOWING_PRODUCT_SITEMAP = "https://www.highmowingseeds.com/sitemap.xml"
 REQUEST_TIMEOUT_SECONDS = 20
-REQUEST_USER_AGENT = "open-garden johnnys-sync/1.0"
+REQUEST_USER_AGENT = "open-garden crop-sync/1.0"
 MAX_IMPORT_WORKERS = 12
 logger = get_logger(__name__)
 
@@ -38,6 +43,37 @@ EXCLUDED_TITLE_KEYWORDS = {
     "seed set",
     "grow kit",
     "spawn",
+}
+
+HIGH_MOWING_EXCLUDED_SEGMENTS = {
+    "microgreens",
+    "sprouts",
+    "shoots",
+    "supplies",
+    "apparel",
+    "collections",
+    "collection",
+    "cover-crops",
+}
+
+HIGH_MOWING_EXCLUDED_LEAF_KEYWORDS = {
+    "greens-sprouts-shoots",
+    "greens-micro",
+    "greens-salad-mixes",
+    "greens-asian-mustard",
+    "greens-specialty",
+}
+
+_HIGH_MOWING_NOISE_TOKENS = {
+    "organic",
+    "non",
+    "gmo",
+    "seed",
+    "seeds",
+    "open",
+    "pollinated",
+    "hybrid",
+    "f1",
 }
 
 SINGULAR_OVERRIDES = {
@@ -288,6 +324,8 @@ class JohnnysCropRecord:
     variety: str
     family: str
     spacing_in: int
+    row_spacing_in: int
+    in_row_spacing_in: int
     planting_window: str
     days_to_harvest: int
     direct_sow: bool
@@ -690,6 +728,88 @@ def _is_importable_url(url: str) -> bool:
     return True
 
 
+def _is_high_mowing_product_url(url: str) -> bool:
+    parsed = urlparse(url)
+    if "highmowingseeds.com" not in parsed.netloc:
+        return False
+    if not parsed.path.endswith(".html"):
+        return False
+
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    if len(segments) < 3 or segments[0] not in ALLOWED_ROOT_SEGMENTS:
+        return False
+    if any(segment in HIGH_MOWING_EXCLUDED_SEGMENTS for segment in segments):
+        return False
+
+    leaf = segments[-1][: -len(".html")]
+    if not leaf:
+        return False
+    if any(keyword in leaf for keyword in HIGH_MOWING_EXCLUDED_LEAF_KEYWORDS):
+        return False
+    if leaf in {"css", "index"}:
+        return False
+    return True
+
+
+def _tokenize_slug(slug: str) -> list[str]:
+    return [token for token in re.split(r"[^a-z0-9]+", slug.lower()) if token]
+
+
+def _build_high_mowing_record_from_url(
+    url: str,
+    spacing_provider: SpacingProvider,
+) -> NormalizedCropRecord:
+    parsed = urlparse(url)
+    segments = [segment for segment in parsed.path.split("/") if segment]
+    if len(segments) < 3:
+        raise ValueError("Missing path segments for High Mowing URL")
+
+    root_segment = segments[0].lower()
+    crop_segment = segments[1]
+    slug = segments[-1][: -len(".html")]
+
+    crop_name = _singularize(crop_segment.replace("-", " "))
+    crop_tokens = set(_tokenize_slug(_normalized_keyword(crop_name)))
+    slug_tokens = _tokenize_slug(slug)
+    variety_tokens = [
+        token
+        for token in slug_tokens
+        if token not in _HIGH_MOWING_NOISE_TOKENS and token not in crop_tokens
+    ]
+    variety = _clean_variety_name(" ".join(variety_tokens).title())
+    if not variety:
+        variety = _clean_variety_name(" ".join(slug_tokens).title())
+
+    direct_sow = _derive_direct_sow(crop_name, root_segment, "")
+    frost_hardy = _derive_frost_hardy(crop_name, root_segment, "")
+    row_spacing_in, in_row_spacing_in = spacing_provider.get_row_and_in_row_spacing(
+        crop_name, root_segment
+    )
+
+    canonical_name = _canonical_crop_name(crop_name, variety)
+    return NormalizedCropRecord(
+        canonical_name=canonical_name,
+        variety=variety,
+        source_key=HIGH_MOWING_SOURCE,
+        source_url=url,
+        image_url="",
+        external_product_id=f"high-mowing:{parsed.path}",
+        family=_derive_family(crop_name, [], root_segment),
+        spacing_in=_derive_spacing_in(crop_name, root_segment),
+        row_spacing_in=row_spacing_in,
+        in_row_spacing_in=in_row_spacing_in,
+        planting_window=_derive_planting_window(direct_sow, frost_hardy, ""),
+        days_to_harvest=_derive_days_to_harvest(crop_name, root_segment, {}),
+        direct_sow=direct_sow,
+        frost_hardy=frost_hardy,
+        weeks_to_transplant=_derive_weeks_to_transplant(crop_name, direct_sow),
+        notes=(
+            "Imported from High Mowing Organic Seeds sitemap metadata. "
+            f"Catalog path: {parsed.path}."
+        ),
+    )
+
+
 def _clean_variety_name(variety: str) -> str:
     cleaned = variety.strip(" -")
     cleaned = re.sub(r"([A-Za-z])\(", r"\1 (", cleaned)
@@ -822,7 +942,7 @@ def _build_notes(
     return " ".join(details)
 
 
-def _parse_product_page(url: str) -> JohnnysCropRecord | None:
+def _parse_product_page(url: str, spacing_provider: SpacingProvider) -> JohnnysCropRecord | None:
     page_text = _fetch_text(url)
     title = _extract_product_title(page_text)
     normalized_title = title.lower()
@@ -845,6 +965,9 @@ def _parse_product_page(url: str) -> JohnnysCropRecord | None:
         re.IGNORECASE,
     )
     image_url = unescape(image_match.group(1)).strip() if image_match else ""
+    row_spacing_in, in_row_spacing_in = spacing_provider.get_row_and_in_row_spacing(
+        crop_name, root_segment
+    )
 
     return JohnnysCropRecord(
         external_product_id=product_id,
@@ -854,6 +977,8 @@ def _parse_product_page(url: str) -> JohnnysCropRecord | None:
         variety=variety,
         family=family,
         spacing_in=_derive_spacing_in(crop_name, root_segment),
+        row_spacing_in=row_spacing_in,
+        in_row_spacing_in=in_row_spacing_in,
         planting_window=_derive_planting_window(direct_sow, frost_hardy, life_cycle),
         days_to_harvest=_derive_days_to_harvest(crop_name, root_segment, quick_facts),
         direct_sow=direct_sow,
@@ -869,14 +994,18 @@ def _canonical_crop_name(crop_name: str, variety: str) -> str:
     return crop_name
 
 
-def _fetch_johnnys_catalog() -> tuple[list[JohnnysCropRecord], int]:
+def _fetch_johnnys_catalog(
+    spacing_provider: SpacingProvider,
+) -> tuple[list[JohnnysCropRecord], int]:
     sitemap_text = _fetch_text(JOHNNYS_PRODUCT_SITEMAP)
     product_urls = [url for url in _extract_sitemap_urls(sitemap_text) if _is_importable_url(url)]
 
     records: list[JohnnysCropRecord] = []
     failed = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_IMPORT_WORKERS) as executor:
-        futures = {executor.submit(_parse_product_page, url): url for url in product_urls}
+        futures = {
+            executor.submit(_parse_product_page, url, spacing_provider): url for url in product_urls
+        }
         for future in concurrent.futures.as_completed(futures):
             try:
                 record = future.result()
@@ -896,76 +1025,108 @@ def _fetch_johnnys_catalog() -> tuple[list[JohnnysCropRecord], int]:
     return records, failed
 
 
-def seed_crop_templates(db, force_refresh: bool = False):
-    existing_imports = db.query(CropTemplate).filter(CropTemplate.source == JOHNNYS_SOURCE).all()
-    if existing_imports and not force_refresh:
-        return {
-            "added": 0,
-            "updated": 0,
-            "skipped": len(existing_imports),
-            "failed": 0,
-            "force_refresh": False,
-        }
+def _fetch_high_mowing_catalog(
+    spacing_provider: SpacingProvider,
+) -> tuple[list[NormalizedCropRecord], int]:
+    sitemap_text = _fetch_text(HIGH_MOWING_PRODUCT_SITEMAP)
+    product_urls = [
+        url for url in _extract_sitemap_urls(sitemap_text) if _is_high_mowing_product_url(url)
+    ]
 
-    try:
-        imported_records, failed = _fetch_johnnys_catalog()
-    except (HTTPError, URLError, TimeoutError, ValueError) as exc:
-        raise RuntimeError(f"Unable to reach Johnny's Selected Seeds catalog: {exc}") from exc
+    records: list[NormalizedCropRecord] = []
+    failed = 0
+    for url in sorted(set(product_urls)):
+        try:
+            records.append(_build_high_mowing_record_from_url(url, spacing_provider))
+        except ValueError as exc:
+            logger.warning("high-mowing product parse failed", extra={"error": str(exc)})
+            failed += 1
+    return records, failed
 
-    if not imported_records:
-        raise RuntimeError("Johnny's Selected Seeds returned no importable crop offerings")
 
-    existing_by_product_id = {
-        template.external_product_id: template
-        for template in db.query(CropTemplate).filter(CropTemplate.source == JOHNNYS_SOURCE).all()
-        if template.external_product_id
-    }
+class JohnnysSelectedSeedsProvider:
+    @property
+    def source_key(self) -> str:
+        return JOHNNYS_SOURCE
 
-    added = 0
-    updated = 0
-    for record in imported_records:
-        canonical_name = _canonical_crop_name(record.crop_name, record.variety)
-        existing = existing_by_product_id.get(record.external_product_id)
-        payload = {
-            "name": canonical_name,
-            "variety": record.variety,
-            "source": JOHNNYS_SOURCE,
-            "source_url": record.source_url,
-            "image_url": record.image_url,
-            "external_product_id": record.external_product_id,
-            "family": record.family,
-            "spacing_in": record.spacing_in,
-            "planting_window": record.planting_window,
-            "days_to_harvest": record.days_to_harvest,
-            "direct_sow": record.direct_sow,
-            "frost_hardy": record.frost_hardy,
-            "weeks_to_transplant": record.weeks_to_transplant,
-            "notes": record.notes,
-        }
+    @property
+    def display_name(self) -> str:
+        return "Johnny's Selected Seeds"
 
-        if existing is None:
-            db.add(CropTemplate(**payload))
-            added += 1
-            continue
+    def fetch_crops(self, spacing_provider: SpacingProvider) -> list[NormalizedCropRecord]:
+        try:
+            records, _failed = _fetch_johnnys_catalog(spacing_provider)
+        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+            raise RuntimeError(f"Unable to reach Johnny's Selected Seeds catalog: {exc}") from exc
 
-        changed = False
-        for key, value in payload.items():
-            if getattr(existing, key) != value:
-                setattr(existing, key, value)
-                changed = True
-        if changed:
-            updated += 1
+        normalized: list[NormalizedCropRecord] = []
+        for record in records:
+            normalized.append(
+                NormalizedCropRecord(
+                    canonical_name=_canonical_crop_name(record.crop_name, record.variety),
+                    variety=record.variety,
+                    source_key=JOHNNYS_SOURCE,
+                    source_url=record.source_url,
+                    image_url=record.image_url,
+                    external_product_id=record.external_product_id,
+                    family=record.family,
+                    spacing_in=record.spacing_in,
+                    row_spacing_in=record.row_spacing_in,
+                    in_row_spacing_in=record.in_row_spacing_in,
+                    planting_window=record.planting_window,
+                    days_to_harvest=record.days_to_harvest,
+                    direct_sow=record.direct_sow,
+                    frost_hardy=record.frost_hardy,
+                    weeks_to_transplant=record.weeks_to_transplant,
+                    notes=record.notes,
+                )
+            )
+        return normalized
 
-    if added or updated:
-        db.commit()
 
-    return {
-        "added": added,
-        "updated": updated,
-        "skipped": 0,
-        "failed": failed,
-        "force_refresh": force_refresh,
-    }
+class HighMowingSeedsProvider:
+    @property
+    def source_key(self) -> str:
+        return HIGH_MOWING_SOURCE
+
+    @property
+    def display_name(self) -> str:
+        return "High Mowing Organic Seeds"
+
+    def fetch_crops(self, spacing_provider: SpacingProvider) -> list[NormalizedCropRecord]:
+        try:
+            records, _failed = _fetch_high_mowing_catalog(spacing_provider)
+        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+            raise RuntimeError(f"Unable to reach High Mowing catalog: {exc}") from exc
+
+        if not records:
+            raise RuntimeError("High Mowing returned no importable crop offerings")
+        return records
+
+
+def _ensure_default_crop_sources_registered() -> None:
+    registered = set(crop_source_registry.registered_keys())
+    if JOHNNYS_SOURCE not in registered:
+        crop_source_registry.register(JohnnysSelectedSeedsProvider())
+    if HIGH_MOWING_SOURCE not in registered:
+        crop_source_registry.register(HighMowingSeedsProvider())
+
+
+def seed_crop_templates(
+    db, force_refresh: bool = False, spacing_provider: SpacingProvider | None = None
+):
+    if spacing_provider is None:
+        spacing_provider = get_default_spacing_provider()
+
+    _ensure_default_crop_sources_registered()
+    crop_source_registry.ensure_source_configs(db)
+    result = crop_source_registry.sync_to_db(
+        db,
+        force_refresh=force_refresh,
+        spacing_provider=spacing_provider,
+    )
+    result["force_refresh"] = force_refresh
+    return result
 
 
 def cleanup_legacy_starter_templates(db) -> int:

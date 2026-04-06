@@ -50,6 +50,7 @@ interface PlannerActions {
   moveBedInYard: (bedId: number, x: number, y: number) => Promise<void>;
   nudgeBedByDelta: (bedId: number, dx: number, dy: number) => void;
   rotateBedInYard: (bedId: number, autoFit?: boolean) => Promise<void>;
+  renameBed: (bedId: number, nextName: string) => Promise<void>;
   deleteBed: (bedId: number) => Promise<void>;
   addPlacement: (bedId: number, x: number, y: number) => Promise<void>;
   movePlacement: (placementId: number, bedId: number, x: number, y: number) => Promise<void>;

@@ -87,6 +87,7 @@ describe("feature contexts", () => {
           },
           plannerActions: {
             moveBedInYard: async () => undefined, nudgeBedByDelta: () => undefined, rotateBedInYard: async () => undefined,
+            renameBed: async () => undefined,
             deleteBed: async () => undefined, addPlacement: async () => undefined, movePlacement: async () => undefined,
             nudgePlacementByDelta: () => undefined, movePlacementsByDelta: async () => undefined,
             removePlacementsBulk: async () => undefined, removePlacement: async () => undefined,

@@ -19,11 +19,13 @@ from app.routers.planner import (
     log_harvest,
     move_placement,
     rotate_bed_in_yard,
+    rename_bed,
     update_bed_position,
 )
 from app.schemas import (
     BedCreate,
     BedPositionUpdate,
+    BedRenameUpdate,
     PlacementCreate,
     PlacementMove,
     PlantingCreate,
@@ -53,6 +55,19 @@ def test_update_bed_position_clamps_to_yard(db_session, bed):
 
     assert updated.grid_x == 17
     assert updated.grid_y == 17
+
+
+def test_rename_bed_updates_name(db_session, bed):
+    updated = rename_bed(BedRenameUpdate(name="Harvest Row"), db=db_session, bed=bed)
+
+    assert updated.name == "Harvest Row"
+
+
+def test_rename_bed_rejects_blank_name(db_session, bed):
+    with pytest.raises(HTTPException) as exc:
+        rename_bed(BedRenameUpdate(name="   "), db=db_session, bed=bed)
+
+    assert exc.value.status_code == 422
 
 
 def test_rotate_bed_swaps_dimensions(db_session, garden):

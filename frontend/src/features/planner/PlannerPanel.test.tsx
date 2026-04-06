@@ -20,6 +20,8 @@ function makeCrop(overrides: Partial<CropTemplate> = {}): CropTemplate {
     external_product_id: "",
     family: "Solanaceae",
     spacing_in: 12,
+    row_spacing_in: 18,
+    in_row_spacing_in: 12,
     days_to_harvest: 75,
     planting_window: "Spring",
     direct_sow: false,
@@ -64,12 +66,14 @@ function renderPlanner(options?: {
   yardWidthFt?: number;
   yardLengthFt?: number;
   onRotateBed?: ReturnType<typeof vi.fn>;
+  onRenameBed?: ReturnType<typeof vi.fn>;
   onNudgePlacement?: ReturnType<typeof vi.fn>;
   onMovePlacement?: ReturnType<typeof vi.fn>;
   onBlockedPlacementMove?: ReturnType<typeof vi.fn>;
   placementSpacingConflict?: ReturnType<typeof vi.fn>;
 }) {
   const onRotateBed = options?.onRotateBed || vi.fn().mockResolvedValue(undefined);
+  const onRenameBed = options?.onRenameBed || vi.fn().mockResolvedValue(undefined);
   const onNudgePlacement = options?.onNudgePlacement || vi.fn();
   const onMovePlacement = options?.onMovePlacement || vi.fn();
   const onBlockedPlacementMove = options?.onBlockedPlacementMove || vi.fn();
@@ -126,6 +130,7 @@ function renderPlanner(options?: {
         onMoveBedInYard: vi.fn(),
         onNudgeBed: vi.fn(),
         onRotateBed,
+        onRenameBed,
         onDeleteBed: vi.fn(),
         onAddPlacement: vi.fn(),
         onMovePlacement,
@@ -147,7 +152,7 @@ function renderPlanner(options?: {
     />,
   );
 
-  return { onRotateBed, onNudgePlacement, onMovePlacement, onBlockedPlacementMove };
+  return { onRotateBed, onRenameBed, onNudgePlacement, onMovePlacement, onBlockedPlacementMove };
 }
 
 describe("PlannerPanel", () => {
@@ -185,14 +190,34 @@ describe("PlannerPanel", () => {
     expect(screen.getByText("Tomato (1)")).toBeInTheDocument();
   });
 
-  it("uses icon fallback in legend when crop has no photo", () => {
+  it("uses default photo fallback in legend when crop has no photo", () => {
     const crop = makeCrop({ name: "Tomato", image_url: "" });
     const placement = makePlacement({ crop_name: "Tomato" });
     renderPlanner({ cropTemplates: [crop], placements: [placement] });
 
     const legend = screen.getAllByLabelText("North Bed crop legend")[0];
     expect(within(legend).getByText("Tomato (1)")).toBeInTheDocument();
-    expect(within(legend).getByText("🍅")).toBeInTheDocument();
+    expect(legend.querySelectorAll("img.legend-photo").length).toBeGreaterThan(0);
+  });
+
+  it("shows row and in-row spacing hints for each placement", () => {
+    const crop = makeCrop({ name: "Tomato", row_spacing_in: 14, in_row_spacing_in: 14 });
+    const placement = makePlacement({ crop_name: "Tomato" });
+    renderPlanner({ cropTemplates: [crop], placements: [placement] });
+
+    expect(screen.getAllByText(/Row 14 in · In-row 14 in/i).length).toBeGreaterThan(0);
+  });
+
+  it("renames a bed from the bed sheet header", () => {
+    const { onRenameBed } = renderPlanner();
+
+    fireEvent.click(screen.getByRole("button", { name: "Rename" }));
+    fireEvent.change(screen.getByRole("textbox", { name: /Rename North Bed/i }), {
+      target: { value: "Herb Bed" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(onRenameBed).toHaveBeenCalledWith(10, "Herb Bed");
   });
 
   it("supports keyboard nudge for placement chips", () => {

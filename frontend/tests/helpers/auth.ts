@@ -52,3 +52,12 @@ export async function loadAuthenticated(page: Page, token: string) {
   }, token);
   await page.goto("/", { waitUntil: "domcontentloaded" });
 }
+
+export async function ensureGardenSelected(page: Page, gardenName?: string) {
+  const targetGarden = gardenName
+    ? page.locator(".garden-card-select", { hasText: gardenName }).first()
+    : page.locator(".garden-card-select").first();
+
+  await expect(targetGarden).toBeVisible({ timeout: 20_000 });
+  await targetGarden.click();
+}

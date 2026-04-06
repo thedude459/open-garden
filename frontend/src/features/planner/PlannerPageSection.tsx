@@ -92,6 +92,7 @@ export function PlannerPageSection() {
         onMoveBedInYard: (bedId, x, y) => plannerActions.moveBedInYard(bedId, x, y).catch(() => undefined),
         onNudgeBed: plannerActions.nudgeBedByDelta,
         onRotateBed: (bedId, autoFit) => plannerActions.rotateBedInYard(bedId, autoFit),
+        onRenameBed: (bedId, nextName) => plannerActions.renameBed(bedId, nextName).catch(() => undefined),
         onDeleteBed: (bedId) => plannerActions.deleteBed(bedId).catch(() => undefined),
         onAddPlacement: (bedId, x, y) => plannerActions.addPlacement(bedId, x, y).catch(() => undefined),
         onMovePlacement: (placementId, bedId, x, y) => plannerActions.movePlacement(placementId, bedId, x, y).catch(() => undefined),

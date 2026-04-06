@@ -61,6 +61,7 @@ type PlannerPanelProps = {
     onMoveBedInYard: (bedId: number, x: number, y: number) => Promise<void> | void;
     onNudgeBed: (bedId: number, dx: number, dy: number) => void;
     onRotateBed: (bedId: number, autoFit?: boolean) => Promise<void>;
+    onRenameBed: (bedId: number, nextName: string) => Promise<void> | void;
     onDeleteBed: (bedId: number) => void;
     onAddPlacement: (bedId: number, x: number, y: number) => void;
     onMovePlacement: (placementId: number, bedId: number, x: number, y: number) => void;
@@ -138,6 +139,7 @@ export function PlannerPanel({
     onMoveBedInYard,
     onNudgeBed,
     onRotateBed,
+    onRenameBed,
     onDeleteBed,
     onAddPlacement,
     onMovePlacement,
@@ -311,6 +313,7 @@ export function PlannerPanel({
             cropVisual={cropVisual}
             onNudgePlacement={onNudgePlacement}
             onRequestRemovePlacement={onRequestRemovePlacement}
+            onRenameBed={onRenameBed}
           />
 
           <PlannerYardLayoutSection

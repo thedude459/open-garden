@@ -253,6 +253,8 @@ export type CropTemplate = {
   external_product_id: string;
   family: string;
   spacing_in: number;
+  row_spacing_in: number;
+  in_row_spacing_in: number;
   days_to_harvest: number;
   planting_window: string;
   direct_sow: boolean;

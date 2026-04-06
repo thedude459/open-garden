@@ -137,6 +137,15 @@ def test_full_planner_workflow_via_http_endpoints(integration_client):
     assert bed["name"] == "North Bed"
     assert bed["garden_id"] == garden["id"]
 
+    rename_bed_response = client.patch(
+        f"/beds/{bed['id']}",
+        headers=headers,
+        json={"name": "Kitchen Bed"},
+    )
+    assert rename_bed_response.status_code == 200
+    bed = rename_bed_response.json()
+    assert bed["name"] == "Kitchen Bed"
+
     placement_response = client.post(
         "/placements",
         headers=headers,

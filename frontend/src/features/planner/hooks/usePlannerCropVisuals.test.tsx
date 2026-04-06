@@ -13,6 +13,8 @@ const tomato: CropTemplate = {
   external_product_id: "",
   family: "Nightshade",
   spacing_in: 12,
+  row_spacing_in: 60,
+  in_row_spacing_in: 24,
   days_to_harvest: 70,
   planting_window: "spring",
   direct_sow: false,
@@ -22,19 +24,21 @@ const tomato: CropTemplate = {
 };
 
 describe("usePlannerCropVisuals", () => {
-  it("returns image when crop template has one", () => {
+  it("returns image and spacing data when crop template has one", () => {
     const { result } = renderHook(() => usePlannerCropVisuals([tomato]));
     const visual = result.current.cropVisual("Tomato");
 
     expect(visual.imageUrl).toBe("https://example.com/tomato.jpg");
-    expect(visual.icon).toBe("🍅");
+    expect(visual.rowSpacingIn).toBe(60);
+    expect(visual.inRowSpacingIn).toBe(24);
   });
 
-  it("falls back to icon selection when no image exists", () => {
+  it("falls back to default photo when no image exists", () => {
     const { result } = renderHook(() => usePlannerCropVisuals([{ ...tomato, image_url: "" }]));
     const visual = result.current.cropVisual("Unknown Crop");
 
-    expect(visual.imageUrl).toBe("");
-    expect(visual.icon.length).toBeGreaterThan(0);
+    expect(visual.imageUrl.startsWith("data:image/svg+xml") || visual.imageUrl.includes("default-plant-photo.svg")).toBe(true);
+    expect(visual.rowSpacingIn).toBe(18);
+    expect(visual.inRowSpacingIn).toBe(12);
   });
 });

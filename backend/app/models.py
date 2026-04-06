@@ -94,6 +94,8 @@ class CropTemplate(Base):
     external_product_id: Mapped[str] = mapped_column(String(64), default="", index=True)
     family: Mapped[str] = mapped_column(String(120), default="")
     spacing_in: Mapped[int] = mapped_column(Integer, default=12)
+    row_spacing_in: Mapped[int] = mapped_column(Integer, default=18)
+    in_row_spacing_in: Mapped[int] = mapped_column(Integer, default=12)
     planting_window: Mapped[str] = mapped_column(String(120), default="Spring")
     days_to_harvest: Mapped[int] = mapped_column(Integer, default=60)
     direct_sow: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -224,3 +226,14 @@ class BackgroundJobState(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
+
+
+class CropSourceConfig(Base):
+    __tablename__ = "crop_source_configs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    display_name: Mapped[str] = mapped_column(String(120), default="")
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0)

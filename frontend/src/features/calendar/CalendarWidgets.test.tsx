@@ -22,6 +22,8 @@ const crop: CropTemplate = {
   external_product_id: "",
   family: "Solanaceae",
   spacing_in: 18,
+  row_spacing_in: 60,
+  in_row_spacing_in: 24,
   days_to_harvest: 70,
   planting_window: "Spring",
   direct_sow: false,

@@ -167,6 +167,47 @@ export function usePlannerBedActions({
     ],
   );
 
+  const renameBed = useCallback(
+    async (bedId: number, nextName: string) => {
+      const bed = beds.find((item) => item.id === bedId);
+      if (!bed) return;
+      const trimmedName = nextName.trim();
+      if (!trimmedName) {
+        pushNotice("Bed name cannot be empty.", "error");
+        return;
+      }
+      if (trimmedName === bed.name) return;
+      try {
+        const updated: Bed = await fetchAuthed(`/beds/${bedId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ name: trimmedName }),
+        });
+        setBeds((prev) => prev.map((item) => (item.id === bedId ? updated : item)));
+        pushPlannerHistory({
+          label: `Rename ${bed.name}`,
+          undo: async () => {
+            const reverted: Bed = await fetchAuthed(`/beds/${bedId}`, {
+              method: "PATCH",
+              body: JSON.stringify({ name: bed.name }),
+            });
+            setBeds((prev) => prev.map((item) => (item.id === bedId ? reverted : item)));
+          },
+          redo: async () => {
+            const redone: Bed = await fetchAuthed(`/beds/${bedId}`, {
+              method: "PATCH",
+              body: JSON.stringify({ name: trimmedName }),
+            });
+            setBeds((prev) => prev.map((item) => (item.id === bedId ? redone : item)));
+          },
+        });
+        pushNotice(`Renamed bed to ${trimmedName}.`, "success");
+      } catch (err: unknown) {
+        pushNotice(getErrorMessage(err, "Unable to rename bed."), "error");
+      }
+    },
+    [beds, fetchAuthed, setBeds, pushPlannerHistory, pushNotice],
+  );
+
   const deleteBed = useCallback(
     async (bedId: number) => {
       setConfirmState({
@@ -218,6 +259,7 @@ export function usePlannerBedActions({
     moveBedInYard,
     nudgeBedByDelta,
     rotateBedInYard,
+    renameBed,
     deleteBed,
     deleteGarden,
   };

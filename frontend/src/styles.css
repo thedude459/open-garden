@@ -118,6 +118,7 @@ p {
   font-size: 0.95rem;
   line-height: 1;
 }
+
 .card h4 {
   font-size: 0.95rem;
 }
@@ -1003,6 +1004,17 @@ p {
   margin-bottom: 0.5rem;
 }
 
+.bed-rename-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bed-rename-form input {
+  min-width: 9rem;
+  width: min(16rem, 48vw);
+}
+
 .bed-board {
   display: grid;
   gap: 0.35rem;
@@ -1032,6 +1044,7 @@ p {
   line-height: 1;
 }
 
+
 .plot-cell.blocked {
   background:
     repeating-linear-gradient(
@@ -1058,6 +1071,10 @@ p {
   padding: 0;
   display: grid;
   gap: 0.4rem;
+}
+
+.chip-spacing-hint {
+  margin: 0.1rem 0 0.2rem 0.5rem;
 }
 
 .chip {

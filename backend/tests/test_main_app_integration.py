@@ -11,9 +11,13 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base, get_db
 from app.main import app
 import app.main as app_main
+from app.models import CropSourceConfig
 from app.routers import auth as auth_router_module
+from app.routers import crops as crops_router_module
 from app.routers import insights as insights_router_module
 from app.routers import gardens as gardens_router_module
+from app.services.crop_source_providers import NormalizedCropRecord
+from app.services import seed as seed_service
 
 
 pytestmark = pytest.mark.integration
@@ -292,6 +296,113 @@ def test_main_app_crop_template_crud_and_sensor_summary(monkeypatch, main_app_cl
     assert payload["garden_id"] == garden["id"]
     assert len(payload["sensors"]) == 1
     assert payload["soil_moisture_series"]
+
+
+def test_refresh_sync_loads_both_primary_and_secondary_sources(monkeypatch, main_app_client):
+    monkeypatch.setattr(app_main, "global_rate_limit_hit", lambda request: None)
+
+    # Route-level refresh sync uses SessionLocal directly; bind it to the same
+    # in-memory engine used by this integration fixture.
+    probe_override = app.dependency_overrides[get_db]()
+    probe_db = next(probe_override)
+    bound_session_local = sessionmaker(
+        bind=probe_db.bind,
+        autocommit=False,
+        autoflush=False,
+    )
+    probe_db.close()
+    probe_override.close()
+    monkeypatch.setattr(crops_router_module, "SessionLocal", bound_session_local)
+
+    class _ImmediateThread:
+        def __init__(self, target, args, daemon):
+            self._target = target
+            self._args = args
+            self._daemon = daemon
+
+        def start(self):
+            self._target(*self._args)
+
+    monkeypatch.setattr(crops_router_module, "Thread", _ImmediateThread)
+
+    def fake_johnnys(self, spacing_provider):
+        del spacing_provider
+        return [
+            NormalizedCropRecord(
+                canonical_name="Tomato (Roma)",
+                variety="Roma",
+                source_key=seed_service.JOHNNYS_SOURCE,
+                source_url="https://www.johnnyseeds.com/tomato-roma.html",
+                image_url="",
+                external_product_id="johnnys:roma",
+                family="Solanaceae",
+                spacing_in=24,
+                row_spacing_in=60,
+                in_row_spacing_in=24,
+                planting_window="Start indoors and transplant after last frost",
+                days_to_harvest=75,
+                direct_sow=False,
+                frost_hardy=False,
+                weeks_to_transplant=8,
+                notes="mock johnnys",
+            )
+        ]
+
+    def fake_high_mowing(self, spacing_provider):
+        del spacing_provider
+        return [
+            NormalizedCropRecord(
+                canonical_name="Bean (Snap Bush)",
+                variety="Snap Bush",
+                source_key=seed_service.HIGH_MOWING_SOURCE,
+                source_url="https://www.highmowingseeds.com/vegetables/beans/organic-snap-bush-bean-seed.html",
+                image_url="",
+                external_product_id="high-mowing:bean-snap-bush",
+                family="Fabaceae",
+                spacing_in=6,
+                row_spacing_in=18,
+                in_row_spacing_in=6,
+                planting_window="Direct sow after last frost once soil has warmed",
+                days_to_harvest=60,
+                direct_sow=True,
+                frost_hardy=False,
+                weeks_to_transplant=0,
+                notes="mock high mowing",
+            )
+        ]
+
+    monkeypatch.setattr(seed_service.JohnnysSelectedSeedsProvider, "fetch_crops", fake_johnnys)
+    monkeypatch.setattr(seed_service.HighMowingSeedsProvider, "fetch_crops", fake_high_mowing)
+
+    token = _register_and_login(main_app_client, "sources-main@example.com", "sources-main")
+    headers = _auth_headers(token)
+
+    refresh = main_app_client.post("/crop-templates/refresh", headers=headers)
+    assert refresh.status_code == 200
+
+    sync_status = main_app_client.get("/crop-templates/sync-status", headers=headers)
+    assert sync_status.status_code == 200
+    assert sync_status.json()["status"] == "succeeded"
+    assert sync_status.json()["is_running"] is False
+    assert sync_status.json()["added"] == 2
+
+    templates = main_app_client.get("/crop-templates", headers=headers)
+    assert templates.status_code == 200
+    template_sources = {item["source"] for item in templates.json()}
+    assert seed_service.JOHNNYS_SOURCE in template_sources
+    assert seed_service.HIGH_MOWING_SOURCE in template_sources
+
+    # Read directly from DB layer to assert source config rows were initialized.
+    db_override = app.dependency_overrides[get_db]()
+    db = next(db_override)
+    try:
+        configured_keys = {row.source_key for row in db.query(CropSourceConfig).all()}
+    finally:
+        db.close()
+        db_override.close()
+
+    assert seed_service.JOHNNYS_SOURCE in configured_keys
+    assert seed_service.HIGH_MOWING_SOURCE in configured_keys
 
 
 def test_main_app_insights_timeline_and_coach_flow(monkeypatch, main_app_client):

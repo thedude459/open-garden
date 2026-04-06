@@ -39,6 +39,8 @@ function makeCrop(): CropTemplate {
     external_product_id: "",
     family: "Nightshade",
     spacing_in: 12,
+    row_spacing_in: 60,
+    in_row_spacing_in: 24,
     days_to_harvest: 70,
     planting_window: "spring",
     direct_sow: false,

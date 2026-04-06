@@ -118,6 +118,8 @@ describe("planner helpers", () => {
           external_product_id: "",
           family: "Apiaceae",
           spacing_in: 6,
+          row_spacing_in: 18,
+          in_row_spacing_in: 6,
           days_to_harvest: 60,
           planting_window: "Spring",
           direct_sow: true,
@@ -299,7 +301,7 @@ describe("buildCanopyPreview – edge cases", () => {
     ];
     const crops: CropTemplate[] = [{
       id: 1, name: "Tomato", variety: "", source: "manual", source_url: "", image_url: "",
-      external_product_id: "", family: "", spacing_in: 12, days_to_harvest: 60,
+      external_product_id: "", family: "", spacing_in: 12, row_spacing_in: 60, in_row_spacing_in: 24, days_to_harvest: 60,
       planting_window: "Spring", direct_sow: false, frost_hardy: false, weeks_to_transplant: 6, notes: "",
     }];
     const canopy = buildCanopyPreview(beds, placements, crops, 0);

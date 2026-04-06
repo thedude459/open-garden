@@ -33,3 +33,6 @@ applyTo: "backend/app/**/*.py"
 - Testing expectations for backend changes:
 	- Add or update targeted backend tests in `backend/tests/` for ownership checks, service logic, and route behavior.
 	- For endpoint changes, cover at least one success path and one auth/validation failure path.
+	- For any backend code change, add or update unit tests in `backend/tests/` for the touched behavior.
+	- For new backend features or behavior spanning multiple modules/routes, add integration tests where needed to verify end-to-end behavior.
+	- For any backend code change, run backend tests with coverage and confirm coverage remains at or above the project threshold.
