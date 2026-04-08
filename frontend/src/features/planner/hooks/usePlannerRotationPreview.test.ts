@@ -18,10 +18,10 @@ function makeBed(overrides: Partial<Bed> = {}): Bed {
 }
 
 describe("usePlannerRotationPreview", () => {
-  let onRotateBed: ReturnType<typeof vi.fn>;
+  let onRotateBed: (bedId: number, autoFit?: boolean) => Promise<void>;
 
   beforeEach(() => {
-    onRotateBed = vi.fn(async () => undefined);
+    onRotateBed = vi.fn(async () => undefined) as unknown as typeof onRotateBed;
   });
 
   it("starts with no pending rotation", () => {

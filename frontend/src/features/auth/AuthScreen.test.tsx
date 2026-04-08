@@ -73,4 +73,57 @@ describe("AuthScreen", () => {
     expect(reset.setAuthPane).toHaveBeenCalledWith("login");
     expect(reset.setResetToken).toHaveBeenCalledWith(null);
   });
+
+  it("fires field change handlers across auth panes", () => {
+    const setEmail = vi.fn();
+    const setUsername = vi.fn();
+    const setPassword = vi.fn();
+    const setResetPassword = vi.fn();
+
+    // signin pane: username + password
+    const { rerender } = render(
+      <AuthScreen {...buildProps({ loginMode: "signin", setEmail, setUsername, setPassword, setResetPassword })} />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "user1" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "pass1" } });
+    expect(setUsername).toHaveBeenCalledWith("user1");
+    expect(setPassword).toHaveBeenCalledWith("pass1");
+
+    // register pane: email field
+    rerender(
+      <AuthScreen {...buildProps({ loginMode: "register", setEmail, setUsername, setPassword })} />,
+    );
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "a@b.com" } });
+    expect(setEmail).toHaveBeenCalledWith("a@b.com");
+
+    // forgot-password pane: email field
+    rerender(
+      <AuthScreen {...buildProps({ authPane: "forgot-password", setEmail })} />,
+    );
+    const forgotPwEmail = screen.getAllByLabelText("Email")[0];
+    fireEvent.change(forgotPwEmail, { target: { value: "b@c.com" } });
+    expect(setEmail).toHaveBeenCalledWith("b@c.com");
+
+    // forgot-username pane: email field
+    rerender(
+      <AuthScreen {...buildProps({ authPane: "forgot-username", setEmail })} />,
+    );
+    const forgotUnEmail = screen.getAllByLabelText("Email")[0];
+    fireEvent.change(forgotUnEmail, { target: { value: "c@d.com" } });
+    expect(setEmail).toHaveBeenCalledWith("c@d.com");
+
+    // reset pane: new password field
+    rerender(
+      <AuthScreen {...buildProps({ authPane: "reset", setResetPassword })} />,
+    );
+    fireEvent.change(screen.getByLabelText("New password"), { target: { value: "newpass" } });
+    expect(setResetPassword).toHaveBeenCalledWith("newpass");
+  });
+
+  it("navigates back from forgot-username to login", () => {
+    const setAuthPane = vi.fn();
+    render(<AuthScreen {...buildProps({ authPane: "forgot-username", setAuthPane })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Back to sign in" }));
+    expect(setAuthPane).toHaveBeenCalledWith("login");
+  });
 });

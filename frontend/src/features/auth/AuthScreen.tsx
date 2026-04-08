@@ -44,8 +44,8 @@ export function AuthScreen({
   dismissNotice,
 }: AuthScreenProps) {
   return (
-    <main className="shell center">
-      <section className="card login-card">
+    <main className="auth-shell">
+      <section className="card auth-card">
         <h1>open-garden</h1>
         <p>Calendar-driven garden planning with visual bed design.</p>
 

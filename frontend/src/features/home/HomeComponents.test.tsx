@@ -90,13 +90,21 @@ describe("HomeHero", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Calendar" }));
     fireEvent.click(screen.getByRole("button", { name: "Open Bed Planner" }));
     fireEvent.click(screen.getByRole("button", { name: "Manage Crops" }));
+    fireEvent.click(screen.getByRole("button", { name: "Schedule planting" }));
+    fireEvent.click(screen.getByRole("button", { name: "Plan protection task" }));
 
     expect(screen.getByText("Backyard")).toBeInTheDocument();
     expect(screen.getByText("Weed tomatoes")).toBeInTheDocument();
     expect(screen.getByText(/Cover seedlings on Tuesday night/i)).toBeInTheDocument();
+    expect(screen.getByText("Act now")).toBeInTheDocument();
+    expect(screen.getByText("Watch soon")).toBeInTheDocument();
+    expect(screen.getByTitle("Planting cue")).toBeInTheDocument();
+    expect(screen.getByTitle("Protection cue")).toBeInTheDocument();
     expect(onNavigate).toHaveBeenNthCalledWith(1, "calendar");
     expect(onNavigate).toHaveBeenNthCalledWith(2, "planner");
     expect(onNavigate).toHaveBeenNthCalledWith(3, "crops");
+    expect(onNavigate).toHaveBeenNthCalledWith(4, "calendar");
+    expect(onNavigate).toHaveBeenNthCalledWith(5, "calendar");
   });
 
   it("renders empty-state guidance when there are no pending tasks or forecast entries", () => {
@@ -122,6 +130,54 @@ describe("HomeHero", () => {
     expect(screen.getByText(/No open tasks/i)).toBeInTheDocument();
     expect(screen.getByText(/No weather data loaded yet/i)).toBeInTheDocument();
     expect(screen.getByText(/No urgent planting windows yet/i)).toBeInTheDocument();
+  });
+
+  it("limits weather and cue previews to three and expands with view-all controls", () => {
+    render(
+      <HomeHero
+        garden={garden}
+        beds={[]}
+        placements={[]}
+        tasks={[]}
+        cropTemplateCount={0}
+        gardenClimate={climate}
+        homeTaskPreview={[]}
+        overdueTaskCount={0}
+        upcomingTaskCount={0}
+        weatherPreview={[
+          { date: "2026-04-07", low: 40, high: 60, rain: 0 },
+          { date: "2026-04-08", low: 42, high: 61, rain: 0.1 },
+          { date: "2026-04-09", low: 43, high: 62, rain: 0.2 },
+          { date: "2026-04-10", low: 44, high: 63, rain: 0.3 },
+        ]}
+        isLoadingWeather={false}
+        actionablePlantingWindows={[
+          { crop_template_id: 1, crop_name: "Pea", variety: "", method: "direct", window_start: "2026-04-07", window_end: "2026-04-14", status: "open", reason: "Soil is ready.", soil_temperature_min_f: 45, indoor_seed_start: null, indoor_seed_end: null, legacy_window_label: "Spring" },
+          { crop_template_id: 2, crop_name: "Carrot", variety: "", method: "direct", window_start: "2026-04-09", window_end: "2026-04-15", status: "watch", reason: "Watch moisture.", soil_temperature_min_f: 45, indoor_seed_start: null, indoor_seed_end: null, legacy_window_label: "Spring" },
+        ]}
+        weatherRiskCues={[
+          "Cover seedlings tonight.",
+          "Prepare row covers for wind.",
+        ]}
+        onNavigate={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("2026-04-10")).not.toBeInTheDocument();
+    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(screen.getByText(/Confidence improves as local forecast/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View all forecast days" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View all cues" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "View all forecast days" }));
+    fireEvent.click(screen.getByRole("button", { name: "View all cues" }));
+
+    expect(screen.getByText("2026-04-10", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText(/Prepare row covers for wind/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Watch soon").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Schedule planting" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Review in planner" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: "Plan protection task" }).length).toBeGreaterThan(0);
   });
 });
 
@@ -149,10 +205,11 @@ describe("CreateGardenForm", () => {
     );
 
     fireEvent.change(screen.getByLabelText("Garden Name"), { target: { value: "Front Yard" } });
-    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Sunny" } });
     fireEvent.change(screen.getByLabelText("ZIP Code"), { target: { value: "80301" } });
     fireEvent.change(screen.getByLabelText("Yard Width (ft)"), { target: { value: "12" } });
     fireEvent.change(screen.getByLabelText("Yard Length (ft)"), { target: { value: "24" } });
+    fireEvent.click(screen.getByText("Advanced options"));
+    fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Sunny" } });
     fireEvent.change(screen.getByLabelText("Private Address"), { target: { value: "123 Lane" } });
     fireEvent.click(screen.getByLabelText("Share publicly"));
     fireEvent.submit(screen.getByRole("button", { name: "Create garden" }).closest("form") as HTMLFormElement);
@@ -179,11 +236,12 @@ describe("GardenListSidebar", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Backyard/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select garden Backyard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete Backyard" }));
 
     expect(onSelectGarden).toHaveBeenCalledWith(1);
     expect(onDeleteGarden).toHaveBeenCalledWith(1);
+    expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByText("Community Plot")).toBeInTheDocument();
   });
 

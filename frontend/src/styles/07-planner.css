@@ -1,0 +1,380 @@
+/* ====================
+   Planner UI
+==================== */
+
+/* Generic section panel used by multiple planner sub-sections */
+.planner-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--panel), #f8fbf4);
+}
+
+.planner-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.planner-sidebar,
+.planner-main {
+  min-width: 0;
+}
+
+.planner-sidebar {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.planner-main {
+  display: grid;
+  gap: var(--space-6);
+  flex: 1;
+}
+
+.planner-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.planner-stat-card {
+  text-align: center;
+  padding: var(--space-4);
+  background: #eaf2ec;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.planner-sidebar .hint,
+.planner-main .hint {
+  color: #42574d;
+}
+
+@media (min-width: 640px) {
+  .planner-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .planner-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .planner-sidebar {
+    width: min(100%, 22rem);
+    flex: 0 0 22rem;
+  }
+}
+
+/* Section head: h3 + hint + action group */
+.planner-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.planner-history-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+/* Bulk selection controls row */
+.planner-bulk-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.planner-empty-state {
+  padding: 0.95rem 1rem;
+  border: 1px dashed #a9bfae;
+  border-radius: 10px;
+  background: #f7fbf6;
+  display: grid;
+  gap: 0.35rem;
+}
+
+/* Rotation / placement selection banner */
+.planner-selection-banner {
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.planner-selection-banner.blocked {
+  background: #fde8e4;
+  border-color: #f0b0a0;
+}
+
+/* Bed sheets grid */
+.bed-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.bed-scale-legend {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Yard layout section */
+.planner-yard-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.planner-yard-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.planner-yard-title-row h3 {
+  margin: 0;
+}
+
+/* Yard size form – two-col inputs then save button */
+.yard-size-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+@media (max-width: 600px) {
+  .yard-size-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .yard-size-form button {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ====================
+   Yard Canvas
+==================== */
+
+.yard-grid-wrap {
+  position: relative;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f0f7f1;
+  padding: 0.5rem;
+}
+
+.yard-grid {
+  position: relative;
+  background-color: #e8f5e9;
+  background-image:
+    linear-gradient(to right, rgba(80, 130, 90, 0.18) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(80, 130, 90, 0.18) 1px, transparent 1px);
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  overflow: hidden;
+  user-select: none;
+  cursor: crosshair;
+}
+
+.yard-empty-state {
+  position: absolute;
+  inset: 1rem;
+  display: grid;
+  place-content: center;
+  gap: 0.45rem;
+  padding: 1rem;
+  border: 1px dashed #8cb198;
+  border-radius: 12px;
+  background: rgba(252, 255, 251, 0.86);
+  text-align: center;
+  color: #284438;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.yard-empty-state span {
+  color: #4d6459;
+  font-size: 0.9rem;
+}
+
+/* Overlay layers (sun/shade/canopy) */
+.yard-overlay-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.yard-overlay-cell {
+  position: absolute;
+  pointer-events: none;
+}
+
+.yard-overlay-cell.sun {
+  background: rgba(255, 200, 0, 0.7);
+  border-radius: 2px;
+}
+
+.yard-overlay-cell.shade {
+  background: rgba(30, 80, 140, 0.55);
+  border-radius: 2px;
+}
+
+.yard-canopy {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(34, 139, 34, 0.35);
+  border: 2px dashed rgba(34, 100, 34, 0.6);
+  pointer-events: none;
+}
+
+/* Individual bed tiles in the yard */
+.yard-bed {
+  position: absolute;
+  background: rgba(45, 123, 88, 0.28);
+  border: 2px solid var(--accent);
+  border-radius: 6px;
+  cursor: move;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #1b3a28;
+  text-align: center;
+  padding: 0.15rem;
+  transition: box-shadow 100ms ease;
+}
+
+.yard-bed:hover {
+  box-shadow: 0 0 0 3px rgba(45, 123, 88, 0.45);
+}
+
+.yard-bed:focus-visible {
+  outline: 3px solid #1d5d8e;
+  outline-offset: 2px;
+}
+
+.yard-bed strong {
+  line-height: 1.1;
+  overflow: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.yard-bed small {
+  font-size: 0.62rem;
+  color: #2d5040;
+  font-weight: 400;
+}
+
+.yard-bed.muted {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.yard-bed.ghost {
+  background: rgba(45, 123, 88, 0.12);
+  border-style: dashed;
+  border-color: var(--accent);
+  cursor: default;
+  pointer-events: none;
+}
+
+.yard-bed.ghost.conflict {
+  background: rgba(200, 60, 40, 0.12);
+  border-color: #c83c28;
+}
+
+/* ====================
+   Spatial Overlay Controls
+==================== */
+
+.spatial-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.spatial-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.spatial-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.spatial-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.spatial-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.spatial-swatch.bed   { background: rgba(45, 123, 88, 0.45); border: 1px solid var(--accent); }
+.spatial-swatch.sun   { background: rgba(255, 200, 0, 0.75); }
+.spatial-swatch.shade { background: rgba(30, 80, 140, 0.55); }
+.spatial-swatch.canopy { background: rgba(34, 139, 34, 0.4); border-radius: 50%; }
+
+.spatial-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.spatial-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+/* ====================
+   Motion Preferences
+==================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

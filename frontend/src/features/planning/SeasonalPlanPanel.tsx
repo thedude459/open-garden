@@ -1,5 +1,6 @@
 import { useSeasonalPlanContext } from "./SeasonalPlanContext";
 import { SeasonalNextPlantingsSection } from "./SeasonalNextPlantingsSection";
+import { Badge } from "@/components/ui/badge";
 
 export function SeasonalPlanPanel() {
   const {
@@ -14,7 +15,7 @@ export function SeasonalPlanPanel() {
   } = useSeasonalPlanContext();
 
   return (
-    <article className="card seasonal-plan-card">
+    <article className="card">
       <div className="crop-card-row">
         <div>
           <h2>Seasonal Plan {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
@@ -27,25 +28,25 @@ export function SeasonalPlanPanel() {
       {!isLoadingSeasonalPlan && !seasonalPlan && <p className="hint">No seasonal plan data yet.</p>}
 
       {seasonalPlan && (
-        <div className="seasonal-layout">
-          <section className="card seasonal-metrics">
+        <div className="space-y-6 mt-4">
+          <section className="card">
             <h3>Current Signals</h3>
-            <div className="home-summary-stats">
-              <div className="planner-stat">
-                <strong>{seasonalPlan.microclimate_band}</strong>
-                <span>Microclimate</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
+              <div className="text-center p-3 bg-muted rounded-md">
+                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.microclimate_band}</div>
+                <div className="text-xs text-muted-foreground mt-1">Microclimate</div>
               </div>
-              <div className="planner-stat">
-                <strong>{seasonalPlan.soil_temperature_estimate_f}F</strong>
-                <span>Estimated soil temperature</span>
+              <div className="text-center p-3 bg-muted rounded-md">
+                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.soil_temperature_estimate_f}F</div>
+                <div className="text-xs text-muted-foreground mt-1">Estimated soil temperature</div>
               </div>
-              <div className="planner-stat">
-                <strong>{seasonalPlan.frost_risk_next_10_days}</strong>
-                <span>10-day frost risk</span>
+              <div className="text-center p-3 bg-muted rounded-md">
+                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.frost_risk_next_10_days}</div>
+                <div className="text-xs text-muted-foreground mt-1">10-day frost risk</div>
               </div>
-              <div className="planner-stat">
-                <strong>{seasonalPlan.growth_stages.length}</strong>
-                <span>Total plantings</span>
+              <div className="text-center p-3 bg-muted rounded-md">
+                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.growth_stages.length}</div>
+                <div className="text-xs text-muted-foreground mt-1">Total plantings</div>
               </div>
             </div>
           </section>
@@ -54,12 +55,12 @@ export function SeasonalPlanPanel() {
             recommendedNextPlantings={seasonalPlan.recommended_next_plantings}
           />
 
-          <section className="card seasonal-growth-stages">
+          <section className="card">
             <h3>Growth Stage Tracking</h3>
             <ul>
               {seasonalPlan.growth_stages.length === 0 && <li className="hint">No plantings found for this garden yet.</li>}
               {seasonalPlan.growth_stages.map((stage) => (
-                <li key={stage.planting_id} className="seasonal-growth-row">
+                <li key={stage.planting_id} className="flex items-start justify-between py-3 border-b last:border-b-0">
                   <div>
                     <strong>{stage.crop_name}</strong>
                     <p className="hint">Bed {stage.bed_id} · Stage {stage.stage.replace("_", " ")} · {stage.progress_pct}%</p>
@@ -73,12 +74,12 @@ export function SeasonalPlanPanel() {
             </ul>
           </section>
 
-          <section className="card seasonal-rotation">
+          <section className="card">
             <h3>Crop Rotation Guidance</h3>
             <ul>
               {seasonalPlan.rotation_recommendations.length === 0 && <li className="hint">No rotation guidance yet. Add plantings to start rotation planning.</li>}
               {seasonalPlan.rotation_recommendations.map((item) => (
-                <li key={item.bed_id} className="climate-signal">
+                <li key={item.bed_id} className="py-3 border-b last:border-b-0">
                   <strong>Bed {item.bed_id}: rotate after {item.last_crop}</strong>
                   <p className="hint">Avoid family {item.avoid_family || "unknown"}. Suggested families: {item.recommended_families.join(", ") || "none"}.</p>
                 </li>
@@ -86,12 +87,12 @@ export function SeasonalPlanPanel() {
             </ul>
           </section>
 
-          <section className="card seasonal-companion">
+          <section className="card">
             <h3>Companion Insights</h3>
             <ul>
               {seasonalPlan.companion_insights.length === 0 && <li className="hint">No companion pairings detected yet.</li>}
               {seasonalPlan.companion_insights.map((item, index) => (
-                <li key={`${item.bed_id}-${item.crop}-${index}`} className="climate-signal">
+                <li key={`${item.bed_id}-${item.crop}-${index}`} className="py-3 border-b last:border-b-0">
                   <strong>Bed {item.bed_id}: {item.crop}</strong>
                   <p className="hint">Good with: {item.good_matches.join(", ") || "none"}</p>
                   <p className="hint">Watch with: {item.risk_matches.join(", ") || "none"}</p>
@@ -100,7 +101,7 @@ export function SeasonalPlanPanel() {
             </ul>
           </section>
 
-          <section className="card seasonal-planting-recs">
+          <section className="card">
             <h3>Selected Planting Recommendations</h3>
             {!selectedRecommendationPlantingId && <p className="hint">Select a planting from Growth Stage Tracking to view targeted recommendations.</p>}
             {isLoadingPlantingRecommendation && <p className="hint">Loading planting recommendations...</p>}
@@ -123,10 +124,10 @@ export function SeasonalPlanPanel() {
                 <ul>
                   {plantingRecommendation.succession_candidates.length === 0 && <li className="hint">No succession candidates currently available.</li>}
                   {plantingRecommendation.succession_candidates.map((candidate, index) => (
-                    <li key={`${candidate.crop_name}-${index}`} className="climate-signal">
+                    <li key={`${candidate.crop_name}-${index}`} className="py-3 border-b last:border-b-0">
                       <div className="crop-card-row">
                         <strong>{candidate.crop_name}</strong>
-                        <span className={`status-pill ${candidate.status}`}>{candidate.status}</span>
+                        <Badge variant="outline">{candidate.status}</Badge>
                       </div>
                       <p className="hint">{candidate.method === "direct_sow" ? "Direct sow" : "Transplant"} {candidate.window_start} to {candidate.window_end}</p>
                     </li>

@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Bed, GardenSensorsSummary, SensorKind } from "../types";
+import { Badge } from "@/components/ui/badge";
 
 type SensorsPanelProps = {
   selectedGardenName?: string;
@@ -51,12 +52,12 @@ function SensorLineChart({ title, points, color }: { title: string; points: { ca
   }, [points]);
 
   return (
-    <section className="sensor-chart-card">
+    <section className="border rounded-md p-3">
       <h4>{title}</h4>
       {points.length === 0 ? (
         <p className="hint">No telemetry points yet.</p>
       ) : (
-        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title} className="sensor-chart-svg">
+        <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={title} className="w-full">
           <rect x={0} y={0} width={width} height={height} fill="#f8fbf6" />
           {plotted.ticks.map((tick, index) => {
             const y = height - pad - ((tick - plotted.min) / Math.max(1e-6, plotted.max - plotted.min)) * (height - pad * 2);
@@ -120,7 +121,7 @@ export function SensorsPanel({
   }
 
   return (
-    <article className="card sensor-dashboard-card">
+    <article className="card">
       <div className="crop-card-row">
         <div>
           <h2>Sensor Dashboard {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
@@ -131,8 +132,8 @@ export function SensorsPanel({
 
       {isLoading && <p className="hint">Loading sensor telemetry...</p>}
 
-      <div className="sensor-layout">
-        <section className="sensor-register card">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <section className="card">
           <h3>Register Sensor</h3>
           <form className="stack compact" onSubmit={registerSensor}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Bed A Moisture Probe" required />
@@ -166,7 +167,7 @@ export function SensorsPanel({
           </form>
         </section>
 
-        <section className="sensor-ingest card">
+        <section className="card">
           <h3>Ingest Reading</h3>
           <form className="stack compact" onSubmit={ingestReading}>
             <select value={ingestSensorId || ""} onChange={(event) => setIngestSensorId(Number(event.target.value) || null)}>
@@ -180,12 +181,12 @@ export function SensorsPanel({
           </form>
 
           <h4>Irrigation Suggestions</h4>
-          <ul className="climate-signal-list">
+          <ul className="space-y-3 mt-2">
             {(summary?.irrigation_suggestions || []).map((item, index) => (
-              <li key={`${item.title}-${index}`} className="climate-signal">
+              <li key={`${item.title}-${index}`} className="py-3 border-b last:border-b-0">
                 <div className="crop-card-row">
                   <strong>{item.title}</strong>
-                  <span className={`status-pill ${item.status}`}>{item.status.replace("_", " ")}</span>
+                  <Badge variant="outline">{item.status.replace("_", " ")}</Badge>
                 </div>
                 <p className="hint">{item.detail}</p>
               </li>
@@ -195,11 +196,11 @@ export function SensorsPanel({
         </section>
       </div>
 
-      <section className="sensor-table card">
+      <section className="card">
         <h3>Registered Sensors</h3>
-        <ul className="chip-list">
+        <ul className="space-y-2">
           {(summary?.sensors || []).map((sensor) => (
-            <li key={sensor.id} className="sensor-row">
+            <li key={sensor.id} className="flex flex-col py-2 border-b last:border-b-0">
               <strong>{sensor.name}</strong>
               <span className="hint">{sensor.sensor_kind.replace("_", " ")} {sensor.location_label ? `· ${sensor.location_label}` : ""}</span>
               <span className="hint">Latest: {sensor.latest_value == null ? "-" : `${sensor.latest_value} ${sensor.unit}`}</span>
@@ -209,7 +210,7 @@ export function SensorsPanel({
         </ul>
       </section>
 
-      <div className="sensor-chart-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <SensorLineChart title="Soil Moisture (%)" points={summary?.soil_moisture_series || []} color="#2f8f4e" />
         <SensorLineChart title="Soil Temperature" points={summary?.soil_temperature_series || []} color="#d46a1f" />
       </div>

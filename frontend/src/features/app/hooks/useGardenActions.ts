@@ -3,7 +3,7 @@ import { getErrorMessage, hasValidationErrors } from "../utils/appUtils";
 import {
   FetchAuthed,
 } from "../types";
-import { Bed, Garden, SensorKind } from "../../types";
+import { Bed, Garden } from "../../types";
 import { useGardenDraftState } from "./useGardenDraftState";
 import { useGardenMicroclimateActions } from "./useGardenMicroclimateActions";
 import { useGardenSensorActions } from "./useGardenSensorActions";
@@ -41,7 +41,6 @@ export function useGardenActions({
   setGardens,
   invalidateSensorCaches,
   loadSensorSummaryForGarden,
-  setBeds,
 }: UseGardenActionsParams) {
   const {
     gardenDraft,
@@ -101,7 +100,15 @@ export function useGardenActions({
         pushNotice(getErrorMessage(err, "Unable to create garden."), "error");
       }
     },
-    [fetchAuthed, gardenDraft, gardenFormErrors, loadGardens, pushNotice],
+    [
+      fetchAuthed,
+      gardenDraft,
+      gardenFormErrors,
+      loadGardens,
+      pushNotice,
+      setGardenDraft,
+      setShowGardenValidation,
+    ],
   );
 
   const createBed = useCallback(
@@ -131,7 +138,16 @@ export function useGardenActions({
         pushNotice(getErrorMessage(err, "Unable to create bed."), "error");
       }
     },
-    [fetchAuthed, selectedGarden, bedDraft, bedFormErrors, loadGardenData, pushNotice],
+    [
+      fetchAuthed,
+      selectedGarden,
+      bedDraft,
+      bedFormErrors,
+      loadGardenData,
+      pushNotice,
+      setBedDraft,
+      setShowBedValidation,
+    ],
   );
 
   const updateYardSize = useCallback(
@@ -165,6 +181,7 @@ export function useGardenActions({
       loadGardens,
       loadGardenData,
       pushNotice,
+      setShowYardValidation,
     ],
   );
 

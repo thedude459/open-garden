@@ -137,6 +137,7 @@ export function useCropFormState({
       refreshTasks,
       resetCropForm,
       pushNotice,
+      setShowCropValidation,
     ],
   );
 

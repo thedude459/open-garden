@@ -1,4 +1,5 @@
 import { FormEvent } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type GardenDraft = {
   name: string;
@@ -33,9 +34,13 @@ export function CreateGardenForm({
   onSubmit,
 }: CreateGardenFormProps) {
   return (
-    <article className="card home-create-card">
-      <h3>Create Garden</h3>
+    <Card>
+      <CardHeader>
+        <CardTitle>Create Garden</CardTitle>
+      </CardHeader>
+      <CardContent>
       <form onSubmit={onSubmit} className="stack">
+        <p className="field-hint">Start with the basics. You can expand advanced fields any time.</p>
         <div className="stack compact">
           <label className="field-label" htmlFor="garden-name">Garden Name</label>
           <input
@@ -49,10 +54,6 @@ export function CreateGardenForm({
             required
           />
           {showGardenValidation && gardenFormErrors.name && <p id="garden-name-error" className="field-error">{gardenFormErrors.name}</p>}
-        </div>
-        <div className="stack compact">
-          <label className="field-label" htmlFor="garden-description">Description</label>
-          <input id="garden-description" name="description" value={gardenDraft.description} onChange={(e) => setGardenDraft((c) => ({ ...c, description: e.target.value }))} placeholder="Description" />
         </div>
         <div className="stack compact">
           <label className="field-label" htmlFor="garden-zip-code">ZIP Code</label>
@@ -106,28 +107,36 @@ export function CreateGardenForm({
             {showGardenValidation && gardenFormErrors.yard_length_ft && <p id="garden-yard-length-error" className="field-error">{gardenFormErrors.yard_length_ft}</p>}
           </div>
         </div>
-        <div className="stack compact">
-          <label className="field-label" htmlFor="garden-private-address">Private Address</label>
-          <input
-            id="garden-private-address"
-            name="address_private"
-            value={gardenDraft.address_private}
-            onChange={(e) => setGardenDraft((c) => ({ ...c, address_private: e.target.value }))}
-            placeholder="Street address (optional, never public)"
-          />
-          <p className="field-hint">Optional. Enter a full street address to enable precise weather location later.</p>
-        </div>
-        <label className="inline">
-          <input
-            type="checkbox"
-            name="is_shared"
-            checked={gardenDraft.is_shared}
-            onChange={(e) => setGardenDraft((c) => ({ ...c, is_shared: e.target.checked }))}
-          />
-          Share publicly
-        </label>
+        <details className="garden-advanced-fields">
+          <summary>Advanced options</summary>
+          <div className="stack compact">
+            <label className="field-label" htmlFor="garden-description">Description</label>
+            <input id="garden-description" name="description" value={gardenDraft.description} onChange={(e) => setGardenDraft((c) => ({ ...c, description: e.target.value }))} placeholder="Description" />
+          </div>
+          <div className="stack compact">
+            <label className="field-label" htmlFor="garden-private-address">Private Address</label>
+            <input
+              id="garden-private-address"
+              name="address_private"
+              value={gardenDraft.address_private}
+              onChange={(e) => setGardenDraft((c) => ({ ...c, address_private: e.target.value }))}
+              placeholder="Street address (optional, never public)"
+            />
+            <p className="field-hint">Optional. Enter a full street address to enable precise weather location later.</p>
+          </div>
+          <label className="inline">
+            <input
+              type="checkbox"
+              name="is_shared"
+              checked={gardenDraft.is_shared}
+              onChange={(e) => setGardenDraft((c) => ({ ...c, is_shared: e.target.checked }))}
+            />
+            Share publicly
+          </label>
+        </details>
         <button type="submit">Create garden</button>
       </form>
-    </article>
+      </CardContent>
+    </Card>
   );
 }

@@ -28,8 +28,9 @@ test.describe("planner bed lifecycle", () => {
 
     await expect(page.getByRole("heading", { name: bedName })).toBeVisible({ timeout: 10_000 });
 
-    // The yard canvas should render a cell for the new bed
-    await expect(page.locator(".yard-cell, .plot-cell, [data-bed]").first()).toBeVisible({ timeout: 10_000 });
+    // The yard canvas should render a movable yard bed tile.
+    await expect(page.locator(".yard-grid")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".yard-grid .yard-bed").first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("deletes a bed via the bed sheet UI and it is removed from the list", async ({ page, request }) => {
@@ -110,13 +111,14 @@ test.describe("planner crop placement lifecycle", () => {
       await emptyCell.click();
     } else {
       // Fallback: pick any available empty planting cell
-      const anyCell = page.locator(".plot-cell:not(.buffer)").first();
+      const anyCell = page.getByRole("button", { name: /empty square column/i }).first();
       await expect(anyCell).toBeVisible({ timeout: 5_000 });
       await anyCell.click();
     }
 
-    // After clicking a valid cell, at least one placement chip should appear
-    await expect(page.locator(".chip-row, .placement-chip").first()).toBeVisible({ timeout: 10_000 });
+    // After clicking a valid cell, the empty placements state should be replaced by at least one chip row.
+    await expect(page.getByText("No crop placements yet.")).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /at column \d+, row \d+/i }).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("removes a placement via delete button and chip disappears", async ({ page, request }) => {
@@ -168,15 +170,15 @@ test.describe("planner crop placement lifecycle", () => {
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
     await expect(page.getByRole("heading", { name: "North Bed" })).toBeVisible({ timeout: 15_000 });
 
-    const chip = page.locator(".chip-row, .placement-chip").first();
-    await expect(chip).toBeVisible({ timeout: 10_000 });
+    const chipList = page.locator("li").filter({ has: page.getByRole("button", { name: /at column \d+, row \d+/i }) });
+    await expect(chipList.first()).toBeVisible({ timeout: 10_000 });
 
-    await chip.getByRole("button", { name: "Remove", exact: true }).click();
+    await chipList.first().getByRole("button", { name: "Remove", exact: true }).click();
     const confirmDialog = page.getByRole("alertdialog");
     await expect(confirmDialog).toBeVisible({ timeout: 10_000 });
     await confirmDialog.getByRole("button", { name: "Remove", exact: true }).click();
 
-    await expect(page.locator(".chip-row, .placement-chip")).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.getByText("No crop placements yet.")).toBeVisible({ timeout: 10_000 });
   });
 });
 

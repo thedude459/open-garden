@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { NextPlanting } from "../types";
+import { Badge } from "@/components/ui/badge";
 
 type VegetableGroup = { baseName: string; varieties: NextPlanting[] };
 
@@ -96,10 +97,10 @@ export function SeasonalNextPlantingsSection({
     const item = varieties[idx] ?? varieties[0];
 
     return (
-      <li key={baseName} className="climate-signal">
+      <li key={baseName} className="py-3 border-b last:border-b-0">
         <div className="crop-card-row">
           <strong>{baseName}</strong>
-          <span className={`status-pill ${item.status}`}>{item.status}</span>
+          <Badge variant="outline">{item.status}</Badge>
         </div>
         {varieties.length > 1 && (
           <select

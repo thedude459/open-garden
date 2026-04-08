@@ -1,3 +1,4 @@
+import { Button } from "./ui/button";
 import { AppPage } from "../features/app/types";
 import { Garden } from "../features/types";
 
@@ -23,45 +24,110 @@ export function AppNavbar({
   onHelpOpen,
 }: AppNavbarProps) {
   return (
-    <nav className="navbar" aria-label="Primary navigation">
-      <div className="navbar-top">
-        <div className="navbar-brand">
-          <h1>open-garden</h1>
+    <nav className="app-nav" aria-label="Primary navigation">
+      <div className="app-nav-top">
+        <div className="app-nav-brand">
+          <h1 className="app-nav-title">open-garden</h1>
           {selectedGardenRecord && (
-            <span className="navbar-garden">{selectedGardenRecord.name} · Zone {selectedGardenRecord.growing_zone}</span>
+            <p className="app-nav-subtitle">{selectedGardenRecord.name} · Zone {selectedGardenRecord.growing_zone}</p>
           )}
         </div>
         <button
           type="button"
-          className="nav-toggle"
+          className="app-nav-menu-btn"
           aria-expanded={isNavOpen}
           aria-controls="primary-navigation"
           onClick={() => setIsNavOpen(!isNavOpen)}
         >
-          {isNavOpen ? "Close menu" : "Menu"}
+          {isNavOpen ? "Close" : "Menu"}
         </button>
       </div>
-      <div id="primary-navigation" className={isNavOpen ? "navbar-content open" : "navbar-content"}>
-        <div className="navbar-nav">
-          <button className={activePage === "home" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("home")}>My Gardens</button>
+      <div id="primary-navigation" className={`app-nav-content ${isNavOpen ? "open" : ""}`}>
+        <div className="app-nav-links">
+          <Button
+            variant={activePage === "home" ? "default" : "secondary"}
+            size="sm"
+            onClick={() => onNavigate("home")}
+          >
+            My Gardens
+          </Button>
           {selectedGarden && (
             <>
-              <button className={activePage === "timeline" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("timeline")}>Timeline</button>
-              <button className={activePage === "calendar" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("calendar")}>Calendar</button>
-              <button className={activePage === "seasonal" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("seasonal")}>Seasonal Plan</button>
-              <button className={activePage === "planner" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("planner")}>Bed Planner</button>
-              <button className={activePage === "coach" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("coach")}>AI Coach</button>
-              <button className={activePage === "sensors" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("sensors")}>Sensors</button>
+              <Button
+                variant={activePage === "timeline" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => onNavigate("timeline")}
+              >
+                Timeline
+              </Button>
+              <Button
+                variant={activePage === "calendar" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => onNavigate("calendar")}
+              >
+                Calendar
+              </Button>
+              <Button
+                variant={activePage === "seasonal" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => onNavigate("seasonal")}
+              >
+                Seasonal Plan
+              </Button>
+              <Button
+                variant={activePage === "planner" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => onNavigate("planner")}
+              >
+                Bed Planner
+              </Button>
+              <Button
+                variant={activePage === "coach" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => onNavigate("coach")}
+              >
+                AI Coach
+              </Button>
+              <Button
+                variant={activePage === "sensors" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => onNavigate("sensors")}
+              >
+                Sensors
+              </Button>
             </>
           )}
-          <button className={activePage === "crops" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("crops")}>Crop Library</button>
+          <Button
+            variant={activePage === "crops" ? "default" : "secondary"}
+            size="sm"
+            onClick={() => onNavigate("crops")}
+          >
+            Crop Library
+          </Button>
           {selectedGarden && (
-            <button className={activePage === "pests" ? "nav-btn active" : "nav-btn"} onClick={() => onNavigate("pests")}>Pest Log</button>
+            <Button
+              variant={activePage === "pests" ? "default" : "secondary"}
+              size="sm"
+              onClick={() => onNavigate("pests")}
+            >
+              Pest Log
+            </Button>
           )}
         </div>
-        <div className="navbar-actions">
-          <button type="button" className="secondary-btn" onClick={() => { setIsNavOpen(false); onHelpOpen(); }}>Help</button>
-          <button type="button" className="secondary-btn" onClick={onLogout}>Log out</button>
+        <div className="app-nav-actions">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setIsNavOpen(false);
+              onHelpOpen();
+            }}
+          >
+            Help
+          </Button>
+          <Button variant="outline" size="sm" onClick={onLogout}>
+            Log out
+          </Button>
         </div>
       </div>
     </nav>

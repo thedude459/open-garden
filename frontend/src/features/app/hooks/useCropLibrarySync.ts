@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { CropTemplate, CropTemplateSyncStatus } from "../../types";
+import { CropTemplateSyncStatus } from "../../types";
 import { ConfirmState } from "../types";
 
 type NoticeKind = "info" | "success" | "error";

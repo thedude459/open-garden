@@ -139,7 +139,7 @@ export function AppPageRouter(props: AppPageRouterProps) {
   const { isEmailVerified, onResendVerificationEmail } = auth;
   const { selectedGarden, selectedGardenRecord } = garden;
   const { confirmState, setConfirmState, isConfirmingAction, runConfirmedAction } = confirm;
-  const { notices: toastNotices, dismissNotice, pushNotice } = notices;
+  const { notices: toastNotices, dismissNotice } = notices;
 
   return (
     <main className="shell">

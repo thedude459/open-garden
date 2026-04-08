@@ -1,0 +1,152 @@
+/* ====================
+   Global Elements
+==================== */
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+  background:
+    radial-gradient(circle at 10% 0%, #e4f6d0 0%, transparent 36%),
+    radial-gradient(circle at 85% 5%, #d6e7ff 0%, transparent 31%),
+    linear-gradient(150deg, var(--bg), var(--bg-2));
+  color: var(--ink);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Palatino", "Book Antiqua", serif;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--panel), #f8fbf4);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: 0 8px 20px rgba(18, 43, 33, 0.08);
+}
+
+/* ====================
+   Auth And Notices
+==================== */
+
+.subhead {
+  font-size: 0.92rem;
+  color: var(--muted);
+  margin-top: 0.35rem;
+}
+
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: start center;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.auth-card {
+  width: min(100%, 52rem);
+  display: grid;
+  gap: 0.8rem;
+  margin-top: clamp(0rem, 4vh, 2.5rem);
+}
+
+.auth-tabs {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.auth-tab + .auth-tab {
+  border-left: 1px solid var(--line);
+}
+
+.auth-tab.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.auth-tab:not(.active):hover {
+  background: var(--bg-2);
+  color: var(--ink);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--accent-3);
+  text-decoration: underline;
+  font-size: 0.86rem;
+  padding: 0;
+  justify-self: start;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--accent);
+}
+
+.notice-card {
+  display: grid;
+  gap: 0.6rem;
+  border-color: #c9d4ef;
+  background: linear-gradient(180deg, #f6f9ff, #eef4ff);
+}
+
+/* ====================
+   App Shell
+==================== */
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.skip-link:focus {
+  position: static;
+  width: auto;
+  height: auto;
+}
+
+.shell {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-6) clamp(var(--space-3), 3vw, var(--space-8));
+}
+
+.page-body {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.page-empty-state {
+  display: grid;
+  gap: 0.8rem;
+}
+

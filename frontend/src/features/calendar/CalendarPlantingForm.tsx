@@ -1,6 +1,7 @@
 import { FormEvent, KeyboardEvent } from "react";
 import { Bed, CropTemplate } from "../types";
 import { cropBaseName } from "../app/utils/cropUtils";
+import { Badge } from "@/components/ui/badge";
 
 type CalendarPlantingFormProps = {
   beds: Bed[];
@@ -123,10 +124,10 @@ export function CalendarPlantingForm({
             {isLoadingPlantingWindows && <p className="hint">Loading dynamic window...</p>}
             {selectedCropWindow && (
               <>
-                <p className="hint">
+                <div className="hint">
                   <strong>Dynamic window:</strong> {selectedCropWindow.window_start} to {selectedCropWindow.window_end}{" "}
-                  <span className={`status-pill ${selectedCropWindow.status}`}>{selectedCropWindow.status}</span>
-                </p>
+                  <Badge variant="outline">{selectedCropWindow.status}</Badge>
+                </div>
                 {selectedCropWindow.indoor_seed_start && selectedCropWindow.indoor_seed_end && (
                   <p className="hint">
                     <strong>Indoor start:</strong> {selectedCropWindow.indoor_seed_start} to {selectedCropWindow.indoor_seed_end}

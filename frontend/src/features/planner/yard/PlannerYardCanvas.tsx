@@ -84,6 +84,12 @@ export function PlannerYardCanvas({
           onMoveBedInYard(payload.bedId, nextPosition.nextX, nextPosition.nextY);
         }}
       >
+        {beds.length === 0 && (
+          <div className="yard-empty-state" aria-hidden="true">
+            <strong>No beds in the yard yet</strong>
+            <span>Create a bed from the left panel, then drag or tap to place it here.</span>
+          </div>
+        )}
         {showSunOverlay && (
           <div className="yard-overlay-layer" aria-hidden="true">
             {sunExposure.map((cell) => (

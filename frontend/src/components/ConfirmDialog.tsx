@@ -1,3 +1,5 @@
+import { Button } from "./ui/button";
+
 type ConfirmDialogProps = {
   open: boolean;
   title: string;
@@ -22,17 +24,17 @@ export function ConfirmDialog({
   }
 
   return (
-    <div className="confirm-overlay" role="presentation">
-      <section className="confirm-dialog card" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
-        <h3 id="confirm-title">{title}</h3>
-        <p id="confirm-message">{message}</p>
-        <div className="panel-actions">
-          <button type="button" className="danger-sm" onClick={onConfirm}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="presentation">
+      <section className="w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--card)] p-6 shadow-lg" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+        <h3 id="confirm-title" className="font-serif text-lg font-semibold">{title}</h3>
+        <p id="confirm-message" className="mt-2 text-sm">{message}</p>
+        <div className="mt-6 flex flex-row-reverse gap-2">
+          <Button variant="destructive" onClick={onConfirm}>
             {confirmLabel}
-          </button>
-          <button type="button" className="secondary-btn" onClick={onCancel}>
+          </Button>
+          <Button variant="outline" onClick={onCancel}>
             {cancelLabel}
-          </button>
+          </Button>
         </div>
       </section>
     </div>

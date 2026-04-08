@@ -21,12 +21,29 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-explicit-any": "error",
       "react-refresh/only-export-components": [
         "warn",
         { allowConstantExport: true },
       ],
+    },
+  },
+  {
+    files: [
+      "src/features/calendar/CalendarContext.tsx",
+      "src/features/planner/PlannerContext.tsx",
+      "src/features/planning/SeasonalPlanContext.tsx",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
+  {
+    // shadcn/ui primitive files intentionally export both components and variant helpers
+    files: ["src/components/ui/**/*.tsx"],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
 );

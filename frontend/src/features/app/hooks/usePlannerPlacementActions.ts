@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Bed, CropTemplate, Placement } from "../../types";
+import { Bed, Placement } from "../../types";
 import { colorForCrop } from "../utils/cropUtils";
 import { FetchAuthed, PlannerHistoryEntry } from "../types";
 

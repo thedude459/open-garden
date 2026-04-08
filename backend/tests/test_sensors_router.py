@@ -89,9 +89,8 @@ def test_ingest_sensor_data_batch_inserts_rows(db_session, sensor):
     assert result == {"inserted": 2}
 
 
-def test_garden_sensor_summary_returns_current_reading_context(
-    db_session, garden, sensor, sensor_reading
-):
+def test_garden_sensor_summary_returns_current_reading_context(db_session, garden, sensor):
+    ingest_sensor_data(SensorDataCreate(value=28.0), db=db_session, sensor=sensor)
     summary = get_garden_sensor_summary(hours=48, db=db_session, garden=garden)
 
     assert summary["garden_id"] == garden.id

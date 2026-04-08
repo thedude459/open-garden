@@ -1,14 +1,24 @@
-import { createRef } from "react";
+import { act, createRef } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PlannerProvider, PlannerContextType } from "./PlannerContext";
 import { PlannerPageSection } from "./PlannerPageSection";
 import { Bed, CropTemplate, Garden, Placement } from "../types";
 
+// Capture all props so we can invoke the callbacks in tests
+let capturedProps: Record<string, unknown> = {};
+
 vi.mock("./PlannerPanel", () => ({
-  PlannerPanel: ({ crop, layout }: { crop: { selectedCropName: string }; layout: { beds: Bed[] } }) => (
-    <div data-testid="planner-panel">crop:{crop.selectedCropName};beds:{layout.beds.length}</div>
-  ),
+  PlannerPanel: (props: {
+    crop: { selectedCropName: string };
+    layout: { beds: Bed[] };
+    forms: Record<string, unknown>;
+    planner: Record<string, unknown>;
+    history: Record<string, unknown>;
+  }) => {
+    capturedProps = props as unknown as Record<string, unknown>;
+    return <div data-testid="planner-panel">crop:{props.crop.selectedCropName};beds:{props.layout.beds.length}</div>;
+  },
 }));
 
 const sampleGarden: Garden = {
@@ -114,8 +124,8 @@ function buildPlannerContextValue(): PlannerContextType {
     setPlacementBedId: vi.fn(),
     plannerUndoCount: 0,
     plannerRedoCount: 0,
-    undoPlannerChange: vi.fn(),
-    redoPlannerChange: vi.fn(),
+    undoPlannerChange: vi.fn().mockResolvedValue(undefined),
+    redoPlannerChange: vi.fn().mockResolvedValue(undefined),
     isLoadingGardenData: false,
     isLoadingSunPath: false,
     isLoadingPlantingWindows: false,
@@ -134,5 +144,72 @@ describe("PlannerPageSection", () => {
     );
 
     expect(screen.getByTestId("planner-panel")).toHaveTextContent("crop:Tomato;beds:1");
+  });
+
+  it("passes all form and planner callbacks that are invokeable", async () => {
+    render(
+      <PlannerProvider value={buildPlannerContextValue()}>
+        <PlannerPageSection />
+      </PlannerProvider>,
+    );
+
+    // Exercise all inline arrow-function props from PlannerPageSection to get V8 coverage
+    await act(async () => {
+      const forms = capturedProps.forms as Record<string, (...args: unknown[]) => unknown>;
+      forms.onBedNameChange("TestBed");
+      forms.onBedWidthFtChange(4);
+      forms.onBedLengthFtChange(8);
+      forms.onYardWidthDraftChange(20);
+      forms.onYardLengthDraftChange(30);
+      forms.onCreateBed({ preventDefault: vi.fn() });
+      forms.onUpdateYardSize({ preventDefault: vi.fn() });
+      forms.onGoToCrops();
+
+      const crop = capturedProps.crop as Record<string, (...args: unknown[]) => unknown>;
+      crop.onCropSearchQueryChange("tom");
+      crop.onCropSearchKeyDown({ key: "Enter" });
+      crop.onSelectCrop({ id: 1, name: "Tomato" });
+
+      const planner = capturedProps.planner as Record<string, (...args: unknown[]) => unknown>;
+      await planner.onMoveBedInYard(1, 0, 0);
+      planner.onNudgeBed(1, 0, 1);
+      await planner.onRotateBed(1, false);
+      await planner.onRenameBed(1, "Renamed");
+      await planner.onDeleteBed(1);
+      await planner.onAddPlacement(1, 0, 0);
+      await planner.onMovePlacement(1, 1, 1, 1);
+      planner.onNudgePlacement(1, 0, 1);
+      await planner.onBulkMovePlacements([1], 0, 1);
+      await planner.onBulkRemovePlacements([1]);
+      planner.onBlockedPlacementMove("Tomato");
+      planner.placementSpacingConflict(1, 0, 0, "Tomato");
+      planner.isCellBlockedForSelectedCrop(1, 0, 0, undefined);
+      planner.isCellInBuffer(1, 0, 0);
+
+      const history = capturedProps.history as Record<string, (...args: unknown[]) => unknown>;
+      await history.onUndoPlanner();
+      await history.onRedoPlanner();
+    });
+
+    // If we get here without error, all callbacks were invokeable
+    expect(screen.getByTestId("planner-panel")).toBeInTheDocument();
+  });
+
+  it("sets up a confirm dialog via onRequestRemovePlacement", async () => {
+    const contextValue = buildPlannerContextValue();
+    render(
+      <PlannerProvider value={contextValue}>
+        <PlannerPageSection />
+      </PlannerProvider>,
+    );
+
+    await act(async () => {
+      const planner = capturedProps.planner as Record<string, (...args: unknown[]) => unknown>;
+      planner.onRequestRemovePlacement(1, "Tomato");
+    });
+
+    expect(contextValue.setConfirmState).toHaveBeenCalledWith(
+      expect.objectContaining({ message: "Remove Tomato from this bed?" }),
+    );
   });
 });

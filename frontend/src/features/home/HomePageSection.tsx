@@ -46,6 +46,8 @@ export function HomePageSection({
   setSelectedGarden,
   onNavigate,
 }: HomePageSectionProps) {
+  const showCreateInManagementColumn = gardens.length === 0;
+
   return (
     <>
       {selectedGarden && selectedGardenRecord && (
@@ -67,7 +69,16 @@ export function HomePageSection({
         />
       )}
       <div className="home-layout">
-        <div className="home-management-column">
+        <div className="home-sidebar">
+          {showCreateInManagementColumn && (
+            <CreateGardenForm
+              gardenDraft={gardenActions.gardenDraft}
+              setGardenDraft={gardenActions.setGardenDraft}
+              showGardenValidation={gardenActions.showGardenValidation}
+              gardenFormErrors={gardenActions.gardenFormErrors}
+              onSubmit={gardenActions.createGarden}
+            />
+          )}
           <GardenListSidebar
             gardens={gardens}
             publicGardens={publicGardens}
@@ -76,14 +87,16 @@ export function HomePageSection({
             onDeleteGarden={(id) => plannerActions.deleteGarden(id).catch(() => undefined)}
           />
         </div>
-        <div className="home-main-column">
-          <CreateGardenForm
-            gardenDraft={gardenActions.gardenDraft}
-            setGardenDraft={gardenActions.setGardenDraft}
-            showGardenValidation={gardenActions.showGardenValidation}
-            gardenFormErrors={gardenActions.gardenFormErrors}
-            onSubmit={gardenActions.createGarden}
-          />
+        <div className="home-main">
+          {!showCreateInManagementColumn && (
+            <CreateGardenForm
+              gardenDraft={gardenActions.gardenDraft}
+              setGardenDraft={gardenActions.setGardenDraft}
+              showGardenValidation={gardenActions.showGardenValidation}
+              gardenFormErrors={gardenActions.gardenFormErrors}
+              onSubmit={gardenActions.createGarden}
+            />
+          )}
           {selectedGarden && selectedGardenRecord && (
             <MicroclimateProfileCard
               selectedGardenRecord={selectedGardenRecord}
@@ -96,7 +109,7 @@ export function HomePageSection({
               isSuggestingMicroclimate={gardenActions.isSuggestingMicroclimate}
               onSubmit={gardenActions.saveMicroclimateProfile}
               onGeocode={gardenActions.geocodeGardenAddress}
-                onSuggest={gardenActions.suggestMicroclimateProfile}
+              onSuggest={gardenActions.suggestMicroclimateProfile}
             />
           )}
         </div>

@@ -1,0 +1,336 @@
+/* ====================
+   Calendar
+==================== */
+
+.calendar-shell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.calendar-month-pane {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .calendar-shell {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .calendar-month-pane {
+    width: min(100%, 25rem);
+    flex-shrink: 0;
+    align-self: flex-start;
+    border-bottom: none;
+    border-right: 1px solid var(--line);
+  }
+
+  .agenda-panel {
+    max-height: none;
+  }
+}
+
+/* Month header: title + prev/next navigation */
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.calendar-head h2 {
+  font-size: 1.2rem;
+  color: var(--ink);
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.month-nav button {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.82rem;
+  min-height: unset;
+}
+
+.month-nav strong {
+  min-width: 9rem;
+  text-align: center;
+  font-family: "Palatino", "Book Antiqua", serif;
+  font-size: 1rem;
+}
+
+/* 7-column date grid */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+/* Weekday header row */
+.weekday {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #4f655a;
+  padding: 0.3rem 0;
+}
+
+/* Individual day cells */
+.day-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.35rem 0.2rem;
+  min-height: 3.2rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+  gap: 0.1rem;
+}
+
+.day-cell:hover:not(:disabled) {
+  background: var(--bg-2);
+  transform: none;
+  box-shadow: none;
+}
+
+.day-cell small {
+  font-size: 0.62rem;
+  color: var(--accent);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.day-cell.muted {
+  color: #6f867a;
+}
+
+.day-cell.muted small {
+  color: #7f998d;
+}
+
+.day-cell.today {
+  border-color: var(--accent);
+  background: #e9f5ed;
+  font-weight: 700;
+}
+
+.day-cell.selected {
+  background: var(--accent);
+  color: #fff;
+}
+
+.day-cell.selected small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.day-cell.selected.today {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Agenda side panel */
+.agenda-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+.agenda-panel h3 {
+  font-size: 1rem;
+  margin-bottom: -0.5rem;
+  color: var(--accent-3);
+}
+
+/* Task filter row (All / To-do / Done) */
+.task-filter-row {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.task-filter-btn {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  min-height: unset;
+  background: #eef3ef;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.task-filter-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Event / task pill */
+.event-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #f4f9f0;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.event-pill.task {
+  background: #f0f7ff;
+  border-color: #c6daef;
+}
+
+.event-pill.harvest {
+  background: #fff8ed;
+  border-color: #e8d4a0;
+}
+
+.event-pill.planting {
+  background: #f0faf2;
+  border-color: #a8d4b0;
+}
+
+.event-pill.done {
+  opacity: 0.6;
+}
+
+.event-pill-title {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.event-pill-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.event-pill-action {
+  padding: 0.15rem 0.45rem;
+  min-height: unset;
+  font-size: 0.78rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.event-pill-action:hover:not(:disabled) {
+  background: var(--bg-2);
+  color: var(--ink);
+  transform: none;
+  box-shadow: none;
+}
+
+.event-pill-action.delete:hover:not(:disabled) {
+  background: #fde8e4;
+  color: #b03020;
+  border-color: #f0b0a0;
+}
+
+.event-pill-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  width: 100%;
+}
+
+.harvest-logged {
+  color: #2a7a40;
+  font-weight: 600;
+}
+
+.harvest-yield-notes {
+  font-style: italic;
+}
+
+/* Task checkbox */
+.task-check {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+/* Log harvest button */
+.log-harvest-btn {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  min-height: unset;
+  background: #fff3d6;
+  color: #7a4a00;
+  border: 1px solid #dfc070;
+}
+
+.log-harvest-btn:hover:not(:disabled) {
+  background: #ffe9b0;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Inline task/harvest edit form */
+.task-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.task-edit-input {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.82rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  width: 100%;
+}
+
+.task-edit-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.task-edit-save {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  min-height: unset;
+  background: var(--accent);
+  color: #fff;
+}
+
+.task-edit-cancel {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  min-height: unset;
+  background: #eef3ef;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+
+
+

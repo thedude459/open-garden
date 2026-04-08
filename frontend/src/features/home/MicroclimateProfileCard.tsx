@@ -1,4 +1,5 @@
 import { FormEvent } from "react";
+import { Badge } from "@/components/ui/badge";
 import { CompassPicker } from "../../components/CompassPicker";
 import {
   frostPocketOptions,
@@ -38,10 +39,10 @@ export function MicroclimateProfileCard({
   onSuggest,
 }: MicroclimateProfileCardProps) {
   return (
-    <article className="card home-summary">
+    <article className="card">
       <div className="crop-card-row">
         <h3>Climate and Site Profile</h3>
-        {gardenClimate && <span className="climate-kpi">{gardenClimate.microclimate_band}</span>}
+        {gardenClimate && <Badge variant="secondary">{gardenClimate.microclimate_band}</Badge>}
       </div>
       <p className="subhead">Fine-tune the site profile so planting windows and climate guidance stay accurate for this garden.</p>
       <form className="microclimate-form" onSubmit={onSubmit}>
@@ -194,18 +195,18 @@ export function MicroclimateProfileCard({
 
         {isLoadingClimate && <p className="hint">Refreshing climate guidance...</p>}
         {gardenClimate && (
-          <div className="climate-metrics">
-            <div className="planner-stat">
-              <strong>{gardenClimate.adjusted_last_spring_frost}</strong>
-              <span>Adjusted last spring frost</span>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-3 bg-muted rounded-md">
+              <div className="text-xl font-bold font-serif text-[var(--accent)]">{gardenClimate.adjusted_last_spring_frost}</div>
+              <div className="text-xs text-muted-foreground mt-1">Adjusted last spring frost</div>
             </div>
-            <div className="planner-stat">
-              <strong>{gardenClimate.adjusted_first_fall_frost}</strong>
-              <span>Adjusted first fall frost</span>
+            <div className="text-center p-3 bg-muted rounded-md">
+              <div className="text-xl font-bold font-serif text-[var(--accent)]">{gardenClimate.adjusted_first_fall_frost}</div>
+              <div className="text-xs text-muted-foreground mt-1">Adjusted first fall frost</div>
             </div>
-            <div className="planner-stat">
-              <strong>{gardenClimate.soil_temperature_estimate_f}F</strong>
-              <span>Estimated soil temperature</span>
+            <div className="text-center p-3 bg-muted rounded-md">
+              <div className="text-xl font-bold font-serif text-[var(--accent)]">{gardenClimate.soil_temperature_estimate_f}F</div>
+              <div className="text-xs text-muted-foreground mt-1">Estimated soil temperature</div>
             </div>
           </div>
         )}

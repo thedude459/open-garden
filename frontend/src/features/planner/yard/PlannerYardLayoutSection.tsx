@@ -1,7 +1,6 @@
 import { Dispatch, RefObject, SetStateAction } from "react";
 import { Bed, GardenSunPath } from "../../types";
 import { RotationPreview } from "../hooks/usePlannerRotationPreview";
-import { toFeet } from "../../app/utils/appUtils";
 import { PlannerYardSizeForm } from "./PlannerYardSizeForm";
 import { PlannerYardBedMoveControls } from "./PlannerYardBedMoveControls";
 import { PlannerYardOverlayControls } from "./PlannerYardOverlayControls";

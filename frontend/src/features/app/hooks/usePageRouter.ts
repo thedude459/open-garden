@@ -94,7 +94,7 @@ export function usePageRouter({
         `${window.location.pathname}${q ? `?${q}` : ""}`
       );
     }
-  }, []);
+  }, [authFlow, pushNotice]);
 
   // Show help modal on first login if not seen before
   useEffect(() => {

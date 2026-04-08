@@ -1,5 +1,6 @@
 import { FormEvent, KeyboardEvent, RefObject, useMemo, useState } from "react";
 import { Bed, ClimatePlantingWindow, CropTemplate, Garden, GardenSunPath, Placement } from "../types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePlannerCropVisuals } from "./hooks/usePlannerCropVisuals";
 import { usePlannerBulkSelection } from "./hooks/usePlannerBulkSelection";
 import { usePlannerRotationPreview } from "./hooks/usePlannerRotationPreview";
@@ -225,141 +226,150 @@ export function PlannerPanel({
   }
 
   return (
-    <article className="card bed-planner-card">
-      <h2>Garden Bed Planner Studio</h2>
-      <p className="subhead">Build your layout map, then click inside each bed to place crops with proper spacing.</p>
-      {isLoadingGardenData && <p className="hint">Refreshing layout data...</p>}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-3xl font-serif">Garden Bed Planner Studio</CardTitle>
+        <CardDescription>Build your layout map, then click inside each bed to place crops with proper spacing.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoadingGardenData && <p className="text-sm text-muted-foreground">Refreshing layout data...</p>}
 
-      <div className="planner-layout">
-        <aside className="planner-sidebar">
-          <PlannerCreateBedForm
-            bedName={bedName}
-            bedWidthFt={bedWidthFt}
-            bedLengthFt={bedLengthFt}
-            bedErrors={bedErrors}
-            onBedNameChange={onBedNameChange}
-            onBedWidthFtChange={onBedWidthFtChange}
-            onBedLengthFtChange={onBedLengthFtChange}
-            onCreateBed={onCreateBed}
-          />
+        <div className="planner-layout">
+          {/* Sidebar - Forms & Tools */}
+          <aside className="planner-sidebar">
+            <PlannerCreateBedForm
+              bedName={bedName}
+              bedWidthFt={bedWidthFt}
+              bedLengthFt={bedLengthFt}
+              bedErrors={bedErrors}
+              onBedNameChange={onBedNameChange}
+              onBedWidthFtChange={onBedWidthFtChange}
+              onBedLengthFtChange={onBedLengthFtChange}
+              onCreateBed={onCreateBed}
+            />
 
-          <PlannerPlacementTools
-            cropSearchQuery={cropSearchQuery}
-            onCropSearchQueryChange={onCropSearchQueryChange}
-            onCropSearchKeyDown={onCropSearchKeyDown}
-            filteredCropTemplates={filteredCropTemplates}
-            cropSearchActiveIndex={cropSearchActiveIndex}
-            selectedCropName={selectedCropName}
-            selectedCrop={selectedCrop}
-            selectedCropWindow={selectedCropWindow}
-            isLoadingPlantingWindows={isLoadingPlantingWindows}
-            onSelectCrop={onSelectCrop}
-            cropBaseName={cropBaseName}
-            beds={beds}
-            placementBedId={placementBedId}
-            onPlacementBedIdChange={onPlacementBedIdChange}
-            onGoToCrops={onGoToCrops}
-          />
-        </aside>
+            <PlannerPlacementTools
+              cropSearchQuery={cropSearchQuery}
+              onCropSearchQueryChange={onCropSearchQueryChange}
+              onCropSearchKeyDown={onCropSearchKeyDown}
+              filteredCropTemplates={filteredCropTemplates}
+              cropSearchActiveIndex={cropSearchActiveIndex}
+              selectedCropName={selectedCropName}
+              selectedCrop={selectedCrop}
+              selectedCropWindow={selectedCropWindow}
+              isLoadingPlantingWindows={isLoadingPlantingWindows}
+              onSelectCrop={onSelectCrop}
+              cropBaseName={cropBaseName}
+              beds={beds}
+              placementBedId={placementBedId}
+              onPlacementBedIdChange={onPlacementBedIdChange}
+              onGoToCrops={onGoToCrops}
+            />
+          </aside>
 
-        <div className="planner-main">
-          <div className="planner-summary">
-            <div className="planner-stat">
-              <strong>{beds.length}</strong>
-              <span>Beds</span>
+          {/* Main Content - Layout & Details */}
+          <div className="planner-main">
+            {/* Stats Summary */}
+            <div className="planner-stats-grid">
+              <div className="planner-stat-card">
+                <div className="text-2xl font-bold font-serif text-accent">{beds.length}</div>
+                <div className="text-sm text-muted-foreground">Beds</div>
+              </div>
+              <div className="planner-stat-card">
+                <div className="text-2xl font-bold font-serif text-accent">{placements.length}</div>
+                <div className="text-sm text-muted-foreground">Placements</div>
+              </div>
+              <div className="planner-stat-card">
+                <div className="text-2xl font-bold font-serif text-accent">{cropTemplates.length}</div>
+                <div className="text-sm text-muted-foreground">Vegetables</div>
+              </div>
+              <div className="planner-stat-card">
+                <div className="text-2xl font-bold font-serif text-accent">{yardWidthFt} × {yardLengthFt}</div>
+                <div className="text-sm text-muted-foreground">Yard (ft)</div>
+              </div>
             </div>
-            <div className="planner-stat">
-              <strong>{placements.length}</strong>
-              <span>Placements</span>
-            </div>
-            <div className="planner-stat">
-              <strong>{cropTemplates.length}</strong>
-              <span>Vegetables</span>
-            </div>
-            <div className="planner-stat">
-              <strong>{yardWidthFt} x {yardLengthFt}</strong>
-              <span>Yard (ft)</span>
-            </div>
+
+            {/* Bed Details Section */}
+            <PlannerBedSheetsSection
+              beds={beds}
+              placements={placements}
+              selectedCropName={selectedCropName}
+              selectedPlacement={selectedPlacement}
+              setSelectedPlacementId={setSelectedPlacementId}
+              bulkMode={bulkMode}
+              selectedPlacementIds={selectedPlacementIds}
+              toggleBulkMode={toggleBulkMode}
+              clearSelection={clearSelection}
+              togglePlacementSelection={togglePlacementSelection}
+              startLasso={startLasso}
+              updateLasso={updateLasso}
+              finishLasso={finishLasso}
+              onBulkMovePlacements={onBulkMovePlacements}
+              onBulkRemovePlacements={onBulkRemovePlacements}
+              canUndoPlanner={canUndoPlanner}
+              canRedoPlanner={canRedoPlanner}
+              onUndoPlanner={onUndoPlanner}
+              onRedoPlanner={onRedoPlanner}
+              requestRotatePreview={requestRotatePreview}
+              onDeleteBed={onDeleteBed}
+              onBlockedPlacementMove={onBlockedPlacementMove}
+              placementSpacingConflict={placementSpacingConflict}
+              onMovePlacement={onMovePlacement}
+              onAddPlacement={onAddPlacement}
+              isCellBlockedForSelectedCrop={isCellBlockedForSelectedCrop}
+              isCellInBuffer={isCellInBuffer}
+              cropVisual={cropVisual}
+              onNudgePlacement={onNudgePlacement}
+              onRequestRemovePlacement={onRequestRemovePlacement}
+              onRenameBed={onRenameBed}
+            />
+
+            {/* Yard Layout Section */}
+            <PlannerYardLayoutSection
+              gardenSatelliteUrl={gardenSatelliteUrl}
+              isLoadingSunPath={isLoadingSunPath}
+              sunSample={sunSample}
+              yardWidthDraft={yardWidthDraft}
+              yardLengthDraft={yardLengthDraft}
+              yardErrors={yardErrors}
+              onYardWidthDraftChange={onYardWidthDraftChange}
+              onYardLengthDraftChange={onYardLengthDraftChange}
+              onUpdateYardSize={onUpdateYardSize}
+              beds={beds}
+              selectedBedId={selectedBedId}
+              setSelectedBedId={setSelectedBedId}
+              onNudgeBed={onNudgeBed}
+              requestRotatePreview={requestRotatePreview}
+              pendingRotation={pendingRotation}
+              setPendingRotation={setPendingRotation}
+              confirmRotate={confirmRotate}
+              isApplyingRotation={isApplyingRotation}
+              showSunOverlay={showSunOverlay}
+              showShadeOverlay={showShadeOverlay}
+              showGrowthPreview={showGrowthPreview}
+              setShowSunOverlay={setShowSunOverlay}
+              setShowShadeOverlay={setShowShadeOverlay}
+              setShowGrowthPreview={setShowGrowthPreview}
+              setOverlayPreset={setOverlayPreset}
+              gardenSunPath={gardenSunPath}
+              sunHour={sunHour}
+              setSunHour={setSunHour}
+              growthDayOffset={growthDayOffset}
+              setGrowthDayOffset={setGrowthDayOffset}
+              sunExposure={sunExposure}
+              shadeMap={shadeMap}
+              canopyPreview={canopyPreview}
+              yardGridRef={yardGridRef}
+              yardWidthFt={yardWidthFt}
+              yardLengthFt={yardLengthFt}
+              yardCellPx={yardCellPx}
+              resolveBedGridPosition={resolveBedGridPosition}
+              onMoveBedInYard={onMoveBedInYard}
+              placementBedId={placementBedId}
+            />
           </div>
-
-          <PlannerBedSheetsSection
-            beds={beds}
-            placements={placements}
-            selectedCropName={selectedCropName}
-            selectedPlacement={selectedPlacement}
-            setSelectedPlacementId={setSelectedPlacementId}
-            bulkMode={bulkMode}
-            selectedPlacementIds={selectedPlacementIds}
-            toggleBulkMode={toggleBulkMode}
-            clearSelection={clearSelection}
-            togglePlacementSelection={togglePlacementSelection}
-            startLasso={startLasso}
-            updateLasso={updateLasso}
-            finishLasso={finishLasso}
-            onBulkMovePlacements={onBulkMovePlacements}
-            onBulkRemovePlacements={onBulkRemovePlacements}
-            canUndoPlanner={canUndoPlanner}
-            canRedoPlanner={canRedoPlanner}
-            onUndoPlanner={onUndoPlanner}
-            onRedoPlanner={onRedoPlanner}
-            requestRotatePreview={requestRotatePreview}
-            onDeleteBed={onDeleteBed}
-            onBlockedPlacementMove={onBlockedPlacementMove}
-            placementSpacingConflict={placementSpacingConflict}
-            onMovePlacement={onMovePlacement}
-            onAddPlacement={onAddPlacement}
-            isCellBlockedForSelectedCrop={isCellBlockedForSelectedCrop}
-            isCellInBuffer={isCellInBuffer}
-            cropVisual={cropVisual}
-            onNudgePlacement={onNudgePlacement}
-            onRequestRemovePlacement={onRequestRemovePlacement}
-            onRenameBed={onRenameBed}
-          />
-
-          <PlannerYardLayoutSection
-            gardenSatelliteUrl={gardenSatelliteUrl}
-            isLoadingSunPath={isLoadingSunPath}
-            sunSample={sunSample}
-            yardWidthDraft={yardWidthDraft}
-            yardLengthDraft={yardLengthDraft}
-            yardErrors={yardErrors}
-            onYardWidthDraftChange={onYardWidthDraftChange}
-            onYardLengthDraftChange={onYardLengthDraftChange}
-            onUpdateYardSize={onUpdateYardSize}
-            beds={beds}
-            selectedBedId={selectedBedId}
-            setSelectedBedId={setSelectedBedId}
-            onNudgeBed={onNudgeBed}
-            requestRotatePreview={requestRotatePreview}
-            pendingRotation={pendingRotation}
-            setPendingRotation={setPendingRotation}
-            confirmRotate={confirmRotate}
-            isApplyingRotation={isApplyingRotation}
-            showSunOverlay={showSunOverlay}
-            showShadeOverlay={showShadeOverlay}
-            showGrowthPreview={showGrowthPreview}
-            setShowSunOverlay={setShowSunOverlay}
-            setShowShadeOverlay={setShowShadeOverlay}
-            setShowGrowthPreview={setShowGrowthPreview}
-            setOverlayPreset={setOverlayPreset}
-            gardenSunPath={gardenSunPath}
-            sunHour={sunHour}
-            setSunHour={setSunHour}
-            growthDayOffset={growthDayOffset}
-            setGrowthDayOffset={setGrowthDayOffset}
-            sunExposure={sunExposure}
-            shadeMap={shadeMap}
-            canopyPreview={canopyPreview}
-            yardGridRef={yardGridRef}
-            yardWidthFt={yardWidthFt}
-            yardLengthFt={yardLengthFt}
-            yardCellPx={yardCellPx}
-            resolveBedGridPosition={resolveBedGridPosition}
-            onMoveBedInYard={onMoveBedInYard}
-            placementBedId={placementBedId}
-          />
         </div>
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   );
 }

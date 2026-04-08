@@ -1,5 +1,6 @@
 import { KeyboardEvent } from "react";
 import { Bed, ClimatePlantingWindow, CropTemplate } from "../types";
+import { Badge } from "@/components/ui/badge";
 
 type PlannerPlacementToolsProps = {
   cropSearchQuery: string;
@@ -97,7 +98,7 @@ export function PlannerPlacementTools({
             <>
               <p className="hint">
                 <strong>Dynamic window:</strong> {selectedCropWindow.window_start} to {selectedCropWindow.window_end}{" "}
-                <span className={`status-pill ${selectedCropWindow.status}`}>{selectedCropWindow.status}</span>
+                <Badge variant="outline">{selectedCropWindow.status}</Badge>
               </p>
               {selectedCropWindow.indoor_seed_start && selectedCropWindow.indoor_seed_end && (
                 <p className="hint">

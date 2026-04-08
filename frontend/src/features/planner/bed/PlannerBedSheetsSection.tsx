@@ -81,6 +81,14 @@ export function PlannerBedSheetsSection({
         </div>
       </div>
 
+      {beds.length === 0 && (
+        <div className="planner-empty-state" role="status" aria-live="polite">
+          <strong>Create your first bed to unlock sheet placement.</strong>
+          <p className="hint">Once a bed exists, you can place crops square-by-square here and move plantings between beds.</p>
+        </div>
+      )}
+
+      {beds.length > 0 && (
       <div className="planner-bulk-controls" role="group" aria-label="Bulk placement tools">
         <button type="button" className={bulkMode ? "secondary-btn active" : "secondary-btn"} onClick={toggleBulkMode}>
           {bulkMode ? "Exit Bulk Select" : "Bulk Select"}
@@ -106,8 +114,9 @@ export function PlannerBedSheetsSection({
         </button>
         {bulkMode && <p className="hint">Drag across a bed to lasso select placements. Shift+drag adds to selection.</p>}
       </div>
+      )}
 
-      {selectedPlacement && (
+      {beds.length > 0 && selectedPlacement && (
         <div className="planner-selection-banner" role="status" aria-live="polite">
           <span>
             Moving <strong>{selectedPlacement.crop_name}</strong> from bed {selectedPlacement.bed_id}. Tap an empty square to place it.

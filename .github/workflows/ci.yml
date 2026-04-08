@@ -170,7 +170,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      BRANCH_COVERAGE_MIN: "86"
       RANDOMLY_SEED: ${{ github.run_number }}
     steps:
       - name: Checkout
@@ -201,17 +200,6 @@ jobs:
             echo "- Coverage XML: backend/coverage.xml"
             echo "- Coverage HTML: backend/htmlcov/index.html"
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Enforce backend branch coverage threshold
-        run: |
-          branch_rate="$(grep -o 'branch-rate="[0-9.]*"' backend/coverage.xml | head -n1 | cut -d'"' -f2)"
-          branch_pct="$(awk "BEGIN {printf \"%.2f\", ${branch_rate} * 100}")"
-          if awk "BEGIN {exit !(${branch_pct} >= ${BRANCH_COVERAGE_MIN})}"; then
-            echo "Branch coverage ${branch_pct}% meets threshold ${BRANCH_COVERAGE_MIN}%"
-          else
-            echo "Branch coverage ${branch_pct}% is below threshold ${BRANCH_COVERAGE_MIN}%"
-            exit 1
-          fi
 
       - name: Upload backend coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

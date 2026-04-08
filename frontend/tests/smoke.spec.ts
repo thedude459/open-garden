@@ -1,19 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { getAuthToken, loadAuthenticated, uid, E2E_USER } from "./helpers/auth";
+import { getAuthToken, loadAuthenticated, uid, E2E_USER, ensureGardenSelected as selectGarden } from "./helpers/auth";
 
 const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
 async function ensureGardenSelected(page: Page) {
-  const firstGarden = page.locator(".garden-card-select").first();
-  await expect(firstGarden).toBeVisible({ timeout: 15_000 });
-  await firstGarden.click();
+  await selectGarden(page);
 }
 
 async function ensureGardenExistsAndSelected(page: Page, request: any, token: string) {
   // Wait for the app to finish loading the garden list before deciding whether
   // to bootstrap — the gardens load asynchronously after page.goto().
-  const firstGarden = page.locator(".garden-card-select").first();
+  const firstGarden = page.getByRole("button", { name: /^Select garden / }).first();
   const loaded = await firstGarden
     .waitFor({ state: "visible", timeout: 12_000 })
     .then(() => true)
@@ -34,10 +32,10 @@ async function ensureGardenExistsAndSelected(page: Page, request: any, token: st
       throw new Error(`Garden bootstrap failed: ${bootstrap.status()} ${await bootstrap.text()}`);
     }
     await page.reload({ waitUntil: "domcontentloaded" });
-    await expect(firstGarden).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: /^Select garden / }).first()).toBeVisible({ timeout: 15_000 });
   }
 
-  await firstGarden.click();
+  await ensureGardenSelected(page);
 }
 
 test.describe("open-garden smoke", () => {
@@ -63,6 +61,9 @@ test.describe("open-garden smoke", () => {
 
     await createForm.locator("input[name='name']").fill(gardenName);
     await createForm
+      .locator("summary")
+      .click();
+    await createForm
       .locator("input[name='description']")
       .fill("Playwright smoke garden");
     await createForm.locator("input[name='zip_code']").fill("94110");
@@ -75,7 +76,7 @@ test.describe("open-garden smoke", () => {
 
     await expect(page.getByText("Garden created.")).toBeVisible({ timeout: 20_000 });
     await expect(
-      page.locator(".garden-card-name", { hasText: gardenName })
+      page.getByRole("button", { name: `Select garden ${gardenName}` })
     ).toBeVisible({ timeout: 20_000 });
   });
 

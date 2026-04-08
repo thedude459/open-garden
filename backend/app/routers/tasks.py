@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..core.auth import get_current_user
 from ..database import get_db
-from ..core.dependencies import get_owned_task
+from ..core.dependencies import get_owned_garden, get_owned_task
 from ..models import Garden, PestLog, SeedInventory, Task, User
 from ..schemas import (
     PestLogCreate,
@@ -19,19 +19,17 @@ from ..schemas import (
 router = APIRouter(tags=["tasks"])
 
 
+def _ensure_owned_garden(db: Session, current_user: User, garden_id: int) -> Garden:
+    return get_owned_garden(garden_id=garden_id, db=db, current_user=current_user)
+
+
 @router.post("/tasks", response_model=TaskOut)
 def create_task(
     payload: TaskCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    garden = (
-        db.query(Garden)
-        .filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id)
-        .first()
-    )
-    if garden is None:
-        raise HTTPException(status_code=404, detail="Garden not found")
+    _ensure_owned_garden(db=db, current_user=current_user, garden_id=payload.garden_id)
 
     task = Task(**payload.model_dump(), planting_id=None)
     db.add(task)
@@ -47,11 +45,7 @@ def list_tasks(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    garden = (
-        db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
-    )
-    if garden is None:
-        raise HTTPException(status_code=404, detail="Garden not found")
+    _ensure_owned_garden(db=db, current_user=current_user, garden_id=garden_id)
 
     query = db.query(Task).filter(Task.garden_id == garden_id)
     if q:
@@ -110,13 +104,7 @@ def create_pest_log(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    garden = (
-        db.query(Garden)
-        .filter(Garden.id == payload.garden_id, Garden.owner_id == current_user.id)
-        .first()
-    )
-    if garden is None:
-        raise HTTPException(status_code=404, detail="Garden not found")
+    _ensure_owned_garden(db=db, current_user=current_user, garden_id=payload.garden_id)
     item = PestLog(**payload.model_dump())
     db.add(item)
     db.commit()
@@ -128,11 +116,7 @@ def create_pest_log(
 def list_pest_logs(
     garden_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    garden = (
-        db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
-    )
-    if garden is None:
-        raise HTTPException(status_code=404, detail="Garden not found")
+    _ensure_owned_garden(db=db, current_user=current_user, garden_id=garden_id)
     return db.query(PestLog).filter(PestLog.garden_id == garden_id).all()
 
 

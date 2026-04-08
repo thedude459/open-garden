@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Garden,
   GardenClimate,
@@ -173,17 +173,23 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
     }
   }, [fetchAuthed]);
 
-  const invalidateGardenInsightCaches = useCallback(createInvalidateCaches(
-    climateCacheRef.current,
-    plantingWindowCacheRef.current,
-    sunPathCacheRef.current,
-    seasonalPlanCacheRef.current,
-  ), []);
+  const invalidateGardenInsightCaches = useMemo(
+    () => createInvalidateCaches(
+      climateCacheRef.current,
+      plantingWindowCacheRef.current,
+      sunPathCacheRef.current,
+      seasonalPlanCacheRef.current,
+    ),
+    [],
+  );
 
-  const invalidateSensorCaches = useCallback(createInvalidateCaches(
-    sensorSummaryCacheRef.current,
-    timelineCacheRef.current,
-  ), []);
+  const invalidateSensorCaches = useMemo(
+    () => createInvalidateCaches(
+      sensorSummaryCacheRef.current,
+      timelineCacheRef.current,
+    ),
+    [],
+  );
 
   const invalidateSeasonalPlanCache = useCallback((gardenId: number) => {
     seasonalPlanCacheRef.current.delete(gardenId);

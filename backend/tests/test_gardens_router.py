@@ -176,10 +176,15 @@ def test_list_public_gardens_redacts_private_address(db_session, user):
 
 def test_geocode_garden_address_updates_coordinates(monkeypatch, db_session, garden):
     garden.address_private = "123 Main St"
+    garden.zip_code = "94110"
     db_session.add(garden)
     db_session.commit()
 
-    async def fake_fetch_address_geocode(address):
+    called = {}
+
+    async def fake_fetch_address_geocode(address, zip_code=None):
+        called["address"] = address
+        called["zip_code"] = zip_code
         return {"latitude": 40.1, "longitude": -74.2, "display_name": "123 Main St"}
 
     monkeypatch.setattr(gardens_router, "fetch_address_geocode", fake_fetch_address_geocode)
@@ -188,14 +193,16 @@ def test_geocode_garden_address_updates_coordinates(monkeypatch, db_session, gar
 
     assert updated.latitude == 40.1
     assert updated.longitude == -74.2
+    assert called == {"address": "123 Main St", "zip_code": "94110"}
 
 
 def test_geocode_garden_address_translates_validation_error(monkeypatch, db_session, garden):
     garden.address_private = "bad"
+    garden.zip_code = "94110"
     db_session.add(garden)
     db_session.commit()
 
-    async def fake_fetch_address_geocode(address):
+    async def fake_fetch_address_geocode(address, zip_code=None):
         raise ValidationServiceError("invalid address")
 
     monkeypatch.setattr(gardens_router, "fetch_address_geocode", fake_fetch_address_geocode)

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { GardenTimeline, GardenTimelineEvent, TimelineCategory } from "../types";
+import { Badge } from "@/components/ui/badge";
 
 const CATEGORY_LABELS: Record<TimelineCategory, string> = {
   task: "Tasks",
@@ -64,7 +65,7 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
   }
 
   return (
-    <article className="card timeline-panel-card">
+    <article className="card">
       <div className="crop-card-row">
         <div>
           <h2>Unified Timeline {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
@@ -73,11 +74,11 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
         <button type="button" className="secondary-btn" onClick={onRefresh}>Refresh</button>
       </div>
 
-      <section className="timeline-filters card">
+      <section className="card timeline-filter-panel">
         <h3>Filters</h3>
-        <div className="timeline-filter-grid">
+        <div className="flex flex-wrap gap-3 mt-2">
           {(Object.keys(CATEGORY_LABELS) as TimelineCategory[]).map((category) => (
-            <label key={category} className="timeline-filter-pill">
+            <label key={category} className="flex items-center gap-1.5 text-sm cursor-pointer">
               <input
                 type="checkbox"
                 checked={activeCategories[category]}
@@ -90,16 +91,16 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
         </div>
       </section>
 
-      <div className="timeline-layout">
-        <section className="timeline-list card">
+      <div className="timeline-columns">
+        <section className="card timeline-events-col">
           <h3>Timeline Events</h3>
           {isLoading && <p className="hint">Loading timeline...</p>}
           {!isLoading && filteredEvents.length === 0 && <p className="hint">No timeline events match the selected filters.</p>}
 
           {activeCategories.planting_window && plantingWindowGroups.length > 0 && (
             <>
-              <h4 className="hint" style={{ marginBottom: "0.25rem" }}>Planting Windows</h4>
-              <ul className="timeline-event-list">
+              <h4 className="hint timeline-group-heading">Planting Windows</h4>
+              <ul className="space-y-1 mt-2">
                 {plantingWindowGroups.map(({ baseName, events: groupEvents }) => {
                   const idx = selectedVarietyIdx[baseName] ?? 0;
                   const event = groupEvents[idx];
@@ -107,15 +108,16 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
                     <li key={baseName}>
                       <button
                         type="button"
-                        className={`timeline-event-row ${selectedEvent === event ? "active" : ""}`}
+                        className={`timeline-event-btn${selectedEvent === event ? " selected" : ""}`}
                         onClick={() => setSelectedEvent(event)}
                       >
                         <div className="crop-card-row">
                           <strong>Planting window: {baseName}</strong>
-                          <span className={`status-pill ${event.severity}`}>{event.severity}</span>
+                          <Badge variant="outline">{event.severity}</Badge>
                         </div>
                         {groupEvents.length > 1 && (
                           <select
+                            className="timeline-variety-select"
                             value={idx}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) => {
@@ -137,12 +139,12 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
                           if (d.method === "transplant" && d.indoor_seed_start) {
                             return (
                               <>
-                                <p className="hint">Start indoors: {String(d.indoor_seed_start)} – {String(d.indoor_seed_end || "?")}</p>
-                                <p className="hint">Transplant outdoors: {String(d.outdoor_window_start)} – {String(d.outdoor_window_end)}</p>
+                                <p className="hint timeline-event-meta">Start indoors: {String(d.indoor_seed_start)} – {String(d.indoor_seed_end || "?")}</p>
+                                <p className="hint timeline-event-meta">Transplant outdoors: {String(d.outdoor_window_start)} – {String(d.outdoor_window_end)}</p>
                               </>
                             );
                           }
-                          return <p className="hint">Direct sow outdoors: {String(d.outdoor_window_start)} – {String(d.outdoor_window_end)}</p>;
+                          return <p className="hint timeline-event-meta">Direct sow outdoors: {String(d.outdoor_window_start)} – {String(d.outdoor_window_end)}</p>;
                         })()}
                       </button>
                     </li>
@@ -155,22 +157,22 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
           {otherFilteredEvents.length > 0 && (
             <>
               {activeCategories.planting_window && plantingWindowGroups.length > 0 && (
-                <h4 className="hint" style={{ marginBottom: "0.25rem", marginTop: "0.75rem" }}>Other Events</h4>
+                <h4 className="hint timeline-group-heading timeline-group-heading-spaced">Other Events</h4>
               )}
-              <ul className="timeline-event-list">
+              <ul className="space-y-1 mt-2">
                 {otherFilteredEvents.map((event, index) => (
                   <li key={`${event.category}-${event.event_date}-${index}`}>
                     <button
                       type="button"
-                      className={`timeline-event-row ${selectedEvent === event ? "active" : ""}`}
+                      className={`timeline-event-btn${selectedEvent === event ? " selected" : ""}`}
                       onClick={() => setSelectedEvent(event)}
                     >
                       <div className="crop-card-row">
                         <strong>{event.title}</strong>
-                        <span className={`status-pill ${event.severity}`}>{event.severity}</span>
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{event.severity}</span>
                       </div>
-                      <p className="hint">{event.event_date} · {CATEGORY_LABELS[event.category]}</p>
-                      <p className="hint">{event.detail}</p>
+                      <p className="hint timeline-event-meta">{event.event_date} · {CATEGORY_LABELS[event.category]}</p>
+                      <p className="hint timeline-event-detail">{event.detail}</p>
                     </button>
                   </li>
                 ))}
@@ -179,7 +181,7 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
           )}
         </section>
 
-        <section className="timeline-drilldown card">
+        <section className="card timeline-drilldown-col">
           <h3>Drill-down</h3>
           {!selectedEvent && <p className="hint">Select an event to inspect details.</p>}
           {selectedEvent && (
@@ -188,9 +190,9 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
               <p className="hint">{selectedEvent.event_date} · {CATEGORY_LABELS[selectedEvent.category]} · {selectedEvent.source}</p>
               <p>{selectedEvent.detail}</p>
               <h4>Event Data</h4>
-              <ul className="chip-list">
+              <ul className="space-y-1">
                 {Object.entries(selectedEvent.drilldown).map(([key, value]) => (
-                  <li key={key} className="timeline-drilldown-row">
+                  <li key={key} className="flex gap-2 py-1 text-sm border-b last:border-b-0">
                     <strong>{key}:</strong> <span>{value === null ? "-" : String(value)}</span>
                   </li>
                 ))}

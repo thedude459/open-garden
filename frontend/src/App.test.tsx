@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 let latestRouterProps: unknown = null;
-const authScreenMock = vi.fn((_props: unknown) => <div data-testid="auth-screen" />);
+const authScreenMock = vi.fn(() => <div data-testid="auth-screen" />);
 const appPageRouterMock = vi.fn((props: unknown) => {
   latestRouterProps = props;
   return <div data-testid="app-page-router" />;
@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 vi.mock("./features/auth/AuthScreen", () => ({
-  AuthScreen: (props: unknown) => authScreenMock(props),
+  AuthScreen: () => authScreenMock(),
 }));
 
 vi.mock("./features/app/sections/AppPageRouter", () => ({

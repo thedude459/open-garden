@@ -37,7 +37,7 @@ repos:
   - repo: local
     hooks:
       - id: frontend-eslint
-        name: Frontend ESLint
+        name: Frontend lint (ESLint + Stylelint)
         entry: npm --prefix frontend run lint
         language: system
         pass_filenames: false

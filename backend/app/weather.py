@@ -97,13 +97,17 @@ async def fetch_zip_profile(zip_code: str) -> dict:
         }
 
 
-async def fetch_address_geocode(address: str) -> dict:
+async def fetch_address_geocode(address: str, zip_code: str | None = None) -> dict:
     """Use Nominatim (OpenStreetMap) to get precise lat/lon for a street address."""
-    if not address.strip():
+    normalized_address = address.strip()
+    if not normalized_address:
         raise ValidationServiceError("Address is required")
 
+    normalized_zip = (zip_code or "").strip()
+    query = normalized_address if not normalized_zip else f"{normalized_address}, {normalized_zip}"
+
     headers = {"User-Agent": "open-garden-app/1.0 (garden planning application)"}
-    params = {"q": address.strip(), "format": "json", "limit": 1}
+    params = {"q": query, "format": "json", "limit": 1}
 
     async with httpx.AsyncClient(timeout=10, headers=headers) as client:
         resp = await client.get("https://nominatim.openstreetmap.org/search", params=params)

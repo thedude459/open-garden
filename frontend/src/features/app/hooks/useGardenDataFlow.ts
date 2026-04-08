@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { ConfirmState } from "../types";
 import { createClearAllCaches } from "../utils/cacheUtils";
 import { useCropLibrarySync } from "./useCropLibrarySync";
@@ -85,9 +85,10 @@ export function useGardenDataFlow({
     clearPlantingRecommendationCacheEntry,
   } = insights;
 
-  const clearAllCaches = useCallback(createClearAllCaches(
-    weatherCacheRef.current,
-  ), []);
+  const clearAllCaches = useMemo(
+    () => createClearAllCaches(weatherCacheRef.current),
+    [weatherCacheRef],
+  );
 
   const noticeUnlessExpired = useCallback((msg: string) => {
     return (err: unknown) => {

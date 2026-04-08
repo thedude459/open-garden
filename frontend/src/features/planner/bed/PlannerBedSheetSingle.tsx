@@ -76,11 +76,11 @@ export function PlannerBedSheetSingle({
   }, [placements]);
 
   return (
-    <section key={bed.id} className="bed-sheet">
+    <section key={bed.id} className="space-y-4 border border-border rounded-lg p-4">
       <header>
         {isRenaming ? (
           <form
-            className="bed-rename-form"
+            className="flex items-center gap-2"
             onSubmit={async (event) => {
               event.preventDefault();
               if (isSavingRename) return;
@@ -135,7 +135,7 @@ export function PlannerBedSheetSingle({
         </button>
       </header>
 
-      <div className="bed-board" style={{ gridTemplateColumns: `repeat(${cols}, minmax(2.1rem, 1fr))` }}>
+      <div className="grid border border-border rounded" style={{ gridTemplateColumns: `repeat(${cols}, minmax(2.1rem, 1fr))` }}>
         {Array.from({ length: cols * rows }).map((_, index) => {
           const x = index % cols;
           const y = Math.floor(index / cols);
@@ -146,7 +146,7 @@ export function PlannerBedSheetSingle({
           return (
             <button
               key={`${bed.id}-${x}-${y}`}
-              className={`plot-cell${occupant ? " occupied" : ""}${blockedForSelected ? " blocked" : ""}${inBuffer ? " buffer" : ""}${occupant && selectedPlacementIds.includes(occupant.id) ? " selected" : ""}`}
+              className={`aspect-square flex items-center justify-center border border-border/30 text-xs transition-colors p-0 ${occupant ? "bg-white" : blockedForSelected ? "bg-red-50 cursor-not-allowed" : inBuffer ? "bg-amber-50 cursor-not-allowed" : "hover:bg-green-50 cursor-pointer"}${occupant && selectedPlacementIds.includes(occupant.id) ? " ring-2 ring-inset ring-[var(--accent)]" : ""}`}
               style={occupant ? { borderColor: occupant.color } : undefined}
               onMouseDown={() => startLasso(bed.id, x, y)}
               onMouseEnter={() => updateLasso(bed.id, x, y)}
@@ -198,7 +198,7 @@ export function PlannerBedSheetSingle({
               {occupant
                 ? (() => {
                     const visual = cropVisual(occupant.crop_name);
-                    return <img className="plot-cell-photo" src={visual.imageUrl} alt="" title={occupant.crop_name} loading="lazy" />;
+                    return <img className="plot-cell-photo w-full h-full object-cover" src={visual.imageUrl} alt="" title={occupant.crop_name} loading="lazy" />;
                   })()
                 : ""}
             </button>
@@ -206,14 +206,14 @@ export function PlannerBedSheetSingle({
         })}
       </div>
 
-      <div className="bed-legend" aria-label={`${bed.name} crop legend`}>
+      <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border" aria-label={`${bed.name} crop legend`}>
         {Array.from(
           new Map(placements.map((p) => [p.crop_name, placements.filter((item) => item.crop_name === p.crop_name).length])).entries()
         ).map(([cropName, count]) => {
           const visual = cropVisual(cropName);
           return (
-            <span key={`${bed.id}-${cropName}`} className="bed-legend-item">
-              <img className="legend-photo" src={visual.imageUrl} alt="" loading="lazy" />
+            <span key={`${bed.id}-${cropName}`} className="flex items-center gap-1.5 text-sm">
+              <img className="legend-photo w-6 h-6 rounded object-cover" src={visual.imageUrl} alt="" loading="lazy" />
               <span>{cropName} ({count})</span>
               <span className="hint">Row {visual.rowSpacingIn} in · In-row {visual.inRowSpacingIn} in</span>
             </span>
@@ -222,11 +222,11 @@ export function PlannerBedSheetSingle({
         {placements.length === 0 && <span className="hint">No crops to show in legend yet.</span>}
       </div>
 
-      <ul className="chip-list">
+      <ul className="space-y-2 mt-4">
         {placements.map((placement) => (
-          <li key={placement.id} className="chip-row">
+          <li key={placement.id} className="flex flex-wrap items-center gap-2 py-2 border-b last:border-b-0">
             <button
-              className={selectedPlacement ? (selectedPlacement.id === placement.id ? "chip selected" : "chip") : "chip"}
+              className={`rounded px-2 py-1 text-sm text-white font-medium cursor-pointer hover:opacity-90 transition-opacity${selectedPlacement && selectedPlacement.id === placement.id ? " ring-2 ring-offset-1 ring-white" : ""}`}
               style={{ background: placement.color }}
               draggable
               aria-label={`${placement.crop_name} at column ${placement.grid_x + 1}, row ${placement.grid_y + 1}. Arrow keys move; Enter removes.`}
@@ -249,15 +249,15 @@ export function PlannerBedSheetSingle({
                 ? `Tap a square for ${placement.crop_name}`
                 : `${placement.crop_name}${(placementIndexes.get(placement.id) || 0) > 1 ? ` #${placementIndexes.get(placement.id)}` : ""}`}
             </button>
-            <p className="hint chip-spacing-hint">
+            <p className="hint text-xs w-full">
               Row {cropVisual(placement.crop_name).rowSpacingIn} in · In-row {cropVisual(placement.crop_name).inRowSpacingIn} in
             </p>
-            <div className="chip-actions">
-              <button type="button" className="secondary-btn chip-action-btn" onClick={() => onNudgePlacement(placement.id, -1, 0)} aria-label={`Move ${placement.crop_name} left`}>←</button>
-              <button type="button" className="secondary-btn chip-action-btn" onClick={() => onNudgePlacement(placement.id, 0, -1)} aria-label={`Move ${placement.crop_name} up`}>↑</button>
-              <button type="button" className="secondary-btn chip-action-btn" onClick={() => onNudgePlacement(placement.id, 0, 1)} aria-label={`Move ${placement.crop_name} down`}>↓</button>
-              <button type="button" className="secondary-btn chip-action-btn" onClick={() => onNudgePlacement(placement.id, 1, 0)} aria-label={`Move ${placement.crop_name} right`}>→</button>
-              <button type="button" className="danger-sm chip-action-btn" onClick={() => onRequestRemovePlacement(placement.id, placement.crop_name)}>Remove</button>
+            <div className="flex gap-1 ml-auto">
+              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, -1, 0)} aria-label={`Move ${placement.crop_name} left`}>←</button>
+              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, 0, -1)} aria-label={`Move ${placement.crop_name} up`}>↑</button>
+              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, 0, 1)} aria-label={`Move ${placement.crop_name} down`}>↓</button>
+              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, 1, 0)} aria-label={`Move ${placement.crop_name} right`}>→</button>
+              <button type="button" className="danger-sm text-xs px-1.5 py-0.5" onClick={() => onRequestRemovePlacement(placement.id, placement.crop_name)}>Remove</button>
             </div>
           </li>
         ))}

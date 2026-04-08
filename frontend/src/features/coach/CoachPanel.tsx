@@ -1,4 +1,5 @@
 import { FormEvent } from "react";
+import { Badge } from "@/components/ui/badge";
 import { AiCoachResponse, AiCoachScenario, CoachMessage } from "../types";
 
 type CoachPanelProps = {
@@ -37,7 +38,7 @@ export function CoachPanel({
   }
 
   return (
-    <article className="card coach-panel-card">
+    <article className="card">
       <div className="crop-card-row">
         <div>
           <h2>AI Garden Coach {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
@@ -45,20 +46,20 @@ export function CoachPanel({
         </div>
       </div>
 
-      <div className="coach-layout">
-        <section className="coach-chat card">
+      <div className="flex flex-col lg:flex-row gap-4 mt-4">
+        <section className="card">
           <h3>Chat</h3>
-          <div className="coach-thread" role="log" aria-live="polite">
+          <div className="h-64 overflow-y-auto space-y-3 p-3 bg-muted rounded-md mb-3" role="log" aria-live="polite">
             {messages.length === 0 && <p className="hint">Ask about watering, task prioritization, planting timing, or what to do this week.</p>}
             {messages.map((message) => (
-              <article key={message.id} className={`coach-bubble ${message.role}`}>
-                <strong>{message.role === "user" ? "You" : "Coach"}</strong>
-                <p>{message.content}</p>
+              <article key={message.id} className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}>
+                <strong className="text-xs text-muted-foreground mb-0.5">{message.role === "user" ? "You" : "Coach"}</strong>
+                <p className={`rounded-md px-3 py-2 text-sm ${message.role === "user" ? "bg-accent/10" : "bg-background border border-border"} max-w-[90%]`}>{message.content}</p>
               </article>
             ))}
             {isLoading && <p className="hint">Coach is thinking...</p>}
           </div>
-          <form className="coach-input-row" onSubmit={submitChat}>
+          <form className="flex gap-2 mt-3" onSubmit={submitChat}>
             <input
               value={draftMessage}
               onChange={(event) => onDraftMessageChange(event.target.value)}
@@ -68,7 +69,7 @@ export function CoachPanel({
           </form>
         </section>
 
-        <section className="coach-scenario card">
+        <section className="card">
           <h3>Scenario Planning Tools</h3>
           <div className="stack compact">
             <label className="field-label" htmlFor="coach-days-ahead">Planning horizon (days)</label>
@@ -118,14 +119,14 @@ export function CoachPanel({
         </section>
       </div>
 
-      <section className="coach-actions card">
+      <section className="card">
         <h3>Suggested Actions</h3>
-        <ul className="climate-signal-list">
+        <ul className="space-y-3">
           {(latestResponse?.suggested_actions || []).map((action, index) => (
-            <li key={`${action.title}-${index}`} className="climate-signal">
+            <li key={`${action.title}-${index}`} className="py-3 border-b last:border-b-0">
               <div className="crop-card-row">
                 <strong>{action.title}</strong>
-                <span className={`status-pill ${action.priority}`}>{action.priority}</span>
+                <Badge variant="outline">{action.priority}</Badge>
               </div>
               <p className="hint">{action.detail}</p>
             </li>
@@ -134,11 +135,11 @@ export function CoachPanel({
         </ul>
       </section>
 
-      <section className="coach-outcomes card">
+      <section className="card">
         <h3>Scenario Outcomes</h3>
-        <ul className="climate-signal-list">
+        <ul className="space-y-3">
           {(latestResponse?.scenario_outcomes || []).map((outcome, index) => (
-            <li key={`${outcome.title}-${index}`} className="climate-signal">
+            <li key={`${outcome.title}-${index}`} className="py-3 border-b last:border-b-0">
               <strong>{outcome.title}</strong>
               <p className="hint">{outcome.detail}</p>
             </li>

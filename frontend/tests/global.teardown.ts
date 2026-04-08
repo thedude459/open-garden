@@ -59,6 +59,10 @@ if user is not None:
     gardens = db.query(Garden).filter(Garden.owner_id == user_id).all()
     for garden in gardens:
         gid = garden.id
+        sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == gid).all()]
+        if sensor_ids:
+            db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
+        db.query(Sensor).filter(Sensor.garden_id == gid).delete()
         bed_ids = [row.id for row in db.query(Bed.id).filter(Bed.garden_id == gid).all()]
         if bed_ids:
             db.query(Placement).filter(Placement.bed_id.in_(bed_ids)).delete(synchronize_session=False)
@@ -67,10 +71,6 @@ if user is not None:
         db.query(Task).filter(Task.garden_id == gid).delete()
         db.query(Planting).filter(Planting.garden_id == gid).delete()
         db.query(Placement).filter(Placement.garden_id == gid).delete()
-        sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == gid).all()]
-        if sensor_ids:
-            db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
-        db.query(Sensor).filter(Sensor.garden_id == gid).delete()
         db.delete(garden)
     db.query(SeedInventory).filter(SeedInventory.user_id == user_id).delete()
     db.query(UserAuthToken).filter(UserAuthToken.user_id == user_id).delete()

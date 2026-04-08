@@ -1,4 +1,5 @@
 import { GardenClimate, Task } from "../types";
+import { Badge } from "@/components/ui/badge";
 
 type WeatherData = {
   daily?: {
@@ -20,26 +21,26 @@ type WeatherPanelProps = {
 
 export function WeatherPanel({ climate, weather, tasks, isLoadingClimate, isLoadingWeather, isLoadingTasks }: WeatherPanelProps) {
   return (
-    <article className="card weather-card">
+    <article className="card">
       <h2>Weather Outlook</h2>
       {isLoadingClimate && <p className="hint">Loading climate guidance...</p>}
       {climate ? (
         <>
-          <div className="climate-kpis">
-            <span className="climate-kpi">{climate.microclimate_band}</span>
-            <span className="climate-kpi">Soil ~ {climate.soil_temperature_estimate_f}F</span>
-            <span className="climate-kpi">Frost risk {climate.frost_risk_next_10_days}</span>
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge variant="secondary">{climate.microclimate_band}</Badge>
+            <Badge variant="secondary">Soil ~ {climate.soil_temperature_estimate_f}F</Badge>
+            <Badge variant="secondary">Frost risk {climate.frost_risk_next_10_days}</Badge>
           </div>
           <p className="hint">
             Adjusted last spring frost {climate.adjusted_last_spring_frost}. First fall frost {climate.adjusted_first_fall_frost}. Estimated frost-free season {climate.growing_season_days} days.
           </p>
           <h3>Climate Signals</h3>
-          <ul className="climate-signal-list">
+          <ul className="space-y-3">
             {climate.recommendations.map((item) => (
-              <li key={item.key} className="climate-signal">
+              <li key={item.key} className="py-3 border-b last:border-b-0">
                 <div className="crop-card-row">
                   <strong>{item.title}</strong>
-                  <span className={`status-pill ${item.status}`}>{item.status}</span>
+                  <Badge variant="outline">{item.status}</Badge>
                 </div>
                 <p className="hint">{item.detail}</p>
               </li>

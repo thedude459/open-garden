@@ -1,0 +1,53 @@
+/* ====================
+  Base Tokens
+==================== */
+
+:root {
+  /* Garden palette */
+  --bg: #f0f4e9;
+  --bg-2: #dfebda;
+  --panel: #fffef8;
+  --ink: #1b2f26;
+  --muted: #5f7368;
+  --accent: #2d7b58;
+  --accent-2: #d2603f;
+  --accent-3: #1e4f63;
+  --line: #c6d3c2;
+
+  /* shadcn/ui semantic tokens mapped to the garden palette */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--accent);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg-2);
+  --secondary-foreground: var(--ink);
+  --muted-foreground: var(--muted);
+  --accent-color: var(--bg-2);
+  --accent-foreground: var(--ink);
+  --destructive: var(--accent-2);
+  --destructive-foreground: #ffffff;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+  --radius: 0.625rem;
+
+  /* Layout system */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --content-max: 1400px;
+}
+
+* {
+  box-sizing: border-box;
+}
+

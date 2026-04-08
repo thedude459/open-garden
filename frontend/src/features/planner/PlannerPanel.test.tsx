@@ -1,5 +1,5 @@
 import { createRef } from "react";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PlannerPanel } from "./PlannerPanel";
@@ -59,25 +59,32 @@ function makePlacement(overrides: Partial<Placement> = {}): Placement {
   };
 }
 
+type RotateBedFn = (bedId: number, autoFit?: boolean) => Promise<void>;
+type RenameBedFn = (bedId: number, nextName: string) => Promise<void> | void;
+type MovePlacementFn = (placementId: number, bedId: number, x: number, y: number) => void;
+type NudgePlacementFn = (placementId: number, dx: number, dy: number) => void;
+type BlockedMoveFn = (cropName: string) => void;
+type SpacingConflictFn = (bedId: number, x: number, y: number, cropName: string, ignorePlacementId?: number) => string | null;
+
 function renderPlanner(options?: {
   beds?: Bed[];
   placements?: Placement[];
   cropTemplates?: CropTemplate[];
   yardWidthFt?: number;
   yardLengthFt?: number;
-  onRotateBed?: ReturnType<typeof vi.fn>;
-  onRenameBed?: ReturnType<typeof vi.fn>;
-  onNudgePlacement?: ReturnType<typeof vi.fn>;
-  onMovePlacement?: ReturnType<typeof vi.fn>;
-  onBlockedPlacementMove?: ReturnType<typeof vi.fn>;
-  placementSpacingConflict?: ReturnType<typeof vi.fn>;
+  onRotateBed?: RotateBedFn;
+  onRenameBed?: RenameBedFn;
+  onNudgePlacement?: NudgePlacementFn;
+  onMovePlacement?: MovePlacementFn;
+  onBlockedPlacementMove?: BlockedMoveFn;
+  placementSpacingConflict?: SpacingConflictFn;
 }) {
-  const onRotateBed = options?.onRotateBed || vi.fn().mockResolvedValue(undefined);
-  const onRenameBed = options?.onRenameBed || vi.fn().mockResolvedValue(undefined);
-  const onNudgePlacement = options?.onNudgePlacement || vi.fn();
-  const onMovePlacement = options?.onMovePlacement || vi.fn();
-  const onBlockedPlacementMove = options?.onBlockedPlacementMove || vi.fn();
-  const placementSpacingConflict = options?.placementSpacingConflict || vi.fn().mockReturnValue(null);
+  const onRotateBed: RotateBedFn = options?.onRotateBed ?? (vi.fn().mockResolvedValue(undefined) as unknown as RotateBedFn);
+  const onRenameBed: RenameBedFn = options?.onRenameBed ?? (vi.fn().mockResolvedValue(undefined) as unknown as RenameBedFn);
+  const onNudgePlacement: NudgePlacementFn = options?.onNudgePlacement ?? (vi.fn() as unknown as NudgePlacementFn);
+  const onMovePlacement: MovePlacementFn = options?.onMovePlacement ?? (vi.fn() as unknown as MovePlacementFn);
+  const onBlockedPlacementMove: BlockedMoveFn = options?.onBlockedPlacementMove ?? (vi.fn() as unknown as BlockedMoveFn);
+  const placementSpacingConflict: SpacingConflictFn = options?.placementSpacingConflict ?? (vi.fn().mockReturnValue(null) as unknown as SpacingConflictFn);
 
   render(
     <PlannerPanel
@@ -86,8 +93,8 @@ function renderPlanner(options?: {
         beds: options?.beds || [makeBed()],
         placements: options?.placements || [],
         cropTemplates: options?.cropTemplates || [makeCrop()],
-        yardWidthFt: options?.yardWidthFt ?? 20,
-        yardLengthFt: options?.yardLengthFt ?? 20,
+        yardWidthFt: options?.yardWidthFt ?? 12,
+        yardLengthFt: options?.yardLengthFt ?? 12,
         gardenSunPath: null,
         isLoadingSunPath: false,
         isLoadingPlantingWindows: false,
@@ -166,7 +173,9 @@ describe("PlannerPanel", () => {
     expect(rotateNow).toBeEnabled();
 
     fireEvent.click(rotateNow);
-    expect(onRotateBed).toHaveBeenCalledWith(10, false);
+    await waitFor(() => {
+      expect(onRotateBed).toHaveBeenCalledWith(10, false);
+    });
   });
 
   it("offers auto-fit rotate when current position would overflow", () => {

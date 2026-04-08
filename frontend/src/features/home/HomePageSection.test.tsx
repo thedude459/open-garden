@@ -10,8 +10,17 @@ vi.mock("./HomeHero", () => ({
 }));
 
 vi.mock("./GardenListSidebar", () => ({
-  GardenListSidebar: ({ onSelectGarden }: { onSelectGarden: (id: number) => void }) => (
-    <button onClick={() => onSelectGarden(2)}>Select Garden 2</button>
+  GardenListSidebar: ({
+    onSelectGarden,
+    onDeleteGarden,
+  }: {
+    onSelectGarden: (id: number) => void;
+    onDeleteGarden: (id: number) => void;
+  }) => (
+    <>
+      <button onClick={() => onSelectGarden(2)}>Select Garden 2</button>
+      <button onClick={() => onDeleteGarden(1)}>Delete Garden 1</button>
+    </>
   ),
 }));
 
@@ -108,6 +117,55 @@ describe("HomePageSection", () => {
     render(<HomePageSection {...props} />);
 
     expect(screen.queryByRole("button", { name: "Go Calendar" })).not.toBeInTheDocument();
+    expect(screen.getByText("Create Form")).toBeInTheDocument();
+  });
+
+  it("shows microclimate card when garden is selected", () => {
+    const props = baseProps();
+    render(<HomePageSection {...props} />);
+    expect(screen.getByText("Microclimate Card")).toBeInTheDocument();
+  });
+
+  it("calls deleteGarden when delete button is clicked", async () => {
+    const deleteGarden = vi.fn(async () => undefined);
+    const props = baseProps();
+    (props.plannerActions as { deleteGarden: typeof deleteGarden }).deleteGarden = deleteGarden;
+    render(<HomePageSection {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Delete Garden 1" }));
+    expect(deleteGarden).toHaveBeenCalledWith(1);
+  });
+
+  it("shows CreateGardenForm in sidebar when no gardens exist", () => {
+    const props = baseProps();
+    render(<HomePageSection {...props} />);
+    expect(screen.getByText("Create Form")).toBeInTheDocument();
+  });
+
+  it("shows CreateGardenForm in main column when gardens exist", () => {
+    const props = baseProps();
+    const sampleGarden = {
+      id: 2,
+      name: "Front Yard",
+      description: "",
+      zip_code: "80301",
+      growing_zone: "6a",
+      yard_width_ft: 15,
+      yard_length_ft: 10,
+      latitude: 40,
+      longitude: -105,
+      orientation: "south",
+      sun_exposure: "full_sun",
+      wind_exposure: "moderate",
+      thermal_mass: "moderate",
+      slope_position: "mid",
+      frost_pocket_risk: "low",
+      address_private: "",
+      is_shared: false,
+      edge_buffer_in: 6,
+    };
+    props.gardens = [sampleGarden];
+    render(<HomePageSection {...props} />);
+    // When gardens exist, showCreateInManagementColumn=false → form moves to main column
     expect(screen.getByText("Create Form")).toBeInTheDocument();
   });
 });

@@ -318,6 +318,44 @@ def test_cross_user_authorization_is_enforced(integration_client):
     assert stranger_update_response.json()["detail"] == "Not authorized"
 
 
+def test_geocode_endpoint_uses_street_address_plus_zip(integration_client, monkeypatch):
+    client, _ = integration_client
+    token = _register_and_login(
+        client,
+        email="geo@example.com",
+        username="geo-user",
+    )
+    headers = _auth_headers(token)
+
+    garden_response = client.post(
+        "/gardens",
+        headers=headers,
+        json={
+            "name": "Geo Garden",
+            "zip_code": "94110",
+            "address_private": "123 Main St",
+        },
+    )
+    assert garden_response.status_code == 200
+    garden = garden_response.json()
+
+    called = {}
+
+    async def fake_fetch_address_geocode(address: str, zip_code: str | None = None):
+        called["address"] = address
+        called["zip_code"] = zip_code
+        return {"latitude": 40.1, "longitude": -74.2, "display_name": "123 Main St, 94110"}
+
+    monkeypatch.setattr(gardens_module, "fetch_address_geocode", fake_fetch_address_geocode)
+
+    geocode_response = client.patch(f"/gardens/{garden['id']}/geocode", headers=headers)
+    assert geocode_response.status_code == 200
+    geocoded = geocode_response.json()
+    assert geocoded["latitude"] == 40.1
+    assert geocoded["longitude"] == -74.2
+    assert called == {"address": "123 Main St", "zip_code": "94110"}
+
+
 def test_invalid_or_missing_auth_token_is_rejected(integration_client):
     client, _ = integration_client
 

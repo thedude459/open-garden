@@ -54,10 +54,29 @@ export async function loadAuthenticated(page: Page, token: string) {
 }
 
 export async function ensureGardenSelected(page: Page, gardenName?: string) {
-  const targetGarden = gardenName
+  const homeNav = page.getByRole("button", { name: "My Gardens", exact: true });
+  if (await homeNav.isVisible({ timeout: 3_000 }).catch(() => false)) {
+    await homeNav.click();
+  }
+
+  const preferred = gardenName
+    ? page.getByRole("button", { name: `Select garden ${gardenName}` }).first()
+    : page.getByRole("button", { name: /^Select garden / }).first();
+
+  const preferredVisible = await expect(preferred)
+    .toBeVisible({ timeout: 12_000 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (preferredVisible) {
+    await preferred.click();
+    return;
+  }
+
+  const fallback = gardenName
     ? page.locator(".garden-card-select", { hasText: gardenName }).first()
     : page.locator(".garden-card-select").first();
 
-  await expect(targetGarden).toBeVisible({ timeout: 20_000 });
-  await targetGarden.click();
+  await expect(fallback).toBeVisible({ timeout: 20_000 });
+  await fallback.click();
 }

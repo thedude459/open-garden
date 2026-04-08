@@ -1,0 +1,165 @@
+/* ====================
+   Microclimate UI
+==================== */
+
+.microclimate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.microclimate-actions button {
+  flex-shrink: 0;
+}
+
+.suggest-btn {
+  background: var(--color-primary, #2e7d32);
+  color: #fff;
+  border-color: transparent;
+}
+.suggest-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark, #1b5e20);
+}
+.suggest-btn:disabled {
+  opacity: 0.65;
+}
+
+/* Inline suggestion notes below microclimate selectors */
+.suggestion-note {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.15rem;
+}
+.suggestion-note.auto-set {
+  color: #1b5e20;
+  background: #e8f5e9;
+  border-left: 3px solid #43a047;
+}
+.suggestion-note.needs-input {
+  color: #7c5c00;
+  background: #fff8e1;
+  border-left: 3px solid #ffc107;
+}
+
+/* ── Compass orientation picker ─────────────────────────────────────── */
+.compass-picker {
+  display: inline-grid;
+  grid-template-areas:
+    ". n ."
+    "w rose e"
+    ". s .";
+  grid-template-columns: 38px 38px 38px;
+  grid-template-rows: 38px 38px 38px;
+  gap: 3px;
+}
+
+.compass-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: unset;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #f3f7ef;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.compass-btn:hover {
+  background: #dff0e6;
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.compass-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.compass-n { grid-area: n; }
+.compass-e { grid-area: e; }
+.compass-s { grid-area: s; }
+.compass-w { grid-area: w; }
+
+.compass-rose {
+  grid-area: rose;
+  border-radius: 50%;
+  background: radial-gradient(circle, #cde8d5 40%, #a8d4b8 100%);
+  border: 1px solid #84bc9a;
+}
+
+/* ── Satellite / map reference section ──────────────────────────────── */
+.map-reference {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.map-reference-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.map-ref-links {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.map-ref-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.map-ref-link:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.garden-location-map {
+  width: 100%;
+  height: 160px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: block;
+}
+
+
+.danger-sm {
+  background: #fde8e4;
+  color: #b03020;
+  border: 1px solid #f0b0a0;
+  padding: 0.5rem 0.7rem;
+  min-height: 2.5rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.danger-sm:hover {
+  background: #f9c5bc;
+}
+
+

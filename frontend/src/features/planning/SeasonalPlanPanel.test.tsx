@@ -92,4 +92,108 @@ describe("SeasonalPlanPanel", () => {
     expect(screen.getByText("Companion risks: Celery")).toBeInTheDocument();
     expect(screen.getByText("Thin seedlings")).toBeInTheDocument();
   });
+
+  it("triggers refreshSeasonalPlan when Refresh Plan is clicked", async () => {
+    const refreshSeasonalPlan = vi.fn(async () => undefined);
+    render(
+      <SeasonalPlanProvider value={contextValue({ refreshSeasonalPlan })}>
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Refresh Plan" }));
+    expect(refreshSeasonalPlan).toHaveBeenCalled();
+  });
+
+  it("renders rotation recommendations and companion insights with data", () => {
+    const seasonalPlan = {
+      microclimate_band: "temperate",
+      soil_temperature_estimate_f: 58,
+      frost_risk_next_10_days: "low",
+      growth_stages: [],
+      recommended_next_plantings: [],
+      rotation_recommendations: [
+        {
+          bed_id: 3,
+          last_crop: "Cabbage",
+          avoid_family: "Brassicaceae",
+          recommended_families: ["Solanaceae", "Cucurbitaceae"],
+        },
+      ],
+      companion_insights: [
+        {
+          bed_id: 3,
+          crop: "Basil",
+          good_matches: ["Tomato"],
+          risk_matches: ["Fennel"],
+        },
+      ],
+    };
+
+    render(
+      <SeasonalPlanProvider value={contextValue({ seasonalPlan: seasonalPlan as never })}>
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+
+    expect(screen.getByText(/Bed 3: rotate after Cabbage/)).toBeInTheDocument();
+    expect(screen.getByText(/Avoid family Brassicaceae/)).toBeInTheDocument();
+    expect(screen.getByText(/Suggested families: Solanaceae, Cucurbitaceae/)).toBeInTheDocument();
+    expect(screen.getByText(/Bed 3: Basil/)).toBeInTheDocument();
+    expect(screen.getByText(/Good with: Tomato/)).toBeInTheDocument();
+    expect(screen.getByText(/Watch with: Fennel/)).toBeInTheDocument();
+  });
+
+  it("renders succession candidates in planting recommendations", () => {
+    const seasonalPlan = {
+      microclimate_band: "cool",
+      soil_temperature_estimate_f: 52,
+      frost_risk_next_10_days: "medium",
+      growth_stages: [
+        {
+          planting_id: 20,
+          bed_id: 1,
+          crop_name: "Spinach",
+          stage: "seedling",
+          progress_pct: 10,
+          expected_harvest_on: "2025-07-01",
+        },
+      ],
+      recommended_next_plantings: [],
+      rotation_recommendations: [],
+      companion_insights: [],
+    };
+    const plantingRecommendation = {
+      planting_id: 20,
+      crop_name: "Spinach",
+      stage: "seedling",
+      progress_pct: 10,
+      expected_harvest_on: "2025-07-01",
+      companion: { good_matches: [], risk_matches: [] },
+      next_actions: [],
+      succession_candidates: [
+        {
+          crop_name: "Kale",
+          status: "open",
+          method: "direct_sow",
+          window_start: "2025-08-01",
+          window_end: "2025-09-01",
+        },
+      ],
+    };
+
+    render(
+      <SeasonalPlanProvider
+        value={contextValue({
+          seasonalPlan: seasonalPlan as never,
+          selectedRecommendationPlantingId: 20,
+          plantingRecommendation: plantingRecommendation as never,
+        })}
+      >
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+
+    expect(screen.getByText("Kale")).toBeInTheDocument();
+    expect(screen.getByText(/Direct sow/)).toBeInTheDocument();
+  });
 });

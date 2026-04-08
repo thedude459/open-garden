@@ -343,3 +343,96 @@ describe("CropsPanel – sync status display", () => {
   });
 });
 
+describe("CropsPanel – form change handlers", () => {
+  it("fires onNewCropNameChange on crop name input change", () => {
+    const onNewCropNameChange = vi.fn();
+    renderPanel({ onNewCropNameChange });
+    fireEvent.change(screen.getByLabelText("Crop Name"), { target: { value: "Kale" } });
+    expect(onNewCropNameChange).toHaveBeenCalledWith("Kale");
+  });
+
+  it("fires onNewCropVarietyChange on variety input change", () => {
+    const onNewCropVarietyChange = vi.fn();
+    renderPanel({ onNewCropVarietyChange });
+    fireEvent.change(screen.getByLabelText("Variety"), { target: { value: "Lacinato" } });
+    expect(onNewCropVarietyChange).toHaveBeenCalledWith("Lacinato");
+  });
+
+  it("fires onNewCropFamilyChange on family input change", () => {
+    const onNewCropFamilyChange = vi.fn();
+    renderPanel({ onNewCropFamilyChange });
+    fireEvent.change(screen.getByLabelText("Family"), { target: { value: "Brassicaceae" } });
+    expect(onNewCropFamilyChange).toHaveBeenCalledWith("Brassicaceae");
+  });
+
+  it("fires onNewCropSpacingChange on spacing input change", () => {
+    const onNewCropSpacingChange = vi.fn();
+    renderPanel({ onNewCropSpacingChange });
+    fireEvent.change(screen.getByLabelText("Spacing (in)"), { target: { value: "18" } });
+    expect(onNewCropSpacingChange).toHaveBeenCalledWith(18);
+  });
+
+  it("fires onNewCropDaysChange on days-to-harvest input change", () => {
+    const onNewCropDaysChange = vi.fn();
+    renderPanel({ onNewCropDaysChange });
+    fireEvent.change(screen.getByLabelText("Days to Harvest"), { target: { value: "90" } });
+    expect(onNewCropDaysChange).toHaveBeenCalledWith(90);
+  });
+
+  it("fires onNewCropPlantingWindowChange on planting window input change", () => {
+    const onNewCropPlantingWindowChange = vi.fn();
+    renderPanel({ onNewCropPlantingWindowChange });
+    fireEvent.change(screen.getByLabelText("When to Plant"), { target: { value: "Early spring" } });
+    expect(onNewCropPlantingWindowChange).toHaveBeenCalledWith("Early spring");
+  });
+
+  it("fires onNewCropImageUrlChange on image URL input change", () => {
+    const onNewCropImageUrlChange = vi.fn();
+    renderPanel({ onNewCropImageUrlChange });
+    fireEvent.change(screen.getByLabelText("Photo URL (optional)"), { target: { value: "https://example.com/img.jpg" } });
+    expect(onNewCropImageUrlChange).toHaveBeenCalledWith("https://example.com/img.jpg");
+  });
+
+  it("fires onNewCropDirectSowChange when direct sow checkbox is toggled", () => {
+    const onNewCropDirectSowChange = vi.fn();
+    renderPanel({ onNewCropDirectSowChange });
+    fireEvent.click(screen.getByLabelText("Direct sow"));
+    expect(onNewCropDirectSowChange).toHaveBeenCalledWith(true);
+  });
+
+  it("fires onNewCropFrostHardyChange when frost hardy checkbox is toggled", () => {
+    const onNewCropFrostHardyChange = vi.fn();
+    renderPanel({ onNewCropFrostHardyChange });
+    fireEvent.click(screen.getByLabelText("Frost hardy"));
+    expect(onNewCropFrostHardyChange).toHaveBeenCalledWith(true);
+  });
+
+  it("fires onNewCropWeeksToTransplantChange on weeks-to-transplant input change", () => {
+    const onNewCropWeeksToTransplantChange = vi.fn();
+    renderPanel({ newCropDirectSow: false, onNewCropWeeksToTransplantChange });
+    fireEvent.change(screen.getByLabelText("Weeks to start indoors before transplant"), { target: { value: "8" } });
+    expect(onNewCropWeeksToTransplantChange).toHaveBeenCalledWith(8);
+  });
+
+  it("fires onNewCropNotesChange on notes textarea change", () => {
+    const onNewCropNotesChange = vi.fn();
+    renderPanel({ onNewCropNotesChange });
+    fireEvent.change(screen.getByLabelText("Care notes (optional)"), { target: { value: "Water daily." } });
+    expect(onNewCropNotesChange).toHaveBeenCalledWith("Water daily.");
+  });
+
+  it("fires onResetCropForm when Cancel edit is clicked", () => {
+    const onResetCropForm = vi.fn();
+    renderPanel({ editingCropId: 3, onResetCropForm });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel edit" }));
+    expect(onResetCropForm).toHaveBeenCalled();
+  });
+
+  it("submits the form and calls onUpsertCropTemplate", () => {
+    const onUpsertCropTemplate = vi.fn((e: React.FormEvent) => e.preventDefault());
+    renderPanel({ onUpsertCropTemplate });
+    fireEvent.submit(screen.getByRole("button", { name: "Add to crop list" }).closest("form") as HTMLFormElement);
+    expect(onUpsertCropTemplate).toHaveBeenCalled();
+  });
+});
+

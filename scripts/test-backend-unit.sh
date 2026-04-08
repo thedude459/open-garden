@@ -33,6 +33,6 @@ TEST_CMD='python -m venv /tmp/venv \
   && /tmp/venv/bin/pip install -r backend/requirements.txt \
   && /tmp/venv/bin/pip install pytest-randomly==3.16.0 \
   && echo "Running backend unit tests with randomized order seed: ${RANDOMLY_SEED}" \
-  && /tmp/venv/bin/pytest backend/tests -q -m "unit" --randomly-seed="${RANDOMLY_SEED}" -o addopts="" --cov=app --cov-branch --cov-report=term-missing --cov-report=xml:backend/coverage-unit.xml --cov-fail-under=0'
+  && /tmp/venv/bin/pytest backend/tests -q -m "unit" --randomly-seed="${RANDOMLY_SEED}" -o addopts="" --cov=app --cov-branch --cov-report=term-missing --cov-report=xml:backend/coverage-unit.xml --cov-fail-under=90'
 
 docker run "${DOCKER_RUN_ARGS[@]}" python:3.12-slim bash -lc "$TEST_CMD"

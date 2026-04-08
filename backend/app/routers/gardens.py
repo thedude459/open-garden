@@ -104,7 +104,7 @@ async def geocode_garden_address(
         )
 
     try:
-        result = await fetch_address_geocode(garden.address_private)
+        result = await fetch_address_geocode(garden.address_private, garden.zip_code)
     except ValidationServiceError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

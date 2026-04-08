@@ -133,4 +133,206 @@ describe("useAuthFlow", () => {
 
     expect(pushNotice).toHaveBeenCalledWith("Password reset successful. Please sign in.", "success");
   });
+
+  it("handles 'username already taken' error during registration", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 400,
+      text: vi.fn(async () => "Username already exists"),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+    act(() => {
+      result.current.setLoginMode("register");
+      result.current.setEmail("user@example.com");
+      result.current.setUsername("takenuser");
+      result.current.setPassword("pass");
+    });
+
+    await act(async () => {
+      await result.current.handleAuth(makeEvent());
+    });
+
+    expect(pushNotice).toHaveBeenCalledWith(
+      "Username already taken. Try a different one or sign in.",
+      "error",
+    );
+  });
+
+  it("handles unknown server error during registration", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: vi.fn(async () => "Internal server error"),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+    act(() => {
+      result.current.setLoginMode("register");
+      result.current.setEmail("user@example.com");
+      result.current.setUsername("user");
+      result.current.setPassword("pass");
+    });
+
+    await act(async () => {
+      await result.current.handleAuth(makeEvent());
+    });
+
+    expect(pushNotice).toHaveBeenCalledWith("Internal server error", "error");
+  });
+
+  it("handles network failure during registration", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce(new TypeError("Network error")));
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+    act(() => {
+      result.current.setLoginMode("register");
+      result.current.setEmail("user@example.com");
+      result.current.setUsername("user");
+      result.current.setPassword("pass");
+    });
+
+    await act(async () => {
+      await result.current.handleAuth(makeEvent());
+    });
+
+    expect(pushNotice).toHaveBeenCalledWith("Unable to reach the server.", "error");
+  });
+
+  it("handles failed handleForgotUsername request", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: vi.fn(async () => ""),
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+    act(() => {
+      result.current.setEmail("user@example.com");
+    });
+
+    await act(async () => {
+      await result.current.handleForgotUsername(makeEvent());
+    });
+
+    expect(pushNotice).toHaveBeenCalledWith(
+      expect.stringContaining("Unable to send username"),
+      "error",
+    );
+  });
+
+  it("handles failed resendVerificationEmail request", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: vi.fn(async () => ""),
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+
+    let caughtError: Error | undefined;
+    await act(async () => {
+      try {
+        await result.current.resendVerificationEmail();
+      } catch (err) {
+        caughtError = err as Error;
+      }
+    });
+    expect(caughtError?.message).toContain("Unable to resend verification email");
+  });
+
+  it("handles failed verifyEmailToken request", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: vi.fn(async () => "Invalid token"),
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+
+    let caughtError: Error | undefined;
+    await act(async () => {
+      try {
+        await result.current.verifyEmailToken("bad-token");
+      } catch (err) {
+        caughtError = err as Error;
+      }
+    });
+    expect(caughtError?.message).toContain("Invalid token");
+  });
+
+  it("handles failed submitPasswordReset request", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        text: vi.fn(async () => "Token expired"),
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+    act(() => {
+      result.current.setResetToken("mytoken");
+      result.current.setResetPassword("longenough");
+    });
+
+    await act(async () => {
+      await result.current.submitPasswordReset(makeEvent());
+    });
+
+    expect(pushNotice).toHaveBeenCalledWith(expect.stringContaining("Token expired"), "error");
+  });
+
+  it("handles failed handleForgotPassword request", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: vi.fn(async () => ""),
+      }),
+    );
+
+    const { result } = renderHook(() =>
+      useAuthFlow({ setToken, authHeaders: { Authorization: "Bearer t" }, pushNotice }),
+    );
+    act(() => {
+      result.current.setEmail("user@example.com");
+    });
+
+    await act(async () => {
+      await result.current.handleForgotPassword(makeEvent());
+    });
+
+    expect(pushNotice).toHaveBeenCalledWith(
+      expect.stringContaining("Unable to send reset email"),
+      "error",
+    );
+  });
 });

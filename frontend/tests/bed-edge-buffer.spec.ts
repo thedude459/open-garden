@@ -42,18 +42,18 @@ test.describe("bed edge buffer", () => {
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
 
     await expect(page.getByRole("heading", { name: "Bed Sheets" })).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator(".plot-cell").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /empty square column|buffer zone at column/i }).first()).toBeVisible({ timeout: 10_000 });
 
     const cropOption = page.locator("#planner-crop-list [role='option']").first();
     await expect(cropOption).toBeVisible({ timeout: 10_000 });
     await cropOption.click();
 
-    const initialBufferCells = await page.locator(".plot-cell.buffer").count();
+    const initialBufferCells = await page.getByRole("button", { name: /buffer zone at column/i }).count();
     expect(initialBufferCells).toBeGreaterThan(0);
 
     // Plant in a non-buffer cell to ensure normal placement still works.
     await page.getByRole("button", { name: "Empty square column 3, row 3" }).first().click();
-    await expect(page.locator(".chip-row")).toHaveCount(1, { timeout: 10_000 });
+    await expect(page.getByText("No crop placements yet.")).not.toBeVisible({ timeout: 10_000 });
 
     const bedsResponse = await request.get(`${API}/gardens/${garden.id}/beds`, {
       headers: authHeaders,
@@ -93,7 +93,7 @@ test.describe("bed edge buffer", () => {
     await expect(page.getByText("Microclimate profile updated.")).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
-    const expandedBufferCells = await page.locator(".plot-cell.buffer").count();
+    const expandedBufferCells = await page.getByRole("button", { name: /buffer zone at column/i }).count();
     expect(expandedBufferCells).toBeGreaterThan(initialBufferCells);
   });
 

@@ -24,6 +24,7 @@ class _FakeResponse:
 class _FakeClient:
     def __init__(self, responses):
         self._responses = list(responses)
+        self.calls = []
 
     async def __aenter__(self):
         return self
@@ -32,6 +33,7 @@ class _FakeClient:
         return False
 
     async def get(self, *args, **kwargs):
+        self.calls.append({"args": args, "kwargs": kwargs})
         response = self._responses.pop(0)
         if isinstance(response, Exception):
             raise response
@@ -195,6 +197,17 @@ def test_fetch_address_geocode_returns_coordinates(monkeypatch):
     result = asyncio.run(weather.fetch_address_geocode("123 Main St"))
 
     assert result == {"latitude": 40.1, "longitude": -74.2, "display_name": "Addr"}
+
+
+def test_fetch_address_geocode_uses_street_plus_zip_query(monkeypatch):
+    fake_client = _FakeClient(
+        [_FakeResponse(payload=[{"lat": "40.1", "lon": "-74.2", "display_name": "Addr"}])]
+    )
+    monkeypatch.setattr(weather.httpx, "AsyncClient", lambda *args, **kwargs: fake_client)
+
+    asyncio.run(weather.fetch_address_geocode("123 Main St", "07001"))
+
+    assert fake_client.calls[0]["kwargs"]["params"]["q"] == "123 Main St, 07001"
 
 
 def test_fetch_elevation_usgs_handles_success_and_sentinels():
