@@ -82,6 +82,7 @@ describe("PlannerYardCanvas", () => {
   it("renders a pending rotation ghost when pendingRotation is provided", () => {
     const pendingRotation = {
       bedId: 1,
+      bedName: "Raised Bed A",
       currentX: 0,
       currentY: 0,
       currentWidthFt: 4,
@@ -102,6 +103,7 @@ describe("PlannerYardCanvas", () => {
   it("applies conflict class to rotation ghost when it does not fit", () => {
     const pendingRotation = {
       bedId: 1,
+      bedName: "Raised Bed A",
       currentX: 0,
       currentY: 0,
       currentWidthFt: 4,

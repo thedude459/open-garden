@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HomePageSection } from "./HomePageSection";
+import type { Garden } from "../types";
 
 vi.mock("./HomeHero", () => ({
   HomeHero: ({ onNavigate }: { onNavigate: (page: string) => void }) => (
@@ -129,7 +130,10 @@ describe("HomePageSection", () => {
   it("calls deleteGarden when delete button is clicked", async () => {
     const deleteGarden = vi.fn(async () => undefined);
     const props = baseProps();
-    (props.plannerActions as { deleteGarden: typeof deleteGarden }).deleteGarden = deleteGarden;
+    props.plannerActions = {
+      ...props.plannerActions,
+      deleteGarden,
+    };
     render(<HomePageSection {...props} />);
     fireEvent.click(screen.getByRole("button", { name: "Delete Garden 1" }));
     expect(deleteGarden).toHaveBeenCalledWith(1);
@@ -143,7 +147,7 @@ describe("HomePageSection", () => {
 
   it("shows CreateGardenForm in main column when gardens exist", () => {
     const props = baseProps();
-    const sampleGarden = {
+    const sampleGarden: Garden = {
       id: 2,
       name: "Front Yard",
       description: "",

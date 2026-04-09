@@ -14,16 +14,23 @@ const sampleBed: Bed = {
 };
 
 const sampleSummary: GardenSensorsSummary = {
+  generated_at: "2026-04-09T00:00:00Z",
+  garden_id: 1,
+  horizon_hours: 24,
   sensors: [
     {
       id: 5,
+      garden_id: 1,
       name: "Bed A Probe",
       sensor_kind: "soil_moisture",
       unit: "%",
       location_label: "Center",
       hardware_id: "hw-001",
       bed_id: 1,
+      is_active: true,
+      created_at: "2026-04-01T00:00:00Z",
       latest_value: 42,
+      latest_captured_at: "2026-04-09T00:00:00Z",
     },
   ],
   irrigation_suggestions: [

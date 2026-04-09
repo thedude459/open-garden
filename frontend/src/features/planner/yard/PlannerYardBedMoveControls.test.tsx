@@ -59,7 +59,7 @@ describe("PlannerYardBedMoveControls", () => {
   });
 
   it("disables the rotate button when pendingRotation is non-null", () => {
-    const pendingRotation = { bedId: 1, currentX: 0, currentY: 0, currentWidthFt: 4, currentLengthFt: 8, previewX: 0, previewY: 0, rotatedWidthFt: 8, rotatedLengthFt: 4, fitsCurrent: true, hasBedOverlap: false };
+    const pendingRotation = { bedId: 1, bedName: "Bed A", currentX: 0, currentY: 0, currentWidthFt: 4, currentLengthFt: 8, previewX: 0, previewY: 0, rotatedWidthFt: 8, rotatedLengthFt: 4, fitsCurrent: true, hasBedOverlap: false };
     render(<PlannerYardBedMoveControls {...defaultProps({ pendingRotation })} />);
     expect(screen.getByRole("button", { name: /rotate bed a/i })).toBeDisabled();
   });

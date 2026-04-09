@@ -105,13 +105,18 @@ describe("PlannerPlacementTools", () => {
 
   it("shows dynamic window when selectedCropWindow is provided", () => {
     const window: ClimatePlantingWindow = {
+      crop_template_id: 1,
       crop_name: "Tomato",
+      variety: "Roma",
+      method: "transplant",
       window_start: "2025-05-01",
       window_end: "2025-06-15",
       status: "open",
       reason: "Soil is warm enough.",
+      soil_temperature_min_f: 55,
       indoor_seed_start: "2025-03-01",
       indoor_seed_end: "2025-03-15",
+      legacy_window_label: "Late spring",
     };
     render(
       <PlannerPlacementTools
