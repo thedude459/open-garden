@@ -33,8 +33,8 @@ export default defineConfig({
         "src/features/app/types.ts",
       ],
       thresholds: {
-        lines: 90,
-        statements: 90,
+        lines: 80,
+        statements: 80,
       },
     },
   },

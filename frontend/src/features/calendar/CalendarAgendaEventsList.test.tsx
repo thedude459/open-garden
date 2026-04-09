@@ -12,15 +12,6 @@ const taskEvent: CalendarEvent = {
   is_done: false,
 };
 
-const doneTaskEvent: CalendarEvent = {
-  id: "task-2",
-  title: "Fertilize beds",
-  date: "2025-06-01",
-  kind: "task",
-  taskId: 2,
-  is_done: true,
-};
-
 const harvestEvent: CalendarEvent = {
   id: "harvest-10",
   title: "Harvest Tomato",
