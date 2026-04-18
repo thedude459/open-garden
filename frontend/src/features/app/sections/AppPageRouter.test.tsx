@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppPageRouter } from "./AppPageRouter";
@@ -24,7 +24,11 @@ vi.mock("../../../components/ToastRegion", () => ({
 }));
 
 vi.mock("./EmailVerificationNotice", () => ({
-  EmailVerificationNotice: () => <div data-testid="email-verification-notice" />,
+  EmailVerificationNotice: ({ compact, onDismiss }: { compact?: boolean; onDismiss?: () => void }) => (
+    <div data-testid="email-verification-notice" data-compact={compact ? "yes" : "no"}>
+      {onDismiss ? <button type="button" onClick={onDismiss}>Dismiss compact notice</button> : null}
+    </div>
+  ),
 }));
 
 vi.mock("./GardenRequiredNotice", () => ({
@@ -169,10 +173,12 @@ function makeProps(): AppPageRouterProps {
 }
 
 describe("AppPageRouter", () => {
-  it("renders home page section when active page is home", () => {
+  it("renders home page section when active page is home", async () => {
     render(<AppPageRouter {...makeProps()} />);
 
-    expect(screen.getByTestId("home-page-section")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("home-page-section")).toBeInTheDocument();
+    });
     expect(screen.queryByTestId("garden-required-notice")).not.toBeInTheDocument();
   });
 
@@ -186,14 +192,31 @@ describe("AppPageRouter", () => {
     expect(screen.queryByTestId("planner-page")).not.toBeInTheDocument();
   });
 
-  it("renders planner page once a garden is selected", () => {
+  it("renders planner page once a garden is selected", async () => {
     const props = makeProps();
     props.routing.activePage = "planner";
     props.garden.selectedGarden = 42;
 
     render(<AppPageRouter {...props} />);
 
-    expect(screen.getByTestId("planner-page")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("planner-page")).toBeInTheDocument();
+    });
     expect(screen.queryByTestId("garden-required-notice")).not.toBeInTheDocument();
+  });
+
+  it("shows compact verification notice on planner and lets user dismiss it", () => {
+    const props = makeProps();
+    props.routing.activePage = "planner";
+    props.garden.selectedGarden = 42;
+    props.auth.isEmailVerified = false;
+
+    render(<AppPageRouter {...props} />);
+
+    const notice = screen.getByTestId("email-verification-notice");
+    expect(notice).toHaveAttribute("data-compact", "yes");
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss compact notice" }));
+    expect(screen.queryByTestId("email-verification-notice")).not.toBeInTheDocument();
   });
 });

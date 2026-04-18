@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import { AppNavbar } from "../../../components/AppNavbar";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { HelpModal } from "../../../components/HelpModal";
@@ -12,6 +12,7 @@ import { usePlannerActions } from "../hooks/usePlannerActions";
 import { useCoachState } from "../hooks/useCoachState";
 import { usePestLogActions } from "../hooks/usePestLogActions";
 import { useDerivedGardenState } from "../hooks/useDerivedGardenState";
+import { PageHeading } from "../../../components/PageHeading";
 import { EmailVerificationNotice } from "./EmailVerificationNotice";
 import { GardenRequiredNotice } from "./GardenRequiredNotice";
 import { AppPageContent } from "./AppPageContent";
@@ -140,9 +141,13 @@ export function AppPageRouter(props: AppPageRouterProps) {
   const { selectedGarden, selectedGardenRecord } = garden;
   const { confirmState, setConfirmState, isConfirmingAction, runConfirmedAction } = confirm;
   const { notices: toastNotices, dismissNotice } = notices;
+  const [isPlannerVerificationNoticeDismissed, setIsPlannerVerificationNoticeDismissed] = useState(false);
+  const showEmailVerificationNotice = isEmailVerified === false && (activePage !== "planner" || !isPlannerVerificationNoticeDismissed);
+
+  const shellWide = activePage === "planner" || activePage === "calendar";
 
   return (
-    <main className="shell">
+    <main className={shellWide ? "shell shell--tool" : "shell"}>
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <AppNavbar
         activePage={activePage}
@@ -156,12 +161,20 @@ export function AppPageRouter(props: AppPageRouterProps) {
       />
 
       <div className="page-body" id="main-content" tabIndex={-1}>
-        {isEmailVerified === false && (
-          <EmailVerificationNotice onResend={onResendVerificationEmail} />
+        {showEmailVerificationNotice && (
+          <EmailVerificationNotice
+            onResend={onResendVerificationEmail}
+            compact={activePage === "planner"}
+            onDismiss={activePage === "planner" ? () => setIsPlannerVerificationNoticeDismissed(true) : undefined}
+          />
         )}
 
         {!selectedGarden && GARDEN_REQUIRED_PAGES.includes(activePage) && (
           <GardenRequiredNotice onGoHome={() => setActivePage("home")} />
+        )}
+
+        {!(selectedGarden === null && GARDEN_REQUIRED_PAGES.includes(activePage)) && (
+          <PageHeading activePage={activePage} />
         )}
 
         <AppPageContent

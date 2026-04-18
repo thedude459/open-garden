@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppPageContent } from "./AppPageContent";
@@ -108,10 +108,12 @@ function makeProps(): AppPageContentProps {
 }
 
 describe("AppPageContent", () => {
-  it("renders the home page when active page is home", () => {
+  it("renders the home page when active page is home", async () => {
     render(<AppPageContent {...makeProps()} />);
 
-    expect(screen.getByTestId("home-page-section")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("home-page-section")).toBeInTheDocument();
+    });
   });
 
   it("returns nothing for garden-required pages without a selected garden", () => {
@@ -123,16 +125,18 @@ describe("AppPageContent", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("keeps crop library accessible without a selected garden", () => {
+  it("keeps crop library accessible without a selected garden", async () => {
     const props = makeProps();
     props.routing.activePage = "crops";
 
     render(<AppPageContent {...props} />);
 
-    expect(screen.getByTestId("crops-page-section")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("crops-page-section")).toBeInTheDocument();
+    });
   });
 
-  it("routes selected-garden pages to their page sections", () => {
+  it("routes selected-garden pages to their page sections", async () => {
     const props = makeProps();
     props.garden.selectedGarden = 1;
     props.garden.selectedGardenRecord = {
@@ -169,7 +173,9 @@ describe("AppPageContent", () => {
     for (const [page, testId] of pages) {
       props.routing.activePage = page;
       const { unmount } = render(<AppPageContent {...props} />);
-      expect(screen.getByTestId(testId)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId(testId)).toBeInTheDocument();
+      });
       unmount();
     }
   });

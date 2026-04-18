@@ -12,16 +12,20 @@ export function CalendarWeatherSection() {
   } = useCalendarContext();
 
   return (
-    <>
-      <CalendarPanel />
-      <WeatherPanel
-        climate={gardenClimate}
-        weather={weather}
-        tasks={taskActions.tasks}
-        isLoadingClimate={isLoadingClimate}
-        isLoadingWeather={isLoadingWeather}
-        isLoadingTasks={taskActions.isLoadingTasks}
-      />
-    </>
+    <div className="calendar-page-layout">
+      <div className="calendar-page-layout-main">
+        <CalendarPanel />
+      </div>
+      <aside className="calendar-page-layout-weather" aria-label="Weather outlook">
+        <WeatherPanel
+          climate={gardenClimate}
+          weather={weather}
+          tasks={taskActions.tasks}
+          isLoadingClimate={isLoadingClimate}
+          isLoadingWeather={isLoadingWeather}
+          isLoadingTasks={taskActions.isLoadingTasks}
+        />
+      </aside>
+    </div>
   );
 }

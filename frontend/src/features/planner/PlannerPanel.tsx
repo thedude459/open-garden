@@ -205,6 +205,7 @@ export function PlannerPanel({
     confirmRotate,
   } = usePlannerRotationPreview({ beds, yardWidthFt, yardLengthFt, onRotateBed });
 
+  const [activeTab, setActiveTab] = useState<"setup" | "plantings">("setup");
   const selectedPlacement = useMemo(
     () => placements.find((placement) => placement.id === selectedPlacementId) || null,
     [placements, selectedPlacementId],
@@ -234,142 +235,184 @@ export function PlannerPanel({
       <CardContent>
         {isLoadingGardenData && <p className="text-sm text-muted-foreground">Refreshing layout data...</p>}
 
-        <div className="planner-layout">
-          {/* Sidebar - Forms & Tools */}
-          <aside className="planner-sidebar">
-            <PlannerCreateBedForm
-              bedName={bedName}
-              bedWidthFt={bedWidthFt}
-              bedLengthFt={bedLengthFt}
-              bedErrors={bedErrors}
-              onBedNameChange={onBedNameChange}
-              onBedWidthFtChange={onBedWidthFtChange}
-              onBedLengthFtChange={onBedLengthFtChange}
-              onCreateBed={onCreateBed}
-            />
+        {/* Main Content - Tabbed Workflow */}
+        <div className="planner-tabs-wrapper">
+            <div className="planner-tabs-container">
+              <div className="planner-tabs-segmented" role="tablist" aria-label="Planner workflow">
+                <button
+                  type="button"
+                  role="tab"
+                  id="planner-tab-setup"
+                  aria-selected={activeTab === "setup"}
+                  aria-controls="planner-panel-setup"
+                  className={`planner-tab-button ${activeTab === "setup" ? "active" : ""}`}
+                  onClick={() => setActiveTab("setup")}
+                >
+                  Setup Yard
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="planner-tab-plantings"
+                  aria-selected={activeTab === "plantings"}
+                  aria-controls="planner-panel-plantings"
+                  className={`planner-tab-button ${activeTab === "plantings" ? "active" : ""}`}
+                  onClick={() => setActiveTab("plantings")}
+                >
+                  Manage Plantings
+                </button>
+              </div>
 
-            <PlannerPlacementTools
-              cropSearchQuery={cropSearchQuery}
-              onCropSearchQueryChange={onCropSearchQueryChange}
-              onCropSearchKeyDown={onCropSearchKeyDown}
-              filteredCropTemplates={filteredCropTemplates}
-              cropSearchActiveIndex={cropSearchActiveIndex}
-              selectedCropName={selectedCropName}
-              selectedCrop={selectedCrop}
-              selectedCropWindow={selectedCropWindow}
-              isLoadingPlantingWindows={isLoadingPlantingWindows}
-              onSelectCrop={onSelectCrop}
-              cropBaseName={cropBaseName}
-              beds={beds}
-              placementBedId={placementBedId}
-              onPlacementBedIdChange={onPlacementBedIdChange}
-              onGoToCrops={onGoToCrops}
-            />
-          </aside>
+              <p className="planner-tab-hint" id="planner-tab-desc">
+                {activeTab === "setup"
+                  ? "Position beds on the yard grid and tune sun or shade overlays. Use Manage Plantings to choose crops and fill bed squares."
+                  : "Pick a crop in the sidebar, then tap bed squares to plant. Undo and redo apply to layout and placement changes."}
+              </p>
 
-          {/* Main Content - Layout & Details */}
-          <div className="planner-main">
-            {/* Stats Summary */}
-            <div className="planner-stats-grid">
-              <div className="planner-stat-card">
-                <div className="text-2xl font-bold font-serif text-accent">{beds.length}</div>
-                <div className="text-sm text-muted-foreground">Beds</div>
+              <div className="planner-sticky-context" role="toolbar" aria-label="Undo, redo, and selected crop">
+                <div className="planner-sticky-context-inner">
+                  <button type="button" className="secondary-btn" onClick={onUndoPlanner} disabled={!canUndoPlanner}>
+                    Undo
+                  </button>
+                  <button type="button" className="secondary-btn" onClick={onRedoPlanner} disabled={!canRedoPlanner}>
+                    Redo
+                  </button>
+                  <span className="planner-sticky-crop">
+                    Crop:&nbsp;
+                    <strong>
+                      {selectedCropName
+                        ? (selectedCrop ? cropBaseName(selectedCrop) : selectedCropName)
+                        : "—"}
+                    </strong>
+                  </span>
+                </div>
               </div>
-              <div className="planner-stat-card">
-                <div className="text-2xl font-bold font-serif text-accent">{placements.length}</div>
-                <div className="text-sm text-muted-foreground">Placements</div>
-              </div>
-              <div className="planner-stat-card">
-                <div className="text-2xl font-bold font-serif text-accent">{cropTemplates.length}</div>
-                <div className="text-sm text-muted-foreground">Vegetables</div>
-              </div>
-              <div className="planner-stat-card">
-                <div className="text-2xl font-bold font-serif text-accent">{yardWidthFt} × {yardLengthFt}</div>
-                <div className="text-sm text-muted-foreground">Yard (ft)</div>
+
+              <div className="planner-tab-content" aria-labelledby="planner-tab-desc">
+                {/* Setup Tab */}
+                {activeTab === "setup" && (
+                  <div className="planner-tab-pane" role="tabpanel" id="planner-panel-setup" aria-labelledby="planner-tab-setup">
+                    <div className="planner-setup-grid">
+                      <aside className="planner-form-sidebar">
+                        <PlannerCreateBedForm
+                          bedName={bedName}
+                          bedWidthFt={bedWidthFt}
+                          bedLengthFt={bedLengthFt}
+                          bedErrors={bedErrors}
+                          onBedNameChange={onBedNameChange}
+                          onBedWidthFtChange={onBedWidthFtChange}
+                          onBedLengthFtChange={onBedLengthFtChange}
+                          onCreateBed={onCreateBed}
+                        />
+                      </aside>
+                      <section className="planner-main-content">
+                        <PlannerYardLayoutSection
+                          gardenSatelliteUrl={gardenSatelliteUrl}
+                          isLoadingSunPath={isLoadingSunPath}
+                          sunSample={sunSample}
+                          yardWidthDraft={yardWidthDraft}
+                          yardLengthDraft={yardLengthDraft}
+                          yardErrors={yardErrors}
+                          onYardWidthDraftChange={onYardWidthDraftChange}
+                          onYardLengthDraftChange={onYardLengthDraftChange}
+                          onUpdateYardSize={onUpdateYardSize}
+                          beds={beds}
+                          selectedBedId={selectedBedId}
+                          setSelectedBedId={setSelectedBedId}
+                          onNudgeBed={onNudgeBed}
+                          requestRotatePreview={requestRotatePreview}
+                          onDeleteBed={onDeleteBed}
+                          pendingRotation={pendingRotation}
+                          setPendingRotation={setPendingRotation}
+                          confirmRotate={confirmRotate}
+                          isApplyingRotation={isApplyingRotation}
+                          showSunOverlay={showSunOverlay}
+                          showShadeOverlay={showShadeOverlay}
+                          showGrowthPreview={showGrowthPreview}
+                          setShowSunOverlay={setShowSunOverlay}
+                          setShowShadeOverlay={setShowShadeOverlay}
+                          setShowGrowthPreview={setShowGrowthPreview}
+                          setOverlayPreset={setOverlayPreset}
+                          gardenSunPath={gardenSunPath}
+                          sunHour={sunHour}
+                          setSunHour={setSunHour}
+                          growthDayOffset={growthDayOffset}
+                          setGrowthDayOffset={setGrowthDayOffset}
+                          sunExposure={sunExposure}
+                          shadeMap={shadeMap}
+                          canopyPreview={canopyPreview}
+                          yardGridRef={yardGridRef}
+                          yardWidthFt={yardWidthFt}
+                          yardLengthFt={yardLengthFt}
+                          yardCellPx={yardCellPx}
+                          resolveBedGridPosition={resolveBedGridPosition}
+                          onMoveBedInYard={onMoveBedInYard}
+                          placementBedId={placementBedId}
+                        />
+                      </section>
+                    </div>
+                  </div>
+                )}
+
+                {/* Plantings Tab */}
+                {activeTab === "plantings" && (
+                  <div className="planner-tab-pane" role="tabpanel" id="planner-panel-plantings" aria-labelledby="planner-tab-plantings">
+                    <div className="planner-plantings-grid">
+                      <aside className="planner-form-sidebar">
+                        <PlannerPlacementTools
+                          cropSearchQuery={cropSearchQuery}
+                          onCropSearchQueryChange={onCropSearchQueryChange}
+                          onCropSearchKeyDown={onCropSearchKeyDown}
+                          filteredCropTemplates={filteredCropTemplates}
+                          cropSearchActiveIndex={cropSearchActiveIndex}
+                          selectedCropName={selectedCropName}
+                          selectedCrop={selectedCrop}
+                          selectedCropWindow={selectedCropWindow}
+                          isLoadingPlantingWindows={isLoadingPlantingWindows}
+                          onSelectCrop={onSelectCrop}
+                          cropBaseName={cropBaseName}
+                          beds={beds}
+                          placementBedId={placementBedId}
+                          onPlacementBedIdChange={onPlacementBedIdChange}
+                          onGoToCrops={onGoToCrops}
+                        />
+                      </aside>
+                      <section className="planner-main-content">
+                        <PlannerBedSheetsSection
+                          beds={beds}
+                          placements={placements}
+                          selectedCropName={selectedCropName}
+                          selectedPlacement={selectedPlacement}
+                          setSelectedPlacementId={setSelectedPlacementId}
+                          bulkMode={bulkMode}
+                          selectedPlacementIds={selectedPlacementIds}
+                          toggleBulkMode={toggleBulkMode}
+                          clearSelection={clearSelection}
+                          togglePlacementSelection={togglePlacementSelection}
+                          startLasso={startLasso}
+                          updateLasso={updateLasso}
+                          finishLasso={finishLasso}
+                          onBulkMovePlacements={onBulkMovePlacements}
+                          onBulkRemovePlacements={onBulkRemovePlacements}
+                          onBlockedPlacementMove={onBlockedPlacementMove}
+                          placementSpacingConflict={placementSpacingConflict}
+                          onMovePlacement={onMovePlacement}
+                          onAddPlacement={onAddPlacement}
+                          isCellBlockedForSelectedCrop={isCellBlockedForSelectedCrop}
+                          isCellInBuffer={isCellInBuffer}
+                          cropVisual={cropVisual}
+                          onNudgePlacement={onNudgePlacement}
+                          onRequestRemovePlacement={onRequestRemovePlacement}
+                          onRenameBed={onRenameBed}
+                        />
+                      </section>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Bed Details Section */}
-            <PlannerBedSheetsSection
-              beds={beds}
-              placements={placements}
-              selectedCropName={selectedCropName}
-              selectedPlacement={selectedPlacement}
-              setSelectedPlacementId={setSelectedPlacementId}
-              bulkMode={bulkMode}
-              selectedPlacementIds={selectedPlacementIds}
-              toggleBulkMode={toggleBulkMode}
-              clearSelection={clearSelection}
-              togglePlacementSelection={togglePlacementSelection}
-              startLasso={startLasso}
-              updateLasso={updateLasso}
-              finishLasso={finishLasso}
-              onBulkMovePlacements={onBulkMovePlacements}
-              onBulkRemovePlacements={onBulkRemovePlacements}
-              canUndoPlanner={canUndoPlanner}
-              canRedoPlanner={canRedoPlanner}
-              onUndoPlanner={onUndoPlanner}
-              onRedoPlanner={onRedoPlanner}
-              requestRotatePreview={requestRotatePreview}
-              onDeleteBed={onDeleteBed}
-              onBlockedPlacementMove={onBlockedPlacementMove}
-              placementSpacingConflict={placementSpacingConflict}
-              onMovePlacement={onMovePlacement}
-              onAddPlacement={onAddPlacement}
-              isCellBlockedForSelectedCrop={isCellBlockedForSelectedCrop}
-              isCellInBuffer={isCellInBuffer}
-              cropVisual={cropVisual}
-              onNudgePlacement={onNudgePlacement}
-              onRequestRemovePlacement={onRequestRemovePlacement}
-              onRenameBed={onRenameBed}
-            />
-
-            {/* Yard Layout Section */}
-            <PlannerYardLayoutSection
-              gardenSatelliteUrl={gardenSatelliteUrl}
-              isLoadingSunPath={isLoadingSunPath}
-              sunSample={sunSample}
-              yardWidthDraft={yardWidthDraft}
-              yardLengthDraft={yardLengthDraft}
-              yardErrors={yardErrors}
-              onYardWidthDraftChange={onYardWidthDraftChange}
-              onYardLengthDraftChange={onYardLengthDraftChange}
-              onUpdateYardSize={onUpdateYardSize}
-              beds={beds}
-              selectedBedId={selectedBedId}
-              setSelectedBedId={setSelectedBedId}
-              onNudgeBed={onNudgeBed}
-              requestRotatePreview={requestRotatePreview}
-              pendingRotation={pendingRotation}
-              setPendingRotation={setPendingRotation}
-              confirmRotate={confirmRotate}
-              isApplyingRotation={isApplyingRotation}
-              showSunOverlay={showSunOverlay}
-              showShadeOverlay={showShadeOverlay}
-              showGrowthPreview={showGrowthPreview}
-              setShowSunOverlay={setShowSunOverlay}
-              setShowShadeOverlay={setShowShadeOverlay}
-              setShowGrowthPreview={setShowGrowthPreview}
-              setOverlayPreset={setOverlayPreset}
-              gardenSunPath={gardenSunPath}
-              sunHour={sunHour}
-              setSunHour={setSunHour}
-              growthDayOffset={growthDayOffset}
-              setGrowthDayOffset={setGrowthDayOffset}
-              sunExposure={sunExposure}
-              shadeMap={shadeMap}
-              canopyPreview={canopyPreview}
-              yardGridRef={yardGridRef}
-              yardWidthFt={yardWidthFt}
-              yardLengthFt={yardLengthFt}
-              yardCellPx={yardCellPx}
-              resolveBedGridPosition={resolveBedGridPosition}
-              onMoveBedInYard={onMoveBedInYard}
-              placementBedId={placementBedId}
-            />
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
   );
 }

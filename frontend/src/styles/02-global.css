@@ -114,6 +114,21 @@ p {
   background: linear-gradient(180deg, #f6f9ff, #eef4ff);
 }
 
+.notice-card-compact {
+  gap: 0.4rem;
+  padding: 0.75rem 0.95rem;
+}
+
+.notice-card-compact h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.notice-card-compact .subhead {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
 /* ====================
    App Shell
 ==================== */
@@ -139,6 +154,47 @@ p {
   padding: var(--space-6) clamp(var(--space-3), 3vw, var(--space-8));
 }
 
+.shell--tool {
+  max-width: min(var(--tool-max), 100%);
+}
+
+.page-heading {
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.page-heading-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  font-family: "Palatino", "Book Antiqua", serif;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+
+.skeleton-line {
+  height: 0.75rem;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--bg-2) 0%, #e4ecd8 50%, var(--bg-2) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.3s ease-in-out infinite;
+}
+
+.skeleton-line + .skeleton-line {
+  margin-top: 0.5rem;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 .page-body {
   display: grid;
   gap: var(--space-6);
@@ -148,5 +204,17 @@ p {
 .page-empty-state {
   display: grid;
   gap: 0.8rem;
+}
+
+.page-route-fallback {
+  padding: 2rem 1.25rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.page-route-fallback-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
 }
 

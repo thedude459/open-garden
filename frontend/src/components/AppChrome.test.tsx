@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppNavbar } from "./AppNavbar";
@@ -10,7 +11,7 @@ afterEach(() => {
 });
 
 describe("AppNavbar", () => {
-  it("renders garden-specific navigation and forwards actions", () => {
+  it("renders garden-specific navigation and forwards actions", async () => {
     const setIsNavOpen = vi.fn();
     const onNavigate = vi.fn();
     const onLogout = vi.fn();
@@ -48,8 +49,10 @@ describe("AppNavbar", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Menu" }));
-    fireEvent.click(screen.getByRole("button", { name: "Timeline" }));
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Menu" }));
+    await user.click(screen.getByRole("button", { name: "More tools" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Timeline" }));
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
     fireEvent.click(screen.getByRole("button", { name: "Log out" }));
 

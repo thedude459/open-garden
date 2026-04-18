@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { Garden } from "../../types";
-import { CropTemplateSyncStatus } from "../../types";
+import { CropTemplateSyncStatus, Garden } from "../../types";
 
 type UseGardenDataFlowEffectsParams = {
   token: string;
@@ -13,9 +12,6 @@ type UseGardenDataFlowEffectsParams = {
   loadGardenData: () => Promise<void>;
   selectedGardenRecord: Garden | undefined;
   resetForNoGarden: () => void;
-  loadClimateForGarden: (garden: Garden) => Promise<void>;
-  loadPlantingWindowsForGarden: (garden: Garden) => Promise<void>;
-  loadSunPathForGarden: (garden: Garden) => Promise<void>;
   noticeUnlessExpired: (msg: string) => (err: unknown) => void;
 };
 
@@ -30,9 +26,6 @@ export function useGardenDataFlowEffects({
   loadGardenData,
   selectedGardenRecord,
   resetForNoGarden,
-  loadClimateForGarden,
-  loadPlantingWindowsForGarden,
-  loadSunPathForGarden,
   noticeUnlessExpired,
 }: UseGardenDataFlowEffectsParams) {
   useEffect(() => {
@@ -51,10 +44,35 @@ export function useGardenDataFlowEffects({
       return;
     }
 
-    const intervalId = window.setInterval(() => {
+    let intervalId: number | undefined;
+
+    const poll = () => {
       loadCropTemplateSyncStatus().catch(() => undefined);
-    }, 5000);
-    return () => window.clearInterval(intervalId);
+    };
+
+    const startPolling = () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+        intervalId = undefined;
+      }
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+      poll();
+      intervalId = window.setInterval(poll, 5000);
+    };
+
+    startPolling();
+    const onVisibility = () => {
+      startPolling();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+      }
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [token, cropTemplateSyncStatus?.is_running, loadCropTemplateSyncStatus]);
 
   useEffect(() => {
@@ -67,19 +85,6 @@ export function useGardenDataFlowEffects({
   useEffect(() => {
     if (!token || !selectedGardenRecord) {
       resetForNoGarden();
-      return;
     }
-
-    loadClimateForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load climate guidance."));
-    loadPlantingWindowsForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load dynamic planting windows."));
-    loadSunPathForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load sun-path layout guidance."));
-  }, [
-    token,
-    selectedGardenRecord,
-    resetForNoGarden,
-    loadClimateForGarden,
-    loadPlantingWindowsForGarden,
-    loadSunPathForGarden,
-    noticeUnlessExpired,
-  ]);
+  }, [token, selectedGardenRecord, resetForNoGarden]);
 }

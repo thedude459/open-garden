@@ -65,6 +65,7 @@ type MovePlacementFn = (placementId: number, bedId: number, x: number, y: number
 type NudgePlacementFn = (placementId: number, dx: number, dy: number) => void;
 type BlockedMoveFn = (cropName: string) => void;
 type SpacingConflictFn = (bedId: number, x: number, y: number, cropName: string, ignorePlacementId?: number) => string | null;
+type DeleteBedFn = (bedId: number) => void;
 
 function renderPlanner(options?: {
   beds?: Bed[];
@@ -78,6 +79,9 @@ function renderPlanner(options?: {
   onMovePlacement?: MovePlacementFn;
   onBlockedPlacementMove?: BlockedMoveFn;
   placementSpacingConflict?: SpacingConflictFn;
+  onDeleteBed?: DeleteBedFn;
+  /** Open the Manage Plantings tab (bed grids and placement UI live here). */
+  openPlantingsTab?: boolean;
 }) {
   const onRotateBed: RotateBedFn = options?.onRotateBed ?? (vi.fn().mockResolvedValue(undefined) as unknown as RotateBedFn);
   const onRenameBed: RenameBedFn = options?.onRenameBed ?? (vi.fn().mockResolvedValue(undefined) as unknown as RenameBedFn);
@@ -85,6 +89,8 @@ function renderPlanner(options?: {
   const onMovePlacement: MovePlacementFn = options?.onMovePlacement ?? (vi.fn() as unknown as MovePlacementFn);
   const onBlockedPlacementMove: BlockedMoveFn = options?.onBlockedPlacementMove ?? (vi.fn() as unknown as BlockedMoveFn);
   const placementSpacingConflict: SpacingConflictFn = options?.placementSpacingConflict ?? (vi.fn().mockReturnValue(null) as unknown as SpacingConflictFn);
+  const onDeleteBed: DeleteBedFn = options?.onDeleteBed ?? (vi.fn() as unknown as DeleteBedFn);
+  const openPlantingsTab = options?.openPlantingsTab ?? false;
 
   render(
     <PlannerPanel
@@ -138,7 +144,7 @@ function renderPlanner(options?: {
         onNudgeBed: vi.fn(),
         onRotateBed,
         onRenameBed,
-        onDeleteBed: vi.fn(),
+        onDeleteBed,
         onAddPlacement: vi.fn(),
         onMovePlacement,
         onNudgePlacement,
@@ -159,14 +165,18 @@ function renderPlanner(options?: {
     />,
   );
 
-  return { onRotateBed, onRenameBed, onNudgePlacement, onMovePlacement, onBlockedPlacementMove };
+  if (openPlantingsTab) {
+    fireEvent.click(screen.getByRole("tab", { name: /manage plantings/i }));
+  }
+
+  return { onRotateBed, onRenameBed, onNudgePlacement, onMovePlacement, onBlockedPlacementMove, onDeleteBed };
 }
 
 describe("PlannerPanel", () => {
   it("shows rotate preview and calls rotate without auto-fit when bed already fits", async () => {
     const { onRotateBed } = renderPlanner();
 
-    fireEvent.click(screen.getByRole("button", { name: "Rotate 90°" }));
+    fireEvent.click(screen.getByRole("button", { name: /rotate north bed/i }));
     expect(screen.getByRole("status")).toHaveTextContent("Rotate North Bed to 8 x 4 ft.");
 
     const rotateNow = screen.getByRole("button", { name: "Rotate now" });
@@ -182,19 +192,19 @@ describe("PlannerPanel", () => {
     const edgeBed = makeBed({ grid_x: 3, grid_y: 1, width_in: 96, height_in: 48, name: "Edge Bed" });
     const { onRotateBed } = renderPlanner({ beds: [edgeBed], yardWidthFt: 8, yardLengthFt: 8 });
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Rotate 90°" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /rotate edge bed/i }));
     expect(screen.getByText(/Current spot is out of bounds after rotate\./i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Auto-fit rotate" }));
     expect(onRotateBed).toHaveBeenCalledWith(10, true);
   });
 
-  it("renders placement photos in the grid and legend when crop image is available", () => {
+  it("renders planting markers in the grid and photos in the legend when crop image is available", () => {
     const crop = makeCrop({ name: "Tomato", image_url: "https://example.com/tomato.jpg" });
     const placement = makePlacement({ crop_name: "Tomato" });
-    renderPlanner({ cropTemplates: [crop], placements: [placement] });
+    renderPlanner({ cropTemplates: [crop], placements: [placement], openPlantingsTab: true });
 
-    expect(document.querySelectorAll("img.plot-cell-photo").length).toBeGreaterThan(0);
+    expect(document.querySelectorAll(".plot-cell-marker").length).toBeGreaterThan(0);
     expect(document.querySelectorAll("img.legend-photo").length).toBeGreaterThan(0);
     expect(screen.getByText("Tomato (1)")).toBeInTheDocument();
   });
@@ -202,7 +212,7 @@ describe("PlannerPanel", () => {
   it("uses default photo fallback in legend when crop has no photo", () => {
     const crop = makeCrop({ name: "Tomato", image_url: "" });
     const placement = makePlacement({ crop_name: "Tomato" });
-    renderPlanner({ cropTemplates: [crop], placements: [placement] });
+    renderPlanner({ cropTemplates: [crop], placements: [placement], openPlantingsTab: true });
 
     const legend = screen.getAllByLabelText("North Bed crop legend")[0];
     expect(within(legend).getByText("Tomato (1)")).toBeInTheDocument();
@@ -212,13 +222,13 @@ describe("PlannerPanel", () => {
   it("shows row and in-row spacing hints for each placement", () => {
     const crop = makeCrop({ name: "Tomato", row_spacing_in: 14, in_row_spacing_in: 14 });
     const placement = makePlacement({ crop_name: "Tomato" });
-    renderPlanner({ cropTemplates: [crop], placements: [placement] });
+    renderPlanner({ cropTemplates: [crop], placements: [placement], openPlantingsTab: true });
 
     expect(screen.getAllByText(/Row 14 in · In-row 14 in/i).length).toBeGreaterThan(0);
   });
 
   it("renames a bed from the bed sheet header", () => {
-    const { onRenameBed } = renderPlanner();
+    const { onRenameBed } = renderPlanner({ openPlantingsTab: true });
 
     fireEvent.click(screen.getByRole("button", { name: "Rename" }));
     fireEvent.change(screen.getByRole("textbox", { name: /Rename North Bed/i }), {
@@ -229,9 +239,16 @@ describe("PlannerPanel", () => {
     expect(onRenameBed).toHaveBeenCalledWith(10, "Herb Bed");
   });
 
+  it("deletes a bed from yard layout controls", () => {
+    const { onDeleteBed } = renderPlanner();
+
+    fireEvent.click(screen.getByRole("button", { name: /delete north bed/i }));
+    expect(onDeleteBed).toHaveBeenCalledWith(10);
+  });
+
   it("supports keyboard nudge for placement chips", () => {
     const placement = makePlacement({ crop_name: "Tomato" });
-    const { onNudgePlacement } = renderPlanner({ placements: [placement] });
+    const { onNudgePlacement } = renderPlanner({ placements: [placement], openPlantingsTab: true });
 
     const chip = screen.getByRole("button", {
       name: /Tomato at column 1, row 1\. Arrow keys move; Enter removes\./i,
@@ -250,6 +267,7 @@ describe("PlannerPanel", () => {
     const { onBlockedPlacementMove, onMovePlacement } = renderPlanner({
       placements: [placement],
       placementSpacingConflict,
+      openPlantingsTab: true,
     });
 
     const targetCell = screen.getByLabelText("Empty square column 2, row 1");
@@ -263,5 +281,41 @@ describe("PlannerPanel", () => {
 
     expect(onBlockedPlacementMove).toHaveBeenCalledWith("Tomato");
     expect(onMovePlacement).not.toHaveBeenCalled();
+  });
+
+  it("starts on Setup tab and shows create bed form and yard layout", () => {
+    renderPlanner();
+
+    const setupTab = screen.getByRole("tab", { name: /setup yard/i });
+    expect(setupTab).toHaveClass("active");
+
+    // Verify Setup tab content is displayed
+    expect(screen.getByText("Create Bed")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /yard layout/i })).toBeInTheDocument();
+  });
+
+  it("switches to Plantings tab when clicked", () => {
+    renderPlanner();
+
+    const plantingsTab = screen.getByRole("tab", { name: /manage plantings/i });
+    fireEvent.click(plantingsTab);
+
+    expect(plantingsTab).toHaveClass("active");
+    // Verify Plantings tab content is displayed
+    expect(screen.getByText("Placement Tools")).toBeInTheDocument();
+    expect(screen.getByText(/Search Vegetable/i)).toBeInTheDocument();
+  });
+
+  it("switches back to Setup tab when clicked", () => {
+    renderPlanner();
+
+    const plantingsTab = screen.getByRole("tab", { name: /manage plantings/i });
+    fireEvent.click(plantingsTab);
+
+    const setupTab = screen.getByRole("tab", { name: /setup yard/i });
+    fireEvent.click(setupTab);
+
+    expect(setupTab).toHaveClass("active");
+    expect(screen.getByText("Create Bed")).toBeInTheDocument();
   });
 });

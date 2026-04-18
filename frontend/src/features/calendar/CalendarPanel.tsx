@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { useCalendarContext } from "./CalendarContext";
 import { CalendarMonthGrid } from "./CalendarMonthGrid";
 import { CalendarAgendaPanel } from "./CalendarAgendaPanel";
@@ -26,7 +27,13 @@ export function CalendarPanel() {
   });
 
   return (
-    <Card>
+    <Card
+      className={cn(
+        "calendar-card-surface overflow-hidden",
+        "shadow-[0_1px_2px_rgba(15,23,42,0.05),0_6px_20px_rgba(15,23,42,0.06)]",
+        "border-[var(--border)]/90",
+      )}
+    >
       <CardContent className="p-0">
         <div className="calendar-shell">
           <div className="calendar-month-pane">

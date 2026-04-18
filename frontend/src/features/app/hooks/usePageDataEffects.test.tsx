@@ -11,6 +11,9 @@ describe("usePageDataEffects", () => {
     const loadSeasonalPlanForGarden = vi.fn(async () => undefined);
     const loadSensorSummaryForGarden = vi.fn(async () => undefined);
     const loadPlantingRecommendation = vi.fn(async () => undefined);
+    const loadClimateForGarden = vi.fn(async () => undefined);
+    const loadPlantingWindowsForGarden = vi.fn(async () => undefined);
+    const loadSunPathForGarden = vi.fn(async () => undefined);
     const noticeUnlessExpired = vi.fn(() => vi.fn());
     const pushNotice = vi.fn();
     const resetCoach = vi.fn();
@@ -28,6 +31,9 @@ describe("usePageDataEffects", () => {
           loadSeasonalPlanForGarden,
           loadSensorSummaryForGarden,
           loadPlantingRecommendation,
+          loadClimateForGarden,
+          loadPlantingWindowsForGarden,
+          loadSunPathForGarden,
           noticeUnlessExpired,
           pushNotice,
           resetCoach,
@@ -43,6 +49,21 @@ describe("usePageDataEffects", () => {
 
     await waitFor(() => {
       expect(loadTimelineForGarden).toHaveBeenCalledWith(garden);
+    });
+    expect(loadClimateForGarden).not.toHaveBeenCalled();
+    expect(loadPlantingWindowsForGarden).not.toHaveBeenCalled();
+    expect(loadSunPathForGarden).not.toHaveBeenCalled();
+
+    rerender({ activePage: "home" as AppPage, recommendationId: null });
+    await waitFor(() => {
+      expect(loadClimateForGarden).toHaveBeenCalledWith(garden);
+      expect(loadPlantingWindowsForGarden).toHaveBeenCalledWith(garden);
+    });
+    expect(loadSunPathForGarden).not.toHaveBeenCalled();
+
+    rerender({ activePage: "planner" as AppPage, recommendationId: null });
+    await waitFor(() => {
+      expect(loadSunPathForGarden).toHaveBeenCalledWith(garden);
     });
 
     rerender({ activePage: "seasonal" as AppPage, recommendationId: 33 });

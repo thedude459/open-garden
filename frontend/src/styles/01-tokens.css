@@ -45,6 +45,8 @@
   --space-8: 2rem;
   --space-10: 2.5rem;
   --content-max: 1400px;
+  /* Wider canvas for calendar + planner tools */
+  --tool-max: 1680px;
 }
 
 * {

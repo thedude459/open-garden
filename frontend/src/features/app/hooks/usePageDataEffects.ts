@@ -14,6 +14,9 @@ interface UsePageDataEffectsParams {
   loadSeasonalPlanForGarden: (garden: Garden) => Promise<void>;
   loadSensorSummaryForGarden: (garden: Garden) => Promise<void>;
   loadPlantingRecommendation: (plantingId: number) => Promise<void>;
+  loadClimateForGarden: (garden: Garden) => Promise<void>;
+  loadPlantingWindowsForGarden: (garden: Garden) => Promise<void>;
+  loadSunPathForGarden: (garden: Garden) => Promise<void>;
   noticeUnlessExpired: (msg: string) => (err: unknown) => void;
   pushNotice: (msg: string, kind: NoticeKind) => void;
   resetCoach: () => void;
@@ -30,6 +33,9 @@ export function usePageDataEffects({
   loadSeasonalPlanForGarden,
   loadSensorSummaryForGarden,
   loadPlantingRecommendation,
+  loadClimateForGarden,
+  loadPlantingWindowsForGarden,
+  loadSunPathForGarden,
   noticeUnlessExpired,
   pushNotice,
   resetCoach,
@@ -56,6 +62,34 @@ export function usePageDataEffects({
       pushNotice("Unable to load planting recommendations.", "error"),
     );
   }, [token, activePage, selectedRecommendationPlantingId, loadPlantingRecommendation, pushNotice]);
+
+  useEffect(() => {
+    if (!token || !selectedGardenRecord) return;
+
+    const needClimateAndWindows =
+      activePage === "home" || activePage === "calendar" || activePage === "planner";
+    const needSunPath = activePage === "planner";
+
+    if (needClimateAndWindows) {
+      loadClimateForGarden(selectedGardenRecord).catch(noticeUnlessExpired("Unable to load climate guidance."));
+      loadPlantingWindowsForGarden(selectedGardenRecord).catch(
+        noticeUnlessExpired("Unable to load dynamic planting windows."),
+      );
+    }
+    if (needSunPath) {
+      loadSunPathForGarden(selectedGardenRecord).catch(
+        noticeUnlessExpired("Unable to load sun-path layout guidance."),
+      );
+    }
+  }, [
+    token,
+    selectedGardenRecord,
+    activePage,
+    loadClimateForGarden,
+    loadPlantingWindowsForGarden,
+    loadSunPathForGarden,
+    noticeUnlessExpired,
+  ]);
 
   useEffect(() => {
     resetCoach();

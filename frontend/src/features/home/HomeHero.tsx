@@ -248,7 +248,11 @@ export function HomeHero({
           </CardHeader>
           <CardContent>
             {isLoadingWeather ? (
-              <p className="text-sm text-muted-foreground">Refreshing forecast...</p>
+              <div className="space-y-2 py-1" aria-busy="true" aria-label="Loading forecast">
+                <div className="skeleton-line w-full max-w-[14rem]" />
+                <div className="skeleton-line w-full max-w-[11rem]" />
+                <div className="skeleton-line w-full max-w-[9rem]" />
+              </div>
             ) : weatherPreview.length > 0 ? (
               <div className="space-y-3">
                 <ul className="space-y-3">

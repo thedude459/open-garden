@@ -1,6 +1,15 @@
+import { ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { AppPage } from "../features/app/types";
 import { Garden } from "../features/types";
+
+const SECONDARY_NAV_PAGES: AppPage[] = ["timeline", "coach", "sensors", "pests"];
 
 type AppNavbarProps = {
   activePage: AppPage;
@@ -23,6 +32,13 @@ export function AppNavbar({
   onLogout,
   onHelpOpen,
 }: AppNavbarProps) {
+  const moreMenuActive = SECONDARY_NAV_PAGES.includes(activePage);
+
+  function navigateAndCloseNav(page: AppPage) {
+    onNavigate(page);
+    setIsNavOpen(false);
+  }
+
   return (
     <nav className="app-nav" aria-label="Primary navigation">
       <div className="app-nav-top">
@@ -47,72 +63,70 @@ export function AppNavbar({
           <Button
             variant={activePage === "home" ? "default" : "secondary"}
             size="sm"
-            onClick={() => onNavigate("home")}
+            onClick={() => navigateAndCloseNav("home")}
           >
             My Gardens
           </Button>
           {selectedGarden && (
             <>
               <Button
-                variant={activePage === "timeline" ? "default" : "secondary"}
-                size="sm"
-                onClick={() => onNavigate("timeline")}
-              >
-                Timeline
-              </Button>
-              <Button
                 variant={activePage === "calendar" ? "default" : "secondary"}
                 size="sm"
-                onClick={() => onNavigate("calendar")}
+                onClick={() => navigateAndCloseNav("calendar")}
               >
                 Calendar
               </Button>
               <Button
                 variant={activePage === "seasonal" ? "default" : "secondary"}
                 size="sm"
-                onClick={() => onNavigate("seasonal")}
+                onClick={() => navigateAndCloseNav("seasonal")}
               >
                 Seasonal Plan
               </Button>
               <Button
                 variant={activePage === "planner" ? "default" : "secondary"}
                 size="sm"
-                onClick={() => onNavigate("planner")}
+                onClick={() => navigateAndCloseNav("planner")}
               >
                 Bed Planner
               </Button>
-              <Button
-                variant={activePage === "coach" ? "default" : "secondary"}
-                size="sm"
-                onClick={() => onNavigate("coach")}
-              >
-                AI Coach
-              </Button>
-              <Button
-                variant={activePage === "sensors" ? "default" : "secondary"}
-                size="sm"
-                onClick={() => onNavigate("sensors")}
-              >
-                Sensors
-              </Button>
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant={moreMenuActive ? "default" : "secondary"}
+                    size="sm"
+                    className="app-nav-more-trigger"
+                    aria-label="More tools"
+                  >
+                    More
+                    <ChevronDown className="h-3.5 w-3.5 opacity-80" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="app-nav-more-menu">
+                  <DropdownMenuItem onSelect={() => navigateAndCloseNav("timeline")}>
+                    Timeline
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigateAndCloseNav("coach")}>
+                    AI Coach
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigateAndCloseNav("sensors")}>
+                    Sensors
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigateAndCloseNav("pests")}>
+                    Pest Log
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
           <Button
             variant={activePage === "crops" ? "default" : "secondary"}
             size="sm"
-            onClick={() => onNavigate("crops")}
+            onClick={() => navigateAndCloseNav("crops")}
           >
             Crop Library
           </Button>
-          {selectedGarden && (
-            <Button
-              variant={activePage === "pests" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => onNavigate("pests")}
-            >
-              Pest Log
-            </Button>
-          )}
         </div>
         <div className="app-nav-actions">
           <Button

@@ -17,20 +17,14 @@ type PlannerBedSheetsSectionProps = {
   finishLasso: (append: boolean) => void;
   onBulkMovePlacements: (placementIds: number[], dx: number, dy: number) => void;
   onBulkRemovePlacements: (placementIds: number[]) => void;
-  canUndoPlanner: boolean;
-  canRedoPlanner: boolean;
-  onUndoPlanner: () => void;
-  onRedoPlanner: () => void;
-  requestRotatePreview: (bed: Bed) => void;
   onRenameBed: (bedId: number, nextName: string) => Promise<void> | void;
-  onDeleteBed: (bedId: number) => void;
   onBlockedPlacementMove: (cropName: string) => void;
   placementSpacingConflict: (bedId: number, x: number, y: number, cropName: string, ignorePlacementId?: number) => string | null;
   onMovePlacement: (placementId: number, bedId: number, x: number, y: number) => void;
   onAddPlacement: (bedId: number, x: number, y: number) => void;
   isCellBlockedForSelectedCrop: (bedId: number, x: number, y: number, occupant: Placement | undefined) => boolean;
   isCellInBuffer: (bedId: number, x: number, y: number) => boolean;
-  cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number };
+  cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number; emoji: string };
   onNudgePlacement: (placementId: number, dx: number, dy: number) => void;
   onRequestRemovePlacement: (placementId: number, cropName: string) => void;
 };
@@ -51,13 +45,7 @@ export function PlannerBedSheetsSection({
   finishLasso,
   onBulkMovePlacements,
   onBulkRemovePlacements,
-  canUndoPlanner,
-  canRedoPlanner,
-  onUndoPlanner,
-  onRedoPlanner,
-  requestRotatePreview,
   onRenameBed,
-  onDeleteBed,
   onBlockedPlacementMove,
   placementSpacingConflict,
   onMovePlacement,
@@ -73,11 +61,7 @@ export function PlannerBedSheetsSection({
       <div className="planner-section-head">
         <div>
           <h3>Bed Sheets</h3>
-          <p className="hint">Each square is 3 inches. Place crops directly on the grid or drag existing placements between beds.</p>
-        </div>
-        <div className="planner-history-actions">
-          <button type="button" className="secondary-btn" onClick={onUndoPlanner} disabled={!canUndoPlanner}>Undo</button>
-          <button type="button" className="secondary-btn" onClick={onRedoPlanner} disabled={!canRedoPlanner}>Redo</button>
+          <p className="hint">Each square is 3 inches. Place crops directly on the grid or drag existing placements between beds. Undo and redo live in the toolbar above.</p>
         </div>
       </div>
 
@@ -152,9 +136,7 @@ export function PlannerBedSheetsSection({
               cropVisual={cropVisual}
               onNudgePlacement={onNudgePlacement}
               onRequestRemovePlacement={onRequestRemovePlacement}
-              requestRotatePreview={requestRotatePreview}
               onRenameBed={onRenameBed}
-              onDeleteBed={onDeleteBed}
             />
           );
         })}

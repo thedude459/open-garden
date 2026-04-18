@@ -29,11 +29,23 @@ export function CalendarMonthGrid({
   return (
     <div>
       <div className="calendar-head">
-        <h2>{title}</h2>
+        <h2 className="calendar-head-title">{title}</h2>
         <div className="month-nav">
-          <button onClick={() => setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>Previous</button>
-          <strong>{monthTitle(monthCursor)}</strong>
-          <button onClick={() => setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>Next</button>
+          <button
+            type="button"
+            className="calendar-nav-btn"
+            onClick={() => setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+          >
+            Previous
+          </button>
+          <strong className="month-nav-label">{monthTitle(monthCursor)}</strong>
+          <button
+            type="button"
+            className="calendar-nav-btn"
+            onClick={() => setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+          >
+            Next
+          </button>
         </div>
       </div>
 
@@ -50,9 +62,12 @@ export function CalendarMonthGrid({
 
           return (
             <button
+              type="button"
               key={dayIso}
               className={`day-cell${outsideMonth ? " muted" : ""}${dayIso === selectedDate ? " selected" : ""}${dayIso === today ? " today" : ""}`}
               onClick={() => setSelectedDate(dayIso)}
+              aria-pressed={dayIso === selectedDate}
+              aria-current={dayIso === today ? "date" : undefined}
             >
               <span>{day.getDate()}</span>
               <small>{dayEvents.length > 0 ? `${dayEvents.length} item${dayEvents.length === 1 ? "" : "s"}` : ""}</small>

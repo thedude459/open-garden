@@ -2,6 +2,30 @@
    Calendar
 ==================== */
 
+.calendar-page-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.calendar-page-layout-main {
+  min-width: 0;
+}
+
+.calendar-page-layout-weather {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .calendar-page-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    align-items: start;
+    gap: var(--space-6);
+  }
+}
+
 .calendar-shell {
   display: flex;
   flex-direction: column;
@@ -9,23 +33,24 @@
 }
 
 .calendar-month-pane {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--line);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--border);
   min-width: 0;
+  background: var(--card);
 }
 
 @media (min-width: 1024px) {
   .calendar-shell {
     flex-direction: row;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .calendar-month-pane {
-    width: min(100%, 25rem);
+    width: min(100%, 26rem);
     flex-shrink: 0;
-    align-self: flex-start;
+    align-self: stretch;
     border-bottom: none;
-    border-right: 1px solid var(--line);
+    border-right: 1px solid var(--border);
   }
 
   .agenda-panel {
@@ -39,109 +64,163 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
 }
 
-.calendar-head h2 {
-  font-size: 1.2rem;
-  color: var(--ink);
+.calendar-head-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
 }
 
 .month-nav {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
+  padding: 3px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--secondary);
+  box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.04);
 }
 
-.month-nav button {
-  padding: 0.3rem 0.65rem;
-  font-size: 0.82rem;
-  min-height: unset;
+.calendar-nav-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  min-height: 2.25rem;
+  border: none;
+  border-radius: calc(var(--radius) - 3px);
+  background: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.month-nav strong {
-  min-width: 9rem;
+.calendar-nav-btn:hover:not(:disabled) {
+  background: var(--card);
+}
+
+.calendar-nav-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+}
+
+.month-nav-label {
+  min-width: 8.5rem;
   text-align: center;
-  font-family: "Palatino", "Book Antiqua", serif;
-  font-size: 1rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
 }
 
 /* 7-column date grid */
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 4px;
 }
 
 /* Weekday header row */
 .weekday {
   text-align: center;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #4f655a;
-  padding: 0.3rem 0;
+  color: var(--muted-foreground);
+  padding: 0.4rem 0;
 }
 
-/* Individual day cells */
+/* Individual day cells — soft selection like modern desktop planners */
 .day-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 0.35rem 0.2rem;
-  min-height: 3.2rem;
-  border-radius: 8px;
+  padding: 0.4rem 0.2rem;
+  min-height: 3.35rem;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   background: transparent;
-  color: var(--ink);
-  font-size: 0.92rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
-  gap: 0.1rem;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+  gap: 0.15rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-cell {
+    transition: none;
+  }
 }
 
 .day-cell:hover:not(:disabled) {
-  background: var(--bg-2);
-  transform: none;
-  box-shadow: none;
+  background: var(--secondary);
+}
+
+.day-cell:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 .day-cell small {
-  font-size: 0.62rem;
-  color: var(--accent);
+  font-size: 0.625rem;
+  color: var(--muted-foreground);
   font-weight: 600;
   line-height: 1;
 }
 
 .day-cell.muted {
-  color: #6f867a;
+  color: var(--muted-foreground);
+  opacity: 0.72;
 }
 
 .day-cell.muted small {
-  color: #7f998d;
+  color: var(--muted-foreground);
+  opacity: 0.9;
 }
 
 .day-cell.today {
-  border-color: var(--accent);
-  background: #e9f5ed;
-  font-weight: 700;
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  font-weight: 600;
+}
+
+.day-cell.today small {
+  color: var(--primary);
 }
 
 .day-cell.selected {
-  background: var(--accent);
-  color: #fff;
+  background: color-mix(in srgb, var(--primary) 16%, var(--card));
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  font-weight: 600;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
 .day-cell.selected small {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--primary);
 }
 
 .day-cell.selected.today {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--primary) 20%, var(--card));
+  border-color: var(--primary);
 }
 
 /* Agenda side panel */
@@ -149,39 +228,70 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  padding: 1rem;
+  padding: var(--space-5);
   flex: 1 1 auto;
   min-width: 0;
   overflow-y: auto;
   max-height: 80vh;
+  background: color-mix(in srgb, var(--secondary) 55%, var(--card));
+}
+
+@media (min-width: 1024px) {
+  .agenda-panel {
+    border-radius: 0;
+  }
 }
 
 .agenda-panel h3 {
-  font-size: 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
   margin-bottom: -0.5rem;
-  color: var(--accent-3);
+  color: var(--foreground);
+  letter-spacing: -0.01em;
 }
 
-/* Task filter row (All / To-do / Done) */
+/* Task filter — segmented control (matches planner tabs) */
 .task-filter-row {
-  display: flex;
-  gap: 0.35rem;
+  display: inline-flex;
   flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted-foreground) 12%, var(--card));
+  box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.04);
 }
 
 .task-filter-btn {
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
-  min-height: unset;
-  background: #eef3ef;
-  color: var(--ink);
-  border: 1px solid var(--line);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  min-height: 2rem;
+  border: none;
+  border-radius: calc(var(--radius) - 3px);
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.task-filter-btn:hover:not(:disabled) {
+  color: var(--foreground);
+}
+
+.task-filter-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
 }
 
 .task-filter-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: transparent;
+  background: var(--background);
+  color: var(--foreground);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 /* Event / task pill */

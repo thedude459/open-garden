@@ -47,13 +47,7 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetsSecti
     finishLasso: vi.fn(),
     onBulkMovePlacements: vi.fn(),
     onBulkRemovePlacements: vi.fn(),
-    canUndoPlanner: false,
-    canRedoPlanner: false,
-    onUndoPlanner: vi.fn(),
-    onRedoPlanner: vi.fn(),
-    requestRotatePreview: vi.fn(),
     onRenameBed: vi.fn(),
-    onDeleteBed: vi.fn(),
     onBlockedPlacementMove: vi.fn(),
     placementSpacingConflict: vi.fn().mockReturnValue(null),
     onMovePlacement: vi.fn(),
@@ -109,24 +103,6 @@ describe("PlannerBedSheetsSection", () => {
       <PlannerBedSheetsSection {...defaultProps({ beds: [sampleBed], selectedPlacement: null })} />,
     );
     expect(screen.queryByText(/moving/i)).not.toBeInTheDocument();
-  });
-
-  it("shows the undo and redo buttons", () => {
-    render(<PlannerBedSheetsSection {...defaultProps()} />);
-    expect(screen.getByRole("button", { name: /undo/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /redo/i })).toBeInTheDocument();
-  });
-
-  it("disables undo/redo buttons when canUndoPlanner/canRedoPlanner are false", () => {
-    render(<PlannerBedSheetsSection {...defaultProps({ canUndoPlanner: false, canRedoPlanner: false })} />);
-    expect(screen.getByRole("button", { name: /undo/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /redo/i })).toBeDisabled();
-  });
-
-  it("enables undo/redo buttons when canUndoPlanner/canRedoPlanner are true", () => {
-    render(<PlannerBedSheetsSection {...defaultProps({ canUndoPlanner: true, canRedoPlanner: true })} />);
-    expect(screen.getByRole("button", { name: /undo/i })).not.toBeDisabled();
-    expect(screen.getByRole("button", { name: /redo/i })).not.toBeDisabled();
   });
 
   it("shows lasso hint when bulkMode is true and beds exist", () => {
@@ -199,20 +175,6 @@ describe("PlannerBedSheetsSection", () => {
     );
     screen.getByRole("button", { name: "Cancel move" }).click();
     expect(setSelectedPlacementId).toHaveBeenCalledWith(null);
-  });
-
-  it("calls onUndoPlanner and onRedoPlanner on button clicks", () => {
-    const onUndoPlanner = vi.fn();
-    const onRedoPlanner = vi.fn();
-    render(
-      <PlannerBedSheetsSection
-        {...defaultProps({ canUndoPlanner: true, canRedoPlanner: true, onUndoPlanner, onRedoPlanner })}
-      />,
-    );
-    screen.getByRole("button", { name: /undo/i }).click();
-    expect(onUndoPlanner).toHaveBeenCalled();
-    screen.getByRole("button", { name: /redo/i }).click();
-    expect(onRedoPlanner).toHaveBeenCalled();
   });
 
   it("calls onBulkRemovePlacements after window.confirm when removing selected", () => {

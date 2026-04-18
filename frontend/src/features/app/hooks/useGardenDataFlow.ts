@@ -163,9 +163,6 @@ export function useGardenDataFlow({
     loadGardenData,
     selectedGardenRecord,
     resetForNoGarden,
-    loadClimateForGarden,
-    loadPlantingWindowsForGarden,
-    loadSunPathForGarden,
     noticeUnlessExpired,
   });
 

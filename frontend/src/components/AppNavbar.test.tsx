@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { AppNavbar } from "./AppNavbar";
 
@@ -47,20 +48,17 @@ describe("AppNavbar", () => {
     expect(screen.getByText(/Back Garden.*Zone 6a/)).toBeInTheDocument();
   });
 
-  it("shows garden-specific nav links when selectedGarden is set", () => {
+  it("shows primary garden nav links and More menu when selectedGarden is set", () => {
     render(<AppNavbar {...defaultProps({ selectedGarden: 1 })} />);
-    expect(screen.getByRole("button", { name: "Timeline" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Seasonal Plan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bed Planner" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "AI Coach" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sensors" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Pest Log" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "More tools" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Timeline" })).not.toBeInTheDocument();
   });
 
   it("hides garden-specific nav links when selectedGarden is null", () => {
     render(<AppNavbar {...defaultProps({ selectedGarden: null })} />);
-    expect(screen.queryByRole("button", { name: "Timeline" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Calendar" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Crop Library" })).toBeInTheDocument();
   });
@@ -71,27 +69,25 @@ describe("AppNavbar", () => {
     expect(screen.getByRole("button", { name: "My Gardens" })).toBeInTheDocument();
   });
 
-  it("calls onNavigate when nav buttons are clicked", () => {
+  it("calls onNavigate from More menu for secondary destinations", async () => {
+    const user = userEvent.setup();
     const onNavigate = vi.fn();
     render(<AppNavbar {...defaultProps({ selectedGarden: 1, onNavigate })} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Timeline" }));
+    await user.click(screen.getByRole("button", { name: "More tools" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Timeline" }));
     expect(onNavigate).toHaveBeenCalledWith("timeline");
+  });
+
+  it("calls onNavigate when primary nav buttons are clicked", () => {
+    const onNavigate = vi.fn();
+    render(<AppNavbar {...defaultProps({ selectedGarden: 1, onNavigate })} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Calendar" }));
     expect(onNavigate).toHaveBeenCalledWith("calendar");
 
     fireEvent.click(screen.getByRole("button", { name: "Bed Planner" }));
     expect(onNavigate).toHaveBeenCalledWith("planner");
-
-    fireEvent.click(screen.getByRole("button", { name: "AI Coach" }));
-    expect(onNavigate).toHaveBeenCalledWith("coach");
-
-    fireEvent.click(screen.getByRole("button", { name: "Sensors" }));
-    expect(onNavigate).toHaveBeenCalledWith("sensors");
-
-    fireEvent.click(screen.getByRole("button", { name: "Pest Log" }));
-    expect(onNavigate).toHaveBeenCalledWith("pests");
 
     fireEvent.click(screen.getByRole("button", { name: "My Gardens" }));
     expect(onNavigate).toHaveBeenCalledWith("home");
@@ -118,7 +114,6 @@ describe("AppNavbar", () => {
   it("applies active variant to the current page button", () => {
     render(<AppNavbar {...defaultProps({ activePage: "crops" })} />);
     const cropsBtn = screen.getByRole("button", { name: "Crop Library" });
-    // The active button has the "default" variant (not "secondary")
     expect(cropsBtn).toBeInTheDocument();
   });
 });
