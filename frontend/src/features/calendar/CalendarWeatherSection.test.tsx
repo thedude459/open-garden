@@ -29,7 +29,6 @@ function buildCalendarContextValue(): CalendarContextType {
       setTaskQuery: vi.fn(),
       isLoadingTasks: false,
       createTask: vi.fn(),
-      createPlanting: vi.fn(),
       toggleTaskDone: vi.fn(),
       deleteTask: vi.fn(),
       editTask: vi.fn(),

@@ -8,8 +8,8 @@ vi.mock("./CalendarMonthGrid", () => ({
 }));
 
 vi.mock("./CalendarAgendaPanel", () => ({
-  CalendarAgendaPanel: ({ selectedDateLabel, selectedCropName }: { selectedDateLabel: string; selectedCropName: string }) => (
-    <div data-testid="calendar-agenda-panel">{selectedDateLabel}::{selectedCropName}</div>
+  CalendarAgendaPanel: ({ selectedDateLabel }: { selectedDateLabel: string }) => (
+    <div data-testid="calendar-agenda-panel">{selectedDateLabel}</div>
   ),
 }));
 
@@ -29,7 +29,6 @@ function buildCalendarContextValue(): CalendarContextType {
       setTaskQuery: vi.fn(),
       isLoadingTasks: false,
       createTask: vi.fn(),
-      createPlanting: vi.fn(),
       toggleTaskDone: vi.fn(),
       deleteTask: vi.fn(),
       editTask: vi.fn(),
@@ -68,6 +67,6 @@ describe("CalendarPanel", () => {
     );
 
     expect(screen.getByTestId("calendar-month-grid")).toHaveTextContent("Season Calendar - Test Garden");
-    expect(screen.getByTestId("calendar-agenda-panel")).toHaveTextContent("Saturday, Apr 4::Tomato");
+    expect(screen.getByTestId("calendar-agenda-panel")).toHaveTextContent("Saturday, Apr 4");
   });
 });

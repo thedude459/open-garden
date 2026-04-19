@@ -22,6 +22,13 @@ const samplePlacement: Placement = {
   grid_y: 0,
   color: "#e53935",
   planted_on: "2026-04-01",
+  expected_harvest_on: "2026-07-01",
+  method: "direct_seed",
+  location: "in_bed",
+  moved_on: null,
+  source: "",
+  harvested_on: null,
+  yield_notes: "",
 };
 
 function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetSingle>[0]> = {}) {
@@ -46,9 +53,9 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetSingle
     cropVisual: vi.fn().mockReturnValue({ imageUrl: "/img.png", rowSpacingIn: 12, inRowSpacingIn: 6 }),
     onNudgePlacement: vi.fn(),
     onRequestRemovePlacement: vi.fn(),
-    requestRotatePreview: vi.fn(),
+    onRelocatePlanting: vi.fn(),
+    onUpdatePlantingDates: vi.fn(),
     onRenameBed: vi.fn().mockResolvedValue(undefined),
-    onDeleteBed: vi.fn(),
     allPlacements: [],
     ...overrides,
   };
@@ -65,18 +72,10 @@ describe("PlannerBedSheetSingle", () => {
     expect(screen.getByText(/no crop placements yet/i)).toBeInTheDocument();
   });
 
-  it("calls requestRotatePreview when Rotate 90° is clicked", () => {
-    const requestRotatePreview = vi.fn();
-    render(<PlannerBedSheetSingle {...defaultProps({ requestRotatePreview })} />);
-    fireEvent.click(screen.getByRole("button", { name: /rotate 90/i }));
-    expect(requestRotatePreview).toHaveBeenCalledWith(sampleBed);
-  });
-
-  it("calls onDeleteBed when Delete bed is clicked", () => {
-    const onDeleteBed = vi.fn();
-    render(<PlannerBedSheetSingle {...defaultProps({ onDeleteBed })} />);
-    fireEvent.click(screen.getByRole("button", { name: /delete bed/i }));
-    expect(onDeleteBed).toHaveBeenCalledWith(1);
+  it("does not render rotate or delete bed controls in bed sheets", () => {
+    render(<PlannerBedSheetSingle {...defaultProps()} />);
+    expect(screen.queryByRole("button", { name: /rotate/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /delete bed/i })).not.toBeInTheDocument();
   });
 
   it("shows rename form when Rename is clicked, updates draft, saves on submit", async () => {
@@ -123,6 +122,8 @@ describe("PlannerBedSheetSingle", () => {
     render(<PlannerBedSheetSingle {...defaultProps({ placements: [samplePlacement] })} />);
     // The placement chip button has the extended aria-label with "Arrow keys move"
     expect(screen.getByRole("button", { name: /arrow keys move/i })).toBeInTheDocument();
+    expect(document.querySelectorAll(".plot-cell-marker").length).toBeGreaterThan(0);
+    expect(screen.getByText("TO")).toBeInTheDocument();
     // Legend should show crop name
     expect(screen.getByText(/Tomato \(1\)/)).toBeInTheDocument();
   });

@@ -143,14 +143,13 @@ export function useGardenDataLoaders({
 
     try {
       setIsLoadingGardenData(true);
-      const [bedsData, plantingsData, placementData] = await Promise.all([
+      const [bedsData, plantingsData] = await Promise.all([
         fetchAuthed(`/gardens/${gardenId}/beds`) as Promise<Bed[]>,
         fetchAuthed(`/plantings?garden_id=${gardenId}`) as Promise<Planting[]>,
-        fetchAuthed(`/placements?garden_id=${gardenId}`) as Promise<Placement[]>,
       ]);
       setBeds(bedsData);
       setPlantings(plantingsData);
-      setPlacements(placementData);
+      setPlacements(plantingsData);
     } finally {
       setIsLoadingGardenData(false);
     }

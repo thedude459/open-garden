@@ -48,6 +48,8 @@ export type GardenClimate = {
   adjusted_first_fall_frost: string;
   last_frost_shift_days: number;
   first_fall_shift_days: number;
+  last_spring_frost_extended_by_forecast?: boolean;
+  first_fall_frost_extended_by_forecast?: boolean;
   soil_temperature_estimate_f: number;
   soil_temperature_status: string;
   frost_risk_next_10_days: string;
@@ -82,6 +84,18 @@ export type GardenClimatePlantingWindows = {
   soil_temperature_estimate_f: number;
   frost_risk_next_10_days: string;
   windows: ClimatePlantingWindow[];
+};
+
+/** Land-grant Extension portal links derived from the garden ZIP (state). */
+export type GardenExtensionResources = {
+  zip_code: string;
+  state_code: string | null;
+  organization: string;
+  home_url: string;
+  vegetable_gardening_url: string;
+  ipm_url: string;
+  disclaimer: string;
+  source: string;
 };
 
 export type SunPathPoint = {
@@ -225,19 +239,30 @@ export type Task = {
   id: number;
   garden_id: number;
   planting_id: number | null;
+  /** When set, this schedule row applies to multiple plantings (same crop + start schedule). */
+  bundled_planting_ids?: number[] | null;
   title: string;
   due_on: string;
   is_done: boolean;
   notes: string;
 };
 
+export type PlantingMethod = "direct_seed" | "transplant";
+export type PlantingLocation = "indoor" | "in_bed";
+
 export type Planting = {
   id: number;
   garden_id: number;
   bed_id: number;
   crop_name: string;
+  grid_x: number;
+  grid_y: number;
+  color: string;
   planted_on: string;
   expected_harvest_on: string;
+  method: PlantingMethod;
+  location: PlantingLocation;
+  moved_on: string | null;
   source: string;
   harvested_on: string | null;
   yield_notes: string;
@@ -290,16 +315,7 @@ export type CalendarEvent = {
   yield_notes?: string;
 };
 
-export type Placement = {
-  id: number;
-  garden_id: number;
-  bed_id: number;
-  crop_name: string;
-  grid_x: number;
-  grid_y: number;
-  color: string;
-  planted_on: string;
-};
+export type Placement = Planting;
 
 export type DragPayload = { placementId: number };
 

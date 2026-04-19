@@ -30,12 +30,8 @@ describe("useTaskActions", () => {
         pushNotice,
         token: "tok",
         selectedGarden: 1,
-        beds: [{ id: 1 }],
-        cropTemplates: [{ name: "Tomato" }],
         setPlantings: vi.fn(),
         invalidateSeasonalPlanCache: vi.fn(),
-        loadGardenData: vi.fn(async () => undefined),
-        setSelectedCropName: vi.fn(),
       }),
     );
 
@@ -64,17 +60,13 @@ describe("useTaskActions", () => {
     expect(result.current.tasks.some((task) => task.id === 2)).toBe(false);
   });
 
-  it("logs harvest and creates planting", async () => {
+  it("logs harvest", async () => {
     const setPlantings = vi.fn();
-    const loadGardenData = vi.fn(async () => undefined);
     const invalidateSeasonalPlanCache = vi.fn();
-    const setSelectedCropName = vi.fn();
     const pushNotice = vi.fn();
     const fetchAuthed = vi
       .fn()
-      .mockResolvedValueOnce({ id: 10, harvested_on: "2026-04-01" })
-      .mockResolvedValueOnce({ id: 11 })
-      .mockResolvedValueOnce([{ id: 1, title: "Task", is_done: false }]);
+      .mockResolvedValueOnce({ id: 10, harvested_on: "2026-04-01" });
 
     const { result } = renderHook(() =>
       useTaskActions({
@@ -82,12 +74,8 @@ describe("useTaskActions", () => {
         pushNotice,
         token: "tok",
         selectedGarden: 1,
-        beds: [{ id: 2 }],
-        cropTemplates: [{ name: "Lettuce" }],
         setPlantings,
         invalidateSeasonalPlanCache,
-        loadGardenData,
-        setSelectedCropName,
       }),
     );
 
@@ -97,28 +85,7 @@ describe("useTaskActions", () => {
 
     expect(setPlantings).toHaveBeenCalled();
     expect(invalidateSeasonalPlanCache).toHaveBeenCalledWith(1);
-
-    const form = document.createElement("form");
-    const bed = document.createElement("input");
-    bed.name = "bed_id";
-    bed.value = "2";
-    form.appendChild(bed);
-    const crop = document.createElement("input");
-    crop.name = "crop_name";
-    crop.value = "Lettuce";
-    form.appendChild(crop);
-    const plantedOn = document.createElement("input");
-    plantedOn.name = "planted_on";
-    plantedOn.value = "2026-04-04";
-    form.appendChild(plantedOn);
-
-    await act(async () => {
-      await result.current.createPlanting({ preventDefault: vi.fn(), currentTarget: form } as unknown as React.FormEvent<HTMLFormElement>);
-    });
-
-    expect(setSelectedCropName).toHaveBeenCalledWith("Lettuce");
-    expect(loadGardenData).toHaveBeenCalled();
-    expect(pushNotice).toHaveBeenCalledWith("Planting added: Lettuce.", "success");
+    expect(pushNotice).toHaveBeenCalledWith("Harvest logged!", "success");
   });
 
   it("toggles loading state during explicit task fetch", async () => {
@@ -132,12 +99,8 @@ describe("useTaskActions", () => {
         pushNotice,
         token: "tok",
         selectedGarden: null,
-        beds: [{ id: 1 }],
-        cropTemplates: [{ name: "Tomato" }],
         setPlantings: vi.fn(),
         invalidateSeasonalPlanCache: vi.fn(),
-        loadGardenData: vi.fn(async () => undefined),
-        setSelectedCropName: vi.fn(),
       }),
     );
 
@@ -169,12 +132,8 @@ describe("useTaskActions", () => {
         pushNotice,
         token: "tok",
         selectedGarden: 1,
-        beds: [{ id: 1 }],
-        cropTemplates: [{ name: "Tomato" }],
         setPlantings: vi.fn(),
         invalidateSeasonalPlanCache: vi.fn(),
-        loadGardenData: vi.fn(async () => undefined),
-        setSelectedCropName: vi.fn(),
       }),
     );
 

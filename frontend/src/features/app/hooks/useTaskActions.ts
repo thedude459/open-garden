@@ -11,12 +11,8 @@ interface UseTaskActionsParams {
   pushNotice: (message: string, kind: NoticeKind) => void;
   token: string;
   selectedGarden: number | null;
-  beds: { id: number }[];
-  cropTemplates: { name: string }[];
   setPlantings: React.Dispatch<React.SetStateAction<Planting[]>>;
   invalidateSeasonalPlanCache: (gardenId: number) => void;
-  loadGardenData: () => Promise<void>;
-  setSelectedCropName: (name: string) => void;
 }
 
 export function useTaskActions({
@@ -24,12 +20,8 @@ export function useTaskActions({
   pushNotice,
   token,
   selectedGarden,
-  beds,
-  cropTemplates,
   setPlantings,
   invalidateSeasonalPlanCache,
-  loadGardenData,
-  setSelectedCropName,
 }: UseTaskActionsParams) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskQuery, setTaskQuery] = useState("");
@@ -150,49 +142,6 @@ export function useTaskActions({
     [fetchAuthed, setPlantings, selectedGarden, invalidateSeasonalPlanCache, pushNotice],
   );
 
-  const createPlanting = useCallback(
-    async (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if (!selectedGarden || beds.length === 0 || cropTemplates.length === 0) return;
-      const form = e.currentTarget;
-      const fd = new FormData(form);
-      const bedId = Number(fd.get("bed_id"));
-      const cropName = String(fd.get("crop_name") || "");
-      try {
-        await fetchAuthed("/plantings", {
-          method: "POST",
-          body: JSON.stringify({
-            garden_id: selectedGarden,
-            bed_id: bedId,
-            crop_name: cropName,
-            planted_on: fd.get("planted_on"),
-            source: fd.get("source") || "manual",
-          }),
-        });
-        setSelectedCropName(cropName);
-        form.reset();
-        await loadGardenData();
-        await loadTasks(selectedGarden, debouncedTaskQuery);
-        invalidateSeasonalPlanCache(selectedGarden);
-        pushNotice(`Planting added: ${cropName}.`, "success");
-      } catch (err: unknown) {
-        pushNotice(getErrorMessage(err, "Unable to create planting."), "error");
-      }
-    },
-    [
-      fetchAuthed,
-      selectedGarden,
-      beds,
-      cropTemplates,
-      setSelectedCropName,
-      loadGardenData,
-      loadTasks,
-      debouncedTaskQuery,
-      invalidateSeasonalPlanCache,
-      pushNotice,
-    ],
-  );
-
   return {
     tasks,
     setTasks,
@@ -207,6 +156,5 @@ export function useTaskActions({
     deleteTask,
     editTask,
     logHarvest,
-    createPlanting,
   };
 }

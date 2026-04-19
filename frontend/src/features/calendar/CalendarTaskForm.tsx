@@ -1,4 +1,6 @@
 import { FormEvent } from "react";
+import { ListChecks } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
 
 type CalendarTaskFormProps = {
   taskQuery: string;
@@ -21,7 +23,7 @@ export function CalendarTaskForm({
 }: CalendarTaskFormProps) {
   return (
     <>
-      <h4>Add Task</h4>
+      <SectionHeader variant="subsection" headingLevel="h4" icon={ListChecks} title="Add Task" />
       <div className="stack compact">
         <label className="field-label" htmlFor="task-filter-query">Filter Tasks</label>
         <input id="task-filter-query" value={taskQuery} onChange={(event) => setTaskQuery(event.target.value)} placeholder="Filter tasks" />

@@ -4,6 +4,7 @@ Revision ID: 0005
 Revises: 0004
 Create Date: 2026-03-17
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -53,8 +54,16 @@ def upgrade() -> None:
             """
         )
     )
-    op.execute(text("CREATE INDEX IF NOT EXISTS ix_sensor_readings_sensor_id ON sensor_readings (sensor_id)"))
-    op.execute(text("CREATE INDEX IF NOT EXISTS ix_sensor_readings_captured_at ON sensor_readings (captured_at)"))
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_sensor_readings_sensor_id ON sensor_readings (sensor_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_sensor_readings_captured_at ON sensor_readings (captured_at)"
+        )
+    )
 
 
 def downgrade() -> None:

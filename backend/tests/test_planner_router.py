@@ -1,36 +1,66 @@
 import asyncio
-from datetime import date
+from datetime import date, timedelta
 
 import httpx
 import pytest
 from fastapi import HTTPException
 
-from app.models import Bed, CropTemplate, Placement, Task
+from app.models import Bed, CropTemplate, Planting, Task
+from app.services.planting_tasks import crop_task_title
 from app.routers.planner import (
-    _crop_task_title,
     create_bed,
-    create_placement,
     create_planting,
-    delete_placement,
+    delete_planting,
     get_planting_recommendations,
     list_beds,
-    list_placements,
     list_plantings,
     log_harvest,
-    move_placement,
+    move_planting,
+    relocate_planting,
     rotate_bed_in_yard,
     rename_bed,
     update_bed_position,
+    update_planting_dates,
 )
 from app.schemas import (
     BedCreate,
     BedPositionUpdate,
     BedRenameUpdate,
-    PlacementCreate,
-    PlacementMove,
     PlantingCreate,
+    PlantingDatesUpdate,
     PlantingHarvestUpdate,
+    PlantingMove,
+    PlantingRelocate,
 )
+
+
+def _planting_payload(
+    *,
+    garden_id: int,
+    bed_id: int,
+    crop_name: str,
+    grid_x: int,
+    grid_y: int,
+    planted_on: date | None = None,
+    method: str = "direct_seed",
+    location: str = "in_bed",
+    source: str = "manual",
+    color: str = "#57a773",
+    moved_on: date | None = None,
+) -> PlantingCreate:
+    return PlantingCreate(
+        garden_id=garden_id,
+        bed_id=bed_id,
+        crop_name=crop_name,
+        grid_x=grid_x,
+        grid_y=grid_y,
+        color=color,
+        planted_on=planted_on or date.today(),
+        method=method,
+        location=location,
+        source=source,
+        moved_on=moved_on,
+    )
 
 
 def test_create_and_list_beds(db_session, garden):
@@ -46,8 +76,8 @@ def test_create_and_list_beds(db_session, garden):
 
 
 def test_crop_task_title_normalizes_variety_suffix():
-    assert _crop_task_title("Tomato (Roma)", "Harvest", "Roma") == "Tomato • Roma: Harvest"
-    assert _crop_task_title("Carrot", "Thin") == "Carrot: Thin"
+    assert crop_task_title("Tomato (Roma)", "Harvest", "Roma") == "Tomato • Roma: Harvest"
+    assert crop_task_title("Carrot", "Thin") == "Carrot: Thin"
 
 
 def test_update_bed_position_clamps_to_yard(db_session, bed):
@@ -115,7 +145,7 @@ def test_rotate_bed_rejects_overlap_with_other_bed(db_session, garden):
     assert "overlap another bed" in exc.value.detail
 
 
-def test_rotate_bed_rejects_out_of_bounds_placement(db_session, garden):
+def test_rotate_bed_rejects_out_of_bounds_planting(db_session, garden):
     rotatable = Bed(
         garden_id=garden.id, name="Rotate", width_in=12, height_in=24, grid_x=0, grid_y=0
     )
@@ -123,13 +153,14 @@ def test_rotate_bed_rejects_out_of_bounds_placement(db_session, garden):
     db_session.commit()
     db_session.refresh(rotatable)
     db_session.add(
-        Placement(
+        Planting(
             garden_id=garden.id,
             bed_id=rotatable.id,
             crop_name="Tomato",
             grid_x=99,
             grid_y=0,
             planted_on=date.today(),
+            expected_harvest_on=date.today() + timedelta(days=60),
         )
     )
     db_session.commit()
@@ -141,89 +172,87 @@ def test_rotate_bed_rejects_out_of_bounds_placement(db_session, garden):
     assert "outside the current bed bounds" in exc.value.detail
 
 
-def test_delete_bed_removes_related_rows(db_session, bed, placement, planting, sensor):
+def test_delete_bed_removes_related_rows(db_session, bed, planting, sensor):
     from app.routers.planner import delete_bed
 
-    placement_id = placement.id
     planting_id = planting.id
 
     result = delete_bed(db=db_session, bed=bed)
 
     assert result == {"status": "deleted"}
-    assert db_session.query(Placement).filter(Placement.id == placement_id).first() is None
+    assert db_session.query(Planting).filter(Planting.id == planting_id).first() is None
+    # Tasks are kept, their planting_id nulled
     assert db_session.query(Task).filter(Task.planting_id == planting_id).count() == 0
     db_session.refresh(sensor)
     assert sensor.bed_id is None
 
 
-def test_move_placement_rejects_occupied_target(
-    db_session, user, garden, bed, companion_crop_template, placement
+def test_move_planting_rejects_occupied_target(
+    db_session, user, garden, bed, companion_crop_template, planting
 ):
-    other = create_placement(
-        PlacementCreate(
+    other = create_planting(
+        _planting_payload(
             garden_id=garden.id,
             bed_id=bed.id,
             crop_name=companion_crop_template.name,
             grid_x=6,
             grid_y=6,
-            planted_on=date.today(),
         ),
         db=db_session,
         current_user=user,
     )
 
     with pytest.raises(HTTPException) as exc:
-        move_placement(
-            PlacementMove(bed_id=bed.id, grid_x=other.grid_x, grid_y=other.grid_y),
+        move_planting(
+            PlantingMove(bed_id=bed.id, grid_x=other.grid_x, grid_y=other.grid_y),
             db=db_session,
             current_user=user,
-            placement=placement,
+            planting=planting,
         )
 
     assert exc.value.status_code == 409
 
 
-def test_list_and_delete_placements(
-    db_session, user, garden, bed, companion_crop_template, placement
+def test_list_and_delete_plantings(
+    db_session, user, garden, bed, companion_crop_template, planting
 ):
-    second = create_placement(
-        PlacementCreate(
+    second = create_planting(
+        _planting_payload(
             garden_id=garden.id,
             bed_id=bed.id,
             crop_name=companion_crop_template.name,
             grid_x=6,
             grid_y=5,
-            planted_on=date.today(),
         ),
         db=db_session,
         current_user=user,
     )
 
-    listed = list_placements(garden_id=garden.id, bed_id=bed.id, db=db_session, current_user=user)
-    deleted = delete_placement(db=db_session, placement=second)
+    listed = list_plantings(garden_id=garden.id, bed_id=bed.id, db=db_session, current_user=user)
+    deleted = delete_planting(db=db_session, planting=second)
 
-    assert [item.id for item in listed] == [placement.id, second.id]
+    assert planting.id in [item.id for item in listed]
+    assert second.id in [item.id for item in listed]
     assert deleted == {"status": "deleted"}
-    assert db_session.query(Placement).filter(Placement.id == second.id).first() is None
+    assert db_session.query(Planting).filter(Planting.id == second.id).first() is None
 
 
-def test_list_placements_rejects_missing_garden(db_session, user):
+def test_list_plantings_rejects_missing_garden(db_session, user):
     with pytest.raises(HTTPException) as exc:
-        list_placements(garden_id=999, db=db_session, current_user=user)
+        list_plantings(garden_id=999, db=db_session, current_user=user)
 
     assert exc.value.status_code == 404
 
 
-def test_create_placement_rejects_edge_buffer_violation(db_session, user, garden, bed):
+def test_create_planting_rejects_edge_buffer_violation(db_session, user, garden, bed):
     with pytest.raises(HTTPException) as exc:
-        create_placement(
-            PlacementCreate(
+        create_planting(
+            _planting_payload(
                 garden_id=garden.id,
                 bed_id=bed.id,
                 crop_name="Carrot",
                 grid_x=0,
                 grid_y=0,
-                planted_on=date.today(),
             ),
             db=db_session,
             current_user=user,
@@ -232,29 +261,27 @@ def test_create_placement_rejects_edge_buffer_violation(db_session, user, garden
     assert exc.value.status_code == 409
 
 
-def test_create_placement_rejects_missing_garden_or_bed(db_session, user, garden):
+def test_create_planting_rejects_missing_garden_or_bed(db_session, user, garden):
     with pytest.raises(HTTPException) as missing_garden:
-        create_placement(
-            PlacementCreate(
+        create_planting(
+            _planting_payload(
                 garden_id=999,
                 bed_id=1,
                 crop_name="Carrot",
                 grid_x=2,
                 grid_y=2,
-                planted_on=date.today(),
             ),
             db=db_session,
             current_user=user,
         )
     with pytest.raises(HTTPException) as missing_bed:
-        create_placement(
-            PlacementCreate(
+        create_planting(
+            _planting_payload(
                 garden_id=garden.id,
                 bed_id=999,
                 crop_name="Carrot",
                 grid_x=2,
                 grid_y=2,
-                planted_on=date.today(),
             ),
             db=db_session,
             current_user=user,
@@ -264,8 +291,8 @@ def test_create_placement_rejects_missing_garden_or_bed(db_session, user, garden
     assert missing_bed.value.status_code == 404
 
 
-def test_create_placement_rejects_spacing_conflict(
-    db_session, user, garden, bed, crop_template, placement
+def test_create_planting_rejects_spacing_conflict(
+    db_session, user, garden, bed, crop_template, planting
 ):
     db_session.add(
         CropTemplate(
@@ -288,14 +315,13 @@ def test_create_placement_rejects_spacing_conflict(
     db_session.commit()
 
     with pytest.raises(HTTPException) as exc:
-        create_placement(
-            PlacementCreate(
+        create_planting(
+            _planting_payload(
                 garden_id=garden.id,
                 bed_id=bed.id,
                 crop_name="Pepper",
                 grid_x=4,
                 grid_y=3,
-                planted_on=date.today(),
             ),
             db=db_session,
             current_user=user,
@@ -304,73 +330,120 @@ def test_create_placement_rejects_spacing_conflict(
     assert exc.value.status_code == 409
 
 
-def test_create_and_move_placement(db_session, user, garden, bed, companion_crop_template):
-    created = create_placement(
-        PlacementCreate(
+def test_create_and_move_planting(db_session, user, garden, bed, companion_crop_template):
+    created = create_planting(
+        _planting_payload(
             garden_id=garden.id,
             bed_id=bed.id,
             crop_name=companion_crop_template.name,
             grid_x=2,
             grid_y=2,
-            planted_on=date.today(),
         ),
         db=db_session,
         current_user=user,
     )
 
-    moved = move_placement(
-        PlacementMove(bed_id=bed.id, grid_x=5, grid_y=5),
+    moved = move_planting(
+        PlantingMove(bed_id=bed.id, grid_x=5, grid_y=5),
         db=db_session,
         current_user=user,
-        placement=created,
+        planting=created,
     )
 
     assert moved.grid_x == 5
     assert moved.grid_y == 5
 
 
-def test_move_placement_rejects_missing_garden_or_target_bed(db_session, user, placement):
-    db_session.query(Bed).filter(Bed.id == placement.bed_id).delete()
-    db_session.query(Bed).filter(Bed.garden_id == placement.garden_id).delete()
+def test_move_planting_rejects_missing_garden_or_target_bed(db_session, user, planting):
+    db_session.query(Bed).filter(Bed.id == planting.bed_id).delete()
+    db_session.query(Bed).filter(Bed.garden_id == planting.garden_id).delete()
     db_session.query(Bed).delete()
-    db_session.query(Placement).filter(Placement.id == placement.id).update(
-        {Placement.garden_id: 999}
-    )
+    db_session.query(Planting).filter(Planting.id == planting.id).update({Planting.garden_id: 999})
     db_session.commit()
-    db_session.refresh(placement)
+    db_session.refresh(planting)
 
     with pytest.raises(HTTPException) as missing_garden:
-        move_placement(
-            PlacementMove(bed_id=1, grid_x=5, grid_y=5),
+        move_planting(
+            PlantingMove(bed_id=1, grid_x=5, grid_y=5),
             db=db_session,
             current_user=user,
-            placement=placement,
+            planting=planting,
         )
 
-    placement.garden_id = 1
-    db_session.add(placement)
+    planting.garden_id = 1
+    db_session.add(planting)
     db_session.commit()
 
     with pytest.raises(HTTPException) as missing_bed:
-        move_placement(
-            PlacementMove(bed_id=999, grid_x=5, grid_y=5),
+        move_planting(
+            PlantingMove(bed_id=999, grid_x=5, grid_y=5),
             db=db_session,
             current_user=user,
-            placement=placement,
+            planting=planting,
         )
 
     assert missing_garden.value.status_code == 404
     assert missing_bed.value.status_code == 404
 
 
+def test_create_planting_indoor_skips_in_bed_tracking(
+    db_session, user, garden, bed, companion_crop_template
+):
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=companion_crop_template.name,
+            grid_x=2,
+            grid_y=2,
+            location="indoor",
+            method="transplant",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    assert planting.location == "indoor"
+    assert planting.method == "transplant"
+    assert planting.moved_on is None
+
+
+def test_relocate_planting_to_bed_stamps_moved_on(db_session, planting):
+    result = relocate_planting(
+        PlantingRelocate(location="in_bed"),
+        db=db_session,
+        planting=planting,
+    )
+
+    assert result.location == "in_bed"
+    assert result.moved_on == date.today()
+
+
+def test_relocate_planting_to_indoor_clears_moved_on(db_session, planting):
+    planting.location = "in_bed"
+    planting.moved_on = date.today()
+    db_session.add(planting)
+    db_session.commit()
+
+    result = relocate_planting(
+        PlantingRelocate(location="indoor"),
+        db=db_session,
+        planting=planting,
+    )
+
+    assert result.location == "indoor"
+    assert result.moved_on is None
+
+
 def test_create_planting_generates_care_tasks(db_session, user, garden, bed, crop_template):
     planting = create_planting(
-        PlantingCreate(
+        _planting_payload(
             garden_id=garden.id,
             bed_id=bed.id,
             crop_name=crop_template.name,
-            planted_on=date.today(),
-            source="manual",
+            grid_x=4,
+            grid_y=4,
+            method="transplant",
         ),
         db=db_session,
         current_user=user,
@@ -383,18 +456,423 @@ def test_create_planting_generates_care_tasks(db_session, user, garden, bed, cro
     assert any("Start seeds indoors" in task.title for task in tasks)
 
 
+def test_two_plantings_same_schedule_share_bundled_tasks(
+    db_session, user, garden, bed, crop_template
+):
+    """Same crop + same bed-entry schedule → one auto-task row covering all placements."""
+    started = date.today()
+    create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=4,
+            grid_y=4,
+            planted_on=started,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+    create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=9,
+            grid_y=4,
+            planted_on=started,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    planting_ids = {
+        p.id for p in db_session.query(Planting).filter(Planting.garden_id == garden.id).all()
+    }
+    assert len(planting_ids) == 2
+
+    tasks = db_session.query(Task).filter(Task.garden_id == garden.id).all()
+    transplant = [t for t in tasks if "Transplant seedlings to bed" in t.title]
+    assert len(transplant) == 1
+    assert "(2 plantings)" in transplant[0].title
+    assert set(transplant[0].bundled_planting_ids or []) == planting_ids
+
+
+def test_delete_planting_succeeds_when_tasks_reference_canonical_planting_id(
+    db_session, user, garden, bed, crop_template
+):
+    """Bundled tasks use ``planting_id`` = lowest id; deleting that row must not violate FK."""
+    started = date.today()
+    p1 = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=4,
+            grid_y=4,
+            planted_on=started,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+    p2 = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=9,
+            grid_y=4,
+            planted_on=started,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+    ids = sorted([p1.id, p2.id])
+    first = db_session.query(Planting).filter(Planting.id == ids[0]).one()
+    second = db_session.query(Planting).filter(Planting.id == ids[1]).one()
+    delete_planting(db=db_session, planting=first)
+    assert db_session.query(Planting).filter(Planting.id == ids[0]).first() is None
+    delete_planting(db=db_session, planting=second)
+    assert db_session.query(Planting).filter(Planting.garden_id == garden.id).count() == 0
+
+
+def test_create_planting_indoor_skips_seed_start_task_and_dates_forward(
+    db_session, user, garden, bed, crop_template
+):
+    """Indoor plantings should NOT get a 'Start seeds indoors' task (the
+    planting itself is the evidence of starting), and downstream tasks
+    should be derived forward from planted_on + weeks_to_transplant."""
+    started_on = date.today()
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=4,
+            grid_y=4,
+            planted_on=started_on,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    tasks = db_session.query(Task).filter(Task.planting_id == planting.id).all()
+    titles = [task.title for task in tasks]
+
+    assert not any("Start seeds indoors" in title for title in titles)
+
+    weeks = max(1, crop_template.weeks_to_transplant or 6)
+    expected_bed_entry = started_on + timedelta(days=weeks * 7)
+
+    transplant_task = next((t for t in tasks if "Transplant seedlings to bed" in t.title), None)
+    assert transplant_task is not None
+    assert transplant_task.due_on == expected_bed_entry
+
+    harden_task = next((t for t in tasks if "Harden off seedlings" in t.title), None)
+    assert harden_task is not None
+    assert harden_task.due_on == expected_bed_entry - timedelta(days=7)
+
+    # Harvest should be derived from the bed-entry date, not the seed-start date.
+    assert planting.expected_harvest_on > expected_bed_entry
+
+
+def test_relocate_planting_to_bed_marks_transplant_task_done(
+    db_session, user, garden, bed, crop_template
+):
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=5,
+            grid_y=5,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    transplant_task = (
+        db_session.query(Task)
+        .filter(
+            Task.planting_id == planting.id,
+            Task.title.like("%Transplant seedlings to bed%"),
+        )
+        .first()
+    )
+    assert transplant_task is not None
+    assert transplant_task.is_done is False
+
+    relocate_planting(
+        PlantingRelocate(location="in_bed"),
+        db=db_session,
+        planting=planting,
+    )
+
+    new_transplant = (
+        db_session.query(Task)
+        .filter(
+            Task.planting_id == planting.id,
+            Task.title.like("%Transplant seedlings to bed%"),
+        )
+        .first()
+    )
+    assert new_transplant is not None
+    assert new_transplant.is_done is True
+
+
+def test_relocate_planting_in_bed_to_in_bed_does_not_alter_tasks(
+    db_session, user, garden, bed, crop_template
+):
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=6,
+            grid_y=6,
+            method="transplant",
+            location="in_bed",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    transplant_task = (
+        db_session.query(Task)
+        .filter(
+            Task.planting_id == planting.id,
+            Task.title.like("%Transplant seedlings to bed%"),
+        )
+        .first()
+    )
+    assert transplant_task is not None
+    assert transplant_task.is_done is False
+
+    relocate_planting(
+        PlantingRelocate(location="in_bed"),
+        db=db_session,
+        planting=planting,
+    )
+
+    db_session.refresh(transplant_task)
+    # Already in_bed → no transition, task should not be auto-completed.
+    assert transplant_task.is_done is False
+
+
+def test_create_indoor_planting_with_too_early_planned_move_clamps_to_minimum_seedling_age(
+    db_session, user, garden, bed, crop_template
+):
+    """If planned move-to-bed is earlier than planted_on + weeks_to_transplant,
+    anchor tasks on the minimum realistic transplant date."""
+    started_on = date.today()
+    too_soon = started_on + timedelta(days=14)
+    weeks = max(1, crop_template.weeks_to_transplant or 6)
+    effective = started_on + timedelta(days=weeks * 7)
+
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=7,
+            grid_y=7,
+            planted_on=started_on,
+            method="transplant",
+            location="indoor",
+            moved_on=too_soon,
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    assert planting.moved_on == effective
+    transplant_task = (
+        db_session.query(Task)
+        .filter(
+            Task.planting_id == planting.id,
+            Task.title.like("%Transplant seedlings to bed%"),
+        )
+        .first()
+    )
+    assert transplant_task is not None
+    assert transplant_task.due_on == effective
+
+
+def test_create_indoor_planting_with_explicit_planned_transplant_date_anchors_tasks(
+    db_session, user, garden, bed, crop_template
+):
+    """Winter-planning workflow: user starts seeds today and tells us they
+    plan to move the seedlings into the bed on a specific (future) date.
+    The transplant / harden-off / harvest tasks should anchor on the planned
+    move date rather than `planted_on + weeks_to_transplant`."""
+    started_on = date.today()
+    planned_move = started_on + timedelta(days=70)
+
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=7,
+            grid_y=7,
+            planted_on=started_on,
+            method="transplant",
+            location="indoor",
+            moved_on=planned_move,
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    assert planting.moved_on == planned_move
+    assert planting.expected_harvest_on == planned_move + timedelta(
+        days=crop_template.days_to_harvest
+    )
+
+    tasks = db_session.query(Task).filter(Task.planting_id == planting.id).all()
+    transplant_task = next((t for t in tasks if "Transplant seedlings to bed" in t.title), None)
+    harden_task = next((t for t in tasks if "Harden off seedlings" in t.title), None)
+    assert transplant_task is not None and transplant_task.due_on == planned_move
+    assert harden_task is not None and harden_task.due_on == planned_move - timedelta(days=7)
+
+
+def test_update_planting_dates_shifts_planted_on_and_recomputes_harvest(
+    db_session, user, garden, bed, crop_template
+):
+    started_on = date.today()
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=8,
+            grid_y=8,
+            planted_on=started_on,
+            method="transplant",
+            location="indoor",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    new_started_on = started_on + timedelta(days=14)
+    new_move_date = new_started_on + timedelta(days=42)
+
+    updated = update_planting_dates(
+        PlantingDatesUpdate(planted_on=new_started_on, moved_on=new_move_date),
+        db=db_session,
+        planting=planting,
+    )
+
+    weeks = max(1, crop_template.weeks_to_transplant or 6)
+    effective_move = new_started_on + timedelta(days=weeks * 7)
+
+    assert updated.planted_on == new_started_on
+    assert updated.moved_on == effective_move
+    assert updated.expected_harvest_on == effective_move + timedelta(
+        days=crop_template.days_to_harvest
+    )
+
+    transplant_task = (
+        db_session.query(Task)
+        .filter(
+            Task.planting_id == planting.id,
+            Task.title.like("%Transplant seedlings to bed%"),
+        )
+        .first()
+    )
+    assert transplant_task is not None
+    assert transplant_task.due_on == effective_move
+
+
+def test_update_planting_dates_clear_moved_on_falls_back_to_default_offset(
+    db_session, user, garden, bed, crop_template
+):
+    started_on = date.today()
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=9,
+            grid_y=9,
+            planted_on=started_on,
+            method="transplant",
+            location="indoor",
+            moved_on=started_on + timedelta(days=80),
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    updated = update_planting_dates(
+        PlantingDatesUpdate(clear_moved_on=True),
+        db=db_session,
+        planting=planting,
+    )
+
+    weeks = max(1, crop_template.weeks_to_transplant or 6)
+    expected_default_entry = started_on + timedelta(days=weeks * 7)
+    assert updated.moved_on is None
+    assert updated.expected_harvest_on == expected_default_entry + timedelta(
+        days=crop_template.days_to_harvest
+    )
+
+
+def test_update_planting_dates_in_bed_planting_uses_planted_on_as_anchor(
+    db_session, user, garden, bed, crop_template
+):
+    planted_on = date.today() + timedelta(days=30)
+    planting = create_planting(
+        _planting_payload(
+            garden_id=garden.id,
+            bed_id=bed.id,
+            crop_name=crop_template.name,
+            grid_x=8,
+            grid_y=8,
+            planted_on=date.today(),
+            method="direct_seed",
+            location="in_bed",
+        ),
+        db=db_session,
+        current_user=user,
+    )
+
+    updated = update_planting_dates(
+        PlantingDatesUpdate(planted_on=planted_on),
+        db=db_session,
+        planting=planting,
+    )
+
+    assert updated.planted_on == planted_on
+    # in_bed plantings ignore moved_on — harvest is anchored on planted_on.
+    assert updated.expected_harvest_on == planted_on + timedelta(days=crop_template.days_to_harvest)
+
+
 def test_create_planting_direct_sow_without_template_uses_defaults(db_session, user, garden, bed):
     garden.growing_zone = "Unknown"
     db_session.add(garden)
     db_session.commit()
 
     planting = create_planting(
-        PlantingCreate(
+        _planting_payload(
             garden_id=garden.id,
             bed_id=bed.id,
             crop_name="Radish",
-            planted_on=date.today(),
-            source="manual",
+            grid_x=4,
+            grid_y=4,
         ),
         db=db_session,
         current_user=user,
@@ -405,36 +883,6 @@ def test_create_planting_direct_sow_without_template_uses_defaults(db_session, u
     assert any("Direct sow seeds" in task.title for task in tasks)
     assert all("Harden off seedlings" not in task.title for task in tasks)
     assert any(task.notes.startswith("Expected ~day 60.") for task in tasks)
-
-
-def test_create_planting_rejects_missing_garden_or_bed(db_session, user, garden):
-    with pytest.raises(HTTPException) as missing_garden:
-        create_planting(
-            PlantingCreate(
-                garden_id=999,
-                bed_id=1,
-                crop_name="Tomato",
-                planted_on=date.today(),
-                source="manual",
-            ),
-            db=db_session,
-            current_user=user,
-        )
-    with pytest.raises(HTTPException) as missing_bed:
-        create_planting(
-            PlantingCreate(
-                garden_id=garden.id,
-                bed_id=999,
-                crop_name="Tomato",
-                planted_on=date.today(),
-                source="manual",
-            ),
-            db=db_session,
-            current_user=user,
-        )
-
-    assert missing_garden.value.status_code == 404
-    assert missing_bed.value.status_code == 404
 
 
 def test_list_plantings_returns_items_and_rejects_missing_garden(

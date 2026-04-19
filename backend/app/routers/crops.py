@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..core.auth import get_current_user
 from ..database import SessionLocal, get_db
 from ..core.logging_utils import get_logger
-from ..models import CropTemplate, Placement, Planting, Task
+from ..models import CropTemplate, Planting, Task
 from ..schemas import CropTemplateCreate, CropTemplateSyncStatusOut, CropTemplateOut, MessageOut
 from ..services.seed import cleanup_legacy_starter_templates, seed_crop_templates
 from ..services import (
@@ -272,9 +272,6 @@ def update_crop_template(
     crop.notes = payload.notes.strip()
 
     if old_name != stored_name:
-        db.query(Placement).filter(Placement.crop_name == old_name).update(
-            {Placement.crop_name: stored_name}, synchronize_session=False
-        )
         db.query(Planting).filter(Planting.crop_name == old_name).update(
             {Planting.crop_name: stored_name}, synchronize_session=False
         )

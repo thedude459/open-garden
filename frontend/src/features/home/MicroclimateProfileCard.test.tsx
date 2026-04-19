@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MicroclimateProfileCard } from "./MicroclimateProfileCard";
-import type { Garden, GardenClimate } from "../types";
+import type { Garden, GardenClimate, GardenExtensionResources } from "../types";
 import type { MicroclimateFormState, MicroclimateSuggestion } from "../app/types";
 
 const sampleGarden: Garden = {
@@ -55,6 +55,17 @@ const sampleClimate: GardenClimate = {
   forecast: [],
 };
 
+const sampleExtension: GardenExtensionResources = {
+  zip_code: "90210",
+  state_code: "CA",
+  organization: "Test Extension",
+  home_url: "https://example.org/ext",
+  vegetable_gardening_url: "https://example.org/garden",
+  ipm_url: "https://example.org/ipm",
+  disclaimer: "Test disclaimer.",
+  source: "test",
+};
+
 const sampleSuggestion: MicroclimateSuggestion = {
   sun_exposure: { value: "full_sun", note: "Open sky detected" },
   wind_exposure: { value: null, note: "Check for windbreaks" },
@@ -68,7 +79,10 @@ function defaultProps(overrides: Partial<Parameters<typeof MicroclimateProfileCa
   return {
     selectedGardenRecord: sampleGarden,
     gardenClimate: null,
+    gardenExtensionResources: sampleExtension,
+    loadExtensionResourcesForGarden: vi.fn(async () => undefined),
     isLoadingClimate: false,
+    isLoadingExtensionResources: false,
     microclimateDraft: sampleDraft,
     setMicroclimateDraft: vi.fn(),
     microclimateSuggestion: null,
@@ -97,6 +111,20 @@ describe("MicroclimateProfileCard", () => {
     expect(screen.getByText("Feb 10")).toBeInTheDocument();
     expect(screen.getByText("Dec 5")).toBeInTheDocument();
     expect(screen.getByText("68F")).toBeInTheDocument();
+  });
+
+  it("flags forecast-extended frost dates so users know why the date moved", () => {
+    render(
+      <MicroclimateProfileCard
+        {...defaultProps({
+          gardenClimate: {
+            ...sampleClimate,
+            last_spring_frost_extended_by_forecast: true,
+          },
+        })}
+      />,
+    );
+    expect(screen.getByText(/forecast-extended/i)).toBeInTheDocument();
   });
 
   it("does not show frost date section when gardenClimate is null", () => {

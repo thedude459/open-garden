@@ -1,0 +1,94 @@
+---
+description: GitHub Actions security best practices — secrets, OIDC, token permissions, SCA/SAST, secret scanning, and image signing. Use when editing .github/workflows/*.yml to ensure workflows follow least-privilege and supply-chain security practices.
+globs: .github/workflows/*.yml, .github/workflows/*.yaml
+alwaysApply: false
+---
+
+# GitHub Actions: Security
+
+## Secret management
+
+- Store all sensitive values in GitHub Secrets (repo, org, or environment). Never hardcode, never echo.
+- Access via `${{ secrets.MY_SECRET }}`; use environment-level secrets for deployment envs with approval rules.
+- GitHub masks secrets in logs, but still avoid printing them directly or constructing them dynamically in shell.
+- Minimize scope: only grant access to the jobs/environments that need a given secret.
+
+### Example — environment secret with approval
+
+```yaml
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://prod.example.com
+    steps:
+      - name: Deploy to production
+        env:
+          PROD_API_KEY: ${{ secrets.PROD_API_KEY }}
+        run: ./deploy-script.sh
+```
+
+## OIDC for cloud authentication
+
+- Use OpenID Connect (OIDC) to exchange a short-lived JWT for temporary cloud credentials — no long-lived access keys stored as secrets.
+- Configure trust policies in AWS (IAM roles), Azure (AD app registrations), or GCP (service accounts) to trust GitHub's OIDC issuer.
+- Use the provider's official action (e.g. `aws-actions/configure-aws-credentials@<SHA> # v4.x.x`), pinned to a full commit SHA.
+- Strongly prefer OIDC over storing cloud credentials for any new workflow.
+
+## Least privilege for `GITHUB_TOKEN`
+
+- Set `permissions:` explicitly. Default to `contents: read`; add write permissions only where strictly required.
+- Override at the job level when a single job needs elevated privileges.
+
+### Example
+
+```yaml
+permissions:
+  contents: read        # default, explicit
+  pull-requests: write  # only if workflow updates PRs
+  checks: write         # only if workflow publishes check runs
+
+jobs:
+  lint:
+    permissions:
+      contents: read    # job override: this one only reads
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - run: npm run lint
+```
+
+## Dependency review and SCA
+
+- Integrate SCA tooling early in CI: `dependency-review-action` (GitHub), Snyk, Trivy, or Mend.
+- Set up alerts for new vulnerabilities in transitive dependencies.
+- Keep dependency manifests (`package-lock.json`, `requirements.txt`, etc.) committed and up to date.
+
+## SAST
+
+- Integrate static analysis: CodeQL (GitHub Advanced Security), SonarQube, Bandit (Python), ESLint security plugins (JS/TS).
+- Configure SAST to fail builds or block PRs on critical findings.
+- Run SAST as part of the PR pipeline so developers see issues pre-merge.
+
+## Secret scanning and leak prevention
+
+- Enable GitHub's built-in secret scanning for the repository.
+- Recommend pre-commit hooks (e.g. `git-secrets`) for local prevention.
+- Pass secrets only at runtime — never bake them into build artifacts or Docker images.
+
+## Image signing and immutable infrastructure
+
+- Ensure reproducible builds (pinned base images, pinned dependency versions).
+- Sign container images with Cosign or Notary; verify signatures during deploy.
+- Enforce deployment gates that only allow signed, attested images to reach production.
+
+## Security review checklist
+
+- [ ] All secrets accessed via `${{ secrets.* }}`; none hardcoded.
+- [ ] OIDC used for cloud authentication where supported.
+- [ ] `permissions:` explicitly defined and minimal.
+- [ ] Dependency review / SCA integrated in CI.
+- [ ] SAST integrated and blocking on critical findings.
+- [ ] Secret scanning enabled; pre-commit hooks recommended.
+- [ ] Container images signed and verified at deploy time (if applicable).
+- [ ] Self-hosted runners (if any) are hardened and network-restricted.

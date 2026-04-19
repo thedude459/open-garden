@@ -15,7 +15,6 @@ export interface TaskActions {
   setTaskQuery: (value: string) => void;
   isLoadingTasks: boolean;
   createTask: (e: FormEvent<HTMLFormElement>) => void;
-  createPlanting: (e: FormEvent<HTMLFormElement>) => void;
   toggleTaskDone: (taskId: number, done: boolean) => void;
   deleteTask: (taskId: number) => void;
   editTask: (taskId: number, update: { title?: string; due_on?: string; notes?: string }) => void;

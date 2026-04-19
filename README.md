@@ -166,7 +166,7 @@ For NAS deployment, schedule `backup.sh` via cron and also snapshot Docker volum
 ## Environment variables
 
 | Variable | Required | Default | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `SECRET_KEY` | **Yes** | — | JWT signing secret. Generate with `python -c "import secrets; print(secrets.token_hex(32))"`. |
 | `DATABASE_URL` | No | local Docker Postgres | Full SQLAlchemy URL. Leave empty to use bundled Postgres. |
 | `ENV` | No | `development` | Set to `production` to raise an error on insecure defaults. |

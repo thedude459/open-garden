@@ -50,6 +50,14 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerPlacementTools
     placementBedId: null,
     onPlacementBedIdChange: vi.fn(),
     onGoToCrops: vi.fn(),
+    plantingMethod: "direct_seed" as const,
+    setPlantingMethod: vi.fn(),
+    plantingLocation: "in_bed" as const,
+    setPlantingLocation: vi.fn(),
+    plantingDate: "2026-04-01",
+    setPlantingDate: vi.fn(),
+    plantingMovedOn: null as string | null,
+    setPlantingMovedOn: vi.fn(),
     ...overrides,
   };
 }

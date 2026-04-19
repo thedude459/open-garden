@@ -22,6 +22,10 @@ interface UsePlannerActionsParams {
   cropMap: Map<string, CropTemplate>;
   selectedCropName: string;
   selectedDate: string;
+  plantingDate?: string;
+  plantingMovedOn?: string | null;
+  plantingMethod?: "direct_seed" | "transplant";
+  plantingLocation?: "indoor" | "in_bed";
   pushPlannerHistory: (entry: PlannerHistoryEntry) => void;
   setConfirmState: React.Dispatch<React.SetStateAction<ConfirmState | null>>;
   loadGardens: () => Promise<void>;
@@ -29,6 +33,7 @@ interface UsePlannerActionsParams {
   setSelectedGarden: (id: number | null) => void;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   setPlantings: React.Dispatch<React.SetStateAction<Planting[]>>;
+  refreshTasks: () => Promise<void>;
 }
 
 export function usePlannerActions({
@@ -45,6 +50,10 @@ export function usePlannerActions({
   cropMap,
   selectedCropName,
   selectedDate,
+  plantingDate,
+  plantingMovedOn,
+  plantingMethod = "direct_seed",
+  plantingLocation = "in_bed",
   pushPlannerHistory,
   setConfirmState,
   loadGardens,
@@ -52,6 +61,7 @@ export function usePlannerActions({
   setSelectedGarden,
   setTasks,
   setPlantings,
+  refreshTasks,
 }: UsePlannerActionsParams) {
   const {
     isCellInBuffer,
@@ -69,13 +79,18 @@ export function usePlannerActions({
     fetchAuthed,
     pushNotice,
     setPlacements,
+    setPlantings,
     placements,
     beds,
     selectedGarden,
     selectedCropName,
-    selectedDate,
+    selectedDate: plantingDate ?? selectedDate,
+    plantingMovedOn: plantingMovedOn ?? null,
+    plantingMethod,
+    plantingLocation,
     placementSpacingConflict,
     pushPlannerHistory,
+    refreshTasks,
   });
 
   const nudgePlacementByDelta = useCallback(
@@ -124,6 +139,8 @@ export function usePlannerActions({
     movePlacement: placementActions.movePlacement,
     movePlacementsByDelta: placementActions.movePlacementsByDelta,
     removePlacementsBulk: placementActions.removePlacementsBulk,
+    relocatePlanting: placementActions.relocatePlanting,
+    updatePlantingDates: placementActions.updatePlantingDates,
     nudgePlacementByDelta,
     moveBedInYard: bedActions.moveBedInYard,
     nudgeBedByDelta: bedActions.nudgeBedByDelta,

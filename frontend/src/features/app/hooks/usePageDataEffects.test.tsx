@@ -14,6 +14,7 @@ describe("usePageDataEffects", () => {
     const loadClimateForGarden = vi.fn(async () => undefined);
     const loadPlantingWindowsForGarden = vi.fn(async () => undefined);
     const loadSunPathForGarden = vi.fn(async () => undefined);
+    const loadExtensionResourcesForGarden = vi.fn(async () => undefined);
     const noticeUnlessExpired = vi.fn(() => vi.fn());
     const pushNotice = vi.fn();
     const resetCoach = vi.fn();
@@ -34,6 +35,7 @@ describe("usePageDataEffects", () => {
           loadClimateForGarden,
           loadPlantingWindowsForGarden,
           loadSunPathForGarden,
+          loadExtensionResourcesForGarden,
           noticeUnlessExpired,
           pushNotice,
           resetCoach,
@@ -58,6 +60,7 @@ describe("usePageDataEffects", () => {
     await waitFor(() => {
       expect(loadClimateForGarden).toHaveBeenCalledWith(garden);
       expect(loadPlantingWindowsForGarden).toHaveBeenCalledWith(garden);
+      expect(loadExtensionResourcesForGarden).toHaveBeenCalledWith(garden);
     });
     expect(loadSunPathForGarden).not.toHaveBeenCalled();
 

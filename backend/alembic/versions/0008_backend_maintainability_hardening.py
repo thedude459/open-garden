@@ -4,6 +4,7 @@ Revision ID: 0008
 Revises: 0007
 Create Date: 2026-04-04
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -40,13 +41,22 @@ def upgrade() -> None:
             """
         )
     )
-    op.execute(text("CREATE INDEX IF NOT EXISTS ix_background_job_states_job_key ON background_job_states (job_key)"))
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_background_job_states_job_key ON background_job_states (job_key)"
+        )
+    )
 
-    op.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_placements_bed_grid ON placements (bed_id, grid_x, grid_y)"))
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_placements_bed_grid ON placements (bed_id, grid_x, grid_y)"
+        )
+    )
     op.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email ON users (email)"))
     op.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_users_username ON users (username)"))
-    op.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_crop_templates_name ON crop_templates (name)"))
-
+    op.execute(
+        text("CREATE UNIQUE INDEX IF NOT EXISTS uq_crop_templates_name ON crop_templates (name)")
+    )
 
 
 def downgrade() -> None:

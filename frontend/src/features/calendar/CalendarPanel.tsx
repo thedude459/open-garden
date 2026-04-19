@@ -13,12 +13,9 @@ export function CalendarPanel() {
     selectedDate,
     setSelectedDate,
     today,
-    beds,
     taskActions,
-    cropFormState,
     derived,
     selectedCropName,
-    isLoadingPlantingWindows,
   } = useCalendarContext();
   const agendaState = useCalendarAgendaState({
     selectedDayEvents: derived.selectedDayEvents,
@@ -75,24 +72,7 @@ export function CalendarPanel() {
             taskFormErrors={agendaState.taskFormErrors}
             handleTaskFieldBlur={agendaState.handleTaskFieldBlur}
             handleTaskSubmit={agendaState.handleTaskSubmit}
-            beds={beds}
             selectedDate={selectedDate}
-            selectedCropName={selectedCropName}
-            filteredCropTemplates={cropFormState.filteredCropTemplates}
-            cropSearchQuery={cropFormState.cropSearchQuery}
-            setCropSearchQuery={cropFormState.setCropSearchQuery}
-            handleCropSearchKeyDown={cropFormState.handleCropSearchKeyDown}
-            cropSearchActiveIndex={cropFormState.cropSearchActiveIndex}
-            selectCrop={cropFormState.selectCrop}
-            setPlantingCropCleared={() =>
-              agendaState.setPlantingFormErrors((current) => ({ ...current, crop_name: "" }))
-            }
-            plantingFormErrors={agendaState.plantingFormErrors}
-            handlePlantingFieldBlur={agendaState.handlePlantingFieldBlur}
-            handlePlantingSubmit={agendaState.handlePlantingSubmit}
-            selectedCrop={derived.selectedCrop}
-            selectedCropWindow={derived.selectedCropWindow}
-            isLoadingPlantingWindows={isLoadingPlantingWindows}
           />
         </div>
       </CardContent>

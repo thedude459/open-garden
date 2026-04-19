@@ -426,7 +426,12 @@ def test_main_app_insights_timeline_and_coach_flow(monkeypatch, main_app_client)
             "garden_id": garden["id"],
             "bed_id": bed["id"],
             "crop_name": "Lettuce",
+            "grid_x": 3,
+            "grid_y": 3,
+            "color": "#57a773",
             "planted_on": str(date.today()),
+            "method": "direct_seed",
+            "location": "in_bed",
             "source": "manual",
         },
     )

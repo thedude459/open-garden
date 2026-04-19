@@ -11,12 +11,8 @@ vi.mock("./CalendarTaskForm", () => ({
   CalendarTaskForm: ({ taskQuery }: { taskQuery: string }) => <div data-testid="agenda-task">{taskQuery}</div>,
 }));
 
-vi.mock("./CalendarPlantingForm", () => ({
-  CalendarPlantingForm: ({ selectedCropName }: { selectedCropName: string }) => <div data-testid="agenda-planting">{selectedCropName}</div>,
-}));
-
 describe("CalendarAgendaPanel", () => {
-  it("composes agenda event, task, and planting widgets", () => {
+  it("composes agenda event and task widgets without a planting form", () => {
     render(
       <CalendarAgendaPanel
         selectedDateLabel="Apr 4"
@@ -39,7 +35,6 @@ describe("CalendarAgendaPanel", () => {
           setTaskQuery: vi.fn(),
           isLoadingTasks: false,
           createTask: vi.fn(),
-          createPlanting: vi.fn(),
           toggleTaskDone: vi.fn(),
           deleteTask: vi.fn(),
           editTask: vi.fn(),
@@ -54,25 +49,12 @@ describe("CalendarAgendaPanel", () => {
         taskFormErrors={{ title: "", due_on: "" }}
         handleTaskFieldBlur={vi.fn()}
         handleTaskSubmit={vi.fn()}
-        beds={[]}
         selectedDate="2026-04-04"
-        selectedCropName="Tomato"
-        filteredCropTemplates={[]}
-        cropSearchQuery="tom"
-        setCropSearchQuery={vi.fn()}
-        handleCropSearchKeyDown={vi.fn()}
-        cropSearchActiveIndex={0}
-        selectCrop={vi.fn()}
-        setPlantingCropCleared={vi.fn()}
-        plantingFormErrors={{ bed_id: "", crop_name: "", planted_on: "" }}
-        handlePlantingFieldBlur={vi.fn()}
-        handlePlantingSubmit={vi.fn()}
-        isLoadingPlantingWindows={false}
       />,
     );
 
     expect(screen.getByTestId("agenda-events")).toHaveTextContent("Apr 4");
     expect(screen.getByTestId("agenda-task")).toHaveTextContent("weed");
-    expect(screen.getByTestId("agenda-planting")).toHaveTextContent("Tomato");
+    expect(screen.queryByTestId("agenda-planting")).toBeNull();
   });
 });

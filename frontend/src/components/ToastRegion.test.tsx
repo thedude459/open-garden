@@ -34,7 +34,7 @@ describe("ToastRegion", () => {
     expect(screen.getByText("Crop saved.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
 
     expect(onAction).toHaveBeenCalledWith(7);
     expect(onDismiss).toHaveBeenCalledWith(7);

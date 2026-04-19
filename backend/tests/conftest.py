@@ -9,7 +9,6 @@ from app.models import (
     Bed,
     CropTemplate,
     Garden,
-    Placement,
     Planting,
     Sensor,
     SensorReading,
@@ -188,25 +187,6 @@ def companion_crop_template(db_session: Session) -> CropTemplate:
 
 
 @pytest.fixture()
-def placement(
-    db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate
-) -> Placement:
-    item = Placement(
-        garden_id=garden.id,
-        bed_id=bed.id,
-        crop_name=crop_template.name,
-        grid_x=3,
-        grid_y=3,
-        color="#57a773",
-        planted_on=TEST_TODAY,
-    )
-    db_session.add(item)
-    db_session.commit()
-    db_session.refresh(item)
-    return item
-
-
-@pytest.fixture()
 def planting(
     db_session: Session, garden: Garden, bed: Bed, crop_template: CropTemplate
 ) -> Planting:
@@ -215,8 +195,13 @@ def planting(
         garden_id=garden.id,
         bed_id=bed.id,
         crop_name=crop_template.name,
+        grid_x=3,
+        grid_y=3,
+        color="#57a773",
         planted_on=planted_on,
         expected_harvest_on=planted_on + timedelta(days=crop_template.days_to_harvest),
+        method="direct_seed",
+        location="in_bed",
         source="manual",
     )
     db_session.add(item)

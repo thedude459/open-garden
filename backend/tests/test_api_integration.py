@@ -146,24 +146,6 @@ def test_full_planner_workflow_via_http_endpoints(integration_client):
     bed = rename_bed_response.json()
     assert bed["name"] == "Kitchen Bed"
 
-    placement_response = client.post(
-        "/placements",
-        headers=headers,
-        json={
-            "garden_id": garden["id"],
-            "bed_id": bed["id"],
-            "crop_name": "Carrot",
-            "grid_x": 2,
-            "grid_y": 2,
-            "planted_on": str(date.today()),
-        },
-    )
-    assert placement_response.status_code == 200
-    placement = placement_response.json()
-    assert placement["garden_id"] == garden["id"]
-    assert placement["bed_id"] == bed["id"]
-    assert placement["crop_name"] == "Carrot"
-
     planting_response = client.post(
         "/plantings",
         headers=headers,
@@ -171,7 +153,12 @@ def test_full_planner_workflow_via_http_endpoints(integration_client):
             "garden_id": garden["id"],
             "bed_id": bed["id"],
             "crop_name": "Carrot",
+            "grid_x": 2,
+            "grid_y": 2,
+            "color": "#57a773",
             "planted_on": str(date.today()),
+            "method": "direct_seed",
+            "location": "in_bed",
             "source": "manual",
         },
     )
@@ -180,6 +167,10 @@ def test_full_planner_workflow_via_http_endpoints(integration_client):
     assert planting["garden_id"] == garden["id"]
     assert planting["bed_id"] == bed["id"]
     assert planting["crop_name"] == "Carrot"
+    assert planting["grid_x"] == 2
+    assert planting["grid_y"] == 2
+    assert planting["method"] == "direct_seed"
+    assert planting["location"] == "in_bed"
     assert planting["source"] == "manual"
 
     task_list_response = client.get(

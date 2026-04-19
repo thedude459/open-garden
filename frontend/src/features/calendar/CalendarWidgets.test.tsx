@@ -2,35 +2,13 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CalendarAgendaEventsList } from "./CalendarAgendaEventsList";
-import { CalendarPlantingForm } from "./CalendarPlantingForm";
 import { CalendarTaskForm } from "./CalendarTaskForm";
-import { Bed, CalendarEvent, CropTemplate } from "../types";
+import { CalendarEvent } from "../types";
 import { TaskActions } from "./CalendarContext";
 
 afterEach(() => {
   cleanup();
 });
-
-const bed: Bed = { id: 1, garden_id: 1, name: "Bed A", width_in: 48, height_in: 96, grid_x: 0, grid_y: 0 };
-const crop: CropTemplate = {
-  id: 1,
-  name: "Tomato",
-  variety: "Roma",
-  source: "manual",
-  source_url: "",
-  image_url: "",
-  external_product_id: "",
-  family: "Solanaceae",
-  spacing_in: 18,
-  row_spacing_in: 60,
-  in_row_spacing_in: 24,
-  days_to_harvest: 70,
-  planting_window: "Spring",
-  direct_sow: false,
-  frost_hardy: false,
-  weeks_to_transplant: 6,
-  notes: "Stake early",
-};
 
 const taskActions: TaskActions = {
   tasks: [],
@@ -38,7 +16,6 @@ const taskActions: TaskActions = {
   setTaskQuery: vi.fn(),
   isLoadingTasks: false,
   createTask: vi.fn(),
-  createPlanting: vi.fn(),
   toggleTaskDone: vi.fn(),
   deleteTask: vi.fn(),
   editTask: vi.fn(),
@@ -73,78 +50,6 @@ describe("CalendarTaskForm", () => {
     expect(handleTaskFieldBlur).toHaveBeenCalledWith("title", "Mulch");
     expect(handleTaskFieldBlur).toHaveBeenCalledWith("due_on", "2026-04-05");
     expect(handleTaskSubmit).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("CalendarPlantingForm", () => {
-  it("supports crop selection, field blur, and planting submission", () => {
-    const setCropSearchQuery = vi.fn();
-    const handleCropSearchKeyDown = vi.fn();
-    const selectCrop = vi.fn();
-    const setPlantingCropCleared = vi.fn();
-    const handlePlantingFieldBlur = vi.fn();
-    const handlePlantingSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => event.preventDefault());
-
-    render(
-      <CalendarPlantingForm
-        beds={[bed]}
-        selectedDate="2026-04-04"
-        selectedCropName="Tomato"
-        filteredCropTemplates={[crop]}
-        cropSearchQuery="tom"
-        setCropSearchQuery={setCropSearchQuery}
-        handleCropSearchKeyDown={handleCropSearchKeyDown}
-        cropSearchActiveIndex={0}
-        selectCrop={selectCrop}
-        setPlantingCropCleared={setPlantingCropCleared}
-        plantingFormErrors={{ bed_id: "", crop_name: "", planted_on: "" }}
-        handlePlantingFieldBlur={handlePlantingFieldBlur}
-        handlePlantingSubmit={handlePlantingSubmit}
-        selectedCrop={crop}
-        selectedCropWindow={{ window_start: "2026-04-05", window_end: "2026-04-20", status: "open", reason: "Warm enough", indoor_seed_start: "2026-03-01", indoor_seed_end: "2026-03-15" }}
-        isLoadingPlantingWindows={false}
-      />,
-    );
-
-    fireEvent.change(screen.getByLabelText("Search Vegetable"), { target: { value: "roma" } });
-    fireEvent.keyDown(screen.getByLabelText("Search Vegetable"), { key: "ArrowDown" });
-    fireEvent.click(screen.getByRole("option", { name: /Tomato/i }));
-    fireEvent.blur(screen.getByLabelText("Search Vegetable"));
-    fireEvent.blur(screen.getByLabelText("Planting Date"), { target: { value: "2026-04-06" } });
-    fireEvent.submit(screen.getByRole("button", { name: "Add planting" }).closest("form") as HTMLFormElement);
-
-    expect(screen.getByText(/Dynamic window/i)).toBeInTheDocument();
-    expect(setCropSearchQuery).toHaveBeenCalledWith("roma");
-    expect(handleCropSearchKeyDown).toHaveBeenCalledTimes(1);
-    expect(selectCrop).toHaveBeenCalledWith(crop);
-    expect(setPlantingCropCleared).toHaveBeenCalledTimes(1);
-    expect(handlePlantingFieldBlur).toHaveBeenCalledWith("crop_name", "Tomato");
-    expect(handlePlantingFieldBlur).toHaveBeenCalledWith("planted_on", "2026-04-06");
-    expect(handlePlantingSubmit).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows empty crop-search results and disables submission without a selected crop", () => {
-    render(
-      <CalendarPlantingForm
-        beds={[bed]}
-        selectedDate="2026-04-04"
-        selectedCropName=""
-        filteredCropTemplates={[]}
-        cropSearchQuery="xyz"
-        setCropSearchQuery={vi.fn()}
-        handleCropSearchKeyDown={vi.fn()}
-        cropSearchActiveIndex={0}
-        selectCrop={vi.fn()}
-        setPlantingCropCleared={vi.fn()}
-        plantingFormErrors={{ bed_id: "Pick a bed", crop_name: "Pick a crop", planted_on: "Pick a date" }}
-        handlePlantingFieldBlur={vi.fn()}
-        handlePlantingSubmit={vi.fn()}
-        isLoadingPlantingWindows={true}
-      />,
-    );
-
-    expect(screen.getByText(/No vegetables match that search/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add planting" })).toBeDisabled();
   });
 });
 

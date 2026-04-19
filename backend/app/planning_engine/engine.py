@@ -237,9 +237,11 @@ def _succession_recommendations(
 
 
 def _recommended_next_plantings(
-    climate_windows: dict, crop_templates_by_name: dict[str, object], active_plantings: list
+    climate_windows: dict,
+    crop_templates_by_name: dict[str, object],
+    active_crop_base_names: set[str],
 ) -> list[dict]:
-    active_crop_names = {_base_crop_name(planting.crop_name) for planting in active_plantings}
+    """Skip crops the grower is already cultivating (in bed *or* indoor starts)."""
     today = date.today()
 
     candidates = []
@@ -248,7 +250,7 @@ def _recommended_next_plantings(
             continue
 
         base_name = _base_crop_name(window["crop_name"])
-        if base_name in active_crop_names:
+        if base_name in active_crop_base_names:
             continue
 
         crop = crop_templates_by_name.get(window["crop_name"])
@@ -335,8 +337,10 @@ def build_seasonal_plan(garden, weather: dict, crop_templates: list, plantings: 
     today = date.today()
     crop_templates_by_name, _ = _template_lookup_by_name(crop_templates)
 
+    in_bed_plantings = [p for p in plantings if getattr(p, "location", "in_bed") == "in_bed"]
+
     growth_stages = []
-    for planting in plantings:
+    for planting in in_bed_plantings:
         template = crop_templates_by_name.get(planting.crop_name)
         days_to_harvest = template.days_to_harvest if template else 60
         days_since = (today - planting.planted_on).days
@@ -355,16 +359,19 @@ def build_seasonal_plan(garden, weather: dict, crop_templates: list, plantings: 
             }
         )
 
-    active_plantings = [item for item in plantings if item.harvested_on is None]
+    active_plantings = [item for item in in_bed_plantings if item.harvested_on is None]
+    active_crop_base_names = {
+        _base_crop_name(p.crop_name) for p in plantings if getattr(p, "harvested_on", None) is None
+    }
     climate_windows = build_dynamic_planting_windows(garden, weather, crop_templates)
 
-    rotation = _rotation_recommendations(plantings, crop_templates_by_name)
+    rotation = _rotation_recommendations(in_bed_plantings, crop_templates_by_name)
     companion = _companion_insights(active_plantings, crop_templates_by_name)
     succession = _succession_recommendations(
-        plantings, climate_windows, crop_templates_by_name, active_plantings
+        in_bed_plantings, climate_windows, crop_templates_by_name, active_plantings
     )
     recommended_next = _recommended_next_plantings(
-        climate_windows, crop_templates_by_name, active_plantings
+        climate_windows, crop_templates_by_name, active_crop_base_names
     )
 
     stage_counts = Counter(stage["stage"] for stage in growth_stages)
@@ -403,7 +410,11 @@ def build_planting_recommendations(
     climate_windows = build_dynamic_planting_windows(garden, weather, crop_templates)
 
     active_plantings = [
-        item for item in plantings if item.harvested_on is None and item.id != planting.id
+        item
+        for item in plantings
+        if item.harvested_on is None
+        and item.id != planting.id
+        and getattr(item, "location", "in_bed") == "in_bed"
     ]
     active_base_names = {_base_crop_name(item.crop_name) for item in active_plantings}
 

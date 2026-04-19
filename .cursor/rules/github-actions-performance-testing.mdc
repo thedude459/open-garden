@@ -1,0 +1,124 @@
+---
+description: GitHub Actions performance, caching, matrix parallelization, artifacts, and comprehensive testing (unit, integration, E2E, performance, reporting). Use when editing .github/workflows/*.yml to speed up pipelines and ensure thorough test coverage.
+globs: .github/workflows/*.yml, .github/workflows/*.yaml
+alwaysApply: false
+---
+
+# GitHub Actions: Performance and Testing
+
+## Caching
+
+- Use `actions/cache` (pinned to a full commit SHA) for dependencies and build outputs.
+- Design cache keys with `hashFiles()` so the cache invalidates only when relevant files change.
+- Use `restore-keys` for graceful fallback to older compatible caches.
+
+### Example — monorepo Node cache
+
+```yaml
+- name: Cache Node.js modules
+  uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+  with:
+    path: |
+      ~/.npm
+      ./node_modules
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
+    restore-keys: |
+      ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-
+      ${{ runner.os }}-node-
+```
+
+## Matrix strategies
+
+- Use `strategy.matrix` to run jobs in parallel across versions, OSes, or browsers.
+- Use `include`/`exclude` to fine-tune combinations.
+- Use `fail-fast: true` (default) for quick failure feedback, or `fail-fast: false` when you want comprehensive test results.
+
+### Example — multi-version, multi-OS test matrix
+
+```yaml
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [16.x, 18.x, 20.x]
+        browser: [chromium, firefox]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - run: npx playwright install ${{ matrix.browser }}
+      - run: npm test
+```
+
+## Checkout optimization
+
+- Default to `fetch-depth: 1` for `actions/checkout` — most jobs don't need full history.
+- Only use `fetch-depth: 0` when explicitly required (release tagging, `git blame`, deep commit analysis).
+- Skip submodules (`submodules: false`) and LFS when not required.
+
+## Artifacts
+
+- Use `actions/upload-artifact` and `actions/download-artifact` (pinned SHAs) to pass large payloads between jobs.
+- Set `retention-days` deliberately to control storage costs.
+- Upload test reports (JUnit XML, HTML, coverage) and deployment artifacts for inspection and historical trend analysis.
+
+## Self-hosted runners
+
+- Use only when GitHub-hosted runners don't meet needs (GPU, on-prem access, very high volume).
+- Harden runner machines, manage access, patch promptly, and restrict network egress.
+- Use runner groups to organize and assign runners by purpose or environment.
+
+---
+
+## Testing strategy
+
+### Unit tests
+
+- Run on every push and PR. They should be fast and numerous.
+- Parallelize aggressively (via matrix or test runner sharding).
+- Publish JUnit XML / coverage reports as artifacts and surface them via GitHub Checks.
+- Track code coverage and enforce a minimum threshold — focus on meaningful tests, not just line count.
+
+### Integration tests
+
+- Use `services:` blocks to spin up databases, queues, or caches as ephemeral containers.
+- Run after unit tests, before E2E.
+- Plan for test data setup/teardown to keep runs repeatable.
+
+### End-to-end tests
+
+- Use Playwright, Cypress, or Selenium for realistic browser flows.
+- Prefer running against a staging environment that mirrors production when feasible.
+- Mitigate flakiness: explicit waits, stable selectors (`data-testid`), and retries for transient failures.
+- Capture screenshots and video on failure for faster debugging.
+
+### Performance and load tests
+
+- Tools: k6, JMeter, Locust, Gatling, Artillery.
+- Run less frequently than unit/integration tests (nightly, weekly, or on release branches).
+- Define thresholds (latency, throughput, error rate) and fail the build when they regress.
+
+### Reporting and visibility
+
+- Surface test results as GitHub Checks/annotations for inline PR feedback.
+- Upload comprehensive reports (JUnit XML, HTML, coverage, screenshots, videos) as artifacts.
+- Consider external dashboards (SonarQube, Allure, TestRail) for historical trends.
+- Add workflow status badges to README for at-a-glance CI health.
+
+## Performance/testing review checklist
+
+- [ ] `actions/cache` used for package manager deps and large build outputs.
+- [ ] Cache keys use `hashFiles()` and have `restore-keys` fallbacks.
+- [ ] Parallelism via `strategy.matrix` where it makes sense.
+- [ ] `fetch-depth: 1` on `actions/checkout` unless full history is required.
+- [ ] Artifacts used for inter-job data transfer with appropriate `retention-days`.
+- [ ] Unit tests run early on every push/PR.
+- [ ] Integration tests run with `services:` for real dependencies.
+- [ ] E2E tests run against staging with retries and failure artifacts captured.
+- [ ] Performance tests run on a schedule with defined thresholds.
+- [ ] Test reports uploaded and surfaced via GitHub Checks.
+- [ ] Coverage tracked and enforced at a minimum threshold.

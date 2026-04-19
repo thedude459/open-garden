@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Leaf } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -43,10 +43,15 @@ export function AppNavbar({
     <nav className="app-nav" aria-label="Primary navigation">
       <div className="app-nav-top">
         <div className="app-nav-brand">
-          <h1 className="app-nav-title">open-garden</h1>
-          {selectedGardenRecord && (
-            <p className="app-nav-subtitle">{selectedGardenRecord.name} · Zone {selectedGardenRecord.growing_zone}</p>
-          )}
+          <span className="app-nav-brand__mark" aria-hidden>
+            <Leaf strokeWidth={2.25} />
+          </span>
+          <div className="app-nav-brand__text">
+            <h1 className="app-nav-title">open-garden</h1>
+            {selectedGardenRecord && (
+              <p className="app-nav-subtitle">{selectedGardenRecord.name} · Zone {selectedGardenRecord.growing_zone}</p>
+            )}
+          </div>
         </div>
         <button
           type="button"
@@ -63,6 +68,7 @@ export function AppNavbar({
           <Button
             variant={activePage === "home" ? "default" : "secondary"}
             size="sm"
+            aria-current={activePage === "home" ? "page" : undefined}
             onClick={() => navigateAndCloseNav("home")}
           >
             My Gardens
@@ -72,6 +78,7 @@ export function AppNavbar({
               <Button
                 variant={activePage === "calendar" ? "default" : "secondary"}
                 size="sm"
+                aria-current={activePage === "calendar" ? "page" : undefined}
                 onClick={() => navigateAndCloseNav("calendar")}
               >
                 Calendar
@@ -79,6 +86,7 @@ export function AppNavbar({
               <Button
                 variant={activePage === "seasonal" ? "default" : "secondary"}
                 size="sm"
+                aria-current={activePage === "seasonal" ? "page" : undefined}
                 onClick={() => navigateAndCloseNav("seasonal")}
               >
                 Seasonal Plan
@@ -86,6 +94,7 @@ export function AppNavbar({
               <Button
                 variant={activePage === "planner" ? "default" : "secondary"}
                 size="sm"
+                aria-current={activePage === "planner" ? "page" : undefined}
                 onClick={() => navigateAndCloseNav("planner")}
               >
                 Bed Planner
@@ -123,9 +132,10 @@ export function AppNavbar({
           <Button
             variant={activePage === "crops" ? "default" : "secondary"}
             size="sm"
+            aria-current={activePage === "crops" ? "page" : undefined}
             onClick={() => navigateAndCloseNav("crops")}
           >
-            Crop Library
+            Crops
           </Button>
         </div>
         <div className="app-nav-actions">

@@ -1,6 +1,19 @@
+import {
+  ListChecks,
+  RefreshCw,
+  Sparkles,
+  Thermometer,
+  Snowflake,
+  Sprout,
+  Repeat,
+  Users,
+  TrendingUp,
+  MapPin,
+} from "lucide-react";
 import { useSeasonalPlanContext } from "./SeasonalPlanContext";
 import { SeasonalNextPlantingsSection } from "./SeasonalNextPlantingsSection";
 import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/SectionHeader";
 
 export function SeasonalPlanPanel() {
   const {
@@ -16,13 +29,21 @@ export function SeasonalPlanPanel() {
 
   return (
     <article className="card">
-      <div className="crop-card-row">
-        <div>
-          <h2>Seasonal Plan {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
-          <p className="subhead">Succession, rotation, companion, and growth-stage intelligence for current conditions.</p>
-        </div>
-        <button type="button" className="secondary-btn" onClick={() => refreshSeasonalPlan().catch(() => undefined)}>Refresh Plan</button>
-      </div>
+      <SectionHeader
+        icon={ListChecks}
+        title={`Seasonal Plan ${selectedGardenName ? `- ${selectedGardenName}` : ""}`}
+        subtitle="Succession, rotation, companion, and growth-stage intelligence for your current conditions."
+        actions={
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => refreshSeasonalPlan().catch(() => undefined)}
+          >
+            <RefreshCw className="inline-block h-3.5 w-3.5 mr-1.5 align-[-1px]" aria-hidden />
+            Refresh Plan
+          </button>
+        }
+      />
 
       {isLoadingSeasonalPlan && <p className="hint">Building seasonal plan...</p>}
       {!isLoadingSeasonalPlan && !seasonalPlan && <p className="hint">No seasonal plan data yet.</p>}
@@ -30,23 +51,32 @@ export function SeasonalPlanPanel() {
       {seasonalPlan && (
         <div className="space-y-6 mt-4">
           <section className="card">
-            <h3>Current Signals</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-3">
-              <div className="text-center p-3 bg-muted rounded-md">
-                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.microclimate_band}</div>
-                <div className="text-xs text-muted-foreground mt-1">Microclimate</div>
+            <SectionHeader
+              variant="section"
+              headingLevel="h3"
+              icon={Sparkles}
+              title="Current Signals"
+            />
+            <div className="signal-tiles">
+              <div className="signal-tile signal-tile--microclimate">
+                <span className="signal-tile__icon" aria-hidden><MapPin /></span>
+                <div className="signal-tile__value">{seasonalPlan.microclimate_band}</div>
+                <div className="signal-tile__label">Microclimate</div>
               </div>
-              <div className="text-center p-3 bg-muted rounded-md">
-                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.soil_temperature_estimate_f}F</div>
-                <div className="text-xs text-muted-foreground mt-1">Estimated soil temperature</div>
+              <div className="signal-tile signal-tile--soil">
+                <span className="signal-tile__icon" aria-hidden><Thermometer /></span>
+                <div className="signal-tile__value">{seasonalPlan.soil_temperature_estimate_f}&deg;F</div>
+                <div className="signal-tile__label">Est. soil temperature</div>
               </div>
-              <div className="text-center p-3 bg-muted rounded-md">
-                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.frost_risk_next_10_days}</div>
-                <div className="text-xs text-muted-foreground mt-1">10-day frost risk</div>
+              <div className="signal-tile signal-tile--frost">
+                <span className="signal-tile__icon" aria-hidden><Snowflake /></span>
+                <div className="signal-tile__value">{seasonalPlan.frost_risk_next_10_days}</div>
+                <div className="signal-tile__label">10-day frost risk</div>
               </div>
-              <div className="text-center p-3 bg-muted rounded-md">
-                <div className="text-xl font-bold font-serif text-[var(--accent)]">{seasonalPlan.growth_stages.length}</div>
-                <div className="text-xs text-muted-foreground mt-1">Total plantings</div>
+              <div className="signal-tile signal-tile--plantings">
+                <span className="signal-tile__icon" aria-hidden><Sprout /></span>
+                <div className="signal-tile__value">{seasonalPlan.growth_stages.length}</div>
+                <div className="signal-tile__label">Total plantings</div>
               </div>
             </div>
           </section>
@@ -56,7 +86,13 @@ export function SeasonalPlanPanel() {
           />
 
           <section className="card">
-            <h3>Growth Stage Tracking</h3>
+            <SectionHeader
+              variant="section"
+              headingLevel="h3"
+              icon={TrendingUp}
+              title="Growth Stage Tracking"
+              subtitle="Track each planting's progress and pull up tailored recommendations."
+            />
             <ul>
               {seasonalPlan.growth_stages.length === 0 && <li className="hint">No plantings found for this garden yet.</li>}
               {seasonalPlan.growth_stages.map((stage) => (
@@ -75,7 +111,13 @@ export function SeasonalPlanPanel() {
           </section>
 
           <section className="card">
-            <h3>Crop Rotation Guidance</h3>
+            <SectionHeader
+              variant="section"
+              headingLevel="h3"
+              icon={Repeat}
+              title="Crop Rotation Guidance"
+              subtitle="What to plant next in each bed to avoid repeating a family."
+            />
             <ul>
               {seasonalPlan.rotation_recommendations.length === 0 && <li className="hint">No rotation guidance yet. Add plantings to start rotation planning.</li>}
               {seasonalPlan.rotation_recommendations.map((item) => (
@@ -88,7 +130,13 @@ export function SeasonalPlanPanel() {
           </section>
 
           <section className="card">
-            <h3>Companion Insights</h3>
+            <SectionHeader
+              variant="section"
+              headingLevel="h3"
+              icon={Users}
+              title="Companion Insights"
+              subtitle="Which crops pair well (or poorly) in each of your beds right now."
+            />
             <ul>
               {seasonalPlan.companion_insights.length === 0 && <li className="hint">No companion pairings detected yet.</li>}
               {seasonalPlan.companion_insights.map((item, index) => (
@@ -102,7 +150,12 @@ export function SeasonalPlanPanel() {
           </section>
 
           <section className="card">
-            <h3>Selected Planting Recommendations</h3>
+            <SectionHeader
+              variant="section"
+              headingLevel="h3"
+              icon={Sparkles}
+              title="Selected Planting Recommendations"
+            />
             {!selectedRecommendationPlantingId && <p className="hint">Select a planting from Growth Stage Tracking to view targeted recommendations.</p>}
             {isLoadingPlantingRecommendation && <p className="hint">Loading planting recommendations...</p>}
             {plantingRecommendation && (

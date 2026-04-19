@@ -24,9 +24,9 @@ vi.mock("../../../components/ToastRegion", () => ({
 }));
 
 vi.mock("./EmailVerificationNotice", () => ({
-  EmailVerificationNotice: ({ compact, onDismiss }: { compact?: boolean; onDismiss?: () => void }) => (
-    <div data-testid="email-verification-notice" data-compact={compact ? "yes" : "no"}>
-      {onDismiss ? <button type="button" onClick={onDismiss}>Dismiss compact notice</button> : null}
+  EmailVerificationNotice: ({ onDismiss }: { onDismiss?: () => void }) => (
+    <div data-testid="email-verification-notice">
+      {onDismiss ? <button type="button" onClick={onDismiss}>Dismiss verification notice</button> : null}
     </div>
   ),
 }));
@@ -122,6 +122,8 @@ function makeProps(): AppPageRouterProps {
       gardenTimeline: null,
       loadTimelineForGarden: vi.fn(async () => undefined),
       loadSensorSummaryForGarden: vi.fn(async () => undefined),
+      gardenExtensionResources: null,
+      loadExtensionResourcesForGarden: vi.fn(async () => undefined),
     },
     cropLibrary: {
       cropTemplateSyncStatus: null,
@@ -140,6 +142,7 @@ function makeProps(): AppPageRouterProps {
       isLoadingSensorSummary: false,
       isLoadingTimeline: false,
       isLoadingPlantingRecommendation: false,
+      isLoadingExtensionResources: false,
     },
     plannerUi: {
       placementBedId: null,
@@ -148,6 +151,16 @@ function makeProps(): AppPageRouterProps {
       plannerRedoCount: 0,
       undoPlannerChange: vi.fn(async () => undefined),
       redoPlannerChange: vi.fn(async () => undefined),
+      plantingSettings: {
+        plantingMethod: "direct_seed",
+        setPlantingMethod: vi.fn(),
+        plantingLocation: "in_bed",
+        setPlantingLocation: vi.fn(),
+        plantingDate: "2026-04-01",
+        setPlantingDate: vi.fn(),
+        plantingMovedOn: null,
+        setPlantingMovedOn: vi.fn(),
+      },
     },
     actions: {
       taskActions: {} as AppPageRouterProps["actions"]["taskActions"],
@@ -205,7 +218,7 @@ describe("AppPageRouter", () => {
     expect(screen.queryByTestId("garden-required-notice")).not.toBeInTheDocument();
   });
 
-  it("shows compact verification notice on planner and lets user dismiss it", () => {
+  it("shows a dismissible verification notice when the email is unverified", () => {
     const props = makeProps();
     props.routing.activePage = "planner";
     props.garden.selectedGarden = 42;
@@ -213,10 +226,9 @@ describe("AppPageRouter", () => {
 
     render(<AppPageRouter {...props} />);
 
-    const notice = screen.getByTestId("email-verification-notice");
-    expect(notice).toHaveAttribute("data-compact", "yes");
+    expect(screen.getByTestId("email-verification-notice")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss compact notice" }));
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss verification notice" }));
     expect(screen.queryByTestId("email-verification-notice")).not.toBeInTheDocument();
   });
 });

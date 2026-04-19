@@ -31,6 +31,7 @@ describe("usePlannerCropVisuals", () => {
     expect(visual.imageUrl).toBe("https://example.com/tomato.jpg");
     expect(visual.rowSpacingIn).toBe(60);
     expect(visual.inRowSpacingIn).toBe(24);
+    expect(visual.emoji).toBe("🍅");
   });
 
   it("falls back to default photo when no image exists", () => {
@@ -40,5 +41,6 @@ describe("usePlannerCropVisuals", () => {
     expect(visual.imageUrl.startsWith("data:image/svg+xml") || visual.imageUrl.includes("default-plant-photo.svg")).toBe(true);
     expect(visual.rowSpacingIn).toBe(18);
     expect(visual.inRowSpacingIn).toBe(12);
+    expect(visual.emoji).toBe("🌱");
   });
 });

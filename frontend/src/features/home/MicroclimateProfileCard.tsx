@@ -9,12 +9,15 @@ import {
   windExposureOptions,
 } from "../app/constants";
 import { MicroclimateFormState, MicroclimateSuggestion } from "../app/types";
-import { Garden, GardenClimate } from "../types";
+import { Garden, GardenClimate, GardenExtensionResources } from "../types";
 
 type MicroclimateProfileCardProps = {
   selectedGardenRecord: Garden;
   gardenClimate: GardenClimate | null;
+  gardenExtensionResources: GardenExtensionResources | null;
+  loadExtensionResourcesForGarden: (garden: Garden) => Promise<void>;
   isLoadingClimate: boolean;
+  isLoadingExtensionResources: boolean;
   microclimateDraft: MicroclimateFormState;
   setMicroclimateDraft: (updater: (current: MicroclimateFormState) => MicroclimateFormState) => void;
   microclimateSuggestion: MicroclimateSuggestion | null;
@@ -28,7 +31,10 @@ type MicroclimateProfileCardProps = {
 export function MicroclimateProfileCard({
   selectedGardenRecord,
   gardenClimate,
+  gardenExtensionResources,
+  loadExtensionResourcesForGarden,
   isLoadingClimate,
+  isLoadingExtensionResources,
   microclimateDraft,
   setMicroclimateDraft,
   microclimateSuggestion,
@@ -45,6 +51,25 @@ export function MicroclimateProfileCard({
         {gardenClimate && <Badge variant="secondary">{gardenClimate.microclimate_band}</Badge>}
       </div>
       <p className="subhead">Fine-tune the site profile so planting windows and climate guidance stay accurate for this garden.</p>
+      <div className="extension-resources stack compact">
+        <span className="field-label">Local Extension (ZIP {selectedGardenRecord.zip_code})</span>
+        {isLoadingExtensionResources && <p className="hint">Loading regional resources…</p>}
+        {!isLoadingExtensionResources && gardenExtensionResources && (
+          <>
+            <p className="hint">
+              <strong>{gardenExtensionResources.organization}</strong>
+              {gardenExtensionResources.state_code ? ` · ${gardenExtensionResources.state_code}` : ""}
+            </p>
+            <p className="map-ref-links">
+              <a className="map-ref-link" href={gardenExtensionResources.home_url} target="_blank" rel="noopener noreferrer">Extension home ↗</a>
+              <a className="map-ref-link" href={gardenExtensionResources.vegetable_gardening_url} target="_blank" rel="noopener noreferrer">Gardening guides ↗</a>
+              <a className="map-ref-link" href={gardenExtensionResources.ipm_url} target="_blank" rel="noopener noreferrer">Pests &amp; IPM ↗</a>
+              <button type="button" className="map-ref-link" onClick={() => { void loadExtensionResourcesForGarden(selectedGardenRecord); }}>Refresh links</button>
+            </p>
+            <p className="field-hint">{gardenExtensionResources.disclaimer}</p>
+          </>
+        )}
+      </div>
       <form className="microclimate-form" onSubmit={onSubmit}>
         <div className="map-reference">
           <div className="map-reference-head">
@@ -198,11 +223,31 @@ export function MicroclimateProfileCard({
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-xl font-bold font-serif text-[var(--accent)]">{gardenClimate.adjusted_last_spring_frost}</div>
-              <div className="text-xs text-muted-foreground mt-1">Adjusted last spring frost</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Adjusted last spring frost
+                {gardenClimate.last_spring_frost_extended_by_forecast && (
+                  <span
+                    className="climate-frost-flag"
+                    title="Extended from the modelled date because freezing nights are still in the 10-day forecast."
+                  >
+                    {" "}· forecast-extended
+                  </span>
+                )}
+              </div>
             </div>
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-xl font-bold font-serif text-[var(--accent)]">{gardenClimate.adjusted_first_fall_frost}</div>
-              <div className="text-xs text-muted-foreground mt-1">Adjusted first fall frost</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                Adjusted first fall frost
+                {gardenClimate.first_fall_frost_extended_by_forecast && (
+                  <span
+                    className="climate-frost-flag"
+                    title="Pulled in earlier than the modelled date because freezing nights appeared in the 10-day forecast."
+                  >
+                    {" "}· forecast-extended
+                  </span>
+                )}
+              </div>
             </div>
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-xl font-bold font-serif text-[var(--accent)]">{gardenClimate.soil_temperature_estimate_f}F</div>

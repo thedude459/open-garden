@@ -18,6 +18,7 @@ import { GardenRequiredNotice } from "./GardenRequiredNotice";
 import { AppPageContent } from "./AppPageContent";
 import {
   Bed, CropTemplate, CropTemplateSyncStatus, Garden, GardenClimate,
+  GardenExtensionResources,
   GardenSeasonalPlan, GardenSensorsSummary, GardenSunPath, GardenTimeline,
   Placement, PlantingRecommendations,
 } from "../../types";
@@ -70,6 +71,8 @@ export interface AppPageRouterProps {
     gardenTimeline: GardenTimeline | null;
     loadTimelineForGarden: (garden: Garden, forceRefresh?: boolean) => Promise<void>;
     loadSensorSummaryForGarden: (garden: Garden) => Promise<void>;
+    gardenExtensionResources: GardenExtensionResources | null;
+    loadExtensionResourcesForGarden: (garden: Garden) => Promise<void>;
   };
   cropLibrary: {
     cropTemplateSyncStatus: CropTemplateSyncStatus | null;
@@ -88,6 +91,7 @@ export interface AppPageRouterProps {
     isLoadingSensorSummary: boolean;
     isLoadingTimeline: boolean;
     isLoadingPlantingRecommendation: boolean;
+    isLoadingExtensionResources: boolean;
   };
   plannerUi: {
     placementBedId: number | null;
@@ -96,6 +100,16 @@ export interface AppPageRouterProps {
     plannerRedoCount: number;
     undoPlannerChange: () => Promise<void>;
     redoPlannerChange: () => Promise<void>;
+    plantingSettings: {
+      plantingMethod: "direct_seed" | "transplant";
+      setPlantingMethod: (value: "direct_seed" | "transplant") => void;
+      plantingLocation: "indoor" | "in_bed";
+      setPlantingLocation: (value: "indoor" | "in_bed") => void;
+      plantingDate: string;
+      setPlantingDate: (value: string) => void;
+      plantingMovedOn: string | null;
+      setPlantingMovedOn: (value: string | null) => void;
+    };
   };
   actions: {
     taskActions: ReturnType<typeof useTaskActions>;
@@ -141,8 +155,8 @@ export function AppPageRouter(props: AppPageRouterProps) {
   const { selectedGarden, selectedGardenRecord } = garden;
   const { confirmState, setConfirmState, isConfirmingAction, runConfirmedAction } = confirm;
   const { notices: toastNotices, dismissNotice } = notices;
-  const [isPlannerVerificationNoticeDismissed, setIsPlannerVerificationNoticeDismissed] = useState(false);
-  const showEmailVerificationNotice = isEmailVerified === false && (activePage !== "planner" || !isPlannerVerificationNoticeDismissed);
+  const [isVerificationNoticeDismissed, setIsVerificationNoticeDismissed] = useState(false);
+  const showEmailVerificationNotice = isEmailVerified === false && !isVerificationNoticeDismissed;
 
   const shellWide = activePage === "planner" || activePage === "calendar";
 
@@ -164,8 +178,7 @@ export function AppPageRouter(props: AppPageRouterProps) {
         {showEmailVerificationNotice && (
           <EmailVerificationNotice
             onResend={onResendVerificationEmail}
-            compact={activePage === "planner"}
-            onDismiss={activePage === "planner" ? () => setIsPlannerVerificationNoticeDismissed(true) : undefined}
+            onDismiss={() => setIsVerificationNoticeDismissed(true)}
           />
         )}
 

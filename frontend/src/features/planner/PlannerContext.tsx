@@ -8,7 +8,7 @@ import {
   createContext,
   useContext,
 } from "react";
-import { Bed, CropTemplate, Garden, Placement } from "../types";
+import { Bed, CropTemplate, Garden, Placement, PlantingLocation, PlantingMethod } from "../types";
 import { ClimatePlantingWindow } from "../types";
 import { ConfirmState } from "../app/types";
 import { GardenSunPath } from "../types";
@@ -58,9 +58,25 @@ interface PlannerActions {
   movePlacementsByDelta: (placementIds: number[], dx: number, dy: number) => Promise<void>;
   removePlacementsBulk: (placementIds: number[]) => Promise<void>;
   removePlacement: (placementId: number) => Promise<void>;
+  relocatePlanting: (placementId: number, location: PlantingLocation) => Promise<void>;
+  updatePlantingDates: (
+    placementId: number,
+    changes: { planted_on?: string; moved_on?: string | null },
+  ) => Promise<void>;
   placementSpacingConflict: (bedId: number, x: number, y: number, cropName: string, ignorePlacementId?: number) => string | null;
   isCellBlockedForSelectedCrop: (bedId: number, x: number, y: number, occupant: Placement | undefined) => boolean;
   isCellInBuffer: (bedId: number, x: number, y: number) => boolean;
+}
+
+interface PlannerPlantingSettings {
+  plantingMethod: PlantingMethod;
+  setPlantingMethod: (value: PlantingMethod) => void;
+  plantingLocation: PlantingLocation;
+  setPlantingLocation: (value: PlantingLocation) => void;
+  plantingDate: string;
+  setPlantingDate: (value: string) => void;
+  plantingMovedOn: string | null;
+  setPlantingMovedOn: (value: string | null) => void;
 }
 
 export interface PlannerContextType {
@@ -78,6 +94,7 @@ export interface PlannerContextType {
   cropFormState: CropFormState;
   gardenActions: GardenActions;
   plannerActions: PlannerActions;
+  plantingSettings: PlannerPlantingSettings;
   
   // UI state
   placementBedId: number | null;

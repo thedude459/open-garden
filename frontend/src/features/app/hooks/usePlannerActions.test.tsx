@@ -24,7 +24,14 @@ function makePlacement(): Placement {
     grid_x: 14,
     grid_y: 0,
     planted_on: "2026-04-01",
+    expected_harvest_on: "2026-07-01",
     color: "#fff",
+    method: "direct_seed",
+    location: "in_bed",
+    moved_on: null,
+    source: "",
+    harvested_on: null,
+    yield_notes: "",
   };
 }
 
@@ -90,13 +97,14 @@ describe("usePlannerActions", () => {
       setSelectedGarden: vi.fn(),
       setTasks: vi.fn(),
       setPlantings: vi.fn(),
+      refreshTasks: vi.fn(async () => undefined),
     }));
 
     await act(async () => {
       await result.current.nudgePlacementByDelta(1, 1, 0);
     });
 
-    const moveCall = fetchAuthedMock.mock.calls.find(([path]) => path === "/placements/1/move");
+    const moveCall = fetchAuthedMock.mock.calls.find(([path]) => path === "/plantings/1/move");
     expect(moveCall).toBeTruthy();
     const body = JSON.parse(String(moveCall?.[1]?.body || "{}"));
     expect(body.grid_x).toBe(15);

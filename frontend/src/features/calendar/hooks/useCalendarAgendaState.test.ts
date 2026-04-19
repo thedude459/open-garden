@@ -13,7 +13,6 @@ function makeTaskActions(overrides: Partial<TaskActions> = {}): TaskActions {
     setTaskQuery: vi.fn(),
     isLoadingTasks: false,
     createTask: vi.fn(),
-    createPlanting: vi.fn(),
     toggleTaskDone: vi.fn(),
     deleteTask: vi.fn(),
     editTask: vi.fn(),
@@ -176,41 +175,6 @@ describe("useCalendarAgendaState – handleTaskFieldBlur", () => {
   });
 });
 
-describe("useCalendarAgendaState – handlePlantingFieldBlur", () => {
-  it("sets bed_id error for blank value", () => {
-    const { result } = renderHook(() =>
-      useCalendarAgendaState({ selectedDayEvents: [], selectedCropName: "", taskActions: makeTaskActions() }),
-    );
-    act(() => result.current.handlePlantingFieldBlur("bed_id", ""));
-    expect(result.current.plantingFormErrors.bed_id).toBe("Choose a bed for this planting.");
-  });
-
-  it("sets crop_name error for blank value", () => {
-    const { result } = renderHook(() =>
-      useCalendarAgendaState({ selectedDayEvents: [], selectedCropName: "", taskActions: makeTaskActions() }),
-    );
-    act(() => result.current.handlePlantingFieldBlur("crop_name", ""));
-    expect(result.current.plantingFormErrors.crop_name).toBe("Choose a vegetable before adding a planting.");
-  });
-
-  it("sets planted_on error for blank value", () => {
-    const { result } = renderHook(() =>
-      useCalendarAgendaState({ selectedDayEvents: [], selectedCropName: "", taskActions: makeTaskActions() }),
-    );
-    act(() => result.current.handlePlantingFieldBlur("planted_on", ""));
-    expect(result.current.plantingFormErrors.planted_on).toBe("Planting date is required.");
-  });
-
-  it("clears bed_id error for non-blank value", () => {
-    const { result } = renderHook(() =>
-      useCalendarAgendaState({ selectedDayEvents: [], selectedCropName: "", taskActions: makeTaskActions() }),
-    );
-    act(() => result.current.handlePlantingFieldBlur("bed_id", ""));
-    act(() => result.current.handlePlantingFieldBlur("bed_id", "3"));
-    expect(result.current.plantingFormErrors.bed_id).toBe("");
-  });
-});
-
 describe("useCalendarAgendaState – handleTaskSubmit", () => {
   it("blocks submission and sets both errors when required fields are blank", () => {
     const createTask = vi.fn();
@@ -243,37 +207,6 @@ describe("useCalendarAgendaState – handleTaskSubmit", () => {
     const event = makeFormEvent({ title: "Water crops", due_on: "2026-04-10" });
     act(() => result.current.handleTaskSubmit(event));
     expect(createTask).toHaveBeenCalledWith(event);
-  });
-});
-
-describe("useCalendarAgendaState – handlePlantingSubmit", () => {
-  it("blocks submission and sets crop_name error when selectedCropName is empty", () => {
-    const createPlanting = vi.fn();
-    const { result } = renderHook(() =>
-      useCalendarAgendaState({
-        selectedDayEvents: [],
-        selectedCropName: "",
-        taskActions: makeTaskActions({ createPlanting }),
-      }),
-    );
-    const event = makeFormEvent({ bed_id: "1", planted_on: "2026-04-10" });
-    act(() => result.current.handlePlantingSubmit(event));
-    expect(createPlanting).not.toHaveBeenCalled();
-    expect(result.current.plantingFormErrors.crop_name).toBe("Choose a vegetable before adding a planting.");
-  });
-
-  it("calls createPlanting when all planting fields are present", () => {
-    const createPlanting = vi.fn();
-    const { result } = renderHook(() =>
-      useCalendarAgendaState({
-        selectedDayEvents: [],
-        selectedCropName: "Tomato",
-        taskActions: makeTaskActions({ createPlanting }),
-      }),
-    );
-    const event = makeFormEvent({ bed_id: "2", planted_on: "2026-04-10" });
-    act(() => result.current.handlePlantingSubmit(event));
-    expect(createPlanting).toHaveBeenCalledWith(event);
   });
 });
 

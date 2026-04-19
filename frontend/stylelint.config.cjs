@@ -14,5 +14,10 @@ module.exports = {
     "declaration-block-no-redundant-longhand-properties": null,
     "rule-empty-line-before": null,
     "no-descending-specificity": null,
+    // Allow BEM-style class selectors (block__element and block--modifier)
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:(?:__|--)[a-z0-9]+(?:-[a-z0-9]+)*)*$",
+      { message: "Expected class selector to be kebab-case with optional BEM __element/--modifier suffixes" },
+    ],
   },
 };

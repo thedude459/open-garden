@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from app.engines.climate import (
     _forecast_days,
@@ -63,7 +64,10 @@ def test_build_climate_summary_opens_warm_season_for_hot_microclimates():
 
 
 def test_build_dynamic_planting_windows_marks_warm_crops_watch_and_sets_indoor_dates():
-    weather = make_weather(low_f=31, high_f=55)
+    # 33F lows keep soil cool (status=watch) without triggering the
+    # forecast-frost extension that would bump the modelled spring frost
+    # forward and confuse this test's intent.
+    weather = make_weather(low_f=33, high_f=55)
     windows = build_dynamic_planting_windows(
         make_garden(),
         weather,
@@ -103,6 +107,36 @@ def test_climate_helpers_cover_normalization_forecast_and_soil_status():
     assert _soil_status(65.0) == "warm"
 
 
+@patch("app.engines.climate.date")
+def test_build_dynamic_planting_windows_open_transplant_reason_warns_about_seedling_readiness(
+    mock_date,
+):
+    # Frost-hardy transplant: window can be "open" for weather while seedlings may still be young.
+    mock_date.today.return_value = date(2026, 5, 10)
+    mock_date.side_effect = date
+    weather = make_weather(low_f=45, high_f=65)
+    windows = build_dynamic_planting_windows(
+        make_garden(growing_zone="6a"),
+        weather,
+        [
+            make_crop(
+                id=4,
+                name="Broccoli",
+                direct_sow=False,
+                frost_hardy=True,
+                days_to_harvest=80,
+                weeks_to_transplant=6,
+                planting_window="Spring",
+            ),
+        ],
+    )["windows"]
+
+    broccoli = windows[0]
+    assert broccoli["method"] == "transplant"
+    assert broccoli["status"] == "open"
+    assert "garden-ready" in broccoli["reason"]
+
+
 def test_build_dynamic_planting_windows_handles_direct_ground_transplants():
     windows = build_dynamic_planting_windows(
         make_garden(growing_zone="6a"),
@@ -123,6 +157,37 @@ def test_build_dynamic_planting_windows_handles_direct_ground_transplants():
     assert strawberry["method"] == "transplant"
     assert strawberry["indoor_seed_start"] is None
     assert strawberry["indoor_seed_end"] is None
+
+
+def test_adjusted_last_spring_frost_is_extended_by_forecast_freezes():
+    # Use a warm zone (10b: baseline last spring frost = Jan 15) so the modelled
+    # adjusted last spring frost is well in the past for any test run, then feed
+    # a 10-day forecast where every night drops to 30F. The latest forecast
+    # freeze should push the adjusted date forward and the response should flag
+    # that the forecast extended it.
+    summary = build_climate_summary(
+        make_garden(growing_zone="10b"),
+        make_weather(low_f=30, high_f=50),
+    )
+
+    today = date.today()
+    expected_latest_freeze = today + timedelta(days=9)
+
+    assert summary["last_spring_frost_extended_by_forecast"] is True
+    assert summary["adjusted_last_spring_frost"] == expected_latest_freeze
+    assert summary["next_frost_date"] == today
+    assert summary["frost_risk_next_10_days"] == "high"
+
+
+def test_adjusted_last_spring_frost_not_extended_when_forecast_is_warm():
+    summary = build_climate_summary(
+        make_garden(growing_zone="6a"),
+        make_weather(low_f=45, high_f=70),
+    )
+
+    assert summary["last_spring_frost_extended_by_forecast"] is False
+    assert summary["first_fall_frost_extended_by_forecast"] is False
+    assert summary["next_frost_date"] is None
 
 
 def test_build_climate_summary_handles_cool_weather_and_moderate_frost_risk():

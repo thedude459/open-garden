@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import pytest
 from fastapi import HTTPException
 
-from app.models import CropTemplate, Placement, Planting, Task
+from app.models import CropTemplate, Planting, Task
 from app.routers import crops
 from app.schemas import CropTemplateCreate
 
@@ -55,24 +55,18 @@ def test_update_crop_template_renames_related_rows(db_session, crop_template, ga
         garden_id=garden.id,
         bed_id=bed.id,
         crop_name=crop_template.name,
+        grid_x=2,
+        grid_y=2,
+        color="#57a773",
         planted_on=date.today(),
         expected_harvest_on=date.today() + timedelta(days=30),
+        method="direct_seed",
+        location="in_bed",
         source="manual",
     )
     db_session.add(planting)
     db_session.commit()
     db_session.refresh(planting)
-    db_session.add(
-        Placement(
-            garden_id=garden.id,
-            bed_id=bed.id,
-            crop_name=crop_template.name,
-            grid_x=2,
-            grid_y=2,
-            planted_on=date.today(),
-            color="#57a773",
-        )
-    )
     db_session.add(
         Task(
             garden_id=garden.id,
@@ -94,10 +88,6 @@ def test_update_crop_template_renames_related_rows(db_session, crop_template, ga
     )
 
     assert updated.name == "Tomato (San Marzano)"
-    assert (
-        db_session.query(Placement).filter(Placement.crop_name == "Tomato (San Marzano)").count()
-        == 1
-    )
     assert (
         db_session.query(Planting).filter(Planting.crop_name == "Tomato (San Marzano)").count() == 1
     )

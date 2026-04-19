@@ -226,9 +226,7 @@ def test_reset_password_rejects_invalid_token(db_session):
     assert exc.value.status_code == 400
 
 
-def test_delete_me_removes_user_and_related_rows(
-    db_session, user, garden, bed, planting, placement, sensor
-):
+def test_delete_me_removes_user_and_related_rows(db_session, user, garden, bed, planting, sensor):
     token = auth_router._issue_user_token(db_session, user.id, "email_verify", 30)
     db_session.add(
         SeedInventory(user_id=user.id, crop_name="Carrot", supplier="", quantity_packets=1)

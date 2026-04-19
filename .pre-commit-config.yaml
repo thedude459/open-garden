@@ -1,29 +1,37 @@
+# https://pre-commit.com - install: pip install pre-commit && pre-commit install
+# Run all hooks on the repo: pre-commit run --all-files
+
+default_install_hook_types: [pre-commit]
+default_stages: [pre-commit]
+fail_fast: false
+
 repos:
+  # Backend: ruff format (write), then ruff check --fix (safe fixes). Config: backend/pyproject.toml
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.13
     hooks:
-      - id: ruff-check
-        name: Backend Ruff check
-        files: ^backend/(app|tests)/.*\.py$
-        args: ["backend/app", "backend/tests"]
       - id: ruff-format
-        name: Backend Ruff format check
-        files: ^backend/(app|tests)/.*\.py$
-        args: ["--check", "backend/app", "backend/tests"]
+        name: backend - ruff format
+        files: ^backend/(app|tests|alembic)/.*\.py$
+
+      - id: ruff-check
+        name: backend - ruff check --fix
+        files: ^backend/(app|tests|alembic)/.*\.py$
+        args: [--fix]
 
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.1
     hooks:
       - id: yamllint
         name: YAML lint
-        args: ["-c", ".yamllint.yml"]
+        args: [-c, .yamllint.yml]
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.18.1
     hooks:
       - id: markdownlint-cli2
         name: Docs markdown lint
-        args: ["--config", ".markdownlint-cli2.jsonc"]
+        args: [--config, .markdownlint-cli2.jsonc]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
@@ -32,12 +40,12 @@ repos:
         name: Docs markdown spelling
         files: \.md$
         exclude: ^\.github/(skills|instructions)/
-        args: ["--check-filenames", "--check-hidden"]
+        args: [--check-filenames, --check-hidden]
 
   - repo: local
     hooks:
       - id: frontend-eslint
         name: Frontend lint (ESLint + Stylelint)
-        entry: npm --prefix frontend run lint
+        entry: node frontend/scripts/run-frontend.mjs lint
         language: system
         pass_filenames: false

@@ -134,7 +134,22 @@ export function usePlannerBedActions({
             "Bed cannot rotate at its current position. Use Auto-fit rotate or move the bed first.",
           );
         }
-        await apiRotateBedInYard(bedId);
+        const rotated = await apiRotateBedInYard(bedId);
+        const rotatedActualWidthFt = Math.max(1, Math.ceil(rotated.width_in / 12));
+        const rotatedActualLengthFt = Math.max(1, Math.ceil(rotated.height_in / 12));
+        const clampedX = Math.min(
+          Math.max(0, rotated.grid_x),
+          Math.max(0, yardWidthFt - rotatedActualWidthFt),
+        );
+        const clampedY = Math.min(
+          Math.max(0, rotated.grid_y),
+          Math.max(0, yardLengthFt - rotatedActualLengthFt),
+        );
+        if (clampedX !== rotated.grid_x || clampedY !== rotated.grid_y) {
+          await apiMoveBedInYard(bed.id, clampedX, clampedY);
+          rotatedToX = clampedX;
+          rotatedToY = clampedY;
+        }
         pushPlannerHistory({
           label: `Rotate ${bed.name}`,
           undo: async () => {

@@ -3,6 +3,16 @@ import { describe, expect, it, vi } from "vitest";
 import { usePlannerBulkSelection } from "./usePlannerBulkSelection";
 import { Placement } from "../../types";
 
+const basePlacement = {
+  expected_harvest_on: "2026-07-01",
+  method: "direct_seed" as const,
+  location: "in_bed" as const,
+  moved_on: null,
+  source: "",
+  harvested_on: null,
+  yield_notes: "",
+};
+
 const placements: Placement[] = [
   {
     id: 1,
@@ -13,6 +23,7 @@ const placements: Placement[] = [
     grid_y: 0,
     planted_on: "2026-04-01",
     color: "#f00",
+    ...basePlacement,
   },
   {
     id: 2,
@@ -23,6 +34,7 @@ const placements: Placement[] = [
     grid_y: 1,
     planted_on: "2026-04-01",
     color: "#0f0",
+    ...basePlacement,
   },
 ];
 

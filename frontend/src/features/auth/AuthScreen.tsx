@@ -1,4 +1,5 @@
 import { FormEvent } from "react";
+import { CalendarDays, LayoutGrid, Leaf, Sprout } from "lucide-react";
 import { ToastRegion } from "../../components/ToastRegion";
 import { AuthPane, LoginMode } from "../app/types";
 import { ToastNotice } from "../../components/ToastRegion";
@@ -45,9 +46,60 @@ export function AuthScreen({
 }: AuthScreenProps) {
   return (
     <main className="auth-shell">
+      <aside className="auth-hero" aria-hidden>
+        <div className="auth-hero__content">
+          <span className="auth-hero__eyebrow">
+            <Leaf size={14} strokeWidth={2.5} />
+            Grow with confidence
+          </span>
+          <h2 className="auth-hero__title">
+            Plan your garden.<br />
+            Grow what you love.
+          </h2>
+          <p className="auth-hero__lede">
+            A calendar-driven planner for home gardeners. Lay out your beds,
+            schedule plantings, and let us handle the watering, weeding, and
+            harvest reminders — tailored to your ZIP code.
+          </p>
+          <ul className="auth-hero__list">
+            <li className="auth-hero__item">
+              <span className="auth-hero__icon"><Sprout size={16} strokeWidth={2.2} /></span>
+              <span>
+                <strong>Zone-aware planting.</strong> Frost dates, soil temps,
+                and microclimate built in.
+              </span>
+            </li>
+            <li className="auth-hero__item">
+              <span className="auth-hero__icon"><LayoutGrid size={16} strokeWidth={2.2} /></span>
+              <span>
+                <strong>Visual bed planner.</strong> Drag beds in your yard,
+                drop crops on a square-foot grid.
+              </span>
+            </li>
+            <li className="auth-hero__item">
+              <span className="auth-hero__icon"><CalendarDays size={16} strokeWidth={2.2} /></span>
+              <span>
+                <strong>Auto-generated to-dos.</strong> Sow, transplant, water,
+                and harvest tasks on your calendar.
+              </span>
+            </li>
+          </ul>
+        </div>
+        <p className="auth-hero__foot">
+          Open-source. Made for home gardeners — not commercial farms.
+        </p>
+      </aside>
+
       <section className="card auth-card">
-        <h1>open-garden</h1>
-        <p>Calendar-driven garden planning with visual bed design.</p>
+        <div className="auth-brand">
+          <span className="auth-brand__mark" aria-hidden>
+            <Leaf strokeWidth={2.25} />
+          </span>
+          <div>
+            <div className="auth-brand__wordmark">open-garden</div>
+            <div className="auth-brand__tagline">Calendar-driven garden planning.</div>
+          </div>
+        </div>
 
         {authPane === "login" && (
           <>
@@ -97,14 +149,14 @@ export function AuthScreen({
               </div>
               <button type="submit">{loginMode === "register" ? "Create account" : "Sign in"}</button>
               {loginMode === "signin" && (
-                <>
+                <div className="inline" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: "0.35rem" }}>
                   <button type="button" className="link-btn" onClick={() => setAuthPane("forgot-password")}>
                     Forgot password?
                   </button>
                   <button type="button" className="link-btn" onClick={() => setAuthPane("forgot-username")}>
                     Forgot username?
                   </button>
-                </>
+                </div>
               )}
             </form>
           </>

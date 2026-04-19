@@ -47,6 +47,7 @@ async def fetch_zip_profile(zip_code: str) -> dict:
             "latitude": float(fallback["latitude"]),
             "longitude": float(fallback["longitude"]),
             "growing_zone": str(fallback["growing_zone"]),
+            "state_code": "CA",
         }
 
     async with httpx.AsyncClient(timeout=10) as client:
@@ -89,11 +90,14 @@ async def fetch_zip_profile(zip_code: str) -> dict:
             # Zone enrichment is optional; return location data even if this API is unavailable.
             pass
 
+        state_code = str(first_place.get("state abbreviation") or "").strip().upper()[:2]
+
         return {
             "zip_code": normalized_zip,
             "latitude": latitude,
             "longitude": longitude,
             "growing_zone": zone,
+            "state_code": state_code,
         }
 
 

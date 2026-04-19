@@ -37,7 +37,7 @@
 - First-time setup: `cp .env.example .env` from the repo root.
 - Preferred full-stack rebuild: `./scripts/rebuild.sh`.
 - Fast restart (no rebuild needed): `./scripts/up.sh`.
-- Frontend-only build: `cd frontend && npm run build`.
+- Frontend-only build: `cd frontend && npm run build`. If npm warns about unknown `devdir` (some environments set `npm_config_devdir`), use `cd frontend && node ./scripts/run-frontend.mjs build` instead, or `frontend/scripts/npm-without-devdir.sh run build`.
 - Backend tests live in `backend/tests/`. Run with `pytest backend/tests/` inside the Docker container.
 - For behavior changes, prefer targeted smoke checks against the running app or API after rebuilding.
 

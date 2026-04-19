@@ -17,6 +17,7 @@ interface UsePageDataEffectsParams {
   loadClimateForGarden: (garden: Garden) => Promise<void>;
   loadPlantingWindowsForGarden: (garden: Garden) => Promise<void>;
   loadSunPathForGarden: (garden: Garden) => Promise<void>;
+  loadExtensionResourcesForGarden: (garden: Garden) => Promise<void>;
   noticeUnlessExpired: (msg: string) => (err: unknown) => void;
   pushNotice: (msg: string, kind: NoticeKind) => void;
   resetCoach: () => void;
@@ -36,6 +37,7 @@ export function usePageDataEffects({
   loadClimateForGarden,
   loadPlantingWindowsForGarden,
   loadSunPathForGarden,
+  loadExtensionResourcesForGarden,
   noticeUnlessExpired,
   pushNotice,
   resetCoach,
@@ -75,6 +77,9 @@ export function usePageDataEffects({
       loadPlantingWindowsForGarden(selectedGardenRecord).catch(
         noticeUnlessExpired("Unable to load dynamic planting windows."),
       );
+      loadExtensionResourcesForGarden(selectedGardenRecord).catch(
+        noticeUnlessExpired("Unable to load Extension resources."),
+      );
     }
     if (needSunPath) {
       loadSunPathForGarden(selectedGardenRecord).catch(
@@ -88,6 +93,7 @@ export function usePageDataEffects({
     loadClimateForGarden,
     loadPlantingWindowsForGarden,
     loadSunPathForGarden,
+    loadExtensionResourcesForGarden,
     noticeUnlessExpired,
   ]);
 

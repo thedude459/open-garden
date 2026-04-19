@@ -67,6 +67,69 @@ def test_build_seasonal_plan_groups_growth_rotation_and_next_plantings(monkeypat
     assert result["recommended_next_plantings"][0]["crop_name"] == "Lettuce"
 
 
+def test_recommended_next_plantings_skip_crops_already_started_indoors(monkeypatch):
+    """Indoor trays count as active so we do not suggest starting the same crop again."""
+    garden = SimpleNamespace(id=1, growing_zone="7a")
+    crop_templates = [
+        SimpleNamespace(
+            id=1, name="Broccoli", variety="", family="Brassicaceae", days_to_harvest=60
+        ),
+        SimpleNamespace(
+            id=2, name="Lettuce", variety="Butter", family="Asteraceae", days_to_harvest=45
+        ),
+    ]
+    plantings = [
+        SimpleNamespace(
+            id=1,
+            bed_id=1,
+            crop_name="Broccoli",
+            planted_on=date.today(),
+            expected_harvest_on=date.today() + timedelta(days=120),
+            harvested_on=None,
+            location="indoor",
+        ),
+    ]
+    monkeypatch.setattr(
+        "app.planning_engine.engine.build_dynamic_planting_windows",
+        lambda g, w, ct: {
+            "microclimate_band": "balanced",
+            "soil_temperature_estimate_f": 50.0,
+            "frost_risk_next_10_days": "low",
+            "windows": [
+                {
+                    "crop_name": "Broccoli",
+                    "variety": "",
+                    "method": "transplant",
+                    "window_start": date.today(),
+                    "window_end": date.today() + timedelta(days=14),
+                    "status": "open",
+                    "reason": "Window open",
+                    "indoor_seed_start": date.today() - timedelta(days=7),
+                    "indoor_seed_end": date.today() + timedelta(days=7),
+                },
+                {
+                    "crop_name": "Lettuce",
+                    "variety": "Butter",
+                    "method": "direct_sow",
+                    "window_start": date.today(),
+                    "window_end": date.today() + timedelta(days=14),
+                    "status": "open",
+                    "reason": "Ok",
+                    "indoor_seed_start": None,
+                    "indoor_seed_end": None,
+                },
+            ],
+        },
+    )
+
+    result = build_seasonal_plan(
+        garden, weather={}, crop_templates=crop_templates, plantings=plantings
+    )
+    names = [r["crop_name"] for r in result["recommended_next_plantings"]]
+    assert "Broccoli" not in names
+    assert "Lettuce" in names
+
+
 def test_internal_planning_helpers_cover_risk_and_transplant_paths():
     crop_templates = [
         SimpleNamespace(
@@ -113,7 +176,8 @@ def test_internal_planning_helpers_cover_risk_and_transplant_paths():
     stage, pct = engine._growth_stage(90, 60, date.today())
     companions = engine._companion_insights(active, by_name)
     succession = engine._succession_recommendations(active, windows, by_name, active)
-    next_up = engine._recommended_next_plantings(windows, by_name, active)
+    active_names = {engine._base_crop_name(p.crop_name) for p in active}
+    next_up = engine._recommended_next_plantings(windows, by_name, active_names)
 
     assert (stage, pct) == ("harvested", 100)
     assert companions[0]["crop"] == "bean"
@@ -294,7 +358,8 @@ def test_succession_and_next_plantings_cover_skip_branches():
         }
     )
 
-    next_up = engine._recommended_next_plantings(many_windows, by_name, active_plantings)
+    active_base = {engine._base_crop_name(p.crop_name) for p in active_plantings}
+    next_up = engine._recommended_next_plantings(many_windows, by_name, active_base)
 
     assert [item["recommended_crop"] for item in succession] == ["Lettuce", "Bean"]
     assert len(next_up) == 20

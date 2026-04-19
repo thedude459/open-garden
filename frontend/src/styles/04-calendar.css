@@ -42,19 +42,14 @@
 @media (min-width: 1024px) {
   .calendar-shell {
     flex-direction: row;
-    align-items: stretch;
+    align-items: flex-start;
   }
 
   .calendar-month-pane {
     width: min(100%, 26rem);
     flex-shrink: 0;
-    align-self: stretch;
     border-bottom: none;
     border-right: 1px solid var(--border);
-  }
-
-  .agenda-panel {
-    max-height: none;
   }
 }
 
@@ -231,15 +226,7 @@
   padding: var(--space-5);
   flex: 1 1 auto;
   min-width: 0;
-  overflow-y: auto;
-  max-height: 80vh;
   background: color-mix(in srgb, var(--secondary) 55%, var(--card));
-}
-
-@media (min-width: 1024px) {
-  .agenda-panel {
-    border-radius: 0;
-  }
 }
 
 .agenda-panel h3 {

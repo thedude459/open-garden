@@ -53,7 +53,6 @@ def test_alembic_upgrade_head_creates_core_tables():
         "gardens",
         "beds",
         "crop_templates",
-        "placements",
         "plantings",
         "tasks",
         "sensors",
@@ -62,6 +61,7 @@ def test_alembic_upgrade_head_creates_core_tables():
         "background_job_states",
     }
     assert expected_tables.issubset(table_names)
+    assert "placements" not in table_names
 
 
 @pytest.mark.skipif(

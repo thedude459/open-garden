@@ -21,7 +21,8 @@ coverage/
 
 uploads/
 backups/*.sql
-.vscode/
+.vscode/*
+!.vscode/settings.json
 
 playwright-report/
 test-results/

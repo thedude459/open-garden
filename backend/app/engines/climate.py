@@ -282,15 +282,45 @@ def build_climate_summary(garden, weather: dict) -> dict:
 
     forecast = _forecast_days(weather)
     forecast_window = forecast[:10]
-    next_frost_date = next(
-        (day["date"] for day in forecast_window if day["temperature_min_f"] <= 32), None
-    )
+    forecast_frost_dates = [
+        day["date"] for day in forecast_window if day["temperature_min_f"] <= 32
+    ]
+    next_frost_date = forecast_frost_dates[0] if forecast_frost_dates else None
     if next_frost_date is not None:
         frost_risk = "high"
     elif any(day["temperature_min_f"] <= 36 for day in forecast_window):
         frost_risk = "moderate"
     else:
         frost_risk = "low"
+
+    # Reality check the model-derived adjusted dates against the actual
+    # forecast. The microclimate model can't know about an unseasonable cold
+    # snap, so if we're seeing forecast freezes later than the modelled
+    # spring frost (or earlier than the modelled fall frost), trust the
+    # forecast and shift the displayed date so downstream planting windows
+    # don't tell the user it's safe to plant when it isn't.
+    forecast_extended_last_spring_frost = False
+    forecast_extended_first_fall_frost = False
+    if forecast_frost_dates:
+        latest_forecast_frost = max(forecast_frost_dates)
+        earliest_forecast_frost = min(forecast_frost_dates)
+        # Decide whether each forecast frost is a "spring" or "fall" event by
+        # which baseline frost date it sits closer to. This avoids accidentally
+        # pushing the spring date out from a September cold snap.
+        spring_distance = abs((latest_forecast_frost - baseline_last_spring_frost).days)
+        fall_distance = abs((latest_forecast_frost - baseline_first_fall_frost).days)
+        if spring_distance <= fall_distance and latest_forecast_frost > adjusted_last_spring_frost:
+            adjusted_last_spring_frost = latest_forecast_frost
+            forecast_extended_last_spring_frost = True
+
+        spring_distance_fall = abs((earliest_forecast_frost - baseline_last_spring_frost).days)
+        fall_distance_fall = abs((earliest_forecast_frost - baseline_first_fall_frost).days)
+        if (
+            fall_distance_fall < spring_distance_fall
+            and earliest_forecast_frost < adjusted_first_fall_frost
+        ):
+            adjusted_first_fall_frost = earliest_forecast_frost
+            forecast_extended_first_fall_frost = True
 
     soil_samples = forecast[:5] or forecast
     if soil_samples:
@@ -369,6 +399,8 @@ def build_climate_summary(garden, weather: dict) -> dict:
         "adjusted_first_fall_frost": adjusted_first_fall_frost,
         "last_frost_shift_days": adjustments["spring_shift"],
         "first_fall_shift_days": adjustments["fall_shift"],
+        "last_spring_frost_extended_by_forecast": forecast_extended_last_spring_frost,
+        "first_fall_frost_extended_by_forecast": forecast_extended_first_fall_frost,
         "soil_temperature_estimate_f": soil_temperature_estimate_f,
         "soil_temperature_status": soil_temperature_status,
         "frost_risk_next_10_days": frost_risk,
@@ -458,7 +490,18 @@ def build_dynamic_planting_windows(garden, weather: dict, crop_templates: list) 
             status = "watch"
 
         if status == "open":
-            reason = "Conditions are in range for active planting."
+            # Weather/soil timing only — not seedling age. Users who sowed later than the
+            # suggested indoor range may still need several weeks before moving outside.
+            if method == "transplant" and not _is_direct_ground_transplant(crop):
+                wtt = max(1, int(crop.weeks_to_transplant))
+                wk_label = "week" if wtt == 1 else "weeks"
+                reason = (
+                    "Outdoor conditions look suitable for transplanting, but only once seedlings are "
+                    f"garden-ready—often about {wtt} {wk_label} after an indoor seed start. "
+                    "If you sowed later than the suggested indoor range, set your planned move-to-bed date accordingly."
+                )
+            else:
+                reason = "Conditions are in range for active planting."
         elif status == "watch":
             reason = (
                 "Calendar window is open, but soil warmth or near-term frost risk suggests caution."

@@ -60,12 +60,12 @@ describe("AppNavbar", () => {
   it("hides garden-specific nav links when selectedGarden is null", () => {
     render(<AppNavbar {...defaultProps({ selectedGarden: null })} />);
     expect(screen.queryByRole("button", { name: "Calendar" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Crop Library" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Crops" })).toBeInTheDocument();
   });
 
-  it("always shows Crop Library and My Gardens links", () => {
+  it("always shows Crops and My Gardens links", () => {
     render(<AppNavbar {...defaultProps()} />);
-    expect(screen.getByRole("button", { name: "Crop Library" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Crops" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "My Gardens" })).toBeInTheDocument();
   });
 
@@ -92,7 +92,7 @@ describe("AppNavbar", () => {
     fireEvent.click(screen.getByRole("button", { name: "My Gardens" }));
     expect(onNavigate).toHaveBeenCalledWith("home");
 
-    fireEvent.click(screen.getByRole("button", { name: "Crop Library" }));
+    fireEvent.click(screen.getByRole("button", { name: "Crops" }));
     expect(onNavigate).toHaveBeenCalledWith("crops");
 
     fireEvent.click(screen.getByRole("button", { name: "Seasonal Plan" }));
@@ -113,7 +113,7 @@ describe("AppNavbar", () => {
 
   it("applies active variant to the current page button", () => {
     render(<AppNavbar {...defaultProps({ activePage: "crops" })} />);
-    const cropsBtn = screen.getByRole("button", { name: "Crop Library" });
+    const cropsBtn = screen.getByRole("button", { name: "Crops" });
     expect(cropsBtn).toBeInTheDocument();
   });
 });

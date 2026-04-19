@@ -13,6 +13,7 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerYardBedMoveCon
     setSelectedBedId: vi.fn(),
     onNudgeBed: vi.fn(),
     requestRotatePreview: vi.fn(),
+    onDeleteBed: vi.fn(),
     pendingRotation: null,
     ...overrides,
   };
@@ -56,6 +57,13 @@ describe("PlannerYardBedMoveControls", () => {
     render(<PlannerYardBedMoveControls {...defaultProps({ requestRotatePreview })} />);
     fireEvent.click(screen.getByRole("button", { name: /rotate bed a/i }));
     expect(requestRotatePreview).toHaveBeenCalledWith(bedA);
+  });
+
+  it("calls onDeleteBed when the delete button is clicked", () => {
+    const onDeleteBed = vi.fn();
+    render(<PlannerYardBedMoveControls {...defaultProps({ onDeleteBed })} />);
+    fireEvent.click(screen.getByRole("button", { name: /delete bed a/i }));
+    expect(onDeleteBed).toHaveBeenCalledWith(1);
   });
 
   it("disables the rotate button when pendingRotation is non-null", () => {

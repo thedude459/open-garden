@@ -57,6 +57,8 @@ function makeProps(): AppPageContentProps {
       gardenTimeline: null,
       loadTimelineForGarden: vi.fn(async () => undefined),
       loadSensorSummaryForGarden: vi.fn(async () => undefined),
+      gardenExtensionResources: null,
+      loadExtensionResourcesForGarden: vi.fn(async () => undefined),
     },
     cropLibrary: {
       cropTemplateSyncStatus: null,
@@ -75,6 +77,7 @@ function makeProps(): AppPageContentProps {
       isLoadingSensorSummary: false,
       isLoadingTimeline: false,
       isLoadingPlantingRecommendation: false,
+      isLoadingExtensionResources: false,
     },
     plannerUi: {
       placementBedId: null,
@@ -83,6 +86,16 @@ function makeProps(): AppPageContentProps {
       plannerRedoCount: 0,
       undoPlannerChange: vi.fn(async () => undefined),
       redoPlannerChange: vi.fn(async () => undefined),
+      plantingSettings: {
+        plantingMethod: "direct_seed",
+        setPlantingMethod: vi.fn(),
+        plantingLocation: "in_bed",
+        setPlantingLocation: vi.fn(),
+        plantingDate: "2026-04-01",
+        setPlantingDate: vi.fn(),
+        plantingMovedOn: null,
+        setPlantingMovedOn: vi.fn(),
+      },
     },
     actions: {
       taskActions: { tasks: [] } as unknown as AppPageContentProps["actions"]["taskActions"],

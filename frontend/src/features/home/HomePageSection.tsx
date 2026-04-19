@@ -1,9 +1,10 @@
 import { CreateGardenForm } from "./CreateGardenForm";
 import { GardenListSidebar } from "./GardenListSidebar";
 import { HomeHero } from "./HomeHero";
+import { HomeWelcomeCard } from "./HomeWelcomeCard";
 import { MicroclimateProfileCard } from "./MicroclimateProfileCard";
 import { AppPage } from "../app/types";
-import { Bed, Garden, GardenClimate, Placement } from "../types";
+import { Bed, Garden, GardenClimate, GardenExtensionResources, Placement } from "../types";
 import { useDerivedGardenState } from "../app/hooks/useDerivedGardenState";
 import { useGardenActions } from "../app/hooks/useGardenActions";
 import { usePlannerActions } from "../app/hooks/usePlannerActions";
@@ -18,8 +19,11 @@ type HomePageSectionProps = {
   placements: Placement[];
   cropTemplatesCount: number;
   gardenClimate: GardenClimate | null;
+  gardenExtensionResources: GardenExtensionResources | null;
+  loadExtensionResourcesForGarden: (garden: Garden) => Promise<void>;
   isLoadingWeather: boolean;
   isLoadingClimate: boolean;
+  isLoadingExtensionResources: boolean;
   derived: ReturnType<typeof useDerivedGardenState>;
   taskActions: ReturnType<typeof useTaskActions>;
   gardenActions: ReturnType<typeof useGardenActions>;
@@ -37,8 +41,11 @@ export function HomePageSection({
   placements,
   cropTemplatesCount,
   gardenClimate,
+  gardenExtensionResources,
+  loadExtensionResourcesForGarden,
   isLoadingWeather,
   isLoadingClimate,
+  isLoadingExtensionResources,
   derived,
   taskActions,
   gardenActions,
@@ -68,13 +75,26 @@ export function HomePageSection({
       )}
       <div className="home-layout">
         <div className="home-sidebar">
-          <CreateGardenForm
-            gardenDraft={gardenActions.gardenDraft}
-            setGardenDraft={gardenActions.setGardenDraft}
-            showGardenValidation={gardenActions.showGardenValidation}
-            gardenFormErrors={gardenActions.gardenFormErrors}
-            onSubmit={gardenActions.createGarden}
-          />
+          {selectedGarden && selectedGardenRecord ? (
+            <details className="home-create-garden-collapsible">
+              <summary>Create another garden</summary>
+              <CreateGardenForm
+                gardenDraft={gardenActions.gardenDraft}
+                setGardenDraft={gardenActions.setGardenDraft}
+                showGardenValidation={gardenActions.showGardenValidation}
+                gardenFormErrors={gardenActions.gardenFormErrors}
+                onSubmit={gardenActions.createGarden}
+              />
+            </details>
+          ) : (
+            <CreateGardenForm
+              gardenDraft={gardenActions.gardenDraft}
+              setGardenDraft={gardenActions.setGardenDraft}
+              showGardenValidation={gardenActions.showGardenValidation}
+              gardenFormErrors={gardenActions.gardenFormErrors}
+              onSubmit={gardenActions.createGarden}
+            />
+          )}
           <GardenListSidebar
             gardens={gardens}
             publicGardens={publicGardens}
@@ -84,11 +104,17 @@ export function HomePageSection({
           />
         </div>
         <div className="home-main">
+          {!(selectedGarden && selectedGardenRecord) && (
+            <HomeWelcomeCard hasAnyGarden={gardens.length > 0} />
+          )}
           {selectedGarden && selectedGardenRecord && (
             <MicroclimateProfileCard
               selectedGardenRecord={selectedGardenRecord}
               gardenClimate={gardenClimate}
+              gardenExtensionResources={gardenExtensionResources}
+              loadExtensionResourcesForGarden={loadExtensionResourcesForGarden}
               isLoadingClimate={isLoadingClimate}
+              isLoadingExtensionResources={isLoadingExtensionResources}
               microclimateDraft={gardenActions.microclimateDraft}
               setMicroclimateDraft={gardenActions.setMicroclimateDraft}
               microclimateSuggestion={gardenActions.microclimateSuggestion}

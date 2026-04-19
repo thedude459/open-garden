@@ -4,6 +4,7 @@ Revision ID: 0006
 Revises: 0005
 Create Date: 2026-03-21
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -17,7 +18,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute(text("ALTER TABLE crop_templates ADD COLUMN IF NOT EXISTS image_url VARCHAR(500) DEFAULT ''"))
+    op.execute(
+        text(
+            "ALTER TABLE crop_templates ADD COLUMN IF NOT EXISTS image_url VARCHAR(500) DEFAULT ''"
+        )
+    )
 
 
 def downgrade() -> None:

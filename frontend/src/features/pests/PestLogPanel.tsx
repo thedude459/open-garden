@@ -1,4 +1,6 @@
 import { FormEvent } from "react";
+import { Bug, PenSquare } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
 import { PestLog } from "../types";
 
 type PestLogPanelProps = {
@@ -19,10 +21,11 @@ export function PestLogPanel({
   return (
     <div className="pest-layout">
       <section className="card">
-        <h2>Pest &amp; Disease Log</h2>
-        <p className="subhead">
-          {pestLogs.length} observation{pestLogs.length !== 1 ? "s" : ""} recorded for this garden.
-        </p>
+        <SectionHeader
+          icon={Bug}
+          title="Pest & Disease Log"
+          subtitle={`${pestLogs.length} observation${pestLogs.length !== 1 ? "s" : ""} recorded for this garden.`}
+        />
         {isLoading && <p className="hint">Loading...</p>}
         {!isLoading && pestLogs.length === 0 && (
           <p className="hint">No pest or disease observations yet. Use the form to record your first.</p>
@@ -48,7 +51,11 @@ export function PestLogPanel({
       </section>
 
       <form onSubmit={onCreatePestLog} className="card stack compact">
-        <h2>Record Observation</h2>
+        <SectionHeader
+          icon={PenSquare}
+          title="Record Observation"
+          subtitle="Track pests, diseases, and what you tried to control them."
+        />
         <label className="field-label" htmlFor="pest-title">What did you observe?</label>
         <input id="pest-title" name="title" placeholder="Aphids on tomato leaves" required />
         <label className="field-label" htmlFor="pest-date">Date observed</label>

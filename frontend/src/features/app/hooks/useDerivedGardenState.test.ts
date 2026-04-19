@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { useDerivedGardenState } from "./useDerivedGardenState";
+import { getLocalIsoWeekRange, useDerivedGardenState } from "./useDerivedGardenState";
 import type {
   CropTemplate,
   Garden,
@@ -89,8 +89,14 @@ describe("useDerivedGardenState", () => {
           garden_id: 1,
           bed_id: 1,
           crop_name: "Basil",
+          grid_x: 0,
+          grid_y: 0,
+          color: "#57a773",
           planted_on: "2026-04-01",
           expected_harvest_on: "2026-06-01",
+          method: "direct_seed",
+          location: "in_bed",
+          moved_on: null,
           source: "manual",
           harvested_on: null,
           yield_notes: "",
@@ -238,18 +244,45 @@ describe("useDerivedGardenState", () => {
       expect(result.current.pendingTasks[1].title).toBe("Late");
     });
 
-    it("homeTaskPreview returns at most 4 tasks", () => {
-      const tasks: Task[] = Array.from({ length: 6 }, (_, i) => ({
+    it("homeTaskPreview returns at most 4 tasks from the current week scope", () => {
+      // today 2026-04-08 → week Mon 04-06 … Sun 04-12
+      const daysInWeek = [6, 7, 8, 9, 10, 11];
+      const tasks: Task[] = daysInWeek.map((day, i) => ({
         id: i + 1,
         garden_id: 1,
         planting_id: null,
         title: `Task ${i + 1}`,
-        due_on: `2026-04-${10 + i}`,
+        due_on: `2026-04-${String(day).padStart(2, "0")}`,
         is_done: false,
         notes: "",
       }));
       const { result } = renderHook(() => useDerivedGardenState(defaultParams({ today, tasks })));
       expect(result.current.homeTaskPreview).toHaveLength(4);
+    });
+
+    it("homeTaskPreview excludes tasks due after this calendar week", () => {
+      const tasks: Task[] = [
+        {
+          id: 1,
+          garden_id: 1,
+          planting_id: null,
+          title: "This week",
+          due_on: "2026-04-10",
+          is_done: false,
+          notes: "",
+        },
+        {
+          id: 2,
+          garden_id: 1,
+          planting_id: null,
+          title: "Next week",
+          due_on: "2026-04-15",
+          is_done: false,
+          notes: "",
+        },
+      ];
+      const { result } = renderHook(() => useDerivedGardenState(defaultParams({ today, tasks })));
+      expect(result.current.homeTaskPreview.map((t) => t.title)).toEqual(["This week"]);
     });
 
     it("counts overdue tasks (due_on < today)", () => {
@@ -260,7 +293,13 @@ describe("useDerivedGardenState", () => {
       ];
       const { result } = renderHook(() => useDerivedGardenState(defaultParams({ today, tasks })));
       expect(result.current.overdueTaskCount).toBe(1);
-      expect(result.current.upcomingTaskCount).toBe(3);
+      expect(result.current.upcomingTaskCount).toBe(2);
+    });
+  });
+
+  describe("getLocalIsoWeekRange", () => {
+    it("returns Monday–Sunday bounds for a Wednesday", () => {
+      expect(getLocalIsoWeekRange("2026-04-08")).toEqual({ start: "2026-04-06", end: "2026-04-12" });
     });
   });
 

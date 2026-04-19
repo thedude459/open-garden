@@ -19,6 +19,21 @@ interface WeatherData {
   };
 }
 
+/** Local Monday–Sunday week bounds as YYYY-MM-DD (matches calendar month grid week start). */
+export function getLocalIsoWeekRange(todayStr: string): { start: string; end: string } {
+  const ref = new Date(`${todayStr}T12:00:00`);
+  const mondayOffset = (ref.getDay() + 6) % 7;
+  const startDate = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - mondayOffset);
+  const endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 6);
+  const toYmd = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+  return { start: toYmd(startDate), end: toYmd(endDate) };
+}
+
 interface UseDerivedGardenStateParams {
   today: string;
   tasks: Task[];
@@ -118,14 +133,25 @@ export function useDerivedGardenState({
     [tasks],
   );
 
-  const homeTaskPreview = useMemo(() => pendingTasks.slice(0, 4), [pendingTasks]);
+  const weekEndYmd = useMemo(() => getLocalIsoWeekRange(today).end, [today]);
+
+  /** Open tasks due by end of this calendar week (includes overdue); excludes due dates after Sunday. */
+  const pendingTasksThisWeekOrOverdue = useMemo(
+    () => pendingTasks.filter((task) => task.due_on <= weekEndYmd),
+    [pendingTasks, weekEndYmd],
+  );
+
+  const homeTaskPreview = useMemo(
+    () => pendingTasksThisWeekOrOverdue.slice(0, 4),
+    [pendingTasksThisWeekOrOverdue],
+  );
 
   const overdueTaskCount = useMemo(
     () => pendingTasks.filter((task) => task.due_on < today).length,
     [pendingTasks, today],
   );
 
-  const upcomingTaskCount = pendingTasks.length;
+  const upcomingTaskCount = pendingTasksThisWeekOrOverdue.length;
 
   const weatherPreview = useMemo(() => {
     if (!weather?.daily?.time) {

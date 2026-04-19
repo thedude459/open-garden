@@ -93,7 +93,14 @@ describe("usePlacementSpacing", () => {
       grid_x: 8,
       grid_y: 8,
       planted_on: "2024-04-01",
+      expected_harvest_on: "2024-07-01",
       color: "red",
+      method: "direct_seed",
+      location: "in_bed",
+      moved_on: null,
+      source: "",
+      harvested_on: null,
+      yield_notes: "",
     },
   ];
 

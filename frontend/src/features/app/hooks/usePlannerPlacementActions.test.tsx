@@ -27,7 +27,14 @@ function makePlacement(overrides: Partial<Placement> = {}): Placement {
     grid_x: 1,
     grid_y: 1,
     planted_on: "2026-04-01",
+    expected_harvest_on: "2026-07-01",
     color: "#f00",
+    method: "direct_seed",
+    location: "in_bed",
+    moved_on: null,
+    source: "",
+    harvested_on: null,
+    yield_notes: "",
     ...overrides,
   };
 }
@@ -58,6 +65,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => "Too close to another crop",
         pushPlannerHistory,
+        refreshTasks: vi.fn(async () => undefined),
       }),
     );
 
@@ -82,11 +90,19 @@ describe("usePlannerPlacementActions", () => {
       placements = typeof update === "function" ? update(placements) : update;
     });
     const fetchAuthed = vi.fn(async (path: string, options?: RequestInit) => {
-      if (path === "/placements") {
+      if (path === "/plantings") {
         const payload = JSON.parse(String(options?.body ?? "{}"));
-        return { id: nextId++, ...payload } satisfies Placement;
+        return {
+          id: nextId++,
+          expected_harvest_on: "2026-07-01",
+          moved_on: null,
+          source: "",
+          harvested_on: null,
+          yield_notes: "",
+          ...payload,
+        } satisfies Placement;
       }
-      if (path.startsWith("/placements/") && options?.method === "DELETE") {
+      if (path.startsWith("/plantings/") && options?.method === "DELETE") {
         return undefined;
       }
       throw new Error(`Unhandled path: ${path}`);
@@ -104,6 +120,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => null,
         pushPlannerHistory,
+        refreshTasks: vi.fn(async () => undefined),
       }),
     );
 
@@ -120,9 +137,9 @@ describe("usePlannerPlacementActions", () => {
       await historyEntry?.redo();
     });
 
-    expect(fetchAuthed).toHaveBeenCalledWith("/placements/2", { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith("/plantings/2", { method: "DELETE" });
     expect(fetchAuthed).toHaveBeenCalledWith(
-      "/placements",
+      "/plantings",
       expect.objectContaining({ method: "POST" }),
     );
     expect(placements).toHaveLength(2);
@@ -139,7 +156,7 @@ describe("usePlannerPlacementActions", () => {
       placements = typeof update === "function" ? update(placements) : update;
     });
     const fetchAuthed = vi.fn(async (path: string, options?: RequestInit) => {
-      if (path === "/placements/4/move") {
+      if (path === "/plantings/4/move") {
         const payload = JSON.parse(String(options?.body ?? "{}"));
         return { ...placements[0], bed_id: payload.bed_id, grid_x: payload.grid_x, grid_y: payload.grid_y } satisfies Placement;
       }
@@ -158,6 +175,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => null,
         pushPlannerHistory,
+        refreshTasks: vi.fn(async () => undefined),
       }),
     );
 
@@ -175,7 +193,7 @@ describe("usePlannerPlacementActions", () => {
     });
 
     expect(fetchAuthed).toHaveBeenCalledWith(
-      "/placements/4/move",
+      "/plantings/4/move",
       expect.objectContaining({ method: "PATCH" }),
     );
   });
@@ -201,6 +219,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => null,
         pushPlannerHistory,
+        refreshTasks: vi.fn(async () => undefined),
       }),
     );
 
@@ -237,6 +256,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => null,
         pushPlannerHistory,
+        refreshTasks: vi.fn(async () => undefined),
       }),
     );
 
@@ -257,15 +277,24 @@ describe("usePlannerPlacementActions", () => {
       historyEntry = entry;
     });
     const pushNotice = vi.fn();
+    const refreshTasks = vi.fn(async () => undefined);
     const setPlacements = vi.fn((update: Placement[] | ((prev: Placement[]) => Placement[])) => {
       placements = typeof update === "function" ? update(placements) : update;
     });
     const fetchAuthed = vi.fn(async (path: string, options?: RequestInit) => {
-      if (path === "/placements") {
+      if (path === "/plantings") {
         const payload = JSON.parse(String(options?.body ?? "{}"));
-        return { id: nextId++, ...payload } satisfies Placement;
+        return {
+          id: nextId++,
+          expected_harvest_on: "2026-07-01",
+          moved_on: null,
+          source: "",
+          harvested_on: null,
+          yield_notes: "",
+          ...payload,
+        } satisfies Placement;
       }
-      if (path.startsWith("/placements/") && options?.method === "DELETE") {
+      if (path.startsWith("/plantings/") && options?.method === "DELETE") {
         return undefined;
       }
       throw new Error(`Unhandled path: ${path}`);
@@ -283,6 +312,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => null,
         pushPlannerHistory,
+        refreshTasks,
       }),
     );
 
@@ -290,7 +320,8 @@ describe("usePlannerPlacementActions", () => {
       await result.current.removePlacement(5);
     });
 
-    expect(fetchAuthed).toHaveBeenCalledWith("/placements/5", { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith("/plantings/5", { method: "DELETE" });
+    expect(refreshTasks).toHaveBeenCalledTimes(1);
     expect(placements).toHaveLength(0);
     expect(historyEntry?.label).toBe("Remove Basil");
     expect(pushNotice).toHaveBeenCalledWith("Placement removed.", "info");
@@ -299,7 +330,7 @@ describe("usePlannerPlacementActions", () => {
     await act(async () => {
       await historyEntry?.undo();
     });
-    expect(fetchAuthed).toHaveBeenCalledWith("/placements", expect.objectContaining({ method: "POST" }));
+    expect(fetchAuthed).toHaveBeenCalledWith("/plantings", expect.objectContaining({ method: "POST" }));
     expect(placements).toHaveLength(1);
 
     // redo deletes the recreated placement
@@ -307,7 +338,7 @@ describe("usePlannerPlacementActions", () => {
     await act(async () => {
       await historyEntry?.redo();
     });
-    expect(fetchAuthed).toHaveBeenCalledWith(`/placements/${recreatedId}`, { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith(`/plantings/${recreatedId}`, { method: "DELETE" });
     expect(placements).toHaveLength(0);
   });
 
@@ -322,15 +353,24 @@ describe("usePlannerPlacementActions", () => {
       historyEntry = entry;
     });
     const pushNotice = vi.fn();
+    const refreshTasks = vi.fn(async () => undefined);
     const setPlacements = vi.fn((update: Placement[] | ((prev: Placement[]) => Placement[])) => {
       placements = typeof update === "function" ? update(placements) : update;
     });
     const fetchAuthed = vi.fn(async (path: string, options?: RequestInit) => {
-      if (path === "/placements") {
+      if (path === "/plantings") {
         const payload = JSON.parse(String(options?.body ?? "{}"));
-        return { id: nextId++, ...payload } satisfies Placement;
+        return {
+          id: nextId++,
+          expected_harvest_on: "2026-07-01",
+          moved_on: null,
+          source: "",
+          harvested_on: null,
+          yield_notes: "",
+          ...payload,
+        } satisfies Placement;
       }
-      if (path.startsWith("/placements/") && options?.method === "DELETE") {
+      if (path.startsWith("/plantings/") && options?.method === "DELETE") {
         return undefined;
       }
       throw new Error(`Unhandled path: ${path}`);
@@ -348,6 +388,7 @@ describe("usePlannerPlacementActions", () => {
         selectedDate: "2026-04-01",
         placementSpacingConflict: () => null,
         pushPlannerHistory,
+        refreshTasks,
       }),
     );
 
@@ -355,11 +396,12 @@ describe("usePlannerPlacementActions", () => {
       await result.current.removePlacementsBulk([7, 8]);
     });
 
-    expect(fetchAuthed).toHaveBeenCalledWith("/placements/7", { method: "DELETE" });
-    expect(fetchAuthed).toHaveBeenCalledWith("/placements/8", { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith("/plantings/7", { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith("/plantings/8", { method: "DELETE" });
     expect(placements).toHaveLength(0);
     expect(historyEntry?.label).toBe("Remove 2 placements");
     expect(pushNotice).toHaveBeenCalledWith("Removed 2 placements.", "info");
+    expect(refreshTasks).toHaveBeenCalledTimes(1);
 
     // undo recreates both placements
     await act(async () => {
@@ -373,8 +415,8 @@ describe("usePlannerPlacementActions", () => {
     await act(async () => {
       await historyEntry?.redo();
     });
-    expect(fetchAuthed).toHaveBeenCalledWith(`/placements/${ids[0]}`, { method: "DELETE" });
-    expect(fetchAuthed).toHaveBeenCalledWith(`/placements/${ids[1]}`, { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith(`/plantings/${ids[0]}`, { method: "DELETE" });
+    expect(fetchAuthed).toHaveBeenCalledWith(`/plantings/${ids[1]}`, { method: "DELETE" });
     expect(placements).toHaveLength(0);
   });
 });

@@ -3,14 +3,20 @@
 ==================== */
 
 .app-nav {
-  border-bottom: 1px solid var(--line);
-  padding-bottom: var(--space-3);
-  margin-bottom: var(--space-6);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 calc(-1 * clamp(var(--space-3), 3vw, var(--space-8)))
+    var(--space-6);
+  padding: var(--space-3) clamp(var(--space-3), 3vw, var(--space-8));
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
 }
 
 .app-nav-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
 }
@@ -18,38 +24,76 @@
 .app-nav-brand {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.app-nav-brand__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.app-nav-brand__mark svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.app-nav-brand__text {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
 .app-nav-title {
-  font-size: clamp(1.55rem, 2.4vw, 2rem);
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0;
 }
 
 .app-nav-subtitle {
-  margin-top: var(--space-1);
   font-size: 0.78rem;
   color: var(--muted);
   overflow-wrap: anywhere;
+  margin: 0;
 }
 
 .app-nav-menu-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: 10px;
+  padding: 0.45rem 0.8rem;
+  border-radius: 9px;
   border: 1px solid var(--line);
-  background: var(--bg-2);
+  background: var(--panel);
   color: var(--ink);
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+}
+
+.app-nav-menu-btn:hover {
+  background: var(--bg-2);
 }
 
 .app-nav-content {
-  margin-top: var(--space-4);
+  margin-top: var(--space-3);
   display: none;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .app-nav-content.open {
@@ -79,6 +123,9 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    margin-top: 0;
+    margin-left: var(--space-5);
+    flex: 1;
   }
 
   .app-nav-links {
@@ -104,6 +151,54 @@
   min-width: 0;
 }
 
+.home-create-garden-collapsible {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.home-create-garden-collapsible > summary {
+  cursor: pointer;
+  padding: 0.8rem 1.1rem;
+  font-weight: 600;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--ink);
+  transition: background 120ms ease;
+}
+
+.home-create-garden-collapsible > summary:hover {
+  background: var(--bg-2);
+}
+
+.home-create-garden-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-create-garden-collapsible > summary::after {
+  content: "+";
+  font-size: 1.2rem;
+  line-height: 1;
+  opacity: 0.55;
+}
+
+.home-create-garden-collapsible[open] > summary::after {
+  content: "\2212"; /* minus sign */
+}
+
+.home-create-garden-collapsible[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.home-create-garden-collapsible > :not(summary) {
+  margin: 0;
+}
+
 @media (min-width: 1024px) {
   .home-layout {
     flex-direction: row;
@@ -111,8 +206,8 @@
   }
 
   .home-sidebar {
-    width: min(100%, 20rem);
-    flex: 0 0 20rem;
+    width: min(100%, 22rem);
+    flex: 0 0 22rem;
   }
 
   .home-main {
@@ -120,4 +215,117 @@
   }
 }
 
+/* Home hero card accents — provide a single cohesive visual system */
+.home-hero-card {
+  position: relative;
+  overflow: hidden;
+}
 
+.home-hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
+.home-hero-card--tasks::before { background: var(--accent-2); }
+.home-hero-card--weather::before { background: var(--accent-3); }
+.home-hero-card--cues::before { background: var(--accent); }
+
+.home-stat {
+  text-align: left;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem 0.95rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent-soft) 55%, var(--panel)),
+    var(--panel)
+  );
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition:
+    transform 120ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+  cursor: pointer;
+}
+
+.home-stat:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.home-stat__value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--accent-dark);
+  letter-spacing: -0.02em;
+}
+
+.home-stat__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.home-stat__icon {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: color-mix(in srgb, var(--accent) 50%, var(--muted));
+  opacity: 0.55;
+}
+
+/* Welcome steps */
+.welcome-steps {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.welcome-step {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.85rem;
+  align-items: start;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+}
+
+.welcome-step__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.welcome-step__title {
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.welcome-step__body {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 0.2rem;
+}

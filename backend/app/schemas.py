@@ -102,6 +102,19 @@ class GardenOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class GardenExtensionResourcesOut(BaseModel):
+    """Curated Extension / land-grant links resolved from the garden ZIP (state)."""
+
+    zip_code: str
+    state_code: str | None = None
+    organization: str
+    home_url: str
+    vegetable_gardening_url: str
+    ipm_url: str
+    disclaimer: str
+    source: str
+
+
 class GardenMicroclimateUpdate(BaseModel):
     orientation: Literal["north", "east", "south", "west"] | None = None
     sun_exposure: Literal["full_sun", "part_sun", "part_shade", "full_shade"] | None = None
@@ -156,6 +169,8 @@ class GardenClimateOut(BaseModel):
     adjusted_first_fall_frost: date
     last_frost_shift_days: int
     first_fall_shift_days: int
+    last_spring_frost_extended_by_forecast: bool = False
+    first_fall_frost_extended_by_forecast: bool = False
     soil_temperature_estimate_f: float
     soil_temperature_status: str
     frost_risk_next_10_days: str
@@ -412,7 +427,17 @@ class PlantingCreate(BaseModel):
     garden_id: int
     bed_id: int
     crop_name: str
+    grid_x: int
+    grid_y: int
+    color: str = "#57a773"
     planted_on: date
+    method: Literal["direct_seed", "transplant"] = "direct_seed"
+    location: Literal["indoor", "in_bed"] = "in_bed"
+    # Optional planned bed-entry date. Only meaningful when location="indoor"
+    # (i.e. "I'm starting seeds today and plan to transplant them on this
+    # future date"). Ignored for in_bed plantings, which enter the bed on
+    # planted_on by definition.
+    moved_on: date | None = None
     source: str = ""
 
 
@@ -421,8 +446,14 @@ class PlantingOut(BaseModel):
     garden_id: int
     bed_id: int
     crop_name: str
+    grid_x: int
+    grid_y: int
+    color: str
     planted_on: date
     expected_harvest_on: date
+    method: str
+    location: str
+    moved_on: date | None = None
     source: str
     harvested_on: date | None = None
     yield_notes: str = ""
@@ -430,9 +461,37 @@ class PlantingOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PlantingMove(BaseModel):
+    bed_id: int
+    grid_x: int
+    grid_y: int
+
+
+class PlantingRelocate(BaseModel):
+    location: Literal["indoor", "in_bed"]
+    moved_on: date | None = None
+
+
 class PlantingHarvestUpdate(BaseModel):
     harvested_on: date
     yield_notes: str = ""
+
+
+class PlantingDatesUpdate(BaseModel):
+    """Edit the seed-start / direct-sow date and the optional bed-entry date.
+
+    Both fields are optional: omit a field to leave the existing value
+    untouched. Used for adjusting plans (e.g. shifting a planned seed-start
+    week as winter unfolds) without re-creating the planting or its tasks.
+    """
+
+    planted_on: date | None = None
+    moved_on: date | None = None
+    # When true, an explicitly-omitted moved_on is treated as "clear it"
+    # (set to NULL) rather than "leave unchanged". Lets the UI distinguish
+    # between "user didn't touch this field" and "user cleared the planned
+    # transplant date".
+    clear_moved_on: bool = False
 
 
 class TaskCreate(BaseModel):
@@ -446,6 +505,7 @@ class TaskOut(BaseModel):
     id: int
     garden_id: int
     planting_id: int | None
+    bundled_planting_ids: list[int] | None = None
     title: str
     due_on: date
     is_done: bool
@@ -492,35 +552,6 @@ class PestLogOut(BaseModel):
     observed_on: date
     treatment: str
     photo_path: str
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class PlacementCreate(BaseModel):
-    garden_id: int
-    bed_id: int
-    crop_name: str
-    grid_x: int
-    grid_y: int
-    color: str = "#57a773"
-    planted_on: date
-
-
-class PlacementMove(BaseModel):
-    bed_id: int
-    grid_x: int
-    grid_y: int
-
-
-class PlacementOut(BaseModel):
-    id: int
-    garden_id: int
-    bed_id: int
-    crop_name: str
-    grid_x: int
-    grid_y: int
-    color: str
-    planted_on: date
 
     model_config = ConfigDict(from_attributes=True)
 

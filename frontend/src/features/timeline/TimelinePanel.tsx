@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { History, Filter, Rss, Info, RefreshCw } from "lucide-react";
 import { GardenTimeline, GardenTimelineEvent, TimelineCategory } from "../types";
 import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/SectionHeader";
 
 const CATEGORY_LABELS: Record<TimelineCategory, string> = {
   task: "Tasks",
@@ -66,16 +68,20 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
 
   return (
     <article className="card">
-      <div className="crop-card-row">
-        <div>
-          <h2>Unified Timeline {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
-          <p className="subhead">Daily and weekly command center across tasks, weather, planting windows, sensors, and AI guidance.</p>
-        </div>
-        <button type="button" className="secondary-btn" onClick={onRefresh}>Refresh</button>
-      </div>
+      <SectionHeader
+        icon={History}
+        title={`Unified Timeline ${selectedGardenName ? `- ${selectedGardenName}` : ""}`}
+        subtitle="Daily and weekly command center across tasks, weather, planting windows, sensors, and AI guidance."
+        actions={
+          <button type="button" className="secondary-btn" onClick={onRefresh}>
+            <RefreshCw className="inline-block h-3.5 w-3.5 mr-1.5 align-[-1px]" aria-hidden />
+            Refresh
+          </button>
+        }
+      />
 
       <section className="card timeline-filter-panel">
-        <h3>Filters</h3>
+        <SectionHeader variant="section" headingLevel="h3" icon={Filter} title="Filters" />
         <div className="flex flex-wrap gap-3 mt-2">
           {(Object.keys(CATEGORY_LABELS) as TimelineCategory[]).map((category) => (
             <label key={category} className="flex items-center gap-1.5 text-sm cursor-pointer">
@@ -93,7 +99,7 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
 
       <div className="timeline-columns">
         <section className="card timeline-events-col">
-          <h3>Timeline Events</h3>
+          <SectionHeader variant="section" headingLevel="h3" icon={Rss} title="Timeline Events" />
           {isLoading && <p className="hint">Loading timeline...</p>}
           {!isLoading && filteredEvents.length === 0 && <p className="hint">No timeline events match the selected filters.</p>}
 
@@ -182,7 +188,7 @@ export function TimelinePanel({ selectedGardenName, timeline, isLoading, onRefre
         </section>
 
         <section className="card timeline-drilldown-col">
-          <h3>Drill-down</h3>
+          <SectionHeader variant="section" headingLevel="h3" icon={Info} title="Drill-down" />
           {!selectedEvent && <p className="hint">Select an event to inspect details.</p>}
           {selectedEvent && (
             <div className="stack compact">

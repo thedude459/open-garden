@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from .auth import get_current_user
 from ..database import get_db
-from ..models import Bed, Garden, Placement, Planting, Sensor, Task, User
+from ..models import Bed, Garden, Planting, Sensor, Task, User
 
 
 def get_owned_garden(
@@ -36,25 +36,6 @@ def get_owned_bed(
     if garden is None:
         raise HTTPException(status_code=404, detail="Garden not found")
     return bed
-
-
-def get_owned_placement(
-    placement_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-) -> Placement:
-    placement = db.query(Placement).filter(Placement.id == placement_id).first()
-    if placement is None:
-        raise HTTPException(status_code=404, detail="Placement not found")
-
-    garden = (
-        db.query(Garden)
-        .filter(Garden.id == placement.garden_id, Garden.owner_id == current_user.id)
-        .first()
-    )
-    if garden is None:
-        raise HTTPException(status_code=404, detail="Garden not found")
-    return placement
 
 
 def get_owned_task(

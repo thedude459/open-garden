@@ -4,7 +4,6 @@ from fastapi import HTTPException
 from app.core.dependencies import get_owned_garden
 from app.core.dependencies import (
     get_owned_bed,
-    get_owned_placement,
     get_owned_planting,
     get_owned_sensor,
     get_owned_task,
@@ -37,27 +36,6 @@ def test_get_owned_bed_rejects_missing_bed(db_session, user):
 def test_get_owned_bed_rejects_non_owner(db_session, other_user, bed):
     with pytest.raises(HTTPException) as exc:
         get_owned_bed(bed_id=bed.id, db=db_session, current_user=other_user)
-
-    assert exc.value.status_code == 404
-
-
-def test_get_owned_placement_returns_placement(db_session, user, placement):
-    assert (
-        get_owned_placement(placement_id=placement.id, db=db_session, current_user=user).id
-        == placement.id
-    )
-
-
-def test_get_owned_placement_rejects_missing_placement(db_session, user):
-    with pytest.raises(HTTPException) as exc:
-        get_owned_placement(placement_id=999, db=db_session, current_user=user)
-
-    assert exc.value.status_code == 404
-
-
-def test_get_owned_placement_rejects_non_owner(db_session, other_user, placement):
-    with pytest.raises(HTTPException) as exc:
-        get_owned_placement(placement_id=placement.id, db=db_session, current_user=other_user)
 
     assert exc.value.status_code == 404
 

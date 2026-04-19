@@ -66,8 +66,11 @@ function baseProps(): Parameters<typeof HomePageSection>[0] {
     placements: [],
     cropTemplatesCount: 0,
     gardenClimate: null,
+    gardenExtensionResources: null,
+    loadExtensionResourcesForGarden: vi.fn(async () => undefined),
     isLoadingWeather: false,
     isLoadingClimate: false,
+    isLoadingExtensionResources: false,
     derived: {
       homeTaskPreview: [],
       overdueTaskCount: 0,

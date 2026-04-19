@@ -1,5 +1,7 @@
 import { FormEvent } from "react";
+import { Bot, MessageCircle, Target, Lightbulb, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/SectionHeader";
 import { AiCoachResponse, AiCoachScenario, CoachMessage } from "../types";
 
 type CoachPanelProps = {
@@ -39,16 +41,15 @@ export function CoachPanel({
 
   return (
     <article className="card">
-      <div className="crop-card-row">
-        <div>
-          <h2>AI Garden Coach {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
-          <p className="subhead">Context-aware coaching using your garden state, weather, tasks, plantings, and sensor telemetry.</p>
-        </div>
-      </div>
+      <SectionHeader
+        icon={Bot}
+        title={`AI Garden Coach ${selectedGardenName ? `- ${selectedGardenName}` : ""}`}
+        subtitle="Context-aware coaching using your garden state, weather, tasks, plantings, and sensor telemetry."
+      />
 
       <div className="flex flex-col lg:flex-row gap-4 mt-4">
-        <section className="card">
-          <h3>Chat</h3>
+        <section className="card flex-1">
+          <SectionHeader variant="section" headingLevel="h3" icon={MessageCircle} title="Chat" />
           <div className="h-64 overflow-y-auto space-y-3 p-3 bg-muted rounded-md mb-3" role="log" aria-live="polite">
             {messages.length === 0 && <p className="hint">Ask about watering, task prioritization, planting timing, or what to do this week.</p>}
             {messages.map((message) => (
@@ -69,8 +70,8 @@ export function CoachPanel({
           </form>
         </section>
 
-        <section className="card">
-          <h3>Scenario Planning Tools</h3>
+        <section className="card flex-1">
+          <SectionHeader variant="section" headingLevel="h3" icon={Target} title="Scenario Planning Tools" />
           <div className="stack compact">
             <label className="field-label" htmlFor="coach-days-ahead">Planning horizon (days)</label>
             <input
@@ -119,8 +120,8 @@ export function CoachPanel({
         </section>
       </div>
 
-      <section className="card">
-        <h3>Suggested Actions</h3>
+      <section className="card mt-4">
+        <SectionHeader variant="section" headingLevel="h3" icon={Lightbulb} title="Suggested Actions" />
         <ul className="space-y-3">
           {(latestResponse?.suggested_actions || []).map((action, index) => (
             <li key={`${action.title}-${index}`} className="py-3 border-b last:border-b-0">
@@ -135,8 +136,8 @@ export function CoachPanel({
         </ul>
       </section>
 
-      <section className="card">
-        <h3>Scenario Outcomes</h3>
+      <section className="card mt-4">
+        <SectionHeader variant="section" headingLevel="h3" icon={GitBranch} title="Scenario Outcomes" />
         <ul className="space-y-3">
           {(latestResponse?.scenario_outcomes || []).map((outcome, index) => (
             <li key={`${outcome.title}-${index}`} className="py-3 border-b last:border-b-0">

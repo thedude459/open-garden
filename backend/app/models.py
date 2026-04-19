@@ -1,6 +1,7 @@
 from datetime import date, datetime, timezone
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Date,
     DateTime,
@@ -106,13 +107,20 @@ class CropTemplate(Base):
 
 class Planting(Base):
     __tablename__ = "plantings"
+    __table_args__ = (UniqueConstraint("bed_id", "grid_x", "grid_y", name="uq_plantings_bed_grid"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     garden_id: Mapped[int] = mapped_column(ForeignKey("gardens.id"), index=True)
     bed_id: Mapped[int] = mapped_column(ForeignKey("beds.id"), index=True)
     crop_name: Mapped[str] = mapped_column(String(120), index=True)
+    grid_x: Mapped[int] = mapped_column(Integer)
+    grid_y: Mapped[int] = mapped_column(Integer)
+    color: Mapped[str] = mapped_column(String(20), default="#57a773")
     planted_on: Mapped[date] = mapped_column(Date)
     expected_harvest_on: Mapped[date] = mapped_column(Date)
+    method: Mapped[str] = mapped_column(String(20), default="direct_seed")
+    location: Mapped[str] = mapped_column(String(20), default="in_bed")
+    moved_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     source: Mapped[str] = mapped_column(String(120), default="")
     harvested_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     yield_notes: Mapped[str] = mapped_column(Text, default="")
@@ -124,6 +132,7 @@ class Task(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     garden_id: Mapped[int] = mapped_column(ForeignKey("gardens.id"), index=True)
     planting_id: Mapped[int] = mapped_column(ForeignKey("plantings.id"), index=True, nullable=True)
+    bundled_planting_ids: Mapped[list[int] | None] = mapped_column(JSON, nullable=True)
     title: Mapped[str] = mapped_column(String(200), index=True)
     due_on: Mapped[date] = mapped_column(Date)
     is_done: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -149,22 +158,6 @@ class PestLog(Base):
     observed_on: Mapped[date] = mapped_column(Date)
     treatment: Mapped[str] = mapped_column(Text, default="")
     photo_path: Mapped[str] = mapped_column(String(255), default="")
-
-
-class Placement(Base):
-    __tablename__ = "placements"
-    __table_args__ = (
-        UniqueConstraint("bed_id", "grid_x", "grid_y", name="uq_placements_bed_grid"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    garden_id: Mapped[int] = mapped_column(ForeignKey("gardens.id"), index=True)
-    bed_id: Mapped[int] = mapped_column(ForeignKey("beds.id"), index=True)
-    crop_name: Mapped[str] = mapped_column(String(120), index=True)
-    grid_x: Mapped[int] = mapped_column(Integer)
-    grid_y: Mapped[int] = mapped_column(Integer)
-    color: Mapped[str] = mapped_column(String(20), default="#57a773")
-    planted_on: Mapped[date] = mapped_column(Date)
 
 
 class Sensor(Base):

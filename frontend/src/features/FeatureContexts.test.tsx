@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CalendarProvider, useCalendarContext } from "./calendar/CalendarContext";
 import { PlannerProvider, usePlannerContext } from "./planner/PlannerContext";
@@ -18,6 +18,15 @@ function PlannerConsumer() {
 function SeasonalConsumer() {
   const context = useSeasonalPlanContext();
   return <div>{context.selectedGardenName}</div>;
+}
+
+function expectProviderError(callback: () => void, message: string) {
+  const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    expect(callback).toThrow(message);
+  } finally {
+    consoleError.mockRestore();
+  }
 }
 
 afterEach(() => {
@@ -39,7 +48,7 @@ describe("feature contexts", () => {
           gardenClimate: null,
           taskActions: {
             tasks: [], taskQuery: "", setTaskQuery: () => undefined, isLoadingTasks: false,
-            createTask: () => undefined, createPlanting: () => undefined, toggleTaskDone: () => undefined,
+            createTask: () => undefined, toggleTaskDone: () => undefined,
             deleteTask: () => undefined, editTask: () => undefined, logHarvest: () => undefined,
           },
           cropFormState: {
@@ -62,7 +71,7 @@ describe("feature contexts", () => {
   });
 
   it("throws when calendar context hook is used outside its provider", () => {
-    expect(() => render(<CalendarConsumer />)).toThrow("useCalendarContext must be used within CalendarProvider");
+    expectProviderError(() => render(<CalendarConsumer />), "useCalendarContext must be used within CalendarProvider");
   });
 
   it("provides planner context values", () => {
@@ -91,7 +100,19 @@ describe("feature contexts", () => {
             deleteBed: async () => undefined, addPlacement: async () => undefined, movePlacement: async () => undefined,
             nudgePlacementByDelta: () => undefined, movePlacementsByDelta: async () => undefined,
             removePlacementsBulk: async () => undefined, removePlacement: async () => undefined,
+            relocatePlanting: async () => undefined,
+            updatePlantingDates: async () => undefined,
             placementSpacingConflict: () => null, isCellBlockedForSelectedCrop: () => false, isCellInBuffer: () => false,
+          },
+          plantingSettings: {
+            plantingMethod: "direct_seed",
+            setPlantingMethod: () => undefined,
+            plantingLocation: "in_bed",
+            setPlantingLocation: () => undefined,
+            plantingDate: "2026-04-01",
+            setPlantingDate: () => undefined,
+            plantingMovedOn: null,
+            setPlantingMovedOn: () => undefined,
           },
           placementBedId: null,
           setPlacementBedId: () => undefined,
@@ -115,7 +136,7 @@ describe("feature contexts", () => {
   });
 
   it("throws when planner context hook is used outside its provider", () => {
-    expect(() => render(<PlannerConsumer />)).toThrow("usePlannerContext must be used within PlannerProvider");
+    expectProviderError(() => render(<PlannerConsumer />), "usePlannerContext must be used within PlannerProvider");
   });
 
   it("provides seasonal context values", () => {
@@ -141,6 +162,6 @@ describe("feature contexts", () => {
   });
 
   it("throws when seasonal context hook is used outside its provider", () => {
-    expect(() => render(<SeasonalConsumer />)).toThrow("useSeasonalPlanContext must be used within SeasonalPlanProvider");
+    expectProviderError(() => render(<SeasonalConsumer />), "useSeasonalPlanContext must be used within SeasonalPlanProvider");
   });
 });

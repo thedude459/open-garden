@@ -1,9 +1,8 @@
-import { Dispatch, FormEvent, KeyboardEvent, SetStateAction } from "react";
-import { Bed, CalendarEvent, CropTemplate } from "../types";
+import { Dispatch, FormEvent, SetStateAction } from "react";
+import { CalendarEvent } from "../types";
 import { TaskActions } from "./CalendarContext";
 import { CalendarAgendaEventsList } from "./CalendarAgendaEventsList";
 import { CalendarTaskForm } from "./CalendarTaskForm";
-import { CalendarPlantingForm } from "./CalendarPlantingForm";
 
 type TaskDraft = { title: string; due_on: string; notes: string };
 type HarvestDraft = { harvested_on: string; yield_notes: string };
@@ -33,29 +32,7 @@ type CalendarAgendaPanelProps = {
   taskFormErrors: { title: string; due_on: string };
   handleTaskFieldBlur: (field: "title" | "due_on", value: string) => void;
   handleTaskSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  beds: Bed[];
   selectedDate: string;
-  selectedCropName: string;
-  filteredCropTemplates: CropTemplate[];
-  cropSearchQuery: string;
-  setCropSearchQuery: (value: string) => void;
-  handleCropSearchKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
-  cropSearchActiveIndex: number;
-  selectCrop: (crop: CropTemplate) => void;
-  setPlantingCropCleared: () => void;
-  plantingFormErrors: { bed_id: string; crop_name: string; planted_on: string };
-  handlePlantingFieldBlur: (field: "bed_id" | "crop_name" | "planted_on", value: string) => void;
-  handlePlantingSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  selectedCrop?: CropTemplate;
-  selectedCropWindow?: {
-    window_start: string;
-    window_end: string;
-    status: string;
-    reason: string;
-    indoor_seed_start: string | null;
-    indoor_seed_end: string | null;
-  };
-  isLoadingPlantingWindows: boolean;
 };
 
 export function CalendarAgendaPanel(props: CalendarAgendaPanelProps) {
@@ -93,25 +70,6 @@ export function CalendarAgendaPanel(props: CalendarAgendaPanelProps) {
         taskFormErrors={props.taskFormErrors}
         handleTaskFieldBlur={props.handleTaskFieldBlur}
         handleTaskSubmit={props.handleTaskSubmit}
-      />
-
-      <CalendarPlantingForm
-        beds={props.beds}
-        selectedDate={props.selectedDate}
-        selectedCropName={props.selectedCropName}
-        filteredCropTemplates={props.filteredCropTemplates}
-        cropSearchQuery={props.cropSearchQuery}
-        setCropSearchQuery={props.setCropSearchQuery}
-        handleCropSearchKeyDown={props.handleCropSearchKeyDown}
-        cropSearchActiveIndex={props.cropSearchActiveIndex}
-        selectCrop={props.selectCrop}
-        setPlantingCropCleared={props.setPlantingCropCleared}
-        plantingFormErrors={props.plantingFormErrors}
-        handlePlantingFieldBlur={props.handlePlantingFieldBlur}
-        handlePlantingSubmit={props.handlePlantingSubmit}
-        selectedCrop={props.selectedCrop}
-        selectedCropWindow={props.selectedCropWindow}
-        isLoadingPlantingWindows={props.isLoadingPlantingWindows}
       />
     </aside>
   );

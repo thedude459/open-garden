@@ -191,6 +191,64 @@ describe("usePlannerBedActions", () => {
     );
   });
 
+  it("clamps rotated bed position when rotate response is out of bounds", async () => {
+    const bed = makeBed({ width_in: 96, height_in: 48, grid_x: 7, grid_y: 1 });
+    const fetchAuthed = vi.fn(async (path: string, options?: RequestInit) => {
+      if (path === "/beds/10/rotate") {
+        return {
+          ...bed,
+          width_in: 48,
+          height_in: 96,
+          grid_x: 11,
+          grid_y: 1,
+        } satisfies Bed;
+      }
+      if (path === "/beds/10/position") {
+        const payload = JSON.parse(String(options?.body ?? "{}"));
+        return {
+          ...bed,
+          width_in: 48,
+          height_in: 96,
+          grid_x: payload.grid_x,
+          grid_y: payload.grid_y,
+        } satisfies Bed;
+      }
+      return undefined;
+    });
+    const setBeds = vi.fn();
+    const pushNotice = vi.fn();
+    const pushPlannerHistory = vi.fn();
+
+    const { result } = renderHook(() =>
+      usePlannerBedActions({
+        fetchAuthed: fetchAuthed as unknown as <T = unknown>(url: string, options?: RequestInit) => Promise<T>,
+        pushNotice,
+        setBeds,
+        beds: [bed],
+        yardWidthFt: 12,
+        yardLengthFt: 12,
+        pushPlannerHistory,
+        setConfirmState: vi.fn() as React.Dispatch<React.SetStateAction<ConfirmState | null>>,
+        loadGardenData: vi.fn(async () => undefined),
+        loadGardens: vi.fn(async () => undefined),
+        setSelectedGarden: vi.fn(),
+        setTasks: vi.fn(),
+        setPlantings: vi.fn(),
+        setPlacements: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.rotateBedInYard(10, false);
+    });
+
+    expect(fetchAuthed).toHaveBeenCalledWith(
+      "/beds/10/position",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ grid_x: 8, grid_y: 1 }) }),
+    );
+    expect(pushNotice).toHaveBeenCalledWith("Rotated Bed A.", "success");
+  });
+
   it("configures delete bed confirmation and runs the delete callback", async () => {
     const { result, confirmStateRef, fetchAuthed, loadGardenData, pushNotice } = renderBedActions();
 

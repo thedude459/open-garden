@@ -5,8 +5,11 @@ type GardenRequiredNoticeProps = {
 export function GardenRequiredNotice({ onGoHome }: GardenRequiredNoticeProps) {
   return (
     <article className="card page-empty-state">
-      <h2>Select or Create a Garden</h2>
-      <p className="subhead">Timeline, Calendar, Seasonal Plan, Bed Planner, AI Coach, Sensors, and Pest Log need an active garden. Choose one from My Gardens first.</p>
+      <h2>Pick a garden first</h2>
+      <p className="subhead">
+        This page uses your garden's location, beds, and plantings. Head to My Gardens to pick
+        one, or create a new garden in under a minute.
+      </p>
       <div className="panel-actions">
         <button type="button" onClick={onGoHome}>Go to My Gardens</button>
       </div>

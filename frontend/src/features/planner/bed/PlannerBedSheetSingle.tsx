@@ -1,5 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
-import { Bed, DragPayload, Placement } from "../../types";
+import { CSSProperties, useEffect, useMemo, useState } from "react";
+import { Bed, DragPayload, Placement, PlantingLocation } from "../../types";
+
+function getCropInitials(cropName: string) {
+  const parts = cropName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "PL";
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+}
 
 type PlannerBedSheetSingleProps = {
   bed: Bed;
@@ -19,12 +36,15 @@ type PlannerBedSheetSingleProps = {
   onAddPlacement: (bedId: number, x: number, y: number) => void;
   isCellBlockedForSelectedCrop: (bedId: number, x: number, y: number, occupant: Placement | undefined) => boolean;
   isCellInBuffer: (bedId: number, x: number, y: number) => boolean;
-  cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number };
+  cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number; emoji: string };
   onNudgePlacement: (placementId: number, dx: number, dy: number) => void;
   onRequestRemovePlacement: (placementId: number, cropName: string) => void;
-  requestRotatePreview: (bed: Bed) => void;
+  onRelocatePlanting: (placementId: number, location: PlantingLocation) => void;
+  onUpdatePlantingDates: (
+    placementId: number,
+    changes: { planted_on?: string; moved_on?: string | null },
+  ) => void;
   onRenameBed: (bedId: number, nextName: string) => Promise<void> | void;
-  onDeleteBed: (bedId: number) => void;
   allPlacements: Placement[];
 };
 
@@ -49,16 +69,19 @@ export function PlannerBedSheetSingle({
   cropVisual,
   onNudgePlacement,
   onRequestRemovePlacement,
-  requestRotatePreview,
+  onRelocatePlanting,
+  onUpdatePlantingDates,
   onRenameBed,
-  onDeleteBed,
   allPlacements,
 }: PlannerBedSheetSingleProps) {
   const cols = Math.max(1, Math.ceil(bed.width_in / 3));
   const rows = Math.max(1, Math.ceil(bed.height_in / 3));
+  const isWideBed = cols >= 24 || cols >= rows * 2;
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState(bed.name);
   const [isSavingRename, setIsSavingRename] = useState(false);
+  // Track which placement row currently has its inline date editor open.
+  const [editingDatesId, setEditingDatesId] = useState<number | null>(null);
 
   useEffect(() => {
     setRenameDraft(bed.name);
@@ -73,6 +96,19 @@ export function PlannerBedSheetSingle({
       indexByPlacementId.set(placement.id, next);
     });
     return indexByPlacementId;
+  }, [placements]);
+
+  const groupedPlacements = useMemo(() => {
+    const groups = new Map<string, Placement[]>();
+    placements.forEach((placement) => {
+      const existing = groups.get(placement.crop_name);
+      if (existing) {
+        existing.push(placement);
+      } else {
+        groups.set(placement.crop_name, [placement]);
+      }
+    });
+    return Array.from(groups.entries());
   }, [placements]);
 
   return (
@@ -127,27 +163,40 @@ export function PlannerBedSheetSingle({
             Rename
           </button>
         )}
-        <button className="secondary-btn" title="Preview rotate bed 90 degrees" onClick={() => requestRotatePreview(bed)}>
-          Rotate 90°
-        </button>
-        <button className="danger-sm" title="Delete bed" onClick={() => onDeleteBed(bed.id)}>
-          Delete bed
-        </button>
       </header>
 
-      <div className="grid border border-border rounded" style={{ gridTemplateColumns: `repeat(${cols}, minmax(2.1rem, 1fr))` }}>
-        {Array.from({ length: cols * rows }).map((_, index) => {
+      <div
+        className={`planner-bed-sheet-workspace${isWideBed ? " is-wide-bed" : ""}`}
+      >
+        <div className="bed-sheet-grid-scroll">
+          <div
+            className="bed-sheet-grid"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(${
+                isWideBed ? "1.1rem" : "1.85rem"
+              }, 1fr))`,
+            }}
+          >
+          {Array.from({ length: cols * rows }).map((_, index) => {
           const x = index % cols;
           const y = Math.floor(index / cols);
           const occupant = placements.find((item) => item.grid_x === x && item.grid_y === y);
           const blockedForSelected = isCellBlockedForSelectedCrop(bed.id, x, y, occupant);
           const inBuffer = isCellInBuffer(bed.id, x, y);
+          const cellClassName = [
+            "bed-sheet-cell",
+            occupant ? "occupied" : blockedForSelected ? "spacing-blocked" : inBuffer ? "buffer-blocked" : "empty",
+            occupant && selectedPlacementIds.includes(occupant.id) ? "selected" : "",
+            occupant && occupant.location === "indoor" ? "indoor" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
 
           return (
             <button
               key={`${bed.id}-${x}-${y}`}
-              className={`aspect-square flex items-center justify-center border border-border/30 text-xs transition-colors p-0 ${occupant ? "bg-white" : blockedForSelected ? "bg-red-50 cursor-not-allowed" : inBuffer ? "bg-amber-50 cursor-not-allowed" : "hover:bg-green-50 cursor-pointer"}${occupant && selectedPlacementIds.includes(occupant.id) ? " ring-2 ring-inset ring-[var(--accent)]" : ""}`}
-              style={occupant ? { borderColor: occupant.color } : undefined}
+              className={cellClassName}
+              style={occupant ? ({ borderColor: occupant.color } as CSSProperties) : undefined}
               onMouseDown={() => startLasso(bed.id, x, y)}
               onMouseEnter={() => updateLasso(bed.id, x, y)}
               onMouseUp={(event) => finishLasso(event.shiftKey)}
@@ -198,71 +247,270 @@ export function PlannerBedSheetSingle({
               {occupant
                 ? (() => {
                     const visual = cropVisual(occupant.crop_name);
-                    return <img className="plot-cell-photo w-full h-full object-cover" src={visual.imageUrl} alt="" title={occupant.crop_name} loading="lazy" />;
+                    const markerStyle = { "--placement-accent": occupant.color } as CSSProperties;
+
+                    return (
+                      <span className="plot-cell-marker" style={markerStyle} title={occupant.crop_name}>
+                        <span
+                          className="plot-cell-marker__photo"
+                          style={{ backgroundImage: `url("${visual.imageUrl}")` }}
+                          aria-hidden="true"
+                        />
+                        <span className="plot-cell-marker__emoji" aria-hidden="true">
+                          {visual.emoji}
+                        </span>
+                        <span className="plot-cell-marker__label">{getCropInitials(occupant.crop_name)}</span>
+                      </span>
+                    );
                   })()
                 : ""}
             </button>
           );
-        })}
-      </div>
-
-      <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border" aria-label={`${bed.name} crop legend`}>
-        {Array.from(
-          new Map(placements.map((p) => [p.crop_name, placements.filter((item) => item.crop_name === p.crop_name).length])).entries()
-        ).map(([cropName, count]) => {
-          const visual = cropVisual(cropName);
-          return (
-            <span key={`${bed.id}-${cropName}`} className="flex items-center gap-1.5 text-sm">
-              <img className="legend-photo w-6 h-6 rounded object-cover" src={visual.imageUrl} alt="" loading="lazy" />
-              <span>{cropName} ({count})</span>
-              <span className="hint">Row {visual.rowSpacingIn} in · In-row {visual.inRowSpacingIn} in</span>
+          })}
+          </div>
+        </div>
+        <aside className="bed-placements-panel" aria-label={`${bed.name} placement controls`}>
+          <header className="bed-placements-panel__header">
+            <h5 className="bed-placements-panel__title">Plants</h5>
+            <span className="bed-placements-panel__count">
+              {placements.length} {placements.length === 1 ? "plant" : "plants"}
             </span>
-          );
-        })}
-        {placements.length === 0 && <span className="hint">No crops to show in legend yet.</span>}
-      </div>
+          </header>
 
-      <ul className="space-y-2 mt-4">
-        {placements.map((placement) => (
-          <li key={placement.id} className="flex flex-wrap items-center gap-2 py-2 border-b last:border-b-0">
-            <button
-              className={`rounded px-2 py-1 text-sm text-white font-medium cursor-pointer hover:opacity-90 transition-opacity${selectedPlacement && selectedPlacement.id === placement.id ? " ring-2 ring-offset-1 ring-white" : ""}`}
-              style={{ background: placement.color }}
-              draggable
-              aria-label={`${placement.crop_name} at column ${placement.grid_x + 1}, row ${placement.grid_y + 1}. Arrow keys move; Enter removes.`}
-              onDragStart={(event) => {
-                event.dataTransfer.setData("application/json", JSON.stringify({ placementId: placement.id }));
-                event.dataTransfer.effectAllowed = "move";
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowLeft") { event.preventDefault(); onNudgePlacement(placement.id, -1, 0); }
-                else if (event.key === "ArrowRight") { event.preventDefault(); onNudgePlacement(placement.id, 1, 0); }
-                else if (event.key === "ArrowUp") { event.preventDefault(); onNudgePlacement(placement.id, 0, -1); }
-                else if (event.key === "ArrowDown") { event.preventDefault(); onNudgePlacement(placement.id, 0, 1); }
-              }}
-              onClick={() => {
-                if (bulkMode) { togglePlacementSelection(placement.id); return; }
-                setSelectedPlacementId((current) => current === placement.id ? null : placement.id);
-              }}
-            >
-              {selectedPlacement && selectedPlacement.id === placement.id
-                ? `Tap a square for ${placement.crop_name}`
-                : `${placement.crop_name}${(placementIndexes.get(placement.id) || 0) > 1 ? ` #${placementIndexes.get(placement.id)}` : ""}`}
-            </button>
-            <p className="hint text-xs w-full">
-              Row {cropVisual(placement.crop_name).rowSpacingIn} in · In-row {cropVisual(placement.crop_name).inRowSpacingIn} in
-            </p>
-            <div className="flex gap-1 ml-auto">
-              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, -1, 0)} aria-label={`Move ${placement.crop_name} left`}>←</button>
-              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, 0, -1)} aria-label={`Move ${placement.crop_name} up`}>↑</button>
-              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, 0, 1)} aria-label={`Move ${placement.crop_name} down`}>↓</button>
-              <button type="button" className="secondary-btn text-xs px-1.5 py-0.5" onClick={() => onNudgePlacement(placement.id, 1, 0)} aria-label={`Move ${placement.crop_name} right`}>→</button>
-              <button type="button" className="danger-sm text-xs px-1.5 py-0.5" onClick={() => onRequestRemovePlacement(placement.id, placement.crop_name)}>Remove</button>
-            </div>
-          </li>
-        ))}
-        {placements.length === 0 && <li>No crop placements yet.</li>}
-      </ul>
+          {placements.length === 0 ? (
+            <p className="bed-placements-panel__empty">No crop placements yet.</p>
+          ) : (
+            <ul className="bed-placements-groups" aria-label={`${bed.name} crop legend`}>
+              {groupedPlacements.map(([cropName, cropPlacements]) => {
+                const visual = cropVisual(cropName);
+                return (
+                  <li key={`${bed.id}-${cropName}`} className="bed-placement-group">
+                    <div className="bed-placement-group__header">
+                      <span className="bed-placement-group__avatar">
+                        <img
+                          className="bed-placement-group__photo legend-photo"
+                          src={visual.imageUrl}
+                          alt=""
+                          loading="lazy"
+                        />
+                        <span className="bed-placement-group__emoji" aria-hidden="true">
+                          {visual.emoji}
+                        </span>
+                      </span>
+                      <div className="bed-placement-group__meta">
+                        <span className="bed-placement-group__name" title={cropName}>
+                          {cropName} ({cropPlacements.length})
+                        </span>
+                        <span className="bed-placement-group__spacing">
+                          Row {visual.rowSpacingIn} in · In-row {visual.inRowSpacingIn} in
+                        </span>
+                      </div>
+                    </div>
+
+                    <ul className="bed-placement-rows">
+                      {cropPlacements.map((placement) => {
+                        const placementIndex = placementIndexes.get(placement.id) || 0;
+                        const isSelected = selectedPlacement?.id === placement.id;
+                        const isMultiple = cropPlacements.length > 1;
+                        return (
+                          <li
+                            key={placement.id}
+                            className={`bed-placement-row${isSelected ? " is-selected" : ""}`}
+                          >
+                            <div className="bed-placement-row__top">
+                              <button
+                                type="button"
+                                className="bed-placement-row__chip"
+                                style={{ "--placement-color": placement.color } as CSSProperties}
+                                draggable
+                                aria-label={`${placement.crop_name} at column ${placement.grid_x + 1}, row ${placement.grid_y + 1}. Arrow keys move; Enter removes.`}
+                                aria-pressed={isSelected}
+                                onDragStart={(event) => {
+                                  event.dataTransfer.setData(
+                                    "application/json",
+                                    JSON.stringify({ placementId: placement.id }),
+                                  );
+                                  event.dataTransfer.effectAllowed = "move";
+                                }}
+                                onKeyDown={(event) => {
+                                  if (event.key === "ArrowLeft") { event.preventDefault(); onNudgePlacement(placement.id, -1, 0); }
+                                  else if (event.key === "ArrowRight") { event.preventDefault(); onNudgePlacement(placement.id, 1, 0); }
+                                  else if (event.key === "ArrowUp") { event.preventDefault(); onNudgePlacement(placement.id, 0, -1); }
+                                  else if (event.key === "ArrowDown") { event.preventDefault(); onNudgePlacement(placement.id, 0, 1); }
+                                }}
+                                onClick={() => {
+                                  if (bulkMode) { togglePlacementSelection(placement.id); return; }
+                                  setSelectedPlacementId((current) => current === placement.id ? null : placement.id);
+                                }}
+                              >
+                                <span className="bed-placement-row__dot" aria-hidden="true" />
+                                <span className="bed-placement-row__label">
+                                  {isSelected
+                                    ? "Tap a square"
+                                    : isMultiple
+                                    ? `#${placementIndex} · Col ${placement.grid_x + 1}, Row ${placement.grid_y + 1}`
+                                    : `Col ${placement.grid_x + 1}, Row ${placement.grid_y + 1}`}
+                                </span>
+                                {placement.location === "indoor" && (
+                                  <span className="bed-placement-row__badge" aria-label="Started indoors">
+                                    Indoor
+                                  </span>
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                className="bed-placement-row__remove"
+                                onClick={() => onRequestRemovePlacement(placement.id, placement.crop_name)}
+                                title={`Remove ${placement.crop_name} at column ${placement.grid_x + 1}, row ${placement.grid_y + 1}`}
+                              >
+                                Remove
+                              </button>
+                            </div>
+
+                            <div className="bed-placement-row__bottom">
+                              <div
+                                className="bed-placement-row__nudge-pad"
+                                role="group"
+                                aria-label={`Nudge ${placement.crop_name}`}
+                              >
+                                <button
+                                  type="button"
+                                  className="bed-placement-row__nudge"
+                                  onClick={() => onNudgePlacement(placement.id, -1, 0)}
+                                  aria-label={`Move ${placement.crop_name} left`}
+                                >
+                                  ←
+                                </button>
+                                <button
+                                  type="button"
+                                  className="bed-placement-row__nudge"
+                                  onClick={() => onNudgePlacement(placement.id, 0, -1)}
+                                  aria-label={`Move ${placement.crop_name} up`}
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  type="button"
+                                  className="bed-placement-row__nudge"
+                                  onClick={() => onNudgePlacement(placement.id, 0, 1)}
+                                  aria-label={`Move ${placement.crop_name} down`}
+                                >
+                                  ↓
+                                </button>
+                                <button
+                                  type="button"
+                                  className="bed-placement-row__nudge"
+                                  onClick={() => onNudgePlacement(placement.id, 1, 0)}
+                                  aria-label={`Move ${placement.crop_name} right`}
+                                >
+                                  →
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                className="bed-placement-row__relocate"
+                                onClick={() =>
+                                  onRelocatePlanting(
+                                    placement.id,
+                                    placement.location === "indoor" ? "in_bed" : "indoor",
+                                  )
+                                }
+                                aria-label={
+                                  placement.location === "indoor"
+                                    ? `Move ${placement.crop_name} into bed`
+                                    : `Move ${placement.crop_name} indoors`
+                                }
+                              >
+                                {placement.location === "indoor" ? "Move to bed" : "Move indoors"}
+                              </button>
+                              <button
+                                type="button"
+                                className="bed-placement-row__edit-dates"
+                                aria-expanded={editingDatesId === placement.id}
+                                aria-controls={`bed-placement-dates-${placement.id}`}
+                                onClick={() =>
+                                  setEditingDatesId((current) =>
+                                    current === placement.id ? null : placement.id,
+                                  )
+                                }
+                              >
+                                {editingDatesId === placement.id ? "Hide dates" : "Edit dates"}
+                              </button>
+                            </div>
+
+                            {editingDatesId === placement.id && (
+                              <div
+                                id={`bed-placement-dates-${placement.id}`}
+                                className="bed-placement-row__dates"
+                                role="group"
+                                aria-label={`Edit dates for ${placement.crop_name}`}
+                              >
+                                <label className="bed-placement-row__date-field">
+                                  <span>
+                                    {placement.location === "indoor"
+                                      ? "Seed start (indoors)"
+                                      : placement.method === "transplant"
+                                      ? "Transplant date"
+                                      : "Direct sow date"}
+                                  </span>
+                                  <input
+                                    type="date"
+                                    defaultValue={placement.planted_on}
+                                    onBlur={(event) => {
+                                      const value = event.target.value;
+                                      if (value && value !== placement.planted_on) {
+                                        onUpdatePlantingDates(placement.id, { planted_on: value });
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                {placement.location === "indoor" && (
+                                  <label className="bed-placement-row__date-field">
+                                    <span>Planned move-to-bed</span>
+                                    <div className="bed-placement-row__date-inline">
+                                      <input
+                                        type="date"
+                                        defaultValue={placement.moved_on ?? ""}
+                                        min={placement.planted_on}
+                                        onBlur={(event) => {
+                                          const value = event.target.value;
+                                          if (value && value !== placement.moved_on) {
+                                            onUpdatePlantingDates(placement.id, { moved_on: value });
+                                          } else if (!value && placement.moved_on) {
+                                            onUpdatePlantingDates(placement.id, { moved_on: null });
+                                          }
+                                        }}
+                                      />
+                                      {placement.moved_on && (
+                                        <button
+                                          type="button"
+                                          className="secondary-btn"
+                                          onClick={() =>
+                                            onUpdatePlantingDates(placement.id, { moved_on: null })
+                                          }
+                                        >
+                                          Clear
+                                        </button>
+                                      )}
+                                    </div>
+                                  </label>
+                                )}
+                                <p className="bed-placement-row__dates-hint">
+                                  Changes update the harvest estimate. Existing tasks aren't touched.
+                                </p>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </aside>
+      </div>
     </section>
   );
 }

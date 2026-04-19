@@ -16,7 +16,7 @@ describe("status notices", () => {
       </>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Resend verification email" }));
+    fireEvent.click(screen.getByRole("button", { name: "Resend email" }));
     fireEvent.click(screen.getByRole("button", { name: "Go to My Gardens" }));
 
     expect(onResend).toHaveBeenCalledTimes(1);

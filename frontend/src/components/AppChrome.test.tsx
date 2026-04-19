@@ -81,7 +81,7 @@ describe("AppNavbar", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Timeline" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Crop Library" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Crops" })).toBeInTheDocument();
   });
 });
 
@@ -97,7 +97,7 @@ describe("HelpModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     fireEvent.click(screen.getByRole("button", { name: "Got it" }));
 
-    expect(screen.getByRole("dialog", { name: "Keyboard Controls" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "How open-garden works" })).toBeInTheDocument();
     expect(onClose).toHaveBeenNthCalledWith(1, false);
     expect(onClose).toHaveBeenNthCalledWith(2, true);
   });

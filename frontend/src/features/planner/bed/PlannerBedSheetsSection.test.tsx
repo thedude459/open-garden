@@ -28,6 +28,13 @@ const samplePlacement: Placement = {
   grid_y: 0,
   color: "#4caf50",
   planted_on: "2026-04-01",
+  expected_harvest_on: "2026-07-01",
+  method: "direct_seed",
+  location: "in_bed",
+  moved_on: null,
+  source: "",
+  harvested_on: null,
+  yield_notes: "",
 };
 
 function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetsSection>[0]> = {}) {
@@ -57,6 +64,8 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetsSecti
     cropVisual: vi.fn().mockReturnValue({ imageUrl: "", rowSpacingIn: 12, inRowSpacingIn: 12 }),
     onNudgePlacement: vi.fn(),
     onRequestRemovePlacement: vi.fn(),
+    onRelocatePlanting: vi.fn(),
+    onUpdatePlantingDates: vi.fn(),
     ...overrides,
   };
 }

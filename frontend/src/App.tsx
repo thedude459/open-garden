@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { PlantingLocation, PlantingMethod } from "./features/types";
 import { useAuthFlow } from "./features/app/hooks/useAuthFlow";
 import { useAuthedFetch } from "./features/app/hooks/useAuthedFetch";
 import { useCoachState } from "./features/app/hooks/useCoachState";
@@ -49,6 +50,17 @@ function App() {
 
   const { activePage, setActivePage, navigateTo, isNavOpen, setIsNavOpen, isHelpOpen, setIsHelpOpen, monthCursor, setMonthCursor, selectedDate, setSelectedDate, placementBedId, setPlacementBedId } = pageRouter;
 
+  const [plantingMethod, setPlantingMethod] = useState<PlantingMethod>("direct_seed");
+  const [plantingLocation, setPlantingLocation] = useState<PlantingLocation>("in_bed");
+  // Date the user wants to stamp on new plantings — defaults to today, but
+  // can be set to any future date to support winter planning. Kept distinct
+  // from the calendar's `selectedDate` so changing the planning date for new
+  // plantings doesn't shift the calendar view.
+  const [plantingDate, setPlantingDate] = useState<string>(today);
+  // Optional planned bed-entry date for indoor plantings (the day the user
+  // intends to transplant the seedlings into the bed).
+  const [plantingMovedOn, setPlantingMovedOn] = useState<string | null>(null);
+
   const selectedGardenRecord = useMemo(
     () => gardenData.gardens.find((g) => g.id === gardenData.selectedGarden),
     [gardenData.gardens, gardenData.selectedGarden],
@@ -56,10 +68,8 @@ function App() {
 
   const taskActions = useTaskActions({
     fetchAuthed, pushNotice, token, selectedGarden: gardenData.selectedGarden,
-    beds: gardenData.beds, cropTemplates: gardenData.cropTemplates, setPlantings: gardenData.setPlantings,
+    setPlantings: gardenData.setPlantings,
     invalidateSeasonalPlanCache: gardenData.invalidateSeasonalPlanCache,
-    loadGardenData: gardenData.loadGardenData,
-    setSelectedCropName: gardenData.setSelectedCropName,
   });
 
   const gardenActions = useGardenActions({
@@ -111,6 +121,10 @@ function App() {
     cropMap: derived.cropMap,
     selectedCropName: gardenData.selectedCropName,
     selectedDate,
+    plantingDate,
+    plantingMovedOn,
+    plantingMethod,
+    plantingLocation,
     pushPlannerHistory,
     setConfirmState,
     loadGardens: gardenData.loadGardens,
@@ -118,6 +132,7 @@ function App() {
     setSelectedGarden: gardenData.setSelectedGarden,
     setTasks: taskActions.setTasks,
     setPlantings: gardenData.setPlantings,
+    refreshTasks: taskActions.refreshTasks,
   });
 
   const coachState = useCoachState({ fetchAuthed, selectedGardenRecord });
@@ -140,6 +155,7 @@ function App() {
     loadClimateForGarden: gardenData.loadClimateForGarden,
     loadPlantingWindowsForGarden: gardenData.loadPlantingWindowsForGarden,
     loadSunPathForGarden: gardenData.loadSunPathForGarden,
+    loadExtensionResourcesForGarden: gardenData.loadExtensionResourcesForGarden,
     noticeUnlessExpired: gardenData.noticeUnlessExpired,
     pushNotice,
     resetCoach: coachState.resetCoach, resetPlannerHistory,
@@ -218,6 +234,8 @@ function App() {
         gardenTimeline: gardenData.gardenTimeline,
         loadTimelineForGarden: gardenData.loadTimelineForGarden,
         loadSensorSummaryForGarden: gardenData.loadSensorSummaryForGarden,
+        gardenExtensionResources: gardenData.gardenExtensionResources,
+        loadExtensionResourcesForGarden: gardenData.loadExtensionResourcesForGarden,
       }}
       cropLibrary={{
         cropTemplateSyncStatus: gardenData.cropTemplateSyncStatus,
@@ -236,6 +254,7 @@ function App() {
         isLoadingSensorSummary: gardenData.isLoadingSensorSummary,
         isLoadingTimeline: gardenData.isLoadingTimeline,
         isLoadingPlantingRecommendation: gardenData.isLoadingPlantingRecommendation,
+        isLoadingExtensionResources: gardenData.isLoadingExtensionResources,
       }}
       plannerUi={{
         placementBedId,
@@ -244,6 +263,16 @@ function App() {
         plannerRedoCount,
         undoPlannerChange,
         redoPlannerChange,
+        plantingSettings: {
+          plantingMethod,
+          setPlantingMethod,
+          plantingLocation,
+          setPlantingLocation,
+          plantingDate,
+          setPlantingDate,
+          plantingMovedOn,
+          setPlantingMovedOn,
+        },
       }}
       actions={{
         taskActions,

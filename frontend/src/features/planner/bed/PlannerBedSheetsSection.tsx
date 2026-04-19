@@ -1,4 +1,4 @@
-import { Placement, Bed } from "../../types";
+import { Placement, Bed, PlantingLocation } from "../../types";
 import { PlannerBedSheetSingle } from "./PlannerBedSheetSingle";
 
 type PlannerBedSheetsSectionProps = {
@@ -27,6 +27,11 @@ type PlannerBedSheetsSectionProps = {
   cropVisual: (cropName: string) => { imageUrl: string; rowSpacingIn: number; inRowSpacingIn: number; emoji: string };
   onNudgePlacement: (placementId: number, dx: number, dy: number) => void;
   onRequestRemovePlacement: (placementId: number, cropName: string) => void;
+  onRelocatePlanting: (placementId: number, location: PlantingLocation) => void;
+  onUpdatePlantingDates: (
+    placementId: number,
+    changes: { planted_on?: string; moved_on?: string | null },
+  ) => void;
 };
 
 export function PlannerBedSheetsSection({
@@ -55,6 +60,8 @@ export function PlannerBedSheetsSection({
   cropVisual,
   onNudgePlacement,
   onRequestRemovePlacement,
+  onRelocatePlanting,
+  onUpdatePlantingDates,
 }: PlannerBedSheetsSectionProps) {
   return (
     <section className="planner-panel planner-bed-panel">
@@ -136,6 +143,8 @@ export function PlannerBedSheetsSection({
               cropVisual={cropVisual}
               onNudgePlacement={onNudgePlacement}
               onRequestRemovePlacement={onRequestRemovePlacement}
+              onRelocatePlanting={onRelocatePlanting}
+              onUpdatePlantingDates={onUpdatePlantingDates}
               onRenameBed={onRenameBed}
             />
           );

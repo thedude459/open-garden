@@ -89,6 +89,7 @@ def test_fetch_zip_profile_uses_fallback_on_non_200(monkeypatch):
     result = asyncio.run(weather.fetch_zip_profile("94110"))
 
     assert result["zip_code"] == "94110"
+    assert result.get("state_code") == "CA"
 
 
 def test_fetch_zip_profile_non_200_without_fallback_raises(monkeypatch):
@@ -119,7 +120,17 @@ def test_fetch_zip_profile_returns_zone_when_enrichment_succeeds(monkeypatch):
         "AsyncClient",
         lambda *args, **kwargs: _FakeClient(
             [
-                _FakeResponse(payload={"places": [{"latitude": "37.7", "longitude": "-122.4"}]}),
+                _FakeResponse(
+                    payload={
+                        "places": [
+                            {
+                                "latitude": "37.7",
+                                "longitude": "-122.4",
+                                "state abbreviation": "CA",
+                            }
+                        ]
+                    }
+                ),
                 _FakeResponse(payload={"zone": "9b"}),
             ]
         ),
@@ -128,6 +139,7 @@ def test_fetch_zip_profile_returns_zone_when_enrichment_succeeds(monkeypatch):
     result = asyncio.run(weather.fetch_zip_profile("94110"))
 
     assert result["growing_zone"] == "9b"
+    assert result.get("state_code") == "CA"
 
 
 def test_fetch_zip_profile_returns_unknown_zone_on_enrichment_error(monkeypatch):

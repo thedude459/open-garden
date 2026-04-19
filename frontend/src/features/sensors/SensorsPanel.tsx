@@ -1,6 +1,8 @@
 import { FormEvent, useMemo, useState } from "react";
+import { Cpu, Droplets, Plus, Radio, Upload, Thermometer } from "lucide-react";
 import { Bed, GardenSensorsSummary, SensorKind } from "../types";
 import { Badge } from "@/components/ui/badge";
+import { SectionHeader } from "@/components/SectionHeader";
 
 type SensorsPanelProps = {
   selectedGardenName?: string;
@@ -24,7 +26,17 @@ function formatSeriesLabel(value: string) {
   return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:00`;
 }
 
-function SensorLineChart({ title, points, color }: { title: string; points: { captured_at: string; value: number }[]; color: string }) {
+function SensorLineChart({
+  title,
+  points,
+  color,
+  icon: Icon,
+}: {
+  title: string;
+  points: { captured_at: string; value: number }[];
+  color: string;
+  icon?: typeof Droplets;
+}) {
   const width = 560;
   const height = 180;
   const pad = 28;
@@ -52,8 +64,11 @@ function SensorLineChart({ title, points, color }: { title: string; points: { ca
   }, [points]);
 
   return (
-    <section className="border rounded-md p-3">
-      <h4>{title}</h4>
+    <section className="sensor-chart-card">
+      <header className="sensor-chart-card__head">
+        {Icon && <span className="sensor-chart-card__icon" aria-hidden><Icon /></span>}
+        <h4 className="sensor-chart-card__title">{title}</h4>
+      </header>
       {points.length === 0 ? (
         <p className="hint">No telemetry points yet.</p>
       ) : (
@@ -122,19 +137,20 @@ export function SensorsPanel({
 
   return (
     <article className="card">
-      <div className="crop-card-row">
-        <div>
-          <h2>Sensor Dashboard {selectedGardenName ? `- ${selectedGardenName}` : ""}</h2>
-          <p className="subhead">IoT telemetry for moisture, temperature, and automation-ready irrigation guidance.</p>
-        </div>
-        <button type="button" className="secondary-btn" onClick={onRefresh}>Refresh</button>
-      </div>
+      <SectionHeader
+        icon={Cpu}
+        title={`Sensor Dashboard ${selectedGardenName ? `- ${selectedGardenName}` : ""}`}
+        subtitle="IoT telemetry for moisture, temperature, and automation-ready irrigation guidance."
+        actions={
+          <button type="button" className="secondary-btn" onClick={onRefresh}>Refresh</button>
+        }
+      />
 
       {isLoading && <p className="hint">Loading sensor telemetry...</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <section className="card">
-          <h3>Register Sensor</h3>
+          <SectionHeader variant="section" headingLevel="h3" icon={Plus} title="Register Sensor" />
           <form className="stack compact" onSubmit={registerSensor}>
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Bed A Moisture Probe" required />
             <select
@@ -168,7 +184,7 @@ export function SensorsPanel({
         </section>
 
         <section className="card">
-          <h3>Ingest Reading</h3>
+          <SectionHeader variant="section" headingLevel="h3" icon={Upload} title="Ingest Reading" />
           <form className="stack compact" onSubmit={ingestReading}>
             <select value={ingestSensorId || ""} onChange={(event) => setIngestSensorId(Number(event.target.value) || null)}>
               <option value="">Select sensor</option>
@@ -196,8 +212,8 @@ export function SensorsPanel({
         </section>
       </div>
 
-      <section className="card">
-        <h3>Registered Sensors</h3>
+      <section className="card mt-4">
+        <SectionHeader variant="section" headingLevel="h3" icon={Radio} title="Registered Sensors" />
         <ul className="space-y-2">
           {(summary?.sensors || []).map((sensor) => (
             <li key={sensor.id} className="flex flex-col py-2 border-b last:border-b-0">
@@ -211,8 +227,8 @@ export function SensorsPanel({
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-        <SensorLineChart title="Soil Moisture (%)" points={summary?.soil_moisture_series || []} color="#2f8f4e" />
-        <SensorLineChart title="Soil Temperature" points={summary?.soil_temperature_series || []} color="#d46a1f" />
+        <SensorLineChart title="Soil Moisture (%)" points={summary?.soil_moisture_series || []} color="#2f8f4e" icon={Droplets} />
+        <SensorLineChart title="Soil Temperature" points={summary?.soil_temperature_series || []} color="#d46a1f" icon={Thermometer} />
       </div>
     </article>
   );

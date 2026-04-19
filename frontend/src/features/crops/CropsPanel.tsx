@@ -1,4 +1,6 @@
 import { FormEvent } from "react";
+import { Leaf, PenSquare, Sprout } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
 import { CropTemplate, CropTemplateSyncStatus } from "../types";
 
 type CropsPanelProps = {
@@ -87,11 +89,21 @@ export function CropsPanel({
   return (
     <div className="crops-layout">
       <section className="card">
-        <h2>Crop Library</h2>
-        <p className="subhead">
-          {cropTemplates.length} crop template{cropTemplates.length !== 1 ? "s" : ""} available.
-          {` ${importedCount} imported from Johnny's, ${manualCount} manual.`}
-        </p>
+        <SectionHeader
+          icon={Sprout}
+          title="Crop Library"
+          subtitle={`${cropTemplates.length} crop template${cropTemplates.length !== 1 ? "s" : ""} available. ${importedCount} imported from Johnny's, ${manualCount} manual.`}
+          actions={
+            <>
+              <button type="button" className="secondary-btn" onClick={onRefreshLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
+                {isRefreshingLibrary || isSyncRunning ? "Syncing crop database..." : "Update Crop Database"}
+              </button>
+              <button type="button" className="secondary-btn" onClick={onCleanupLegacyLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
+                {isCleaningLegacyLibrary ? "Removing legacy starter crops..." : "Remove Legacy Starter Crops"}
+              </button>
+            </>
+          }
+        />
         {syncStatus && (
           <div className="hint crop-notes">
             <strong>Catalog sync:</strong> {syncStatus.message}
@@ -102,14 +114,6 @@ export function CropsPanel({
             {syncStatus.error && ` Error: ${syncStatus.error}`}
           </div>
         )}
-        <div className="panel-actions">
-          <button type="button" className="secondary-btn" onClick={onRefreshLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
-            {isRefreshingLibrary || isSyncRunning ? "Syncing crop database..." : "Update Crop Database"}
-          </button>
-          <button type="button" className="secondary-btn" onClick={onCleanupLegacyLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
-            {isCleaningLegacyLibrary ? "Removing legacy starter crops..." : "Remove Legacy Starter Crops"}
-          </button>
-        </div>
         <div className="crops-grid">
           {cropTemplates.map((crop) => (
             <div key={crop.id} className="crop-card">
@@ -145,7 +149,11 @@ export function CropsPanel({
       </section>
 
       <form onSubmit={onUpsertCropTemplate} className="card stack compact">
-        <h2>{editingCropId ? "Edit Crop" : "Add Crop"}</h2>
+        <SectionHeader
+          icon={editingCropId ? PenSquare : Leaf}
+          title={editingCropId ? "Edit Crop" : "Add Crop"}
+          subtitle={editingCropId ? "Tune this crop's spacing, timing, and notes." : "Create a custom crop your library is missing."}
+        />
         <label className="field-label" htmlFor="crop-name">Crop Name</label>
         <input id="crop-name" value={newCropName} onChange={(e) => onNewCropNameChange(e.target.value)} placeholder="Broccoli" aria-invalid={Boolean(cropErrors.name)} aria-describedby={cropErrors.name ? "crop-name-error" : undefined} required />
         {cropErrors.name && <p id="crop-name-error" className="field-error">{cropErrors.name}</p>}

@@ -1,6 +1,8 @@
 import { FormEvent, KeyboardEvent, RefObject, useMemo, useState } from "react";
-import { Bed, ClimatePlantingWindow, CropTemplate, Garden, GardenSunPath, Placement } from "../types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LayoutGrid, Sprout } from "lucide-react";
+import { Bed, ClimatePlantingWindow, CropTemplate, Garden, GardenSunPath, Placement, PlantingLocation, PlantingMethod } from "../types";
+import { Card, CardContent } from "@/components/ui/card";
+import { SectionHeader } from "@/components/SectionHeader";
 import { usePlannerCropVisuals } from "./hooks/usePlannerCropVisuals";
 import { usePlannerBulkSelection } from "./hooks/usePlannerBulkSelection";
 import { usePlannerRotationPreview } from "./hooks/usePlannerRotationPreview";
@@ -66,6 +68,19 @@ type PlannerPanelProps = {
     onDeleteBed: (bedId: number) => void;
     onAddPlacement: (bedId: number, x: number, y: number) => void;
     onMovePlacement: (placementId: number, bedId: number, x: number, y: number) => void;
+    onRelocatePlanting: (placementId: number, location: PlantingLocation) => void;
+    onUpdatePlantingDates: (
+      placementId: number,
+      changes: { planted_on?: string; moved_on?: string | null },
+    ) => void;
+    plantingMethod: PlantingMethod;
+    setPlantingMethod: (value: PlantingMethod) => void;
+    plantingLocation: PlantingLocation;
+    setPlantingLocation: (value: PlantingLocation) => void;
+    plantingDate: string;
+    setPlantingDate: (value: string) => void;
+    plantingMovedOn: string | null;
+    setPlantingMovedOn: (value: string | null) => void;
     onNudgePlacement: (placementId: number, dx: number, dy: number) => void;
     onBulkMovePlacements: (placementIds: number[], dx: number, dy: number) => void;
     onBulkRemovePlacements: (placementIds: number[]) => void;
@@ -144,6 +159,16 @@ export function PlannerPanel({
     onDeleteBed,
     onAddPlacement,
     onMovePlacement,
+    onRelocatePlanting,
+    onUpdatePlantingDates,
+    plantingMethod,
+    setPlantingMethod,
+    plantingLocation,
+    setPlantingLocation,
+    plantingDate,
+    setPlantingDate,
+    plantingMovedOn,
+    setPlantingMovedOn,
     onNudgePlacement,
     onBulkMovePlacements,
     onBulkRemovePlacements,
@@ -227,12 +252,17 @@ export function PlannerPanel({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-3xl font-serif">Garden Bed Planner Studio</CardTitle>
-        <CardDescription>Build your layout map, then click inside each bed to place crops with proper spacing.</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="planner-panel-card">
+      <CardContent className="p-5 sm:p-6">
+        <SectionHeader
+          icon={LayoutGrid}
+          title={activeTab === "setup" ? "Design your yard" : "Place your crops"}
+          subtitle={
+            activeTab === "setup"
+              ? "Size the plot, drop in beds, and preview sun or shade before you plant."
+              : "Pick a crop, then tap squares inside any bed to plant with proper spacing."
+          }
+        />
         {isLoadingGardenData && <p className="text-sm text-muted-foreground">Refreshing layout data...</p>}
 
         {/* Main Content - Tabbed Workflow */}
@@ -248,6 +278,7 @@ export function PlannerPanel({
                   className={`planner-tab-button ${activeTab === "setup" ? "active" : ""}`}
                   onClick={() => setActiveTab("setup")}
                 >
+                  <LayoutGrid className="planner-tab-icon" aria-hidden />
                   Setup Yard
                 </button>
                 <button
@@ -259,6 +290,7 @@ export function PlannerPanel({
                   className={`planner-tab-button ${activeTab === "plantings" ? "active" : ""}`}
                   onClick={() => setActiveTab("plantings")}
                 >
+                  <Sprout className="planner-tab-icon" aria-hidden />
                   Manage Plantings
                 </button>
               </div>
@@ -375,6 +407,14 @@ export function PlannerPanel({
                           placementBedId={placementBedId}
                           onPlacementBedIdChange={onPlacementBedIdChange}
                           onGoToCrops={onGoToCrops}
+                          plantingMethod={plantingMethod}
+                          setPlantingMethod={setPlantingMethod}
+                          plantingLocation={plantingLocation}
+                          setPlantingLocation={setPlantingLocation}
+                          plantingDate={plantingDate}
+                          setPlantingDate={setPlantingDate}
+                          plantingMovedOn={plantingMovedOn}
+                          setPlantingMovedOn={setPlantingMovedOn}
                         />
                       </aside>
                       <section className="planner-main-content">
@@ -403,6 +443,8 @@ export function PlannerPanel({
                           cropVisual={cropVisual}
                           onNudgePlacement={onNudgePlacement}
                           onRequestRemovePlacement={onRequestRemovePlacement}
+                          onRelocatePlanting={onRelocatePlanting}
+                          onUpdatePlantingDates={onUpdatePlantingDates}
                           onRenameBed={onRenameBed}
                         />
                       </section>
@@ -412,7 +454,7 @@ export function PlannerPanel({
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+      </CardContent>
+    </Card>
   );
 }

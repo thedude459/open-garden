@@ -1,0 +1,98 @@
+---
+description: GitHub Actions deployment strategies, rollback, observability, and troubleshooting common workflow issues. Use when editing .github/workflows/*.yml that deploys to staging or production, or when diagnosing workflow problems.
+globs: .github/workflows/*.yml, .github/workflows/*.yaml
+alwaysApply: false
+---
+
+# GitHub Actions: Deployment and Troubleshooting
+
+## Staging deployment
+
+- Keep staging as close to production as possible (infra, config, anonymized data).
+- Use GitHub `environments` with approval rules, secret scoping, and branch restrictions.
+- Auto-deploy to staging on merges to `develop` / `release/*` branches.
+- Run automated smoke tests and post-deploy validation against staging before promotion.
+
+## Production deployment
+
+- Require manual approval (GitHub Environment required reviewers) for production jobs.
+- Have a rollback strategy ready before the first prod deploy. Keep previous artifacts/images easily deployable.
+- Monitor production closely *during and immediately after* deploy — dashboards, alerts, tracing.
+- Have a separate expedited pipeline for hotfixes that still enforces critical security checks.
+
+## Deployment types
+
+- **Rolling update** (default for K8s Deployments) — gradual instance replacement. Tune `maxSurge` / `maxUnavailable`.
+- **Blue/green** — two identical environments with traffic switch. Best for zero-downtime + instant rollback. Requires a traffic router.
+- **Canary** — ship to 5–10% of users first, monitor error/latency, then roll out. Needs service mesh or ingress with traffic splitting.
+- **Dark launch / feature flags** — deploy code but hide behind flags. Decouples deploy from release; enables A/B testing (LaunchDarkly, Split, Unleash).
+- **A/B testing** — multiple variants in production at once, compared via product/analytics metrics.
+
+## Rollback and incident response
+
+- Keep versioned artifacts (images, bundles, infra state) available and easily re-deployable.
+- Automate rollbacks on post-deploy health check failures where possible.
+- Write runbooks for manual rollback and common incident scenarios; review and test them periodically.
+- Treat reversibility as a design property — make changes easy to undo.
+- Run blameless post-incident reviews to identify root cause and prevent recurrence.
+
+## Deployment review checklist
+
+- [ ] Staging and production use GitHub `environments` with appropriate protections.
+- [ ] Manual approval required for production.
+- [ ] Rollback strategy defined, automated where possible, and tested.
+- [ ] Deployment type (rolling/blue-green/canary/flag) matches the app's criticality.
+- [ ] Post-deploy health checks and smoke tests are automated.
+- [ ] Workflow is resilient to transient failures (retries where appropriate).
+
+---
+
+## Troubleshooting
+
+### Workflow not triggering or steps skipping
+
+- Verify `on:` triggers, `paths`/`branches` filters, and `if:` conditions.
+- `paths-ignore` and `branches-ignore` take precedence — double-check them.
+- Dump context for debugging: `echo '${{ toJson(github) }}'`, `${{ toJson(job) }}`, `${{ toJson(steps) }}`.
+- Check the `concurrency` tab on the workflow run to see if a previous run is blocking.
+- Check branch protection rules that might be blocking execution.
+
+### Permission errors (`Resource not accessible by integration`, `Permission denied`)
+
+- Review `permissions:` at workflow and job level; most issues are missing write scopes.
+- Confirm secrets are configured at the right scope (repo vs environment) and referenced by the exact name.
+- For OIDC: verify the cloud trust policy trusts GitHub's OIDC issuer and the assumed role has required permissions.
+
+### Caching issues (miss, failure to restore)
+
+- Use `actions/cache/restore` with `lookup-only: true` to inspect which keys are being tried.
+- Ensure `path:` matches the directory where deps are installed.
+- Cache keys that change too frequently will always miss — base them on `hashFiles()` of lockfiles.
+- Repos have cache size limits; very large caches may be evicted.
+
+### Slow or timing-out workflows
+
+- Use the workflow run summary to find the longest jobs/steps — optimize those first.
+- Enable/tune caching for deps and build outputs.
+- Parallelize with `strategy.matrix`.
+- Combine `run` commands with `&&` to reduce overhead (especially inside Docker builds).
+- Use a larger GitHub-hosted runner or a self-hosted runner for resource-heavy jobs.
+- Break huge workflows into smaller reusable workflows.
+
+### Flaky tests in CI (passes locally, fails in CI)
+
+- Ensure test isolation — clean up DB rows, files, env between tests.
+- Replace `sleep` with explicit waits (for element visible, for API ready).
+- Pin tool versions (Node, Python, browsers) to match local.
+- Use `services:` for consistent test dependencies instead of localhost quirks.
+- Use stable selectors (`data-testid`) for E2E; capture screenshots/video on failure.
+- Isolate and rerun a flaky test locally many times to reproduce.
+
+### Deployment failures (deploy succeeds, app broken)
+
+- Review deploy + application logs immediately after rollout.
+- Validate injected config (env vars, ConfigMaps, secrets) matches target env expectations.
+- Confirm runtime deps are bundled in the image or present in the environment.
+- Run post-deploy health checks / smoke tests and roll back on failure.
+- Check network connectivity (firewall, security groups, K8s network policies) between components.
+- When in doubt in prod, roll back first, diagnose second.

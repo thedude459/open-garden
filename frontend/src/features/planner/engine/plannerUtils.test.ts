@@ -93,20 +93,18 @@ describe("planner helpers", () => {
           bed_id: 2,
           crop_name: "Carrot",
           planted_on: "2026-03-10",
+          expected_harvest_on: "2026-05-09",
           grid_x: 2,
           grid_y: 1,
           color: "#66aa66",
+          method: "direct_seed",
+          location: "in_bed",
+          moved_on: null,
+          source: "",
+          harvested_on: null,
+          yield_notes: "",
         },
-      ] as Array<{
-        id: number;
-        garden_id: number;
-        bed_id: number;
-        crop_name: string;
-        planted_on: string;
-        grid_x: number;
-        grid_y: number;
-        color: string;
-      }>,
+      ],
       [
         {
           id: 11,
@@ -273,7 +271,7 @@ describe("buildCanopyPreview – edge cases", () => {
     vi.setSystemTime(new Date("2026-04-05T12:00:00Z"));
     const beds: Bed[] = [{ id: 1, garden_id: 1, name: "Bed", width_in: 48, height_in: 96, grid_x: 0, grid_y: 0 }];
     const placements: Placement[] = [
-      { id: 99, garden_id: 1, bed_id: 999, crop_name: "Tomato", grid_x: 0, grid_y: 0, color: "#f00", planted_on: "2026-03-01" },
+      { id: 99, garden_id: 1, bed_id: 999, crop_name: "Tomato", grid_x: 0, grid_y: 0, color: "#f00", planted_on: "2026-03-01", expected_harvest_on: "2026-07-01", method: "direct_seed", location: "in_bed", moved_on: null, source: "", harvested_on: null, yield_notes: "" },
     ];
     expect(buildCanopyPreview(beds, placements, [], 0)).toHaveLength(0);
   });
@@ -283,7 +281,7 @@ describe("buildCanopyPreview – edge cases", () => {
     vi.setSystemTime(new Date("2026-04-05T12:00:00Z"));
     const beds: Bed[] = [{ id: 1, garden_id: 1, name: "Bed", width_in: 48, height_in: 96, grid_x: 0, grid_y: 0 }];
     const placements: Placement[] = [
-      { id: 1, garden_id: 1, bed_id: 1, crop_name: "Unknown Crop", grid_x: 1, grid_y: 1, color: "#0f0", planted_on: "2026-03-01" },
+      { id: 1, garden_id: 1, bed_id: 1, crop_name: "Unknown Crop", grid_x: 1, grid_y: 1, color: "#0f0", planted_on: "2026-03-01", expected_harvest_on: "2026-07-01", method: "direct_seed", location: "in_bed", moved_on: null, source: "", harvested_on: null, yield_notes: "" },
     ];
     const crops: CropTemplate[] = [];
     const canopy = buildCanopyPreview(beds, placements, crops, 0);
@@ -297,7 +295,7 @@ describe("buildCanopyPreview – edge cases", () => {
     vi.setSystemTime(new Date("2026-08-01T12:00:00Z"));
     const beds: Bed[] = [{ id: 1, garden_id: 1, name: "Bed", width_in: 48, height_in: 96, grid_x: 0, grid_y: 0 }];
     const placements: Placement[] = [
-      { id: 1, garden_id: 1, bed_id: 1, crop_name: "Tomato", grid_x: 0, grid_y: 0, color: "#0f0", planted_on: "2026-01-01" },
+      { id: 1, garden_id: 1, bed_id: 1, crop_name: "Tomato", grid_x: 0, grid_y: 0, color: "#0f0", planted_on: "2026-01-01", expected_harvest_on: "2026-07-01", method: "direct_seed", location: "in_bed", moved_on: null, source: "", harvested_on: null, yield_notes: "" },
     ];
     const crops: CropTemplate[] = [{
       id: 1, name: "Tomato", variety: "", source: "manual", source_url: "", image_url: "",

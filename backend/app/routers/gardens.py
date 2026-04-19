@@ -14,17 +14,18 @@ from ..models import (
     CropTemplate,
     Garden,
     PestLog,
-    Placement,
     Planting,
     Sensor,
     SensorReading,
     Task,
     User,
 )
+from ..extension_resources import build_extension_resources_payload
 from ..schemas import (
     GardenClimateOut,
     GardenClimatePlantingWindowsOut,
     GardenCreate,
+    GardenExtensionResourcesOut,
     GardenMicroclimateUpdate,
     GardenOut,
     GardenSunPathOut,
@@ -80,6 +81,24 @@ async def create_garden(
 @router.get("/gardens", response_model=list[GardenOut])
 def list_my_gardens(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Garden).filter(Garden.owner_id == current_user.id).all()
+
+
+@router.get("/gardens/{garden_id}/extension-resources", response_model=GardenExtensionResourcesOut)
+async def garden_extension_resources(garden: Garden = Depends(get_owned_garden)):
+    """Land-grant Extension portal links for the garden's state (from ZIP)."""
+    normalized = (garden.zip_code or "").strip()
+    if not normalized:
+        raise HTTPException(
+            status_code=400, detail="Garden ZIP code is required for Extension links."
+        )
+    try:
+        profile = await fetch_zip_profile(normalized)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="ZIP code is required.") from exc
+    except ValidationServiceError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    state = profile.get("state_code") if isinstance(profile.get("state_code"), str) else ""
+    return build_extension_resources_payload(zip_code=normalized, state_code=state or None)
 
 
 @router.get("/gardens/public", response_model=list[GardenOut])
@@ -216,7 +235,6 @@ def delete_garden(db: Session = Depends(get_db), garden: Garden = Depends(get_ow
     db.query(PestLog).filter(PestLog.garden_id == garden.id).delete()
     db.query(Task).filter(Task.garden_id == garden.id).delete()
     db.query(Planting).filter(Planting.garden_id == garden.id).delete()
-    db.query(Placement).filter(Placement.garden_id == garden.id).delete()
     sensor_ids = [row.id for row in db.query(Sensor.id).filter(Sensor.garden_id == garden.id).all()]
     if sensor_ids:
         db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(

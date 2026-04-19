@@ -315,7 +315,7 @@ jobs:
 
       - name: Typecheck
         working-directory: frontend
-        run: npx tsc --noEmit
+        run: node ./scripts/run-frontend.mjs typecheck
 
       - name: Run frontend unit tests with coverage
         working-directory: frontend
@@ -355,7 +355,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: node ./scripts/run-frontend.mjs test:e2e:install --with-deps chromium
 
       - name: Set up environment
         run: |
@@ -393,7 +393,7 @@ jobs:
 
       - name: Run Playwright tests
         working-directory: frontend
-        run: npx playwright test --reporter=list
+        run: node ./scripts/run-frontend.mjs test:e2e --reporter=list
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:5173
           PLAYWRIGHT_API_URL: http://localhost:8000

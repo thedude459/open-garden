@@ -48,6 +48,7 @@ type PlannerYardLayoutSectionProps = {
   setSelectedBedId: Dispatch<SetStateAction<number | null>>;
   onNudgeBed: (bedId: number, dx: number, dy: number) => void;
   requestRotatePreview: (bed: Bed) => void;
+  onDeleteBed: (bedId: number) => void;
   pendingRotation: RotationPreview | null;
   setPendingRotation: Dispatch<SetStateAction<RotationPreview | null>>;
   confirmRotate: (autoFit: boolean) => Promise<void>;
@@ -91,6 +92,7 @@ export function PlannerYardLayoutSection({
   setSelectedBedId,
   onNudgeBed,
   requestRotatePreview,
+  onDeleteBed,
   pendingRotation,
   setPendingRotation,
   confirmRotate,
@@ -155,6 +157,7 @@ export function PlannerYardLayoutSection({
         setSelectedBedId={setSelectedBedId}
         onNudgeBed={onNudgeBed}
         requestRotatePreview={requestRotatePreview}
+        onDeleteBed={onDeleteBed}
         pendingRotation={pendingRotation}
       />
 

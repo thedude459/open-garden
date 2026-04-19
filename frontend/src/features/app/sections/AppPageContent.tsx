@@ -71,6 +71,8 @@ export function AppPageContent({
     gardenTimeline,
     loadTimelineForGarden,
     loadSensorSummaryForGarden,
+    gardenExtensionResources,
+    loadExtensionResourcesForGarden,
   } = insights;
   const {
     cropTemplateSyncStatus,
@@ -89,8 +91,9 @@ export function AppPageContent({
     isLoadingSensorSummary,
     isLoadingTimeline,
     isLoadingPlantingRecommendation,
+    isLoadingExtensionResources,
   } = loading;
-  const { placementBedId, setPlacementBedId, plannerUndoCount, plannerRedoCount, undoPlannerChange, redoPlannerChange } = plannerUi;
+  const { placementBedId, setPlacementBedId, plannerUndoCount, plannerRedoCount, undoPlannerChange, redoPlannerChange, plantingSettings } = plannerUi;
   const { taskActions, gardenActions, cropFormState, plannerActions, coachState, pestLogActions, derived } = actions;
   const { setConfirmState } = confirm;
   const { pushNotice } = notices;
@@ -107,8 +110,11 @@ export function AppPageContent({
           placements={placements}
           cropTemplatesCount={cropTemplates.length}
           gardenClimate={gardenClimate}
+          gardenExtensionResources={gardenExtensionResources}
+          loadExtensionResourcesForGarden={loadExtensionResourcesForGarden}
           isLoadingWeather={isLoadingWeather}
           isLoadingClimate={isLoadingClimate}
+          isLoadingExtensionResources={isLoadingExtensionResources}
           derived={derived}
           taskActions={taskActions}
           gardenActions={gardenActions}
@@ -176,6 +182,7 @@ export function AppPageContent({
             plannerActions={plannerActions}
             placementBedId={placementBedId}
             setPlacementBedId={setPlacementBedId}
+            plantingSettings={plantingSettings}
             plannerUndoCount={plannerUndoCount}
             plannerRedoCount={plannerRedoCount}
             undoPlannerChange={undoPlannerChange}

@@ -7,7 +7,6 @@ type TaskFilter = "all" | "todo" | "done";
 type TaskDraft = { title: string; due_on: string; notes: string };
 type HarvestDraft = { harvested_on: string; yield_notes: string };
 type TaskFormErrors = { title: string; due_on: string };
-type PlantingFormErrors = { bed_id: string; crop_name: string; planted_on: string };
 
 interface UseCalendarAgendaStateParams {
   selectedDayEvents: CalendarEvent[];
@@ -17,7 +16,6 @@ interface UseCalendarAgendaStateParams {
 
 export function useCalendarAgendaState({
   selectedDayEvents,
-  selectedCropName,
   taskActions,
 }: UseCalendarAgendaStateParams) {
   const [taskDoneFilter, setTaskDoneFilter] = useState<TaskFilter>("all");
@@ -26,11 +24,6 @@ export function useCalendarAgendaState({
   const [harvestEditId, setHarvestEditId] = useState<number | null>(null);
   const [harvestDraft, setHarvestDraft] = useState<HarvestDraft>({ harvested_on: "", yield_notes: "" });
   const [taskFormErrors, setTaskFormErrors] = useState<TaskFormErrors>({ title: "", due_on: "" });
-  const [plantingFormErrors, setPlantingFormErrors] = useState<PlantingFormErrors>({
-    bed_id: "",
-    crop_name: "",
-    planted_on: "",
-  });
 
   const hasTasks = useMemo(
     () => selectedDayEvents.some((event) => event.kind === "task"),
@@ -54,22 +47,8 @@ export function useCalendarAgendaState({
     return value.trim() ? "" : "Due date is required.";
   }
 
-  function validatePlantingField(field: keyof PlantingFormErrors, value: string) {
-    if (field === "bed_id") {
-      return value.trim() ? "" : "Choose a bed for this planting.";
-    }
-    if (field === "crop_name") {
-      return value.trim() ? "" : "Choose a vegetable before adding a planting.";
-    }
-    return value.trim() ? "" : "Planting date is required.";
-  }
-
   function handleTaskFieldBlur(field: keyof TaskFormErrors, value: string) {
     setTaskFormErrors((current) => ({ ...current, [field]: validateTaskField(field, value) }));
-  }
-
-  function handlePlantingFieldBlur(field: keyof PlantingFormErrors, value: string) {
-    setPlantingFormErrors((current) => ({ ...current, [field]: validatePlantingField(field, value) }));
   }
 
   function handleTaskSubmit(event: FormEvent<HTMLFormElement>) {
@@ -84,21 +63,6 @@ export function useCalendarAgendaState({
       return;
     }
     taskActions.createTask(event);
-  }
-
-  function handlePlantingSubmit(event: FormEvent<HTMLFormElement>) {
-    const formData = new FormData(event.currentTarget);
-    const nextErrors = {
-      bed_id: validatePlantingField("bed_id", String(formData.get("bed_id") || "")),
-      crop_name: validatePlantingField("crop_name", selectedCropName),
-      planted_on: validatePlantingField("planted_on", String(formData.get("planted_on") || "")),
-    };
-    setPlantingFormErrors(nextErrors);
-    if (nextErrors.bed_id || nextErrors.crop_name || nextErrors.planted_on) {
-      event.preventDefault();
-      return;
-    }
-    taskActions.createPlanting(event);
   }
 
   function beginTaskEdit(event: CalendarEvent) {
@@ -157,12 +121,8 @@ export function useCalendarAgendaState({
     harvestDraft,
     setHarvestDraft,
     taskFormErrors,
-    plantingFormErrors,
-    setPlantingFormErrors,
     handleTaskFieldBlur,
-    handlePlantingFieldBlur,
     handleTaskSubmit,
-    handlePlantingSubmit,
     beginTaskEdit,
     saveTaskEdit,
     beginHarvestEdit,

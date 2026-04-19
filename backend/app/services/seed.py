@@ -419,7 +419,7 @@ LEGACY_STARTER_SIGNATURES = {
             "family": "Brassicaceae",
             "spacing_in": 18,
             "days_to_harvest": 80,
-            "planting_window": "Start indoors 6 wks before last frost for spring; OR direct sow mid-summer for fall crop",
+            "planting_window": "Start seeds indoors 4–6 weeks before last frost (supplier timing); transplant sturdy seedlings when weather allows",
             "direct_sow": False,
             "frost_hardy": True,
             "weeks_to_transplant": 6,

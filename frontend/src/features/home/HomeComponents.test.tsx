@@ -8,6 +8,13 @@ import { MicroclimateProfileCard } from "./MicroclimateProfileCard";
 import { Garden, GardenClimate, Task } from "../types";
 import { MicroclimateSuggestion } from "../app/types";
 
+function isoDateFromToday(offsetDays: number) {
+  const value = new Date();
+  value.setHours(0, 0, 0, 0);
+  value.setDate(value.getDate() + offsetDays);
+  return value.toISOString().slice(0, 10);
+}
+
 afterEach(() => {
   cleanup();
 });
@@ -87,9 +94,9 @@ describe("HomeHero", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Open Calendar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Open Bed Planner" }));
-    fireEvent.click(screen.getByRole("button", { name: "Manage Crops" }));
+    fireEvent.click(screen.getByRole("button", { name: "This week's to-dos" }));
+    fireEvent.click(screen.getByRole("button", { name: "Design my beds" }));
+    fireEvent.click(screen.getByRole("button", { name: "Browse crops" }));
     fireEvent.click(screen.getByRole("button", { name: "Schedule planting" }));
     fireEvent.click(screen.getByRole("button", { name: "Plan protection task" }));
 
@@ -133,6 +140,11 @@ describe("HomeHero", () => {
   });
 
   it("limits weather and cue previews to three and expands with view-all controls", () => {
+    const today = isoDateFromToday(0);
+    const tomorrow = isoDateFromToday(1);
+    const inTwoDays = isoDateFromToday(2);
+    const inThreeDays = isoDateFromToday(3);
+
     render(
       <HomeHero
         garden={garden}
@@ -145,15 +157,15 @@ describe("HomeHero", () => {
         overdueTaskCount={0}
         upcomingTaskCount={0}
         weatherPreview={[
-          { date: "2026-04-07", low: 40, high: 60, rain: 0 },
-          { date: "2026-04-08", low: 42, high: 61, rain: 0.1 },
-          { date: "2026-04-09", low: 43, high: 62, rain: 0.2 },
-          { date: "2026-04-10", low: 44, high: 63, rain: 0.3 },
+          { date: today, low: 40, high: 60, rain: 0 },
+          { date: tomorrow, low: 42, high: 61, rain: 0.1 },
+          { date: inTwoDays, low: 43, high: 62, rain: 0.2 },
+          { date: inThreeDays, low: 44, high: 63, rain: 0.3 },
         ]}
         isLoadingWeather={false}
         actionablePlantingWindows={[
-          { crop_template_id: 1, crop_name: "Pea", variety: "", method: "direct", window_start: "2026-04-07", window_end: "2026-04-14", status: "open", reason: "Soil is ready.", soil_temperature_min_f: 45, indoor_seed_start: null, indoor_seed_end: null, legacy_window_label: "Spring" },
-          { crop_template_id: 2, crop_name: "Carrot", variety: "", method: "direct", window_start: "2026-04-09", window_end: "2026-04-15", status: "watch", reason: "Watch moisture.", soil_temperature_min_f: 45, indoor_seed_start: null, indoor_seed_end: null, legacy_window_label: "Spring" },
+          { crop_template_id: 1, crop_name: "Pea", variety: "", method: "direct", window_start: today, window_end: inThreeDays, status: "open", reason: "Soil is ready.", soil_temperature_min_f: 45, indoor_seed_start: null, indoor_seed_end: null, legacy_window_label: "Spring" },
+          { crop_template_id: 2, crop_name: "Carrot", variety: "", method: "direct", window_start: inTwoDays, window_end: isoDateFromToday(5), status: "watch", reason: "Watch moisture.", soil_temperature_min_f: 45, indoor_seed_start: null, indoor_seed_end: null, legacy_window_label: "Spring" },
         ]}
         weatherRiskCues={[
           "Cover seedlings tonight.",
@@ -163,7 +175,7 @@ describe("HomeHero", () => {
       />,
     );
 
-    expect(screen.queryByText("2026-04-10")).not.toBeInTheDocument();
+    expect(screen.queryByText(inThreeDays, { exact: false })).not.toBeInTheDocument();
     expect(screen.getByText("Today")).toBeInTheDocument();
     expect(screen.getByText(/Confidence improves as local forecast/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "View all forecast days" })).toBeInTheDocument();
@@ -172,7 +184,7 @@ describe("HomeHero", () => {
     fireEvent.click(screen.getByRole("button", { name: "View all forecast days" }));
     fireEvent.click(screen.getByRole("button", { name: "View all cues" }));
 
-    expect(screen.getByText("2026-04-10", { exact: false })).toBeInTheDocument();
+    expect(screen.getByText(inThreeDays, { exact: false })).toBeInTheDocument();
     expect(screen.getByText(/Prepare row covers for wind/i)).toBeInTheDocument();
     expect(screen.getAllByText("Watch soon").length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Schedule planting" }).length).toBeGreaterThan(0);
@@ -272,7 +284,10 @@ describe("MicroclimateProfileCard", () => {
       <MicroclimateProfileCard
         selectedGardenRecord={garden}
         gardenClimate={climate}
+        gardenExtensionResources={null}
+        loadExtensionResourcesForGarden={vi.fn(async () => undefined)}
         isLoadingClimate={false}
+        isLoadingExtensionResources={false}
         microclimateDraft={{
           orientation: "south",
           sun_exposure: "full_sun",
@@ -314,7 +329,10 @@ describe("MicroclimateProfileCard", () => {
       <MicroclimateProfileCard
         selectedGardenRecord={{ ...garden, latitude: 0 }}
         gardenClimate={null}
+        gardenExtensionResources={null}
+        loadExtensionResourcesForGarden={vi.fn(async () => undefined)}
         isLoadingClimate
+        isLoadingExtensionResources={false}
         microclimateDraft={{
           orientation: "south",
           sun_exposure: "full_sun",

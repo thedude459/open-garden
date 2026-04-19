@@ -64,6 +64,7 @@ export function useGardenDataFlow({
     plantingRecommendation,
     selectedRecommendationPlantingId,
     setSelectedRecommendationPlantingId,
+    gardenExtensionResources,
     isLoadingClimate,
     isLoadingPlantingWindows,
     isLoadingSunPath,
@@ -71,6 +72,7 @@ export function useGardenDataFlow({
     isLoadingSensorSummary,
     isLoadingTimeline,
     isLoadingPlantingRecommendation,
+    isLoadingExtensionResources,
     loadClimateForGarden,
     loadPlantingWindowsForGarden,
     loadSunPathForGarden,
@@ -78,6 +80,7 @@ export function useGardenDataFlow({
     loadSensorSummaryForGarden,
     loadTimelineForGarden,
     loadPlantingRecommendation,
+    loadExtensionResourcesForGarden,
     invalidateGardenInsightCaches,
     invalidateSensorCaches,
     invalidateSeasonalPlanCache,
@@ -192,6 +195,7 @@ export function useGardenDataFlow({
     plantingRecommendation,
     selectedRecommendationPlantingId,
     setSelectedRecommendationPlantingId,
+    gardenExtensionResources,
 
     cropTemplateSyncStatus,
     isRefreshingCropLibrary,
@@ -206,6 +210,7 @@ export function useGardenDataFlow({
     isLoadingSensorSummary,
     isLoadingTimeline,
     isLoadingPlantingRecommendation,
+    isLoadingExtensionResources,
 
     selectedCropName,
     setSelectedCropName,
@@ -224,6 +229,7 @@ export function useGardenDataFlow({
     loadSensorSummaryForGarden,
     loadTimelineForGarden,
     loadPlantingRecommendation,
+    loadExtensionResourcesForGarden,
 
     refreshCropTemplateDatabase,
     requestLegacyCropCleanup,

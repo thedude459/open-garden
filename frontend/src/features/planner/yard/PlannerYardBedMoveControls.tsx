@@ -8,6 +8,7 @@ type PlannerYardBedMoveControlsProps = {
   setSelectedBedId: Dispatch<SetStateAction<number | null>>;
   onNudgeBed: (bedId: number, dx: number, dy: number) => void;
   requestRotatePreview: (bed: Bed) => void;
+  onDeleteBed: (bedId: number) => void;
   pendingRotation: RotationPreview | null;
 };
 
@@ -17,6 +18,7 @@ export function PlannerYardBedMoveControls({
   setSelectedBedId,
   onNudgeBed,
   requestRotatePreview,
+  onDeleteBed,
   pendingRotation,
 }: PlannerYardBedMoveControlsProps) {
   return (
@@ -42,6 +44,14 @@ export function PlannerYardBedMoveControls({
             disabled={pendingRotation !== null}
           >
             ⟳
+          </button>
+          <button
+            type="button"
+            className="danger-sm"
+            onClick={() => onDeleteBed(bed.id)}
+            aria-label={`Delete ${bed.name}`}
+          >
+            Delete
           </button>
         </div>
       ))}

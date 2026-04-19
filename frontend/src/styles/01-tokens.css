@@ -3,16 +3,42 @@
 ==================== */
 
 :root {
-  /* Garden palette */
-  --bg: #f0f4e9;
-  --bg-2: #dfebda;
-  --panel: #fffef8;
-  --ink: #1b2f26;
-  --muted: #5f7368;
-  --accent: #2d7b58;
-  --accent-2: #d2603f;
-  --accent-3: #1e4f63;
-  --line: #c6d3c2;
+  /* Garden palette — fresh living greens with sun-warmed accents */
+  --bg: #f6faf2;
+  --bg-2: #ebf3e2;
+  --bg-soft: #fafdf6;
+  --panel: #ffffff;
+  --panel-2: #fbfdf8;
+  --ink: #132b21;
+  --ink-soft: #234a3a;
+  --muted: #5b6f64;
+  --muted-soft: #8b9b90;
+  --accent: #2f8559;           /* leafy green */
+  --accent-dark: #1f5f3f;
+  --accent-soft: #dcefe2;
+  --accent-2: #e67a47;         /* terracotta */
+  --accent-2-soft: #fce3d3;
+  --accent-3: #1e4f63;         /* sky-pond blue */
+  --accent-3-soft: #d9ebf3;
+  --accent-4: #d9a441;         /* honey */
+  --accent-4-soft: #fbeecd;
+  --line: #dbe6d2;
+  --line-strong: #c0d1b6;
+
+  /* Surface / elevation */
+  --shadow-xs: 0 1px 2px rgba(17, 40, 30, 0.05);
+  --shadow-sm: 0 2px 6px rgba(17, 40, 30, 0.06), 0 1px 2px rgba(17, 40, 30, 0.04);
+  --shadow-md: 0 8px 20px rgba(17, 40, 30, 0.08), 0 2px 4px rgba(17, 40, 30, 0.04);
+  --shadow-lg: 0 18px 40px rgba(17, 40, 30, 0.10), 0 4px 8px rgba(17, 40, 30, 0.05);
+  --shadow-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    roboto, "Helvetica Neue", arial, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", palatino,
+    "Book Antiqua", georgia, serif;
+  --font-mono: ui-monospace, sfmono-regular, "SF Mono", menlo, consolas,
+    "Liberation Mono", monospace;
 
   /* shadcn/ui semantic tokens mapped to the garden palette */
   --background: var(--bg);
@@ -26,14 +52,14 @@
   --secondary: var(--bg-2);
   --secondary-foreground: var(--ink);
   --muted-foreground: var(--muted);
-  --accent-color: var(--bg-2);
-  --accent-foreground: var(--ink);
+  --accent-color: var(--accent-soft);
+  --accent-foreground: var(--accent-dark);
   --destructive: var(--accent-2);
   --destructive-foreground: #ffffff;
   --border: var(--line);
   --input: var(--line);
   --ring: var(--accent);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 
   /* Layout system */
   --space-1: 0.25rem;
@@ -45,11 +71,9 @@
   --space-8: 2rem;
   --space-10: 2.5rem;
   --content-max: 1400px;
-  /* Wider canvas for calendar + planner tools */
   --tool-max: 1680px;
 }
 
 * {
   box-sizing: border-box;
 }
-

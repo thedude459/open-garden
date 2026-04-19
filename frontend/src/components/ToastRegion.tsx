@@ -23,17 +23,20 @@ export function ToastRegion({ notices, onDismiss, onAction }: ToastRegionProps) 
     <div className="toast-region" role="status" aria-live="polite" aria-atomic="false">
       {notices.map((notice) => (
         <article key={notice.id} className={`toast toast-${notice.kind}`}>
-          <p>{notice.message}</p>
-          <div className="toast-actions">
-            {notice.actionLabel && notice.onAction && (
-              <button type="button" className="secondary-btn" onClick={() => onAction(notice.id)}>
-                {notice.actionLabel}
-              </button>
-            )}
-            <button type="button" className="secondary-btn" onClick={() => onDismiss(notice.id)}>
-              Dismiss
+          <p className="toast-message">{notice.message}</p>
+          {notice.actionLabel && notice.onAction && (
+            <button type="button" className="toast-action" onClick={() => onAction(notice.id)}>
+              {notice.actionLabel}
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            className="toast-close"
+            aria-label="Dismiss notification"
+            onClick={() => onDismiss(notice.id)}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </article>
       ))}
     </div>

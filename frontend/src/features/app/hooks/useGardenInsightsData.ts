@@ -3,6 +3,7 @@ import {
   Garden,
   GardenClimate,
   GardenClimatePlantingWindows,
+  GardenExtensionResources,
   GardenSeasonalPlan,
   GardenSensorsSummary,
   GardenSunPath,
@@ -31,6 +32,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
   const [gardenTimeline, setGardenTimeline] = useState<GardenTimeline | null>(null);
   const [plantingRecommendation, setPlantingRecommendation] = useState<PlantingRecommendations | null>(null);
   const [selectedRecommendationPlantingId, setSelectedRecommendationPlantingId] = useState<number | null>(null);
+  const [gardenExtensionResources, setGardenExtensionResources] = useState<GardenExtensionResources | null>(null);
 
   const [isLoadingClimate, setIsLoadingClimate] = useState(false);
   const [isLoadingPlantingWindows, setIsLoadingPlantingWindows] = useState(false);
@@ -39,6 +41,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
   const [isLoadingSensorSummary, setIsLoadingSensorSummary] = useState(false);
   const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
   const [isLoadingPlantingRecommendation, setIsLoadingPlantingRecommendation] = useState(false);
+  const [isLoadingExtensionResources, setIsLoadingExtensionResources] = useState(false);
 
   const climateCacheRef = useRef<Map<number, CacheEntry<GardenClimate>>>(new Map());
   const plantingWindowCacheRef = useRef<Map<number, CacheEntry<GardenClimatePlantingWindows>>>(new Map());
@@ -47,6 +50,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
   const sensorSummaryCacheRef = useRef<Map<number, CacheEntry<GardenSensorsSummary>>>(new Map());
   const timelineCacheRef = useRef<Map<number, CacheEntry<GardenTimeline>>>(new Map());
   const plantingRecommendationCacheRef = useRef<Map<number, CacheEntry<PlantingRecommendations>>>(new Map());
+  const extensionResourcesCacheRef = useRef<Map<number, CacheEntry<GardenExtensionResources>>>(new Map());
 
   const loadClimateForGarden = useCallback(async (garden: Garden) => {
     const cached = getCachedData(climateCacheRef.current, garden.id, NO_TTL);
@@ -62,6 +66,23 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
       setGardenClimate(climateData);
     } finally {
       setIsLoadingClimate(false);
+    }
+  }, [fetchAuthed]);
+
+  const loadExtensionResourcesForGarden = useCallback(async (garden: Garden) => {
+    const cached = getCachedData(extensionResourcesCacheRef.current, garden.id, NO_TTL);
+    if (cached) {
+      setGardenExtensionResources(cached);
+      return;
+    }
+
+    setIsLoadingExtensionResources(true);
+    try {
+      const data = (await fetchAuthed(`/gardens/${garden.id}/extension-resources`)) as GardenExtensionResources;
+      setCachedData(extensionResourcesCacheRef.current, garden.id, data);
+      setGardenExtensionResources(data);
+    } finally {
+      setIsLoadingExtensionResources(false);
     }
   }, [fetchAuthed]);
 
@@ -179,6 +200,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
       plantingWindowCacheRef.current,
       sunPathCacheRef.current,
       seasonalPlanCacheRef.current,
+      extensionResourcesCacheRef.current,
     ),
     [],
   );
@@ -204,6 +226,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
     setGardenTimeline(null);
     setPlantingRecommendation(null);
     setSelectedRecommendationPlantingId(null);
+    setGardenExtensionResources(null);
   }, []);
 
   const clearPlantingRecommendationCacheEntry = useCallback((plantingId: number) => {
@@ -221,6 +244,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
     plantingRecommendation,
     selectedRecommendationPlantingId,
     setSelectedRecommendationPlantingId,
+    gardenExtensionResources,
 
     isLoadingClimate,
     isLoadingPlantingWindows,
@@ -229,6 +253,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
     isLoadingSensorSummary,
     isLoadingTimeline,
     isLoadingPlantingRecommendation,
+    isLoadingExtensionResources,
 
     loadClimateForGarden,
     loadPlantingWindowsForGarden,
@@ -237,6 +262,7 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
     loadSensorSummaryForGarden,
     loadTimelineForGarden,
     loadPlantingRecommendation,
+    loadExtensionResourcesForGarden,
 
     invalidateGardenInsightCaches,
     invalidateSensorCaches,

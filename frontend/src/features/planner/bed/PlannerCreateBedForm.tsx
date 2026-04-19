@@ -1,4 +1,6 @@
 import { FormEvent } from "react";
+import { SquarePlus } from "lucide-react";
+import { SectionHeader } from "@/components/SectionHeader";
 
 type PlannerCreateBedFormProps = {
   bedName: string;
@@ -23,7 +25,13 @@ export function PlannerCreateBedForm({
 }: PlannerCreateBedFormProps) {
   return (
     <form onSubmit={onCreateBed} className="stack compact planner-panel">
-      <h3>Create Bed</h3>
+      <SectionHeader
+        variant="section"
+        headingLevel="h3"
+        icon={SquarePlus}
+        title="Create Bed"
+        subtitle="Add a raised bed to the yard grid."
+      />
       <label className="field-label" htmlFor="bed-name">Bed Name</label>
       <input id="bed-name" name="name" value={bedName} onChange={(e) => onBedNameChange(e.target.value)} placeholder="Backyard North Bed" aria-invalid={Boolean(bedErrors.name)} aria-describedby={bedErrors.name ? "bed-name-error" : undefined} required />
       {bedErrors.name && <p id="bed-name-error" className="field-error">{bedErrors.name}</p>}

@@ -328,7 +328,7 @@ def test_get_garden_layout_sun_path_uses_default_and_explicit_date(monkeypatch, 
 
 
 def test_delete_garden_cleans_related_rows(
-    db_session, garden, planting, placement, task, sensor, sensor_reading
+    db_session, garden, planting, task, sensor, sensor_reading
 ):
     reading_id = sensor_reading.id
     db_session.add(
@@ -349,3 +349,22 @@ def test_delete_garden_cleans_related_rows(
     assert db_session.query(Task).filter(Task.garden_id == garden.id).count() == 0
     assert db_session.query(Sensor).filter(Sensor.garden_id == garden.id).count() == 0
     assert db_session.query(SensorReading).filter(SensorReading.id == reading_id).count() == 0
+
+
+def test_garden_extension_resources_uses_state_from_zip(monkeypatch, garden):
+    async def fake_fetch_zip_profile(zip_code):
+        return {
+            "zip_code": zip_code,
+            "state_code": "CO",
+            "latitude": 40.0,
+            "longitude": -105.0,
+            "growing_zone": "6a",
+        }
+
+    monkeypatch.setattr(gardens_router, "fetch_zip_profile", fake_fetch_zip_profile)
+
+    result = asyncio.run(gardens_router.garden_extension_resources(garden=garden))
+
+    assert result["state_code"] == "CO"
+    assert "colostate.edu" in result["home_url"]
+    assert result["zip_code"] == garden.zip_code
