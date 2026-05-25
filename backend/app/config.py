@@ -25,6 +25,7 @@ class Settings(BaseSettings):
         if value is None or (isinstance(value, str) and not value.strip()):
             return "postgresql+psycopg2://opengarden:opengarden@db:5432/opengarden"
         return value
+
     weather_base_url: str = "https://api.open-meteo.com/v1/forecast"
     allowed_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",

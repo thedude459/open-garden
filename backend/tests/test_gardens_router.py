@@ -6,6 +6,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.core.exceptions import ValidationServiceError
+from app.extension_resources import EXTENSION_BY_STATE
 from app.models import Garden, PestLog, Sensor, SensorReading, Task
 from app.routers import gardens as gardens_router
 from app.schemas import GardenCreate, GardenMicroclimateUpdate, GardenYardUpdate
@@ -366,5 +367,5 @@ def test_garden_extension_resources_uses_state_from_zip(monkeypatch, garden):
     result = asyncio.run(gardens_router.garden_extension_resources(garden=garden))
 
     assert result["state_code"] == "CO"
-    assert "colostate.edu" in result["home_url"]
+    assert result["home_url"] == EXTENSION_BY_STATE["CO"]["home_url"]
     assert result["zip_code"] == garden.zip_code
