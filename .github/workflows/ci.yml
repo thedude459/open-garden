@@ -361,6 +361,8 @@ jobs:
         run: |
           cp .env.example .env
           sed -i 's/^SECRET_KEY=.*/SECRET_KEY=ci-only-not-for-production-use-replace-me/' .env
+          # Empty DATABASE_URL in .env blocks compose defaults; localdb overlay supplies the URL.
+          sed -i '/^DATABASE_URL=/d' .env
 
       - name: Start app
         run: ./scripts/up.sh
@@ -368,15 +370,22 @@ jobs:
       - name: Wait for API
         run: |
           echo "Waiting for API to be ready..."
-          for i in $(seq 1 30); do
+          ready=0
+          for i in $(seq 1 40); do
             if curl -sf http://localhost:8000/health; then
               echo "API is ready."
+              ready=1
               break
             fi
             echo "Attempt $i: API not ready yet, retrying in 3s..."
             sleep 3
           done
-          curl -sf http://localhost:8000/health
+          if [[ "$ready" -ne 1 ]]; then
+            echo "API failed to become ready. Container logs:"
+            docker compose -f docker-compose.yml -f docker-compose.localdb.yml logs api db --tail=200 || true
+            docker compose -f docker-compose.yml -f docker-compose.localdb.yml ps -a || true
+            exit 1
+          fi
 
       - name: Wait for frontend
         run: |
