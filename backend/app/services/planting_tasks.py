@@ -272,9 +272,7 @@ def rebuild_garden_autotasks(
             planting_id = pids[0]
             bundled = pids if bundle else None
             done = bool(
-                mark_ids
-                and "Transplant seedlings to bed" in title
-                and mark_ids.intersection(pids)
+                mark_ids and "Transplant seedlings to bed" in title and mark_ids.intersection(pids)
             )
             db.add(
                 Task(

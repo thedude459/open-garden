@@ -1,22 +1,59 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
 updates:
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/frontend" # Location of package manifests
+  - package-ecosystem: npm
+    directory: /frontend
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "pip"
-    directory: "/backend"
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      frontend-npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      frontend-npm-major:
+        update-types:
+          - major
+        patterns:
+          - "*"
+
+  - package-ecosystem: pip
+    directory: /backend
     schedule:
-      interval: "weekly"
-  - package-ecosystem: "docker"
-    # Update manifest files stored in these directories weekly
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      backend-pip-minor-patch:
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      backend-pip-major:
+        update-types:
+          - major
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
     directories:
-      - "/frontend"
-      - "/backend"
+      - /frontend
+      - /backend
     schedule:
-      interval: "weekly"
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      docker-minor-patch:
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      docker-major:
+        update-types:
+          - major
+        patterns:
+          - "*"
