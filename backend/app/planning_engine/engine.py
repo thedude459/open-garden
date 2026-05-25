@@ -519,10 +519,11 @@ def build_planting_recommendations(
         )
         if current_family and candidate_family == current_family:
             continue
-        if (
-            allowed_plant_kinds is not None
-            and _template_plant_kind(candidate_template) not in allowed_plant_kinds
-        ):
+        candidate_kind = _template_plant_kind(candidate_template)
+        # Succession slots are main-crop rotations; herbs/flowers surface via companion guidance.
+        if candidate_kind != "vegetable":
+            continue
+        if allowed_plant_kinds is not None and candidate_kind not in allowed_plant_kinds:
             continue
         succession_candidates.append(
             {
