@@ -1,4 +1,4 @@
-import { CSSProperties, useEffect, useMemo, useState } from "react";
+import { CSSProperties, MutableRefObject, useEffect, useMemo, useState } from "react";
 import { Bed, DragPayload, Placement, PlantingLocation } from "../../types";
 
 function getCropInitials(cropName: string) {
@@ -21,6 +21,7 @@ function getCropInitials(cropName: string) {
 type PlannerBedSheetSingleProps = {
   bed: Bed;
   placements: Placement[];
+  placementBedId: number | null;
   selectedCropName: string;
   selectedPlacement: Placement | null;
   setSelectedPlacementId: (value: number | null | ((current: number | null) => number | null)) => void;
@@ -30,6 +31,10 @@ type PlannerBedSheetSingleProps = {
   startLasso: (bedId: number, x: number, y: number) => void;
   updateLasso: (bedId: number, x: number, y: number) => void;
   finishLasso: (append: boolean) => void;
+  showEdgeBufferOverlay: boolean;
+  paintMode: boolean;
+  isPaintingRef: MutableRefObject<boolean>;
+  onExplainPlantingBlocked: (message: string) => void;
   onBlockedPlacementMove: (cropName: string) => void;
   placementSpacingConflict: (bedId: number, x: number, y: number, cropName: string, ignorePlacementId?: number) => string | null;
   onMovePlacement: (placementId: number, bedId: number, x: number, y: number) => void;
@@ -51,6 +56,7 @@ type PlannerBedSheetSingleProps = {
 export function PlannerBedSheetSingle({
   bed,
   placements,
+  placementBedId,
   selectedCropName,
   selectedPlacement,
   setSelectedPlacementId,
@@ -60,6 +66,10 @@ export function PlannerBedSheetSingle({
   startLasso,
   updateLasso,
   finishLasso,
+  showEdgeBufferOverlay,
+  paintMode,
+  isPaintingRef,
+  onExplainPlantingBlocked,
   onBlockedPlacementMove,
   placementSpacingConflict,
   onMovePlacement,
@@ -74,6 +84,30 @@ export function PlannerBedSheetSingle({
   onRenameBed,
   allPlacements,
 }: PlannerBedSheetSingleProps) {
+  function tryPaintStroke(x: number, y: number, isStrokeStart: boolean) {
+    if (!paintMode || bulkMode || selectedPlacement) {
+      return;
+    }
+    const occupant = placements.find((item) => item.grid_x === x && item.grid_y === y);
+    if (occupant) {
+      return;
+    }
+    const blockedForSelected = isCellBlockedForSelectedCrop(bed.id, x, y, occupant);
+    if (blockedForSelected || !selectedCropName.trim()) {
+      return;
+    }
+    if (placementBedId !== null && bed.id !== placementBedId) {
+      return;
+    }
+    if (isStrokeStart) {
+      isPaintingRef.current = true;
+    }
+    if (!isPaintingRef.current) {
+      return;
+    }
+    onAddPlacement(bed.id, x, y);
+  }
+
   const cols = Math.max(1, Math.ceil(bed.width_in / 3));
   const rows = Math.max(1, Math.ceil(bed.height_in / 3));
   const isWideBed = cols >= 24 || cols >= rows * 2;
@@ -183,9 +217,11 @@ export function PlannerBedSheetSingle({
           const occupant = placements.find((item) => item.grid_x === x && item.grid_y === y);
           const blockedForSelected = isCellBlockedForSelectedCrop(bed.id, x, y, occupant);
           const inBuffer = isCellInBuffer(bed.id, x, y);
+          const bufferOverlayOn = showEdgeBufferOverlay && inBuffer;
           const cellClassName = [
             "bed-sheet-cell",
             occupant ? "occupied" : blockedForSelected ? "spacing-blocked" : inBuffer ? "buffer-blocked" : "empty",
+            bufferOverlayOn ? "buffer-overlay-highlight" : "",
             occupant && selectedPlacementIds.includes(occupant.id) ? "selected" : "",
             occupant && occupant.location === "indoor" ? "indoor" : "",
           ]
@@ -197,8 +233,14 @@ export function PlannerBedSheetSingle({
               key={`${bed.id}-${x}-${y}`}
               className={cellClassName}
               style={occupant ? ({ borderColor: occupant.color } as CSSProperties) : undefined}
-              onMouseDown={() => startLasso(bed.id, x, y)}
-              onMouseEnter={() => updateLasso(bed.id, x, y)}
+              onMouseDown={() => {
+                startLasso(bed.id, x, y);
+                tryPaintStroke(x, y, true);
+              }}
+              onMouseEnter={() => {
+                updateLasso(bed.id, x, y);
+                tryPaintStroke(x, y, false);
+              }}
               onMouseUp={(event) => finishLasso(event.shiftKey)}
               onClick={() => {
                 if (bulkMode) {
@@ -213,6 +255,16 @@ export function PlannerBedSheetSingle({
                   }
                   onMovePlacement(selectedPlacement.id, bed.id, x, y);
                   setSelectedPlacementId(null);
+                  return;
+                }
+                if (paintMode) {
+                  return;
+                }
+                if (!occupant && selectedCropName.trim() && blockedForSelected) {
+                  const detail = placementSpacingConflict(bed.id, x, y, selectedCropName);
+                  if (detail) {
+                    onExplainPlantingBlocked(detail);
+                  }
                   return;
                 }
                 if (!occupant && !blockedForSelected) {

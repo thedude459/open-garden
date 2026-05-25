@@ -1,8 +1,9 @@
 import math
 from datetime import date, timedelta
+from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,11 @@ from ..core.dependencies import (
     get_owned_planting,
 )
 from ..models import Bed, CropTemplate, Garden, Planting, Sensor, User
-from ..planning_engine import build_planting_recommendations
+from ..planning_engine import (
+    build_planting_recommendations,
+    normalize_suggestion_kind_inputs,
+    resolve_allowed_plant_kinds,
+)
 from ..services.planting_tasks import (
     delete_garden_schedule_tasks,
     indoor_effective_bed_entry_date,
@@ -33,6 +38,7 @@ from ..schemas import (
     PlantingOut,
     PlantingRecommendationsOut,
     PlantingRelocate,
+    PlantKindLiteral,
 )
 from ..weather import fetch_weather
 
@@ -524,6 +530,11 @@ def log_harvest(
 async def get_planting_recommendations(
     db: Session = Depends(get_db),
     planting: Planting = Depends(get_owned_planting),
+    suggestion_kind: Annotated[list[PlantKindLiteral] | None, Query()] = None,
+    suggestion_kinds: Annotated[
+        str | None,
+        Query(description="Comma-separated kinds (preferred over repeated suggestion_kind)"),
+    ] = None,
 ):
     garden = db.query(Garden).filter(Garden.id == planting.garden_id).first()
 
@@ -538,4 +549,8 @@ async def get_planting_recommendations(
         db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
     )
     plantings = db.query(Planting).filter(Planting.garden_id == garden.id).all()
-    return build_planting_recommendations(planting, garden, weather, crop_templates, plantings)
+    merged = normalize_suggestion_kind_inputs(suggestion_kind, suggestion_kinds)
+    allowed = resolve_allowed_plant_kinds(merged)
+    return build_planting_recommendations(
+        planting, garden, weather, crop_templates, plantings, allowed
+    )

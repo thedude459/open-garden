@@ -53,6 +53,30 @@ export async function loadAuthenticated(page: Page, token: string) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 }
 
+/** Returns an existing garden id or creates a minimal garden for URL routing tests. */
+export async function getFirstGardenId(apiRequest: APIRequestContext, token: string): Promise<number> {
+  const authHeaders = { Authorization: `Bearer ${token}` };
+  const listResponse = await apiRequest.get(`${API}/gardens`, { headers: authHeaders });
+  expect(listResponse.ok()).toBeTruthy();
+  const gardens = (await listResponse.json()) as { id: number }[];
+  if (gardens.length > 0) {
+    return gardens[0].id;
+  }
+  const createResponse = await apiRequest.post(`${API}/gardens`, {
+    headers: authHeaders,
+    data: {
+      name: uid("Routing Garden"),
+      description: "e2e routing",
+      zip_code: "94110",
+      yard_width_ft: 20,
+      yard_length_ft: 20,
+    },
+  });
+  expect(createResponse.ok()).toBeTruthy();
+  const garden = (await createResponse.json()) as { id: number };
+  return garden.id;
+}
+
 export async function ensureGardenSelected(page: Page, gardenName?: string) {
   const homeNav = page.getByRole("button", { name: "My Gardens", exact: true });
   if (await homeNav.isVisible({ timeout: 3_000 }).catch(() => false)) {

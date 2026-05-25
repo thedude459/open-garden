@@ -44,8 +44,23 @@ export function CoachPanel({
       <SectionHeader
         icon={Bot}
         title={`AI Garden Coach ${selectedGardenName ? `- ${selectedGardenName}` : ""}`}
-        subtitle="Context-aware coaching using your garden state, weather, tasks, plantings, and sensor telemetry."
+        subtitle="Rule-based coaching assembled from your live tasks, forecast snippets, plantings, and sensor telemetry — deterministic guidance rather than an external AI chatbot."
       />
+
+      <details className="card mt-4 mb-2 space-y-2">
+        <summary className="cursor-pointer font-semibold text-sm">What signals feed this coach?</summary>
+        <p className="text-sm text-muted-foreground">
+          Priority queues combine overdue-style tasks, soil dryness thresholds from telemetry when sensors exist,
+          and short-range forecast highs for heat stress. Nothing leaves your deployment unless you self-host outbound integrations elsewhere.
+        </p>
+        {latestResponse?.context_highlights && latestResponse.context_highlights.length > 0 && (
+          <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+            {latestResponse.context_highlights.map((line, idx) => (
+              <li key={`highlight-${idx}`}>{line}</li>
+            ))}
+          </ul>
+        )}
+      </details>
 
       <div className="flex flex-col lg:flex-row gap-4 mt-4">
         <section className="card flex-1">
@@ -124,12 +139,18 @@ export function CoachPanel({
         <SectionHeader variant="section" headingLevel="h3" icon={Lightbulb} title="Suggested Actions" />
         <ul className="space-y-3">
           {(latestResponse?.suggested_actions || []).map((action, index) => (
-            <li key={`${action.title}-${index}`} className="py-3 border-b last:border-b-0">
+            <li key={`${action.title}-${index}`} className="py-3 border-b last:border-b-0 space-y-2">
               <div className="crop-card-row">
                 <strong>{action.title}</strong>
                 <Badge variant="outline">{action.priority}</Badge>
               </div>
               <p className="hint">{action.detail}</p>
+              {action.why ? (
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer font-semibold text-[color:inherit]">Why this suggestion</summary>
+                  <p className="mt-1 pl-1">{action.why}</p>
+                </details>
+              ) : null}
             </li>
           ))}
           {(!latestResponse || latestResponse.suggested_actions.length === 0) && <li className="hint">No suggested actions yet. Ask the coach a question.</li>}

@@ -77,7 +77,6 @@ function makeProps(): AppPageRouterProps {
   return {
     routing: {
       activePage: "home",
-      setActivePage: vi.fn(),
       navigateTo: vi.fn(),
     },
     shell: {
@@ -118,6 +117,8 @@ function makeProps(): AppPageRouterProps {
       setSelectedRecommendationPlantingId: vi.fn(),
       plantingRecommendation: null,
       refreshSeasonalPlan: vi.fn(async () => undefined),
+      selectedGardenId: null,
+      applySeasonalSuggestionKinds: vi.fn(async () => undefined),
       sensorSummary: null,
       gardenTimeline: null,
       loadTimelineForGarden: vi.fn(async () => undefined),
@@ -169,6 +170,7 @@ function makeProps(): AppPageRouterProps {
       plannerActions: {} as AppPageRouterProps["actions"]["plannerActions"],
       coachState: {} as AppPageRouterProps["actions"]["coachState"],
       pestLogActions: {} as AppPageRouterProps["actions"]["pestLogActions"],
+      journalActions: {} as AppPageRouterProps["actions"]["journalActions"],
       derived: { selectedGardenName: "My Garden" } as AppPageRouterProps["actions"]["derived"],
     },
     confirm: {

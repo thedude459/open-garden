@@ -165,6 +165,7 @@ class CropSourceRegistry:
                     "frost_hardy": record.frost_hardy,
                     "weeks_to_transplant": record.weeks_to_transplant,
                     "notes": record.notes,
+                    "plant_kind": record.plant_kind,
                 }
 
                 existing = existing_by_product_id.get(record.external_product_id)

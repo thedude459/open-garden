@@ -27,6 +27,7 @@ function makeCrop(overrides: Partial<CropTemplate> = {}): CropTemplate {
     frost_hardy: false,
     weeks_to_transplant: 6,
     notes: "Keep evenly watered.",
+    life_cycle: "annual",
     ...overrides,
   };
 }
@@ -64,6 +65,8 @@ describe("CropsPanel", () => {
         onNewCropNotesChange={vi.fn()}
         newCropImageUrl=""
         onNewCropImageUrlChange={vi.fn()}
+        newCropLifeCycle="annual"
+        onNewCropLifeCycleChange={vi.fn()}
         cropErrors={{ name: "", spacing: "", days: "", planting_window: "", weeks_to_transplant: "" }}
         onUpsertCropTemplate={vi.fn()}
         onResetCropForm={vi.fn()}
@@ -107,6 +110,8 @@ describe("CropsPanel", () => {
         onNewCropNotesChange={vi.fn()}
         newCropImageUrl="https://example.com/pepper.jpg"
         onNewCropImageUrlChange={vi.fn()}
+        newCropLifeCycle="annual"
+        onNewCropLifeCycleChange={vi.fn()}
         cropErrors={{ name: "", spacing: "", days: "", planting_window: "", weeks_to_transplant: "" }}
         onUpsertCropTemplate={vi.fn()}
         onResetCropForm={vi.fn()}
@@ -157,6 +162,8 @@ function renderPanel(overrides: Partial<CropsPanelPartialProps> = {}) {
     onNewCropNotesChange: vi.fn(),
     newCropImageUrl: "",
     onNewCropImageUrlChange: vi.fn(),
+    newCropLifeCycle: "annual",
+    onNewCropLifeCycleChange: vi.fn(),
     cropErrors: { name: "", spacing: "", days: "", planting_window: "", weeks_to_transplant: "" },
     onUpsertCropTemplate: vi.fn(),
     onResetCropForm: vi.fn(),

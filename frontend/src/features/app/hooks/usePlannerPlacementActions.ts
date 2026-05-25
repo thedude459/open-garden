@@ -12,6 +12,8 @@ interface UsePlannerPlacementActionsParams {
   setPlantings?: React.Dispatch<React.SetStateAction<Placement[]>>;
   placements: Placement[];
   beds: Bed[];
+  /** When set, new placements are only allowed on this bed (matches yard-map highlight). */
+  placementBedId?: number | null;
   selectedGarden: number | null;
   selectedCropName: string;
   selectedDate: string;
@@ -36,6 +38,7 @@ export function usePlannerPlacementActions({
   setPlantings,
   placements,
   beds,
+  placementBedId = null,
   selectedGarden,
   selectedCropName,
   selectedDate,
@@ -155,7 +158,19 @@ export function usePlannerPlacementActions({
 
   const addPlacement = useCallback(
     async (bedId: number, x: number, y: number) => {
-      if (!selectedGarden || !selectedCropName.trim()) return;
+      if (!selectedGarden) return;
+      if (!selectedCropName.trim()) {
+        pushNotice("Pick a crop in Placement Tools before tapping bed squares.", "info");
+        return;
+      }
+      if (placementBedId != null && bedId !== placementBedId) {
+        const focusBed = beds.find((b) => b.id === placementBedId);
+        pushNotice(
+          `Planting is limited to “${focusBed?.name ?? "the highlighted bed"}”. Choose another bed in Yard highlight or select Any bed.`,
+          "info",
+        );
+        return;
+      }
       const spacingIssue = placementSpacingConflict(bedId, x, y, selectedCropName);
       if (spacingIssue) {
         pushNotice(spacingIssue, "error");
@@ -204,6 +219,8 @@ export function usePlannerPlacementActions({
     },
     [
       selectedGarden,
+      beds,
+      placementBedId,
       selectedCropName,
       selectedDate,
       plantingMovedOn,

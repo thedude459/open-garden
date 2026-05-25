@@ -1,7 +1,7 @@
 import { FormEvent } from "react";
 import { Leaf, PenSquare, Sprout } from "lucide-react";
 import { SectionHeader } from "@/components/SectionHeader";
-import { CropTemplate, CropTemplateSyncStatus } from "../types";
+import { CropLifeCycle, CropTemplate, CropTemplateSyncStatus } from "../types";
 
 type CropsPanelProps = {
   cropTemplates: CropTemplate[];
@@ -33,6 +33,8 @@ type CropsPanelProps = {
   onNewCropNotesChange: (value: string) => void;
   newCropImageUrl: string;
   onNewCropImageUrlChange: (value: string) => void;
+  newCropLifeCycle: CropLifeCycle;
+  onNewCropLifeCycleChange: (value: CropLifeCycle) => void;
   cropErrors: {
     name: string;
     spacing: string;
@@ -76,6 +78,8 @@ export function CropsPanel({
   onNewCropNotesChange,
   newCropImageUrl,
   onNewCropImageUrlChange,
+  newCropLifeCycle,
+  onNewCropLifeCycleChange,
   cropErrors,
   onUpsertCropTemplate,
   onResetCropForm,
@@ -92,7 +96,7 @@ export function CropsPanel({
         <SectionHeader
           icon={Sprout}
           title="Crop Library"
-          subtitle={`${cropTemplates.length} crop template${cropTemplates.length !== 1 ? "s" : ""} available. ${importedCount} imported from Johnny's, ${manualCount} manual.`}
+          subtitle={`${cropTemplates.length} crop template${cropTemplates.length !== 1 ? "s" : ""} available. ${importedCount} imported from Johnny's, ${manualCount} manual. Tag life cycles for fruit trees, perennial herbs, or ornamentals alongside classic annual vegetables.`}
           actions={
             <>
               <button type="button" className="secondary-btn" onClick={onRefreshLibrary} disabled={isRefreshingLibrary || isSyncRunning || isCleaningLegacyLibrary}>
@@ -124,6 +128,7 @@ export function CropsPanel({
                   {crop.variety && <span className="crop-tag variety">{crop.variety}</span>}
                   {crop.family && <span className="crop-tag family">{crop.family}</span>}
                   <span className="crop-tag family">{crop.source === "johnnys-selected-seeds" ? "Johnny's" : "Manual"}</span>
+                  <span className="crop-tag">{crop.life_cycle ?? "annual"}</span>
                 </span>
                 <span>
                   {crop.frost_hardy
@@ -201,6 +206,16 @@ export function CropsPanel({
             {cropErrors.weeks_to_transplant && <p id="crop-wtt-error" className="field-error">{cropErrors.weeks_to_transplant}</p>}
           </>
         )}
+        <label className="field-label" htmlFor="crop-life-cycle">Life cycle</label>
+        <select
+          id="crop-life-cycle"
+          value={newCropLifeCycle}
+          onChange={(e) => onNewCropLifeCycleChange(e.target.value as CropLifeCycle)}
+        >
+          <option value="annual">Annual (single-season focus)</option>
+          <option value="biennial">Biennial</option>
+          <option value="perennial">Perennial / woody or multi-year</option>
+        </select>
         <label className="field-label" htmlFor="crop-notes">Care notes (optional)</label>
         <textarea id="crop-notes" className="notes-area" value={newCropNotes} onChange={(e) => onNewCropNotesChange(e.target.value)} placeholder="Watering, pest tips, harvest hints..." rows={3} />
         <div className="panel-actions">

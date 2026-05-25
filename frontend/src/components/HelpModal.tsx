@@ -35,7 +35,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <li><strong>Seasonal Plan</strong> — a generated plan tuned to your zone and site.</li>
               <li><strong>Bed Planner</strong> — design beds and place crops visually.</li>
               <li><strong>Crops</strong> — browse the crop library and tune custom spacing / dates.</li>
-              <li><strong>More</strong> — Timeline, AI Coach, Sensors, Pest Log.</li>
+              <li><strong>More</strong> — Timeline, AI Coach, Sensors, Pest Log, Observation Journal.</li>
             </ul>
           </section>
 

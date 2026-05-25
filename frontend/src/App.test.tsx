@@ -132,6 +132,7 @@ vi.mock("./features/app/hooks/useGardenDataFlow", () => ({
     invalidateGardenInsightCaches: vi.fn(),
     invalidateSensorCaches: vi.fn(),
     invalidateSeasonalPlanCache: vi.fn(),
+    applySeasonalSuggestionKinds: vi.fn(async () => undefined),
     noticeUnlessExpired: vi.fn(() => vi.fn()),
   }),
 }));
@@ -139,7 +140,7 @@ vi.mock("./features/app/hooks/useGardenDataFlow", () => ({
 vi.mock("./features/app/hooks/usePageRouter", () => ({
   usePageRouter: () => ({
     activePage: "home",
-    setActivePage: vi.fn(),
+    resumeAfterGardenPick: vi.fn(),
     navigateTo: vi.fn(),
     isNavOpen: false,
     setIsNavOpen: vi.fn(),
@@ -163,6 +164,7 @@ vi.mock("./features/app/hooks/useDerivedGardenState", () => ({
 vi.mock("./features/app/hooks/usePlannerActions", () => ({ usePlannerActions: () => ({}) }));
 vi.mock("./features/app/hooks/useCoachState", () => ({ useCoachState: () => ({ resetCoach: vi.fn() }) }));
 vi.mock("./features/app/hooks/usePestLogActions", () => ({ usePestLogActions: () => ({}) }));
+vi.mock("./features/app/hooks/useJournalActions", () => ({ useJournalActions: () => ({}) }));
 vi.mock("./features/app/hooks/usePageDataEffects", () => ({ usePageDataEffects: vi.fn() }));
 
 describe("App shell integration", () => {

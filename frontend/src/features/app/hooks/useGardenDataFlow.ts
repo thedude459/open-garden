@@ -52,7 +52,9 @@ export function useGardenDataFlow({
     weatherCacheRef,
   } = useGardenCoreState();
 
-  const insights = useGardenInsightsData({ fetchAuthed });
+  const selectedGardenRecord = gardens.find((g) => g.id === selectedGarden);
+
+  const insights = useGardenInsightsData({ fetchAuthed, selectedGarden, gardens });
   const {
     gardenClimate,
     plantingWindows,
@@ -86,6 +88,7 @@ export function useGardenDataFlow({
     invalidateSeasonalPlanCache,
     resetForNoGarden,
     clearPlantingRecommendationCacheEntry,
+    applySeasonalSuggestionKinds,
   } = insights;
 
   const clearAllCaches = useMemo(
@@ -152,8 +155,6 @@ export function useGardenDataFlow({
     refreshCropTemplateDatabase,
     requestLegacyCropCleanup,
   } = cropSync;
-
-  const selectedGardenRecord = gardens.find((g) => g.id === selectedGarden);
 
   useGardenDataFlowEffects({
     token,
@@ -238,6 +239,7 @@ export function useGardenDataFlow({
     invalidateGardenInsightCaches,
     invalidateSensorCaches,
     invalidateSeasonalPlanCache,
+    applySeasonalSuggestionKinds,
 
     noticeUnlessExpired,
   };

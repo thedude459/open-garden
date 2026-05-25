@@ -9,7 +9,7 @@ import {
 import { AppPage } from "../features/app/types";
 import { Garden } from "../features/types";
 
-const SECONDARY_NAV_PAGES: AppPage[] = ["timeline", "coach", "sensors", "pests"];
+const SECONDARY_NAV_PAGES: AppPage[] = ["timeline", "coach", "sensors", "pests", "journal"];
 
 type AppNavbarProps = {
   activePage: AppPage;
@@ -124,6 +124,9 @@ export function AppNavbar({
                   </DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => navigateAndCloseNav("pests")}>
                     Pest Log
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigateAndCloseNav("journal")}>
+                    Observation Journal
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

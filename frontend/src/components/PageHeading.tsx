@@ -8,6 +8,7 @@ import {
   Home,
   LayoutGrid,
   ListChecks,
+  NotebookPen,
   Sprout,
 } from "lucide-react";
 
@@ -57,6 +58,11 @@ const PAGE_META: Record<AppPage, PageMeta> = {
     label: "Pest log",
     subtitle: "Track pests, diseases, and control actions over time",
     Icon: Bug,
+  },
+  journal: {
+    label: "Observation journal",
+    subtitle: "Dated notes and optional photo links for each garden season",
+    Icon: NotebookPen,
   },
   sensors: {
     label: "Sensors",

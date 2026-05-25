@@ -113,7 +113,7 @@ test.describe("open-garden smoke", () => {
   test("navigate to crop library", async ({ page, request }) => {
     const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
-    await page.getByRole("button", { name: "Crop Library" }).click();
+    await page.getByRole("button", { name: "Crops", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: "Crop Library" })

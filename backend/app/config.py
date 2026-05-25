@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     allowed_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://localhost:4173",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
     ]
     frontend_base_url: str = "http://localhost:5173"
     email_verification_expire_minutes: int = 60

@@ -1,5 +1,9 @@
 FROM node:24-alpine AS builder
 
+# Browser-reachable API URL baked into the static bundle (must match how users reach the API).
+ARG VITE_API_URL=http://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
+
 ENV NODE_ENV=development
 
 WORKDIR /app

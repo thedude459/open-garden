@@ -6,11 +6,13 @@ import { SeasonalPageSection } from "./SeasonalPageSection";
 function buildSeasonalContextValue(): SeasonalPlanContextType {
   return {
     selectedGardenName: "Back Garden",
+    selectedGardenId: 1,
     seasonalPlan: null,
     selectedRecommendationPlantingId: null,
     plantingRecommendation: null,
     setSelectedRecommendationPlantingId: vi.fn(),
     refreshSeasonalPlan: vi.fn().mockResolvedValue(undefined),
+    applySeasonalSuggestionKinds: vi.fn().mockResolvedValue(undefined),
     isLoadingSeasonalPlan: false,
     isLoadingPlantingRecommendation: false,
     pushNotice: vi.fn(),

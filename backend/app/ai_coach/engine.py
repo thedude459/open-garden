@@ -139,6 +139,7 @@ def generate_coach_response(context: dict) -> dict:
                 "detail": f"You have {tasks['due_soon']} task(s) due in the next 3 days.",
                 "priority": "high",
                 "category": "tasks",
+                "why": "Derived from open tasks with due dates within three days of today.",
             }
         )
 
@@ -150,6 +151,7 @@ def generate_coach_response(context: dict) -> dict:
                 "detail": f"Latest soil moisture is {latest_moisture:.1f}%. Consider watering this bed today.",
                 "priority": "high",
                 "category": "irrigation",
+                "why": "Soil moisture telemetry dropped below the dry threshold used by the sensor summary.",
             }
         )
 
@@ -161,6 +163,7 @@ def generate_coach_response(context: dict) -> dict:
                 "detail": "Forecasted highs are elevated. Plan for morning watering and midday shade checks.",
                 "priority": "medium",
                 "category": "weather",
+                "why": "Five-day forecast highs from your garden coordinates include at least one day at or above 85°F.",
             }
         )
 
@@ -171,6 +174,7 @@ def generate_coach_response(context: dict) -> dict:
                 "detail": "No urgent signals detected. Continue normal watering, harvest, and scouting cadence.",
                 "priority": "low",
                 "category": "general",
+                "why": "No task backlog, soil dryness, or heat spikes crossed rule thresholds this check.",
             }
         )
 

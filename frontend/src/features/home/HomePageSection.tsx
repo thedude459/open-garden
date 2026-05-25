@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { CreateGardenForm } from "./CreateGardenForm";
 import { GardenListSidebar } from "./GardenListSidebar";
 import { HomeHero } from "./HomeHero";
 import { HomeWelcomeCard } from "./HomeWelcomeCard";
+import { OnboardingWizard } from "./OnboardingWizard";
 import { MicroclimateProfileCard } from "./MicroclimateProfileCard";
 import { AppPage } from "../app/types";
 import { Bed, Garden, GardenClimate, GardenExtensionResources, Placement } from "../types";
@@ -28,7 +30,7 @@ type HomePageSectionProps = {
   taskActions: ReturnType<typeof useTaskActions>;
   gardenActions: ReturnType<typeof useGardenActions>;
   plannerActions: ReturnType<typeof usePlannerActions>;
-  setSelectedGarden: (id: number) => void;
+  setSelectedGarden: (id: number | null) => void;
   onNavigate: (page: AppPage) => void;
 };
 
@@ -53,8 +55,29 @@ export function HomePageSection({
   setSelectedGarden,
   onNavigate,
 }: HomePageSectionProps) {
+  const [onboardingSuppressed, setOnboardingSuppressed] = useState(() =>
+    Boolean(localStorage.getItem("open-garden-onboarding-dismissed"))
+  );
+
+  useEffect(() => {
+    if (gardens.length > 0) {
+      setOnboardingSuppressed(true);
+    }
+  }, [gardens.length]);
+
+  const showOnboarding = gardens.length === 0 && !onboardingSuppressed;
+
   return (
     <>
+      <OnboardingWizard
+        open={showOnboarding}
+        onDismiss={(remember) => {
+          setOnboardingSuppressed(true);
+          if (remember) {
+            localStorage.setItem("open-garden-onboarding-dismissed", "1");
+          }
+        }}
+      />
       {selectedGarden && selectedGardenRecord && (
         <HomeHero
           garden={selectedGardenRecord}

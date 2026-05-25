@@ -5,8 +5,10 @@ from sqlalchemy.orm import Session
 from ..core.auth import get_current_user
 from ..database import get_db
 from ..core.dependencies import get_owned_garden, get_owned_task
-from ..models import Garden, PestLog, SeedInventory, Task, User
+from ..models import Garden, GardenObservation, PestLog, SeedInventory, Task, User
 from ..schemas import (
+    GardenObservationCreate,
+    GardenObservationOut,
     PestLogCreate,
     PestLogOut,
     SeedInventoryCreate,
@@ -135,5 +137,53 @@ def delete_pest_log(
     if garden is None:
         raise HTTPException(status_code=403, detail="Not authorized")
     db.delete(pest_log)
+    db.commit()
+    return {"status": "deleted"}
+
+
+@router.post("/observations", response_model=GardenObservationOut)
+def create_observation(
+    payload: GardenObservationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    _ensure_owned_garden(db=db, current_user=current_user, garden_id=payload.garden_id)
+    item = GardenObservation(**payload.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.get("/observations", response_model=list[GardenObservationOut])
+def list_observations(
+    garden_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    _ensure_owned_garden(db=db, current_user=current_user, garden_id=garden_id)
+    return (
+        db.query(GardenObservation)
+        .filter(GardenObservation.garden_id == garden_id)
+        .order_by(GardenObservation.observed_on.desc(), GardenObservation.id.desc())
+        .all()
+    )
+
+
+@router.delete("/observations/{observation_id}")
+def delete_observation(
+    observation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    obs = db.query(GardenObservation).filter(GardenObservation.id == observation_id).first()
+    if obs is None:
+        raise HTTPException(status_code=404, detail="Observation not found")
+    garden = (
+        db.query(Garden)
+        .filter(Garden.id == obs.garden_id, Garden.owner_id == current_user.id)
+        .first()
+    )
+    if garden is None:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    db.delete(obs)
     db.commit()
     return {"status": "deleted"}

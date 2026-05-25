@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
+PlantKindLiteral = Literal["vegetable", "herb", "flower", "fruit"]
+
 
 class Token(BaseModel):
     access_token: str
@@ -306,6 +308,7 @@ class PlantingActionOut(BaseModel):
 class PlantingCompanionSummaryOut(BaseModel):
     good_matches: list[str]
     risk_matches: list[str]
+    suggested_additions: list[str]
     reason: str
 
 
@@ -348,6 +351,8 @@ class CropTemplateCreate(BaseModel):
     frost_hardy: bool = False
     weeks_to_transplant: int = 6
     notes: str = ""
+    life_cycle: Literal["annual", "biennial", "perennial"] = "annual"
+    plant_kind: PlantKindLiteral = "vegetable"
 
 
 class CropTemplateOut(BaseModel):
@@ -368,6 +373,8 @@ class CropTemplateOut(BaseModel):
     frost_hardy: bool
     weeks_to_transplant: int
     notes: str
+    life_cycle: str
+    plant_kind: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -556,6 +563,29 @@ class PestLogOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class GardenObservationCreate(BaseModel):
+    garden_id: int
+    observed_on: date
+    title: str
+    notes: str = ""
+    photo_url: str = ""
+    planting_id: int | None = None
+    bed_id: int | None = None
+
+
+class GardenObservationOut(BaseModel):
+    id: int
+    garden_id: int
+    observed_on: date
+    title: str
+    notes: str
+    photo_url: str
+    planting_id: int | None
+    bed_id: int | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class SensorRegister(BaseModel):
     garden_id: int
     bed_id: int | None = None
@@ -661,6 +691,7 @@ class AiCoachSuggestedActionOut(BaseModel):
     detail: str
     priority: str
     category: str
+    why: str
 
 
 class AiCoachScenarioOutcomeOut(BaseModel):

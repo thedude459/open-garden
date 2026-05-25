@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, RefObject, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGrid, Sprout } from "lucide-react";
 import { Bed, ClimatePlantingWindow, CropTemplate, Garden, GardenSunPath, Placement, PlantingLocation, PlantingMethod } from "../types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -96,6 +96,7 @@ type PlannerPanelProps = {
     onUndoPlanner: () => void;
     onRedoPlanner: () => void;
   };
+  pushNotice: (message: string, kind: "info" | "success" | "error") => void;
 };
 
 export function PlannerPanel({
@@ -104,6 +105,7 @@ export function PlannerPanel({
   crop,
   planner,
   history,
+  pushNotice,
 }: PlannerPanelProps) {
   const {
     isLoadingGardenData,
@@ -222,6 +224,41 @@ export function PlannerPanel({
     updateLasso,
     finishLasso,
   } = usePlannerBulkSelection(placements, () => setSelectedPlacementId(null));
+  const [showEdgeBufferOverlay, setShowEdgeBufferOverlay] = useState(false);
+  const [paintMode, setPaintMode] = useState(false);
+  const isPaintingRef = useRef(false);
+  useEffect(() => {
+    const endPaintStroke = () => {
+      isPaintingRef.current = false;
+    };
+    window.addEventListener("mouseup", endPaintStroke);
+    window.addEventListener("blur", endPaintStroke);
+    return () => {
+      window.removeEventListener("mouseup", endPaintStroke);
+      window.removeEventListener("blur", endPaintStroke);
+    };
+  }, []);
+  const togglePaintMode = useCallback(() => {
+    setPaintMode((prev) => {
+      const next = !prev;
+      if (next && bulkMode) {
+        toggleBulkMode();
+      }
+      return next;
+    });
+  }, [bulkMode, toggleBulkMode]);
+  const toggleBulkModeWrapped = useCallback(() => {
+    if (!bulkMode && paintMode) {
+      setPaintMode(false);
+    }
+    toggleBulkMode();
+  }, [bulkMode, paintMode, toggleBulkMode]);
+  const explainPlantingBlocked = useCallback(
+    (message: string) => {
+      pushNotice(message, "info");
+    },
+    [pushNotice],
+  );
   const {
     pendingRotation,
     setPendingRotation,
@@ -231,6 +268,17 @@ export function PlannerPanel({
   } = usePlannerRotationPreview({ beds, yardWidthFt, yardLengthFt, onRotateBed });
 
   const [activeTab, setActiveTab] = useState<"setup" | "plantings">("setup");
+  const prevBedCountRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const prev = prevBedCountRef.current;
+    prevBedCountRef.current = beds.length;
+    if (prev === undefined) {
+      return;
+    }
+    if (prev === 0 && beds.length === 1) {
+      setActiveTab("plantings");
+    }
+  }, [beds.length]);
   const selectedPlacement = useMemo(
     () => placements.find((placement) => placement.id === selectedPlacementId) || null,
     [placements, selectedPlacementId],
@@ -421,17 +469,26 @@ export function PlannerPanel({
                         <PlannerBedSheetsSection
                           beds={beds}
                           placements={placements}
+                          placementBedId={placementBedId}
                           selectedCropName={selectedCropName}
                           selectedPlacement={selectedPlacement}
                           setSelectedPlacementId={setSelectedPlacementId}
                           bulkMode={bulkMode}
                           selectedPlacementIds={selectedPlacementIds}
-                          toggleBulkMode={toggleBulkMode}
+                          toggleBulkMode={toggleBulkModeWrapped}
                           clearSelection={clearSelection}
                           togglePlacementSelection={togglePlacementSelection}
                           startLasso={startLasso}
                           updateLasso={updateLasso}
                           finishLasso={finishLasso}
+                          showEdgeBufferOverlay={showEdgeBufferOverlay}
+                          onToggleShowEdgeBuffer={() =>
+                            setShowEdgeBufferOverlay((current) => !current)
+                          }
+                          paintMode={paintMode}
+                          onTogglePaintMode={togglePaintMode}
+                          isPaintingRef={isPaintingRef}
+                          onExplainPlantingBlocked={explainPlantingBlocked}
                           onBulkMovePlacements={onBulkMovePlacements}
                           onBulkRemovePlacements={onBulkRemovePlacements}
                           onBlockedPlacementMove={onBlockedPlacementMove}

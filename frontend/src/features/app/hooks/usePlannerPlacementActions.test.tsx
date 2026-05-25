@@ -266,7 +266,48 @@ describe("usePlannerPlacementActions", () => {
 
     expect(fetchAuthed).not.toHaveBeenCalled();
     expect(pushPlannerHistory).not.toHaveBeenCalled();
-    expect(pushNotice).not.toHaveBeenCalled();
+    expect(pushNotice).toHaveBeenCalledWith(
+      "Pick a crop in Placement Tools before tapping bed squares.",
+      "info",
+    );
+  });
+
+  it("blocks addPlacement when yard highlight targets a different bed", async () => {
+    const fetchAuthed = vi.fn();
+    const pushNotice = vi.fn();
+    const pushPlannerHistory = vi.fn();
+    const setPlacements = vi.fn();
+    const beds = [
+      makeBed({ id: 10, name: "North" }),
+      makeBed({ id: 11, name: "South" }),
+    ];
+
+    const { result } = renderHook(() =>
+      usePlannerPlacementActions({
+        fetchAuthed: fetchAuthed as unknown as <T = unknown>(url: string, options?: RequestInit) => Promise<T>,
+        pushNotice,
+        setPlacements,
+        placements: [],
+        beds,
+        placementBedId: 11,
+        selectedGarden: 1,
+        selectedCropName: "Tomato",
+        selectedDate: "2026-04-01",
+        placementSpacingConflict: () => null,
+        pushPlannerHistory,
+        refreshTasks: vi.fn(async () => undefined),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.addPlacement(10, 0, 0);
+    });
+
+    expect(fetchAuthed).not.toHaveBeenCalled();
+    expect(pushNotice).toHaveBeenCalledWith(
+      expect.stringContaining("South"),
+      "info",
+    );
   });
 
   it("removes a placement and wires undo redo history", async () => {

@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from "react";
 import {
   ListChecks,
   RefreshCw,
@@ -12,12 +13,19 @@ import {
 } from "lucide-react";
 import { useSeasonalPlanContext } from "./SeasonalPlanContext";
 import { SeasonalNextPlantingsSection } from "./SeasonalNextPlantingsSection";
+import { SeasonalSuggestionKindChips } from "./SeasonalSuggestionKindChips";
+import {
+  ALL_PLANT_KINDS,
+  type PlantKind,
+  readStoredSuggestionKinds,
+} from "./suggestionKindsStorage";
 import { Badge } from "@/components/ui/badge";
 import { SectionHeader } from "@/components/SectionHeader";
 
 export function SeasonalPlanPanel() {
   const {
     selectedGardenName,
+    selectedGardenId,
     seasonalPlan,
     isLoadingSeasonalPlan,
     selectedRecommendationPlantingId,
@@ -25,7 +33,37 @@ export function SeasonalPlanPanel() {
     isLoadingPlantingRecommendation,
     setSelectedRecommendationPlantingId,
     refreshSeasonalPlan,
+    applySeasonalSuggestionKinds,
+    pushNotice,
   } = useSeasonalPlanContext();
+
+  const [suggestionKinds, setSuggestionKinds] = useState<PlantKind[]>(() => [...ALL_PLANT_KINDS]);
+
+  useEffect(() => {
+    if (selectedGardenId == null) {
+      setSuggestionKinds([...ALL_PLANT_KINDS]);
+      return;
+    }
+    setSuggestionKinds(readStoredSuggestionKinds(selectedGardenId));
+  }, [selectedGardenId]);
+
+  const handleToggleSuggestionKind = useCallback(
+    async (kind: PlantKind) => {
+      if (selectedGardenId == null) {
+        return;
+      }
+      const next = suggestionKinds.includes(kind)
+        ? suggestionKinds.filter((k) => k !== kind)
+        : [...suggestionKinds, kind].sort();
+      if (next.length === 0) {
+        pushNotice("Select at least one category for suggestions.", "error");
+        return;
+      }
+      setSuggestionKinds(next);
+      await applySeasonalSuggestionKinds(next);
+    },
+    [applySeasonalSuggestionKinds, pushNotice, selectedGardenId, suggestionKinds],
+  );
 
   return (
     <article className="card">
@@ -45,11 +83,40 @@ export function SeasonalPlanPanel() {
         }
       />
 
+      {selectedGardenId != null && (
+        <div className="mt-4">
+          <SeasonalSuggestionKindChips
+            selected={suggestionKinds}
+            disabled={isLoadingSeasonalPlan}
+            onToggle={handleToggleSuggestionKind}
+          />
+        </div>
+      )}
+
       {isLoadingSeasonalPlan && <p className="hint">Building seasonal plan...</p>}
       {!isLoadingSeasonalPlan && !seasonalPlan && <p className="hint">No seasonal plan data yet.</p>}
 
       {seasonalPlan && (
         <div className="space-y-6 mt-4">
+          <details className="card">
+            <summary className="cursor-pointer font-semibold text-sm">
+              Why this seasonal snapshot updates as conditions change
+            </summary>
+            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+              <p>
+                Rotation and companion rows react to <strong>current plantings</strong>, crop families already occupying each bed,
+                and catalog companion hints for overlapping crops.
+              </p>
+              <p>
+                Signals blend your saved microclimate profile with runtime estimates such as soil temperature pace,
+                frost language from the next ten forecast days, and live planting counts for growth-stage summaries.
+              </p>
+              <p className="text-xs italic">
+                Zone label {seasonalPlan.zone} · Microclimate band {seasonalPlan.microclimate_band} · Generated {seasonalPlan.generated_on}
+              </p>
+            </div>
+          </details>
+
           <section className="card">
             <SectionHeader
               variant="section"
@@ -124,6 +191,12 @@ export function SeasonalPlanPanel() {
                 <li key={item.bed_id} className="py-3 border-b last:border-b-0">
                   <strong>Bed {item.bed_id}: rotate after {item.last_crop}</strong>
                   <p className="hint">Avoid family {item.avoid_family || "unknown"}. Suggested families: {item.recommended_families.join(", ") || "none"}.</p>
+                  {item.reason ? (
+                    <details className="mt-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer font-semibold text-[color:inherit]">Why</summary>
+                      <p className="mt-1 pl-1">{item.reason}</p>
+                    </details>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -144,6 +217,12 @@ export function SeasonalPlanPanel() {
                   <strong>Bed {item.bed_id}: {item.crop}</strong>
                   <p className="hint">Good with: {item.good_matches.join(", ") || "none"}</p>
                   <p className="hint">Watch with: {item.risk_matches.join(", ") || "none"}</p>
+                  {item.reason ? (
+                    <details className="mt-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer font-semibold text-[color:inherit]">Why</summary>
+                      <p className="mt-1 pl-1">{item.reason}</p>
+                    </details>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -164,6 +243,9 @@ export function SeasonalPlanPanel() {
                 <p className="hint">Expected harvest {plantingRecommendation.expected_harvest_on}</p>
                 <p className="hint">Companion positives: {plantingRecommendation.companion.good_matches.join(", ") || "none"}</p>
                 <p className="hint">Companion risks: {plantingRecommendation.companion.risk_matches.join(", ") || "none"}</p>
+                <p className="hint">
+                  Ideas to add near this crop: {(plantingRecommendation.companion.suggested_additions ?? []).join(", ") || "none"}
+                </p>
                 <h4>Next Actions</h4>
                 <ul>
                   {plantingRecommendation.next_actions.map((action, index) => (

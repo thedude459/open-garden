@@ -267,6 +267,11 @@
   gap: 0.35rem;
 }
 
+.planner-bulk-controls__full-width {
+  flex-basis: 100%;
+  width: 100%;
+}
+
 .planner-empty-state {
   padding: 0.95rem 1rem;
   border: 1px dashed #a9bfae;
@@ -905,6 +910,14 @@
 .bed-sheet-cell.buffer-blocked {
   background: color-mix(in srgb, var(--muted-foreground) 14%, var(--card));
   cursor: not-allowed;
+}
+
+.bed-sheet-cell.buffer-overlay-highlight {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #ea580c 65%, transparent);
+}
+
+.bed-sheet-cell.empty.buffer-overlay-highlight {
+  background: color-mix(in srgb, #ea580c 14%, var(--card));
 }
 
 .bed-sheet-cell.occupied {

@@ -1,9 +1,10 @@
 """AI coach, timeline, and seasonal plan endpoints."""
 
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..ai_coach import build_coach_context, generate_coach_response
@@ -11,8 +12,18 @@ from ..core.auth import get_current_user
 from ..engines.climate import build_dynamic_planting_windows
 from ..database import get_db
 from ..models import CropTemplate, Garden, Planting, Sensor, SensorReading, Task
-from ..planning_engine import build_seasonal_plan
-from ..schemas import AiCoachRequest, AiCoachResponseOut, GardenSeasonalPlanOut, GardenTimelineOut
+from ..planning_engine import (
+    build_seasonal_plan,
+    normalize_suggestion_kind_inputs,
+    resolve_allowed_plant_kinds,
+)
+from ..schemas import (
+    AiCoachRequest,
+    AiCoachResponseOut,
+    GardenSeasonalPlanOut,
+    GardenTimelineOut,
+    PlantKindLiteral,
+)
 from ..sensors import build_sensor_summary
 from ..engines.timeline import build_unified_timeline
 from ..weather import fetch_weather
@@ -147,6 +158,11 @@ async def get_garden_seasonal_plan(
     garden_id: int,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
+    suggestion_kind: Annotated[list[PlantKindLiteral] | None, Query()] = None,
+    suggestion_kinds: Annotated[
+        str | None,
+        Query(description="Comma-separated kinds (preferred over repeated suggestion_kind)"),
+    ] = None,
 ):
     garden = (
         db.query(Garden).filter(Garden.id == garden_id, Garden.owner_id == current_user.id).first()
@@ -165,4 +181,6 @@ async def get_garden_seasonal_plan(
         db.query(CropTemplate).order_by(CropTemplate.name.asc(), CropTemplate.variety.asc()).all()
     )
     plantings = db.query(Planting).filter(Planting.garden_id == garden_id).all()
-    return build_seasonal_plan(garden, weather, crop_templates, plantings)
+    merged = normalize_suggestion_kind_inputs(suggestion_kind, suggestion_kinds)
+    allowed = resolve_allowed_plant_kinds(merged)
+    return build_seasonal_plan(garden, weather, crop_templates, plantings, allowed)

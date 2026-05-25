@@ -1,6 +1,15 @@
+import React from "react";
 import { renderHook, act, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Garden } from "../../types";
 import { usePageRouter } from "./usePageRouter";
+
+function hookWrapper(initialEntry = "/home") {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return React.createElement(MemoryRouter, { initialEntries: [initialEntry] }, children);
+  };
+}
 
 describe("usePageRouter", () => {
   const mockAuthFlow = {
@@ -11,6 +20,7 @@ describe("usePageRouter", () => {
   };
 
   const mockPushNotice = vi.fn();
+  const mockSetSelectedGarden = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -19,12 +29,17 @@ describe("usePageRouter", () => {
   });
 
   it("should initialize with default page (home) and state", () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     expect(result.current.activePage).toBe("home");
@@ -33,14 +48,19 @@ describe("usePageRouter", () => {
     expect(result.current.placementBedId).toBeNull();
   });
 
-  it("should navigate to a page and close nav", () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-        selectedGarden: 1,
-      })
+  it("should navigate to a garden-scoped page and close nav", () => {
+    const gardens: Garden[] = [{ id: 1 } as unknown as Garden];
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: 1,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens,
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     act(() => {
@@ -52,37 +72,18 @@ describe("usePageRouter", () => {
     expect(result.current.isNavOpen).toBe(false);
   });
 
-  it("should redirect to home when selectedGarden is cleared for garden-required page", () => {
-    const { result, rerender } = renderHook(
-      ({ selectedGarden }: { selectedGarden: number | null }) =>
+  it("should show help modal on first login if not seen before", async () => {
+    const { result } = renderHook(
+      () =>
         usePageRouter({
           token: "test-token",
           authFlow: mockAuthFlow,
           pushNotice: mockPushNotice,
-          selectedGarden,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
         }),
-      { initialProps: { selectedGarden: 1 as number | null } }
-    );
-
-    act(() => {
-      result.current.navigateTo("planner");
-    });
-
-    expect(result.current.activePage).toBe("planner");
-
-    // Clear the selected garden
-    rerender({ selectedGarden: null });
-
-    expect(result.current.activePage).toBe("home");
-  });
-
-  it("should show help modal on first login if not seen before", async () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+      { wrapper: hookWrapper("/home") }
     );
 
     await waitFor(() => {
@@ -91,12 +92,17 @@ describe("usePageRouter", () => {
   });
 
   it("should manage month cursor and selected date state", () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     const newMonth = new Date(2024, 5, 1);
@@ -112,12 +118,17 @@ describe("usePageRouter", () => {
   });
 
   it("should manage placement bed ID state", () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     expect(result.current.placementBedId).toBeNull();
@@ -129,14 +140,18 @@ describe("usePageRouter", () => {
     expect(result.current.placementBedId).toBe(42);
   });
 
-  it("should not allow navigation to garden-required pages when no garden selected", async () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-        selectedGarden: null,
-      })
+  it("should not navigate to garden tools without a selected garden", async () => {
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     act(() => {
@@ -146,16 +161,22 @@ describe("usePageRouter", () => {
     await waitFor(() => {
       expect(result.current.activePage).toBe("home");
     });
+    expect(mockPushNotice).toHaveBeenCalled();
   });
 
-  it("should close nav when page changes", () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-        selectedGarden: 1,
-      })
+  it("should close nav when route changes", () => {
+    const gardens: Garden[] = [{ id: 1 } as unknown as Garden];
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: 1,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens,
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     act(() => {
@@ -165,7 +186,7 @@ describe("usePageRouter", () => {
     expect(result.current.isNavOpen).toBe(true);
 
     act(() => {
-      result.current.setActivePage("calendar");
+      result.current.navigateTo("calendar");
     });
 
     expect(result.current.isNavOpen).toBe(false);
@@ -175,12 +196,17 @@ describe("usePageRouter", () => {
     mockAuthFlow.verifyEmailToken.mockResolvedValueOnce(undefined);
     window.history.replaceState(null, "", "/?verify_token=abc123");
 
-    renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     await waitFor(() => {
@@ -198,12 +224,17 @@ describe("usePageRouter", () => {
   it("handles reset tokens in the URL", async () => {
     window.history.replaceState(null, "", "/?reset_token=reset-456");
 
-    renderHook(() =>
-      usePageRouter({
-        token: "",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    renderHook(
+      () =>
+        usePageRouter({
+          token: "",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     await waitFor(() => {
@@ -218,12 +249,17 @@ describe("usePageRouter", () => {
     mockAuthFlow.verifyEmailToken.mockRejectedValueOnce(new Error("Link expired"));
     window.history.replaceState(null, "", "/?verify_token=expired-token");
 
-    renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     await waitFor(() => {
@@ -236,25 +272,34 @@ describe("usePageRouter", () => {
   it("keeps help modal closed after the first-login hint has been seen", () => {
     localStorage.setItem("open-garden-help-seen", "1");
 
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-      })
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     expect(result.current.isHelpOpen).toBe(false);
   });
 
   it("allows crop library navigation without a selected garden", () => {
-    const { result } = renderHook(() =>
-      usePageRouter({
-        token: "test-token",
-        authFlow: mockAuthFlow,
-        pushNotice: mockPushNotice,
-        selectedGarden: null,
-      })
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens: [],
+        }),
+      { wrapper: hookWrapper("/home") }
     );
 
     act(() => {
@@ -262,5 +307,29 @@ describe("usePageRouter", () => {
     });
 
     expect(result.current.activePage).toBe("crops");
+  });
+
+  it("resumeAfterGardenPick navigates to an intended tool path", () => {
+    sessionStorage.setItem("open-garden-intended-page", "calendar");
+    const gardens: Garden[] = [{ id: 7 } as unknown as Garden];
+    const { result } = renderHook(
+      () =>
+        usePageRouter({
+          token: "test-token",
+          authFlow: mockAuthFlow,
+          pushNotice: mockPushNotice,
+          selectedGarden: null,
+          setSelectedGarden: mockSetSelectedGarden,
+          gardens,
+        }),
+      { wrapper: hookWrapper("/home") }
+    );
+
+    act(() => {
+      result.current.resumeAfterGardenPick(7);
+    });
+
+    expect(result.current.activePage).toBe("calendar");
+    expect(sessionStorage.getItem("open-garden-intended-page")).toBeNull();
   });
 });

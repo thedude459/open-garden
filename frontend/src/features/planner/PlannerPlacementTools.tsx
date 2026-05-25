@@ -107,8 +107,13 @@ export function PlannerPlacementTools({
           aria-expanded={hasPlannerCropOptions}
           aria-activedescendant={hasPlannerCropOptions && filteredCropTemplates[cropSearchActiveIndex] ? `planner-crop-option-${filteredCropTemplates[cropSearchActiveIndex].id}` : undefined}
         />
+        {filteredCropTemplates.length > 0 && (
+          <p className="hint">
+            {filteredCropTemplates.length} match{filteredCropTemplates.length === 1 ? "" : "es"} — scroll the list below.
+          </p>
+        )}
         <div id="planner-crop-list" className="crop-picker-list" role="listbox" aria-label="Planner vegetable search results">
-          {filteredCropTemplates.slice(0, 15).map((crop, index) => {
+          {filteredCropTemplates.map((crop, index) => {
             const isSelected = selectedCropName === crop.name;
             const isFocused = cropSearchActiveIndex === index;
             return (
@@ -257,14 +262,24 @@ export function PlannerPlacementTools({
           </>
         )}
       </fieldset>
-      <select value={placementBedId || ""} onChange={(e) => onPlacementBedIdChange(Number(e.target.value) || null)}>
-        <option value="">Apply to any bed</option>
+      <label className="field-label" htmlFor="planner-yard-highlight-bed">
+        Yard map highlight
+      </label>
+      <select
+        id="planner-yard-highlight-bed"
+        value={placementBedId || ""}
+        onChange={(e) => onPlacementBedIdChange(Number(e.target.value) || null)}
+      >
+        <option value="">Any bed</option>
         {beds.map((bed) => (
           <option key={bed.id} value={bed.id}>
             {bed.name}
           </option>
         ))}
       </select>
+      <p className="hint">
+        Dims other beds on the yard canvas. When a bed is chosen, new plantings are limited to that bed until you switch back to Any bed.
+      </p>
       <p className="hint">Use arrow keys and Enter in the crop search. Click any square in a bed to place {selectedCropName || "a crop"}.</p>
       <p className="hint">Touch move: tap a placement chip, then tap an empty square to move it without dragging.</p>
       <p className="hint">Keyboard move: focus a yard bed or placement chip, then use arrow keys to nudge by one grid cell.</p>

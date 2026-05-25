@@ -132,6 +132,7 @@ export function PlannerPageSection() {
         onUndoPlanner: () => undoPlannerChange().catch(() => undefined),
         onRedoPlanner: () => redoPlannerChange().catch(() => undefined),
       }}
+      pushNotice={pushNotice}
     />
   );
 }

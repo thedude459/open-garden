@@ -1,8 +1,10 @@
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from alembic.config import Config as AlembicConfig
 from alembic import command as alembic_command
+from sqlalchemy import text
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,20 +31,48 @@ from .weather import fetch_weather
 
 logger = get_logger(__name__)
 
+# Serialize startup DDL across uvicorn workers (each worker runs lifespan separately).
+_ALEMBIC_UVICORN_LOCK_KEY = 582_919_374_261_982_734
+
+
+def _bootstrap_schema() -> None:
+    # Docker image runs `alembic upgrade head` in docker-entrypoint.sh before uvicorn forks workers.
+    # Do not call Base.metadata.create_all here when skipping — Alembic already created tables; create_all
+    # would hit "relation already exists", abort the transaction, and break pg_advisory_unlock on the same conn.
+    if os.environ.get("OPEN_GARDEN_SKIP_LIFESPAN_MIGRATIONS") == "1":
+        return
+
+    alembic_path = Path("/app/alembic.ini")
+    if not alembic_path.exists():
+        alembic_path = Path(__file__).resolve().parents[1] / "alembic.ini"
+    alembic_cfg = AlembicConfig(str(alembic_path))
+
+    # Postgres: Alembic owns the schema (no create_all — avoids duplicating migration DDL).
+    # Hold the advisory lock on an AUTOCOMMIT connection so failed DDL inside Alembic cannot poison unlock().
+    if engine.dialect.name == "postgresql":
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as lock_conn:
+            lock_conn.execute(
+                text("SELECT pg_advisory_lock(:key)"), {"key": _ALEMBIC_UVICORN_LOCK_KEY}
+            )
+            try:
+                alembic_command.upgrade(alembic_cfg, "head")
+            finally:
+                lock_conn.execute(
+                    text("SELECT pg_advisory_unlock(:key)"), {"key": _ALEMBIC_UVICORN_LOCK_KEY}
+                )
+        return
+
+    if settings.env != "production":
+        Base.metadata.create_all(bind=engine)
+    alembic_command.upgrade(alembic_cfg, "head")
+
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     if settings.env == "production" and not settings.smtp_host:
         raise RuntimeError("SMTP_HOST is required in production to avoid token-link log fallback.")
 
-    if settings.env != "production":
-        Base.metadata.create_all(bind=engine)
-
-    alembic_path = Path("/app/alembic.ini")
-    if not alembic_path.exists():
-        alembic_path = Path(__file__).resolve().parents[1] / "alembic.ini"
-    alembic_cfg = AlembicConfig(str(alembic_path))
-    alembic_command.upgrade(alembic_cfg, "head")
+    _bootstrap_schema()
 
     db = SessionLocal()
     try:

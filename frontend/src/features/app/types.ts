@@ -3,7 +3,17 @@ import { Garden } from "../types";
 export type TokenResponse = { access_token: string; token_type: string };
 export type LoginMode = "signin" | "register";
 export type AuthPane = "login" | "forgot-password" | "forgot-username" | "reset";
-export type AppPage = "home" | "timeline" | "calendar" | "seasonal" | "planner" | "coach" | "crops" | "pests" | "sensors";
+export type AppPage =
+  | "home"
+  | "timeline"
+  | "calendar"
+  | "seasonal"
+  | "planner"
+  | "coach"
+  | "crops"
+  | "pests"
+  | "sensors"
+  | "journal";
 
 export type ConfirmState = {
   title: string;

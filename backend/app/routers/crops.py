@@ -208,6 +208,8 @@ def create_crop_template(
         frost_hardy=payload.frost_hardy,
         weeks_to_transplant=max(1, payload.weeks_to_transplant),
         notes=payload.notes.strip(),
+        life_cycle=payload.life_cycle,
+        plant_kind=payload.plant_kind,
     )
     db.add(crop)
     db.commit()
@@ -270,6 +272,8 @@ def update_crop_template(
     crop.frost_hardy = payload.frost_hardy
     crop.weeks_to_transplant = max(1, payload.weeks_to_transplant)
     crop.notes = payload.notes.strip()
+    crop.life_cycle = payload.life_cycle
+    crop.plant_kind = payload.plant_kind
 
     if old_name != stored_name:
         db.query(Planting).filter(Planting.crop_name == old_name).update(

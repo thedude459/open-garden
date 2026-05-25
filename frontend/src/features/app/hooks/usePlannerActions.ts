@@ -21,6 +21,7 @@ interface UsePlannerActionsParams {
   yardLengthFt: number;
   cropMap: Map<string, CropTemplate>;
   selectedCropName: string;
+  placementBedId?: number | null;
   selectedDate: string;
   plantingDate?: string;
   plantingMovedOn?: string | null;
@@ -49,6 +50,7 @@ export function usePlannerActions({
   yardLengthFt,
   cropMap,
   selectedCropName,
+  placementBedId = null,
   selectedDate,
   plantingDate,
   plantingMovedOn,
@@ -82,6 +84,7 @@ export function usePlannerActions({
     setPlantings,
     placements,
     beds,
+    placementBedId,
     selectedGarden,
     selectedCropName,
     selectedDate: plantingDate ?? selectedDate,

@@ -103,6 +103,8 @@ class CropTemplate(Base):
     frost_hardy: Mapped[bool] = mapped_column(Boolean, default=False)
     weeks_to_transplant: Mapped[int] = mapped_column(Integer, default=6)
     notes: Mapped[str] = mapped_column(Text, default="")
+    life_cycle: Mapped[str] = mapped_column(String(32), default="annual")
+    plant_kind: Mapped[str] = mapped_column(String(32), default="vegetable", index=True)
 
 
 class Planting(Base):
@@ -158,6 +160,20 @@ class PestLog(Base):
     observed_on: Mapped[date] = mapped_column(Date)
     treatment: Mapped[str] = mapped_column(Text, default="")
     photo_path: Mapped[str] = mapped_column(String(255), default="")
+
+
+class GardenObservation(Base):
+    __tablename__ = "garden_observations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    garden_id: Mapped[int] = mapped_column(ForeignKey("gardens.id"), index=True)
+    observed_on: Mapped[date] = mapped_column(Date)
+    title: Mapped[str] = mapped_column(String(200))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    photo_url: Mapped[str] = mapped_column(String(500), default="")
+    planting_id: Mapped[int | None] = mapped_column(ForeignKey("plantings.id"), nullable=True)
+    bed_id: Mapped[int | None] = mapped_column(ForeignKey("beds.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
 class Sensor(Base):

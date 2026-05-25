@@ -16,9 +16,11 @@ FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
 	PYTHONUNBUFFERED=1 \
+	PYTHONPATH=/app \
 	PATH="/opt/venv/bin:$PATH" \
 	PORT=8000 \
-	WEB_CONCURRENCY=2
+	WEB_CONCURRENCY=1 \
+	OPEN_GARDEN_SKIP_LIFESPAN_MIGRATIONS=1
 
 WORKDIR /app
 
@@ -29,6 +31,8 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --chown=appuser:appuser alembic.ini ./
 COPY --chown=appuser:appuser alembic ./alembic
 COPY --chown=appuser:appuser app ./app
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh && chown appuser:appuser /app/docker-entrypoint.sh
 
 RUN mkdir -p /app/uploads && chown -R appuser:appuser /app/uploads
 
@@ -36,4 +40,4 @@ USER appuser
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD python -c "import sys, urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3); sys.exit(0)"
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WEB_CONCURRENCY}"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

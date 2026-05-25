@@ -35,6 +35,7 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetSingle
   return {
     bed: sampleBed,
     placements: [],
+    placementBedId: null,
     selectedCropName: "",
     selectedPlacement: null,
     setSelectedPlacementId: vi.fn(),
@@ -44,6 +45,10 @@ function defaultProps(overrides: Partial<Parameters<typeof PlannerBedSheetSingle
     startLasso: vi.fn(),
     updateLasso: vi.fn(),
     finishLasso: vi.fn(),
+    showEdgeBufferOverlay: false,
+    paintMode: false,
+    isPaintingRef: { current: false },
+    onExplainPlantingBlocked: vi.fn(),
     onBlockedPlacementMove: vi.fn(),
     placementSpacingConflict: vi.fn().mockReturnValue(null),
     onMovePlacement: vi.fn(),
@@ -187,5 +192,49 @@ describe("PlannerBedSheetSingle", () => {
     // In bulkMode, clicking the occupied grid cell (not the placement chip) should toggle selection
     fireEvent.click(screen.getByRole("button", { name: /tomato at column 1, row 1$/i }));
     expect(togglePlacementSelection).toHaveBeenCalledWith(10);
+  });
+
+  it("calls onExplainPlantingBlocked when a blocked empty cell is clicked", () => {
+    const onExplainPlantingBlocked = vi.fn();
+    const onAddPlacement = vi.fn();
+    const placementSpacingConflict = vi.fn().mockReturnValue("Too close to Tomato.");
+    const isCellBlockedForSelectedCrop = vi.fn().mockImplementation((_bedId, x, _y, occupant) => !occupant && x === 1);
+    render(
+      <PlannerBedSheetSingle
+        {...defaultProps({
+          placements: [samplePlacement],
+          selectedCropName: "Basil",
+          placementSpacingConflict,
+          isCellBlockedForSelectedCrop,
+          onExplainPlantingBlocked,
+          onAddPlacement,
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /empty square column 2, row 1/i }));
+    expect(onExplainPlantingBlocked).toHaveBeenCalledWith("Too close to Tomato.");
+    expect(onAddPlacement).not.toHaveBeenCalled();
+  });
+
+  it("calls onAddPlacement on drag stroke when paint mode is on", () => {
+    const onAddPlacement = vi.fn();
+    const isPaintingRef = { current: false };
+    render(
+      <PlannerBedSheetSingle
+        {...defaultProps({
+          paintMode: true,
+          selectedCropName: "Tomato",
+          isPaintingRef,
+          onAddPlacement,
+        })}
+      />,
+    );
+    const cellA = screen.getByRole("button", { name: /empty square column 2, row 1/i });
+    const cellB = screen.getByRole("button", { name: /empty square column 3, row 1/i });
+    fireEvent.mouseDown(cellA);
+    fireEvent.mouseEnter(cellB);
+    expect(onAddPlacement).toHaveBeenCalled();
+    expect(onAddPlacement.mock.calls.some(([bid, gx]) => bid === 1 && gx === 1)).toBe(true);
+    expect(onAddPlacement.mock.calls.some(([bid, gx]) => bid === 1 && gx === 2)).toBe(true);
   });
 });

@@ -81,5 +81,6 @@ def test_generate_coach_response_falls_back_to_steady_state_without_signals():
             "detail": "No urgent signals detected. Continue normal watering, harvest, and scouting cadence.",
             "priority": "low",
             "category": "general",
+            "why": "No task backlog, soil dryness, or heat spikes crossed rule thresholds this check.",
         }
     ]
