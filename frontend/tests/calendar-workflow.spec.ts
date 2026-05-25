@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { getAuthToken, loadAuthenticated, uid } from "./helpers/auth";
+import { ensureGardenSelected, getAuthToken, loadAuthenticated, uid } from "./helpers/auth";
 
 const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
@@ -23,7 +23,7 @@ test.describe("calendar workflow", () => {
     expect(gardenResponse.ok()).toBeTruthy();
 
     await loadAuthenticated(page, token);
-    await expect(page.getByRole("button", { name: "Calendar", exact: true })).toBeVisible({ timeout: 15_000 });
+    await ensureGardenSelected(page, gardenName);
     await page.getByRole("button", { name: "Calendar", exact: true }).click();
 
     await page.getByLabel("Task Title").fill(taskTitle);
@@ -44,10 +44,11 @@ test.describe("calendar workflow", () => {
     const token = await getAuthToken(request);
     const taskTitle = uid("Remove me");
 
+    const gardenName = uid("Delete Task Garden");
     const gardenResponse = await request.post(`${API}/gardens`, {
       headers: { Authorization: `Bearer ${token}` },
       data: {
-        name: uid("Delete Task Garden"),
+        name: gardenName,
         description: "Task deletion test",
         zip_code: "94110",
         yard_width_ft: 20,
@@ -57,7 +58,7 @@ test.describe("calendar workflow", () => {
     expect(gardenResponse.ok()).toBeTruthy();
 
     await loadAuthenticated(page, token);
-    await expect(page.getByRole("button", { name: "Calendar", exact: true })).toBeVisible({ timeout: 15_000 });
+    await ensureGardenSelected(page, gardenName);
     await page.getByRole("button", { name: "Calendar", exact: true }).click();
 
     await page.getByLabel("Task Title").fill(taskTitle);

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { getAuthToken, loadAuthenticated, uid, E2E_USER, ensureGardenSelected as selectGarden } from "./helpers/auth";
+import { getAuthToken, loadAuthenticated, uid, E2E_USER, ensureGardenSelected as selectGarden, navViaMore } from "./helpers/auth";
 
 const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
@@ -103,7 +103,7 @@ test.describe("open-garden smoke", () => {
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
 
     await expect(
-      page.getByRole("heading", { name: /Garden Bed Planner/i })
+      page.getByRole("heading", { name: /Bed planner/i })
     ).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("heading", { name: "Bed Sheets" })).toBeVisible({
       timeout: 10_000,
@@ -116,7 +116,7 @@ test.describe("open-garden smoke", () => {
     await page.getByRole("button", { name: "Crops", exact: true }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Crop Library" })
+      page.getByRole("heading", { name: /Crop Library/i })
     ).toBeVisible({ timeout: 10_000 });
   });
 });
@@ -126,7 +126,7 @@ test.describe("panel navigation after garden selection", () => {
     const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
     await ensureGardenExistsAndSelected(page, request, token);
-    await page.getByRole("button", { name: "Timeline", exact: true }).click();
+    await navViaMore(page, "Timeline");
     await expect(
       page.getByRole("heading", { name: /Unified Timeline/i })
     ).toBeVisible({ timeout: 10_000 });
@@ -146,7 +146,7 @@ test.describe("panel navigation after garden selection", () => {
     const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
     await ensureGardenExistsAndSelected(page, request, token);
-    await page.getByRole("button", { name: "AI Coach", exact: true }).click();
+    await navViaMore(page, "AI Coach");
     await expect(
       page.getByRole("heading", { name: /AI Garden Coach/i })
     ).toBeVisible({ timeout: 10_000 });
@@ -156,7 +156,7 @@ test.describe("panel navigation after garden selection", () => {
     const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
     await ensureGardenExistsAndSelected(page, request, token);
-    await page.getByRole("button", { name: "Sensors", exact: true }).click();
+    await navViaMore(page, "Sensors");
     await expect(
       page.getByRole("heading", { name: /Sensor Dashboard/i })
     ).toBeVisible({ timeout: 10_000 });
@@ -166,7 +166,7 @@ test.describe("panel navigation after garden selection", () => {
     const token = await getAuthToken(request);
     await loadAuthenticated(page, token);
     await ensureGardenExistsAndSelected(page, request, token);
-    await page.getByRole("button", { name: "Pest Log", exact: true }).click();
+    await navViaMore(page, "Pest Log");
     await expect(
       page.getByRole("heading", { name: /Pest.*Disease Log/i })
     ).toBeVisible({ timeout: 10_000 });

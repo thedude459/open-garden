@@ -8,7 +8,7 @@ test.describe("crop library workflow", () => {
     const cropName = uid("Romanesco");
 
     await loadAuthenticated(page, token);
-    await page.getByRole("button", { name: "Crop Library" }).click();
+    await page.getByRole("button", { name: "Crops", exact: true }).click();
 
     await page.getByLabel("Crop Name").fill(cropName);
     await page.getByLabel("Variety").fill("Veronica");

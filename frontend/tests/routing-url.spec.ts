@@ -30,7 +30,7 @@ test.describe("URL routing and deep links", () => {
     await loadAuthenticated(page, token);
     await page.goto(`/g/${gardenId}/planner`, { waitUntil: "domcontentloaded" });
 
-    await expect(page.getByRole("heading", { name: /Garden Bed Planner/i })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Bed planner/i })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page).toHaveURL(new RegExp(`^/g/${gardenId}/planner$`));
@@ -94,7 +94,7 @@ test.describe("URL routing and deep links", () => {
     await loadAuthenticated(page, token);
     await page.goto("/crops", { waitUntil: "domcontentloaded" });
 
-    await expect(page.getByRole("heading", { name: "Crop Library" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Crop Library/i })).toBeVisible({
       timeout: 15_000,
     });
   });

@@ -45,12 +45,34 @@ export async function getAuthToken(apiRequest: APIRequestContext) {
   return cachedToken;
 }
 
+export async function dismissBlockingOverlays(page: Page) {
+  const onboarding = page.getByRole("dialog").filter({ hasText: "Welcome to open-garden" });
+  if (await onboarding.isVisible({ timeout: 500 }).catch(() => false)) {
+    await page.getByRole("button", { name: "Got it" }).click();
+    await expect(onboarding).not.toBeVisible({ timeout: 3_000 });
+  }
+
+  const help = page.getByRole("dialog").filter({ has: page.getByRole("button", { name: "Close" }) });
+  if (await help.isVisible({ timeout: 500 }).catch(() => false)) {
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(help).not.toBeVisible({ timeout: 3_000 });
+  }
+}
+
 export async function loadAuthenticated(page: Page, token: string) {
   await page.addInitScript((value) => {
     localStorage.setItem("open-garden-token", value);
     localStorage.setItem("open-garden-help-seen", "1");
+    localStorage.setItem("open-garden-onboarding-dismissed", "1");
   }, token);
-  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.goto("/home", { waitUntil: "domcontentloaded" });
+  await dismissBlockingOverlays(page);
+}
+
+/** Opens the overflow nav and picks a secondary page (Timeline, Sensors, etc.). */
+export async function navViaMore(page: Page, menuItem: string) {
+  await page.getByRole("button", { name: "More tools" }).click();
+  await page.getByRole("menuitem", { name: menuItem }).click();
 }
 
 /** Returns an existing garden id or creates a minimal garden for URL routing tests. */
@@ -78,29 +100,21 @@ export async function getFirstGardenId(apiRequest: APIRequestContext, token: str
 }
 
 export async function ensureGardenSelected(page: Page, gardenName?: string) {
-  const homeNav = page.getByRole("button", { name: "My Gardens", exact: true });
-  if (await homeNav.isVisible({ timeout: 3_000 }).catch(() => false)) {
-    await homeNav.click();
-  }
-
-  const preferred = gardenName
+  const selectButton = gardenName
     ? page.getByRole("button", { name: `Select garden ${gardenName}` }).first()
     : page.getByRole("button", { name: /^Select garden / }).first();
 
-  const preferredVisible = await expect(preferred)
-    .toBeVisible({ timeout: 12_000 })
-    .then(() => true)
-    .catch(() => false);
-
-  if (preferredVisible) {
-    await preferred.click();
-    return;
+  const visible = await selectButton.isVisible({ timeout: 5_000 }).catch(() => false);
+  if (!visible) {
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await dismissBlockingOverlays(page);
   }
 
-  const fallback = gardenName
-    ? page.locator(".garden-card-select", { hasText: gardenName }).first()
-    : page.locator(".garden-card-select").first();
+  await expect(selectButton).toBeVisible({ timeout: 20_000 });
+  await selectButton.click();
 
-  await expect(fallback).toBeVisible({ timeout: 20_000 });
-  await fallback.click();
+  // Garden-scoped nav links only render after a garden is active.
+  await expect(page.getByRole("button", { name: "Calendar", exact: true })).toBeVisible({
+    timeout: 15_000,
+  });
 }

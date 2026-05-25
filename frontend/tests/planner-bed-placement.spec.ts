@@ -18,7 +18,7 @@ test.describe("planner bed lifecycle", () => {
     await loadAuthenticated(page, token);
       await ensureGardenSelected(page, gardenName);
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /Garden Bed Planner/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: /Bed planner/i })).toBeVisible({ timeout: 15_000 });
 
     const bedForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Add bed" }) });
     await bedForm.getByLabel("Bed Name").fill(bedName);
@@ -147,7 +147,7 @@ test.describe("planner crop placement lifecycle", () => {
     const bedsRes = await request.get(`${API}/gardens/${garden.id}/beds`, { headers: authHeaders });
     const beds = (await bedsRes.json()) as Array<{ id: number }>;
 
-    const placementRes = await request.post(`${API}/placements`, {
+    const placementRes = await request.post(`${API}/plantings`, {
       headers: authHeaders,
       data: {
         garden_id: garden.id,

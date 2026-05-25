@@ -70,7 +70,7 @@ test.describe("bed edge buffer", () => {
     expect(templates.length).toBeGreaterThan(0);
 
     // API scenario: edge placement should be rejected by backend validation.
-    const edgePlacement = await request.post(`${API}/placements`, {
+    const edgePlacement = await request.post(`${API}/plantings`, {
       headers: authHeaders,
       data: {
         garden_id: garden.id,
@@ -116,7 +116,7 @@ test.describe("bed edge buffer", () => {
     await loadAuthenticated(page, token);
     await ensureGardenSelected(page, gardenName);
     await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /Garden Bed Planner/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: /Bed planner/i })).toBeVisible({ timeout: 10_000 });
 
     // Scope to the Create Bed form to avoid ambiguity with the yard-size inputs.
     const bedForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Add bed" }) });

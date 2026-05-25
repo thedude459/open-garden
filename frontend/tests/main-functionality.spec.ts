@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ensureGardenSelected, getAuthToken, loadAuthenticated, uid } from "./helpers/auth";
+import { ensureGardenSelected, getAuthToken, loadAuthenticated, navViaMore, uid } from "./helpers/auth";
 
 const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
@@ -42,7 +42,7 @@ test.describe("main functionality workflows", () => {
     await ensureGardenSelected(page, gardenName);
 
     // Sensors workflow: register sensor and ingest a reading.
-    await page.getByRole("button", { name: "Sensors", exact: true }).click();
+    await navViaMore(page, "Sensors");
     await expect(page.getByRole("heading", { name: /Sensor Dashboard/i })).toBeVisible({ timeout: 15_000 });
 
     const registerSection = page.locator("section").filter({ has: page.getByRole("heading", { name: "Register Sensor" }) }).first();
@@ -64,7 +64,7 @@ test.describe("main functionality workflows", () => {
     await expect(page.getByText(new RegExp(`Latest: 42\\.5`))).toBeVisible({ timeout: 10_000 });
 
     // Pests workflow: add and remove an observation.
-    await page.getByRole("button", { name: "Pest Log", exact: true }).click();
+    await navViaMore(page, "Pest Log");
     await expect(page.getByRole("heading", { name: /Pest.*Disease Log/i })).toBeVisible({ timeout: 15_000 });
 
     await page.locator("#pest-title").fill(pestTitle);
