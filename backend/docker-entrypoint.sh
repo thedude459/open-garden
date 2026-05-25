@@ -10,7 +10,8 @@ cd /app
 python - <<'PY'
 from sqlalchemy import inspect
 
-from app.database import Base, engine
+from app.database import engine
+from app.models import Base  # noqa: F401 — registers tables on Base.metadata
 
 if engine.dialect.name == "postgresql":
     if not inspect(engine).has_table("users"):
