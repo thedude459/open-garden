@@ -353,9 +353,36 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Install Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers-
+
+      - name: Check Playwright browsers cache
+        id: pw-cache
+        run: |
+          if ls -1 ~/.cache/ms-playwright/chromium-*/chrome-linux/chrome >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Playwright browsers (cache miss)
+        if: steps.pw-cache.outputs.found != 'true'
         working-directory: frontend
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
         run: node ./scripts/run-frontend.mjs test:e2e:install --with-deps chromium
+
+      - name: Ensure Playwright browsers (cache hit)
+        if: steps.pw-cache.outputs.found == 'true'
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+        run: node ./scripts/run-frontend.mjs test:e2e:install chromium
 
       - name: Set up environment
         run: |
@@ -410,15 +437,28 @@ jobs:
           PLAYWRIGHT_API_URL: http://localhost:8000
           CI: "true"
 
+      - name: Stage Playwright artifacts
+        if: always()
+        working-directory: frontend
+        run: |
+          mkdir -p ../.ci-playwright-artifacts
+          if [ -d test-results ] && [ -n "$(ls -A test-results 2>/dev/null)" ]; then
+            cp -R test-results ../.ci-playwright-artifacts/
+          fi
+          if [ -d playwright-report ]; then
+            cp -R playwright-report ../.ci-playwright-artifacts/
+          fi
+          ls -laR ../.ci-playwright-artifacts || true
+
       - name: Upload Playwright results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: playwright-test-results
-          path: |
-            frontend/test-results/
-            frontend/playwright-report/
+          path: .ci-playwright-artifacts/
           retention-days: 7
+          if-no-files-found: warn
+          include-hidden-files: true
 
       - name: Stop containers
         if: always()

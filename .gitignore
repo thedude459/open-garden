@@ -26,5 +26,6 @@ backups/*.sql
 
 playwright-report/
 test-results/
+.ci-playwright-artifacts/
 frontend/tests/.auth/
 frontend/tests/.e2e-session.json
