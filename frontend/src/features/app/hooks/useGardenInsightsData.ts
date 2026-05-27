@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ALL_PLANT_KINDS,
   type PlantKind,
@@ -99,7 +99,9 @@ export function useGardenInsightsData({
   const seasonalSuggestionKindsRef = useRef<PlantKind[]>([...ALL_PLANT_KINDS]);
   const selectedRecommendationPlantingIdRef = useRef<number | null>(null);
 
-  selectedRecommendationPlantingIdRef.current = selectedRecommendationPlantingId;
+  useEffect(() => {
+    selectedRecommendationPlantingIdRef.current = selectedRecommendationPlantingId;
+  }, [selectedRecommendationPlantingId]);
 
   useEffect(() => {
     if (selectedGarden == null) {
@@ -261,30 +263,23 @@ export function useGardenInsightsData({
     }
   }, [fetchAuthed]);
 
-  const invalidateGardenInsightCaches = useMemo(() => {
-    const dropNumericGardenCaches = createInvalidateCaches(
+  const invalidateGardenInsightCaches = useCallback((gardenId: number) => {
+    createInvalidateCaches(
       climateCacheRef.current,
       plantingWindowCacheRef.current,
       sunPathCacheRef.current,
       extensionResourcesCacheRef.current,
-    );
-    return (gardenId: number) => {
-      dropNumericGardenCaches(gardenId);
-      for (const key of [...seasonalPlanCacheRef.current.keys()]) {
-        if (key.startsWith(`${gardenId}:`)) {
-          seasonalPlanCacheRef.current.delete(key);
-        }
+    )(gardenId);
+    for (const key of [...seasonalPlanCacheRef.current.keys()]) {
+      if (key.startsWith(`${gardenId}:`)) {
+        seasonalPlanCacheRef.current.delete(key);
       }
-    };
+    }
   }, []);
 
-  const invalidateSensorCaches = useMemo(
-    () => createInvalidateCaches(
-      sensorSummaryCacheRef.current,
-      timelineCacheRef.current,
-    ),
-    [],
-  );
+  const invalidateSensorCaches = useCallback((gardenId: number) => {
+    createInvalidateCaches(sensorSummaryCacheRef.current, timelineCacheRef.current)(gardenId);
+  }, []);
 
   const invalidateSeasonalPlanCache = useCallback((gardenId: number) => {
     for (const key of [...seasonalPlanCacheRef.current.keys()]) {

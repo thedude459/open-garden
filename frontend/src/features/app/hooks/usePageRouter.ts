@@ -64,6 +64,8 @@ export function usePageRouter({
   const location = useLocation();
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [helpPromptedForToken, setHelpPromptedForToken] = useState<string | null>(null);
+  const [navContextKey, setNavContextKey] = useState(`${location.pathname}:${selectedGarden ?? ""}`);
   const [monthCursor, setMonthCursor] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -148,15 +150,20 @@ export function usePageRouter({
     }
   }, [gardens, location.pathname, navigate, pushNotice]);
 
-  useEffect(() => {
-    if (token && !localStorage.getItem("open-garden-help-seen")) {
+  const nextNavContextKey = `${location.pathname}:${selectedGarden ?? ""}`;
+  if (nextNavContextKey !== navContextKey) {
+    setNavContextKey(nextNavContextKey);
+    if (isNavOpen) {
+      setIsNavOpen(false);
+    }
+  }
+
+  if (token && helpPromptedForToken !== token) {
+    setHelpPromptedForToken(token);
+    if (!localStorage.getItem("open-garden-help-seen")) {
       setIsHelpOpen(true);
     }
-  }, [token]);
-
-  useEffect(() => {
-    setIsNavOpen(false);
-  }, [location.pathname, selectedGarden]);
+  }
 
   const navigateTo = useCallback(
     (page: AppPage) => {
