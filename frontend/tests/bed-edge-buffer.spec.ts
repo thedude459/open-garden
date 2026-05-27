@@ -41,15 +41,8 @@ test.describe("bed edge buffer", () => {
       timeout: 20_000,
     });
 
-    const cropOption = page.locator("#planner-crop-list [role='option']").first();
-    await expect(cropOption).toBeVisible({ timeout: 10_000 });
-    await cropOption.click();
-
     const initialBufferCells = await page.getByRole("button", { name: /buffer zone at column/i }).count();
     expect(initialBufferCells).toBeGreaterThan(0);
-
-    await page.getByRole("button", { name: "Empty square column 3, row 3" }).first().click();
-    await expect(page.getByText("No crop placements yet.")).not.toBeVisible({ timeout: 10_000 });
 
     const bedsResponse = await request.get(`${apiBase}/gardens/${garden.id}/beds`, { headers: authHeaders });
     expect(bedsResponse.ok()).toBeTruthy();
@@ -60,6 +53,24 @@ test.describe("bed edge buffer", () => {
     expect(templatesResponse.ok()).toBeTruthy();
     const templates = (await templatesResponse.json()) as Array<{ name: string }>;
     expect(templates.length).toBeGreaterThan(0);
+
+    const interiorPlacement = await request.post(`${apiBase}/plantings`, {
+      headers: authHeaders,
+      data: {
+        garden_id: garden.id,
+        bed_id: beds[0].id,
+        crop_name: templates[0].name,
+        grid_x: 2,
+        grid_y: 2,
+        planted_on: "2026-03-22",
+        color: "#57a773",
+      },
+    });
+    expect(interiorPlacement.ok()).toBeTruthy();
+
+    await gotoGardenPage(page, garden.id, "planner");
+    await openPlannerTab(page, "Manage Plantings");
+    await expect(page.getByText("No crop placements yet.")).not.toBeVisible({ timeout: 10_000 });
 
     const edgePlacement = await request.post(`${apiBase}/plantings`, {
       headers: authHeaders,

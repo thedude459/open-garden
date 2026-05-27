@@ -59,7 +59,7 @@ test.describe("URL routing and deep links", () => {
     await page.getByRole("button", { name: "More tools" }).click();
     await page.getByRole("menuitem", { name: "Observation Journal" }).click();
     await expect(page).toHaveURL(/\/g\/\d+\/journal$/);
-    await expect(page.getByRole("heading", { name: /Observation Journal/i })).toBeVisible({
+    await expect(page.getByRole("heading", { name: /Observation Journal/i }).first()).toBeVisible({
       timeout: 15_000,
     });
   });
