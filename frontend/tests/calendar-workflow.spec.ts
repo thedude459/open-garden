@@ -1,30 +1,12 @@
-import { expect, test } from "@playwright/test";
-
-import { ensureGardenSelected, getAuthToken, loadAuthenticated, uid } from "./helpers/auth";
-
-const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
+import { expect, test } from "./helpers/fixtures";
+import { calendarTaskItem, gotoGardenPage, uid } from "./helpers/auth";
 
 test.describe("calendar workflow", () => {
-  test("adds, filters, and completes a task", async ({ page, request }) => {
-    const token = await getAuthToken(request);
-    const gardenName = uid("Task Garden");
+  test("adds, filters, and completes a task", async ({ page, token, createGarden }) => {
     const taskTitle = uid("Feed seedlings");
+    const garden = await createGarden({ name: uid("Task Garden"), description: "Calendar workflow test" });
 
-    const gardenResponse = await request.post(`${API}/gardens`, {
-      headers: { Authorization: `Bearer ${token}` },
-      data: {
-        name: gardenName,
-        description: "Calendar workflow test",
-        zip_code: "94110",
-        yard_width_ft: 20,
-        yard_length_ft: 20,
-      },
-    });
-    expect(gardenResponse.ok()).toBeTruthy();
-
-    await loadAuthenticated(page, token);
-    await ensureGardenSelected(page, gardenName);
-    await page.getByRole("button", { name: "Calendar", exact: true }).click();
+    await gotoGardenPage(page, garden.id, "calendar");
 
     await page.getByLabel("Task Title").fill(taskTitle);
     await page.getByLabel("Task Notes").fill("Add diluted fish emulsion");
@@ -40,33 +22,20 @@ test.describe("calendar workflow", () => {
     await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByRole("checkbox", { name: new RegExp(`Mark \"${taskTitle}\" as incomplete`) })).toBeVisible();
   });
-  test("deletes a task", async ({ page, request }) => {
-    const token = await getAuthToken(request);
+
+  test("deletes a task", async ({ page, token, createGarden }) => {
     const taskTitle = uid("Remove me");
+    const garden = await createGarden({ name: uid("Delete Task Garden"), description: "Task deletion test" });
 
-    const gardenName = uid("Delete Task Garden");
-    const gardenResponse = await request.post(`${API}/gardens`, {
-      headers: { Authorization: `Bearer ${token}` },
-      data: {
-        name: gardenName,
-        description: "Task deletion test",
-        zip_code: "94110",
-        yard_width_ft: 20,
-        yard_length_ft: 20,
-      },
-    });
-    expect(gardenResponse.ok()).toBeTruthy();
-
-    await loadAuthenticated(page, token);
-    await ensureGardenSelected(page, gardenName);
-    await page.getByRole("button", { name: "Calendar", exact: true }).click();
+    await gotoGardenPage(page, garden.id, "calendar");
 
     await page.getByLabel("Task Title").fill(taskTitle);
     await page.getByRole("button", { name: "Add task" }).click();
 
-    const taskPill = page.locator(".event-pill", { hasText: taskTitle });
-    await expect(taskPill).toBeVisible({ timeout: 10_000 });
+    const taskItem = calendarTaskItem(page, taskTitle);
+    await expect(taskItem).toBeVisible({ timeout: 10_000 });
 
-    await taskPill.getByRole("button", { name: "Delete task" }).click();
-    await expect(taskPill).not.toBeVisible({ timeout: 5_000 });
-  });});
+    await taskItem.getByRole("button", { name: "Delete task" }).click();
+    await expect(taskItem).not.toBeVisible({ timeout: 5_000 });
+  });
+});

@@ -106,8 +106,12 @@ async function globalTeardown() {
 
   const dir = fileURLToPath(new URL(".", import.meta.url));
   const sessionPath = resolve(dir, ".e2e-session.json");
+  const storageStatePath = resolve(dir, ".auth", "storageState.json");
   if (existsSync(sessionPath)) {
     unlinkSync(sessionPath);
+  }
+  if (existsSync(storageStatePath)) {
+    unlinkSync(storageStatePath);
   }
 }
 

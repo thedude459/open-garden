@@ -1,48 +1,45 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "./helpers/fixtures";
+import { waitForGardenListed } from "./helpers/api";
+import { gotoGardenPage, openPlannerTab, uid, yardBedButton } from "./helpers/auth";
 
-import { ensureGardenSelected, getAuthToken, loadAuthenticated, uid } from "./helpers/auth";
-
-const API = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
+async function showEdgeBufferOverlay(page: Page) {
+  const toggle = page.getByRole("button", { name: /Show edge buffer/i });
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  await toggle.click();
+}
 
 test.describe("bed edge buffer", () => {
   test.describe.configure({ mode: "serial" });
 
-  test("applies default buffer, blocks edge placement via API, and expands when configured", async ({ page, request }) => {
-    const token = await getAuthToken(request);
+  test("applies default buffer, blocks edge placement via API, and expands when configured", async ({
+    page,
+    token,
+    request,
+    createGarden,
+    createBed,
+  }) => {
+    const garden = await createGarden({ name: uid("Buffer Garden"), description: "Edge buffer scenario coverage" });
+    const bed = await createBed(garden.id, {
+      name: uid("Planner Bed"),
+      width_in: 48,
+      height_in: 96,
+      grid_x: 0,
+      grid_y: 0,
+    });
+
     const authHeaders = { Authorization: `Bearer ${token}` };
+    const apiBase = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
-    const gardenName = uid("Buffer Garden");
-    const gardenResponse = await request.post(`${API}/gardens`, {
-      headers: authHeaders,
-      data: {
-        name: gardenName,
-        description: "Edge buffer scenario coverage",
-        zip_code: "94110",
-        yard_width_ft: 20,
-        yard_length_ft: 20,
-      },
+    await waitForGardenListed(request, token, garden.id);
+    await gotoGardenPage(page, garden.id, "planner");
+    await openPlannerTab(page, "Manage Plantings");
+    await expect(page.getByRole("heading", { name: bed.name })).toBeVisible({ timeout: 15_000 });
+    await showEdgeBufferOverlay(page);
+
+    await expect(page.getByRole("heading", { name: "Bed Sheets" })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("button", { name: /empty square column|buffer zone at column/i }).first()).toBeVisible({
+      timeout: 20_000,
     });
-    expect(gardenResponse.ok()).toBeTruthy();
-    const garden = (await gardenResponse.json()) as { id: number };
-
-    const bedResponse = await request.post(`${API}/gardens/${garden.id}/beds`, {
-      headers: authHeaders,
-      data: {
-        name: uid("Planner Bed"),
-        width_in: 48,
-        height_in: 96,
-        grid_x: 0,
-        grid_y: 0,
-      },
-    });
-    expect(bedResponse.ok()).toBeTruthy();
-
-    await loadAuthenticated(page, token);
-    await ensureGardenSelected(page, gardenName);
-    await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
-
-    await expect(page.getByRole("heading", { name: "Bed Sheets" })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("button", { name: /empty square column|buffer zone at column/i }).first()).toBeVisible({ timeout: 10_000 });
 
     const cropOption = page.locator("#planner-crop-list [role='option']").first();
     await expect(cropOption).toBeVisible({ timeout: 10_000 });
@@ -51,26 +48,20 @@ test.describe("bed edge buffer", () => {
     const initialBufferCells = await page.getByRole("button", { name: /buffer zone at column/i }).count();
     expect(initialBufferCells).toBeGreaterThan(0);
 
-    // Plant in a non-buffer cell to ensure normal placement still works.
     await page.getByRole("button", { name: "Empty square column 3, row 3" }).first().click();
     await expect(page.getByText("No crop placements yet.")).not.toBeVisible({ timeout: 10_000 });
 
-    const bedsResponse = await request.get(`${API}/gardens/${garden.id}/beds`, {
-      headers: authHeaders,
-    });
+    const bedsResponse = await request.get(`${apiBase}/gardens/${garden.id}/beds`, { headers: authHeaders });
     expect(bedsResponse.ok()).toBeTruthy();
     const beds = (await bedsResponse.json()) as Array<{ id: number }>;
     expect(beds.length).toBeGreaterThan(0);
 
-    const templatesResponse = await request.get(`${API}/crop-templates`, {
-      headers: authHeaders,
-    });
+    const templatesResponse = await request.get(`${apiBase}/crop-templates`, { headers: authHeaders });
     expect(templatesResponse.ok()).toBeTruthy();
     const templates = (await templatesResponse.json()) as Array<{ name: string }>;
     expect(templates.length).toBeGreaterThan(0);
 
-    // API scenario: edge placement should be rejected by backend validation.
-    const edgePlacement = await request.post(`${API}/plantings`, {
+    const edgePlacement = await request.post(`${apiBase}/plantings`, {
       headers: authHeaders,
       data: {
         garden_id: garden.id,
@@ -82,49 +73,41 @@ test.describe("bed edge buffer", () => {
         color: "#57a773",
       },
     });
-    expect(edgePlacement.status()).toBe(409);
+    const edgeBody = await edgePlacement.text();
+    expect(edgePlacement.status(), `edge placement: ${edgeBody}`).toBe(409);
     const edgeError = (await edgePlacement.json()) as { detail?: string };
     expect(edgeError.detail || "").toContain("bed edge");
 
-    await page.getByRole("button", { name: "My Gardens" }).click();
-    await page.locator("#garden-edge-buffer").fill("12");
-    await page.getByRole("button", { name: "Save climate profile" }).click();
+    const bufferPatch = await request.patch(`${apiBase}/gardens/${garden.id}/microclimate`, {
+      headers: authHeaders,
+      data: { edge_buffer_in: 12 },
+    });
+    expect(bufferPatch.ok()).toBeTruthy();
 
-    await expect(page.getByText("Microclimate profile updated.")).toBeVisible({ timeout: 10_000 });
-
-    await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
+    await gotoGardenPage(page, garden.id, "planner");
+    await openPlannerTab(page, "Manage Plantings");
+    await showEdgeBufferOverlay(page);
     const expandedBufferCells = await page.getByRole("button", { name: /buffer zone at column/i }).count();
+    expect(expandedBufferCells).toBeGreaterThan(0);
     expect(expandedBufferCells).toBeGreaterThan(initialBufferCells);
   });
 
-  test("creates a bed via the planner UI form", async ({ page, request }) => {
-    const token = await getAuthToken(request);
+  test("creates a bed via the planner UI form", async ({ page, token, request, createGarden }) => {
     const bedName = uid("Salad Bed");
+    const garden = await createGarden({ name: uid("UI Bed Garden") });
 
-    const gardenName = uid("UI Bed Garden");
-    const gardenResponse = await request.post(`${API}/gardens`, {
-      headers: { Authorization: `Bearer ${token}` },
-      data: {
-        name: gardenName,
-        zip_code: "94110",
-        yard_width_ft: 20,
-        yard_length_ft: 20,
-      },
-    });
-    expect(gardenResponse.ok()).toBeTruthy();
+    await waitForGardenListed(request, token, garden.id);
+    await gotoGardenPage(page, garden.id, "planner");
+    await openPlannerTab(page, "Setup Yard");
 
-    await loadAuthenticated(page, token);
-    await ensureGardenSelected(page, gardenName);
-    await page.getByRole("button", { name: "Bed Planner", exact: true }).click();
-    await expect(page.getByRole("heading", { name: /Bed planner/i })).toBeVisible({ timeout: 10_000 });
-
-    // Scope to the Create Bed form to avoid ambiguity with the yard-size inputs.
     const bedForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Add bed" }) });
     await bedForm.getByLabel("Bed Name").fill(bedName);
     await bedForm.getByLabel("Width (ft)").fill("4");
     await bedForm.getByLabel("Length (ft)").fill("8");
     await bedForm.getByRole("button", { name: "Add bed" }).click();
 
-    await expect(page.getByRole("heading", { name: bedName })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Bed added to yard layout.")).toBeVisible({ timeout: 15_000 });
+    await openPlannerTab(page, "Setup Yard");
+    await expect(yardBedButton(page, bedName)).toBeVisible({ timeout: 10_000 });
   });
 });

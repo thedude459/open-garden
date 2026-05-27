@@ -363,6 +363,8 @@ jobs:
           sed -i 's/^SECRET_KEY=.*/SECRET_KEY=ci-only-not-for-production-use-replace-me/' .env
           # Empty DATABASE_URL in .env blocks compose defaults; localdb overlay supplies the URL.
           sed -i '/^DATABASE_URL=/d' .env
+          # E2E hammers the API from one runner IP; default 180/min causes 429 flakes.
+          echo "GLOBAL_RATE_LIMIT_PER_MINUTE=10000" >> .env
 
       - name: Start app
         run: ./scripts/up.sh
