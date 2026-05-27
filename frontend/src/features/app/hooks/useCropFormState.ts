@@ -60,6 +60,8 @@ export function useCropFormState({
     setNewCropNotes,
     newCropImageUrl,
     setNewCropImageUrl,
+    newCropLifeCycle,
+    setNewCropLifeCycle,
     editingCropId,
     showCropValidation,
     setShowCropValidation,
@@ -99,6 +101,7 @@ export function useCropFormState({
             frost_hardy: newCropFrostHardy,
             weeks_to_transplant: Math.max(1, Math.round(newCropWeeksToTransplant)),
             notes: newCropNotes.trim(),
+            life_cycle: newCropLifeCycle,
           }),
         });
 
@@ -131,6 +134,7 @@ export function useCropFormState({
       newCropFrostHardy,
       newCropWeeksToTransplant,
       newCropNotes,
+      newCropLifeCycle,
       loadCropTemplates,
       selectedGarden,
       loadGardenData,
@@ -164,6 +168,8 @@ export function useCropFormState({
     setNewCropNotes,
     newCropImageUrl,
     setNewCropImageUrl,
+    newCropLifeCycle,
+    setNewCropLifeCycle,
     cropSearchQuery,
     setCropSearchQuery,
     cropSearchActiveIndex,

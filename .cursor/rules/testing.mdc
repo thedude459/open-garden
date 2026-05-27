@@ -22,7 +22,7 @@ alwaysApply: false
 1. `cp .env.example .env` if `.env` does not exist.
 2. `./scripts/rebuild.sh` for changes that affect backend, frontend, Docker config, or startup behavior.
 3. `./scripts/up.sh` only when a faster restart is sufficient and a no-cache rebuild is unnecessary.
-4. When bringing the stack up manually, use both compose files together: `docker compose -f docker-compose.yml -f docker-compose.localdb.yml up -d`.
+4. Local bundled DB/Mailpit: `docker compose -f docker-compose.yml -f docker-compose.localdb.yml up -d` (or `./scripts/up.sh` with `DATABASE_URL` unset). Deploy-style: set `DATABASE_URL` and `docker compose up -d` with base compose only.
 
 After rebuild, verify the stack is reachable before deeper checks:
 

@@ -10,6 +10,7 @@ import { useGardenActions } from "../hooks/useGardenActions";
 import { useCropFormState } from "../hooks/useCropFormState";
 import { usePlannerActions } from "../hooks/usePlannerActions";
 import { useCoachState } from "../hooks/useCoachState";
+import { useJournalActions } from "../hooks/useJournalActions";
 import { usePestLogActions } from "../hooks/usePestLogActions";
 import { useDerivedGardenState } from "../hooks/useDerivedGardenState";
 import { PageHeading } from "../../../components/PageHeading";
@@ -22,11 +23,11 @@ import {
   GardenSeasonalPlan, GardenSensorsSummary, GardenSunPath, GardenTimeline,
   Placement, PlantingRecommendations,
 } from "../../types";
+import type { PlantKind } from "../../planning/suggestionKindsStorage";
 
 export interface AppPageRouterProps {
   routing: {
     activePage: AppPage;
-    setActivePage: (page: AppPage) => void;
     navigateTo: (page: AppPage) => void;
   };
   shell: {
@@ -67,6 +68,8 @@ export interface AppPageRouterProps {
     setSelectedRecommendationPlantingId: (id: number | null) => void;
     plantingRecommendation: PlantingRecommendations | null;
     refreshSeasonalPlan: () => Promise<void>;
+    selectedGardenId: number | null;
+    applySeasonalSuggestionKinds: (kinds: PlantKind[]) => Promise<void>;
     sensorSummary: GardenSensorsSummary | null;
     gardenTimeline: GardenTimeline | null;
     loadTimelineForGarden: (garden: Garden, forceRefresh?: boolean) => Promise<void>;
@@ -118,6 +121,7 @@ export interface AppPageRouterProps {
     plannerActions: ReturnType<typeof usePlannerActions>;
     coachState: ReturnType<typeof useCoachState>;
     pestLogActions: ReturnType<typeof usePestLogActions>;
+    journalActions: ReturnType<typeof useJournalActions>;
     derived: ReturnType<typeof useDerivedGardenState>;
   };
   confirm: {
@@ -149,7 +153,7 @@ export function AppPageRouter(props: AppPageRouterProps) {
     notices,
   } = props;
 
-  const { activePage, setActivePage, navigateTo } = routing;
+  const { activePage, navigateTo } = routing;
   const { isNavOpen, setIsNavOpen, isHelpOpen, setIsHelpOpen, onLogout } = shell;
   const { isEmailVerified, onResendVerificationEmail } = auth;
   const { selectedGarden, selectedGardenRecord } = garden;
@@ -159,9 +163,16 @@ export function AppPageRouter(props: AppPageRouterProps) {
   const showEmailVerificationNotice = isEmailVerified === false && !isVerificationNoticeDismissed;
 
   const shellWide = activePage === "planner" || activePage === "calendar";
+  const plannerMobile = activePage === "planner";
 
   return (
-    <main className={shellWide ? "shell shell--tool" : "shell"}>
+    <main
+      className={
+        shellWide
+          ? `shell shell--tool${plannerMobile ? " shell--planner-mobile" : ""}`
+          : "shell"
+      }
+    >
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <AppNavbar
         activePage={activePage}
@@ -183,7 +194,7 @@ export function AppPageRouter(props: AppPageRouterProps) {
         )}
 
         {!selectedGarden && GARDEN_REQUIRED_PAGES.includes(activePage) && (
-          <GardenRequiredNotice onGoHome={() => setActivePage("home")} />
+          <GardenRequiredNotice onGoHome={() => navigateTo("home")} />
         )}
 
         {!(selectedGarden === null && GARDEN_REQUIRED_PAGES.includes(activePage)) && (

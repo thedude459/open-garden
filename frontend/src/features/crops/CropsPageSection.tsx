@@ -53,6 +53,8 @@ export function CropsPageSection({
       onNewCropNotesChange={cropFormState.setNewCropNotes}
       newCropImageUrl={cropFormState.newCropImageUrl}
       onNewCropImageUrlChange={cropFormState.setNewCropImageUrl}
+      newCropLifeCycle={cropFormState.newCropLifeCycle}
+      onNewCropLifeCycleChange={cropFormState.setNewCropLifeCycle}
       cropErrors={{
         name: cropFormState.showCropValidation ? cropFormState.cropFormErrors.name : "",
         spacing: cropFormState.showCropValidation ? cropFormState.cropFormErrors.spacing : "",

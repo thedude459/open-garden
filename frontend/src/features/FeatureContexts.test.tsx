@@ -144,11 +144,13 @@ describe("feature contexts", () => {
       <SeasonalPlanProvider
         value={{
           selectedGardenName: "Backyard",
+          selectedGardenId: 1,
           seasonalPlan: null,
           selectedRecommendationPlantingId: null,
           plantingRecommendation: null,
           setSelectedRecommendationPlantingId: () => undefined,
           refreshSeasonalPlan: async () => undefined,
+          applySeasonalSuggestionKinds: async () => undefined,
           isLoadingSeasonalPlan: false,
           isLoadingPlantingRecommendation: false,
           pushNotice: () => undefined,

@@ -27,6 +27,7 @@ class NormalizedCropRecord:
     frost_hardy: bool
     weeks_to_transplant: int
     notes: str
+    plant_kind: str = "vegetable"
 
 
 class CropSourceProvider(Protocol):

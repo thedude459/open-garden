@@ -1,9 +1,11 @@
 import { ReactNode, createContext, useContext } from "react";
+import type { PlantKind } from "./suggestionKindsStorage";
 import { GardenSeasonalPlan, PlantingRecommendations } from "../types";
 
 export interface SeasonalPlanContextType {
   // Data
   selectedGardenName?: string;
+  selectedGardenId: number | null;
   seasonalPlan: GardenSeasonalPlan | null;
   selectedRecommendationPlantingId: number | null;
   plantingRecommendation: PlantingRecommendations | null;
@@ -11,6 +13,7 @@ export interface SeasonalPlanContextType {
   // State management
   setSelectedRecommendationPlantingId: (id: number | null) => void;
   refreshSeasonalPlan: () => Promise<void>;
+  applySeasonalSuggestionKinds: (kinds: PlantKind[]) => Promise<void>;
   
   // Loading states
   isLoadingSeasonalPlan: boolean;

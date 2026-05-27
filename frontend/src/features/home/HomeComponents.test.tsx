@@ -94,9 +94,9 @@ describe("HomeHero", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "This week's to-dos" }));
-    fireEvent.click(screen.getByRole("button", { name: "Design my beds" }));
-    fireEvent.click(screen.getByRole("button", { name: "Browse crops" }));
+    fireEvent.click(screen.getByRole("button", { name: "Catch up on 1 overdue task" }));
+    fireEvent.click(screen.getByRole("button", { name: "1 beds, open bed planner" }));
+    fireEvent.click(screen.getByRole("button", { name: "5 crops in library, browse crops" }));
     fireEvent.click(screen.getByRole("button", { name: "Schedule planting" }));
     fireEvent.click(screen.getByRole("button", { name: "Plan protection task" }));
 

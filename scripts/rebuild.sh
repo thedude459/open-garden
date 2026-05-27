@@ -24,11 +24,11 @@ source .env
 set +a
 
 if [[ -n "${DATABASE_URL:-}" ]]; then
-  echo "Detected DATABASE_URL in .env. Rebuilding app images against external PostgreSQL mode."
+  echo "DATABASE_URL is set — rebuilding docker-compose.yml only (deploy / external Postgres)."
   docker compose build --no-cache api web
   docker compose up -d
 else
-  echo "No DATABASE_URL detected. Rebuilding app images and starting local PostgreSQL mode."
+  echo "DATABASE_URL unset — rebuilding with bundled Postgres + Mailpit."
   docker compose -f docker-compose.yml -f docker-compose.localdb.yml build --no-cache api web
   docker compose -f docker-compose.yml -f docker-compose.localdb.yml up -d
 fi

@@ -257,11 +257,37 @@ def test_get_garden_seasonal_plan_success(monkeypatch, db_session, garden, user)
     monkeypatch.setattr(
         insights,
         "build_seasonal_plan",
-        lambda garden, weather, crop_templates, plantings: {"garden_id": garden.id, "ok": True},
+        lambda garden, weather, crop_templates, plantings, allowed_plant_kinds=None: {
+            "garden_id": garden.id,
+            "ok": True,
+            "allowed": allowed_plant_kinds,
+        },
     )
 
     result = asyncio.run(
         insights.get_garden_seasonal_plan(garden_id=garden.id, db=db_session, current_user=user)
     )
 
-    assert result == {"garden_id": garden.id, "ok": True}
+    assert result["garden_id"] == garden.id
+    assert result["ok"] is True
+    assert result["allowed"] is None
+
+    filtered = asyncio.run(
+        insights.get_garden_seasonal_plan(
+            garden_id=garden.id,
+            db=db_session,
+            current_user=user,
+            suggestion_kinds="flower,herb",
+        )
+    )
+    assert filtered["allowed"] == {"flower", "herb"}
+
+    legacy = asyncio.run(
+        insights.get_garden_seasonal_plan(
+            garden_id=garden.id,
+            db=db_session,
+            current_user=user,
+            suggestion_kind=["fruit"],
+        )
+    )
+    assert legacy["allowed"] == {"fruit"}

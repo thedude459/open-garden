@@ -210,11 +210,13 @@ describe("feature page wrappers", () => {
   it("provides seasonal plan context to the page section", () => {
     const props: SeasonalPlanContextType = {
       selectedGardenName: "Backyard",
+      selectedGardenId: 2,
       seasonalPlan: null,
       selectedRecommendationPlantingId: null,
       plantingRecommendation: null,
       setSelectedRecommendationPlantingId: vi.fn(),
       refreshSeasonalPlan: vi.fn(async () => undefined),
+      applySeasonalSuggestionKinds: vi.fn(async () => undefined),
       isLoadingSeasonalPlan: false,
       isLoadingPlantingRecommendation: false,
       pushNotice: vi.fn(),

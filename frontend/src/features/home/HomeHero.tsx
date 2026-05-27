@@ -220,6 +220,22 @@ export function HomeHero({
     return [...plantingCues, ...riskCues];
   }, [actionablePlantingWindows, weatherRiskCues]);
 
+  const primaryFocus = useMemo(() => {
+    if (beds.length === 0) {
+      return { label: "Lay out your first bed", page: "planner" as AppPage };
+    }
+    if (placements.length === 0) {
+      return { label: "Place your first crop", page: "planner" as AppPage };
+    }
+    if (overdueTaskCount > 0) {
+      return {
+        label: `Catch up on ${overdueTaskCount} overdue task${overdueTaskCount === 1 ? "" : "s"}`,
+        page: "calendar" as AppPage,
+      };
+    }
+    return { label: "Review this week's tasks", page: "calendar" as AppPage };
+  }, [beds.length, placements.length, overdueTaskCount]);
+
   const visibleProtectCues = showAllProtect
     ? protectCues
     : protectCues.slice(0, PREVIEW_LIMIT);
@@ -308,16 +324,34 @@ export function HomeHero({
                 </CardDescription>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => onNavigate("calendar")} variant="default">
-                This week's to-dos
+            <div className="flex flex-col gap-2 w-full md:w-auto md:items-end">
+              <Button
+                type="button"
+                onClick={() => onNavigate(primaryFocus.page)}
+                variant="default"
+                className="w-full md:w-auto"
+              >
+                {primaryFocus.label}
               </Button>
-              <Button onClick={() => onNavigate("planner")} variant="outline">
-                Design my beds
-              </Button>
-              <Button onClick={() => onNavigate("crops")} variant="outline">
-                Browse crops
-              </Button>
+              <details className="w-full md:text-right">
+                <summary className="cursor-pointer text-sm text-muted-foreground">
+                  More shortcuts
+                </summary>
+                <div className="mt-2 flex flex-wrap gap-2 md:justify-end">
+                  <Button type="button" onClick={() => onNavigate("planner")} variant="outline" size="sm">
+                    Bed planner
+                  </Button>
+                  <Button type="button" onClick={() => onNavigate("calendar")} variant="outline" size="sm">
+                    Calendar
+                  </Button>
+                  <Button type="button" onClick={() => onNavigate("crops")} variant="outline" size="sm">
+                    Crop library
+                  </Button>
+                  <Button type="button" onClick={() => onNavigate("journal")} variant="outline" size="sm">
+                    Journal
+                  </Button>
+                </div>
+              </details>
             </div>
           </div>
         </CardHeader>

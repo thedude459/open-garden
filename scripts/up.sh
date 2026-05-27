@@ -24,9 +24,9 @@ source .env
 set +a
 
 if [[ -n "${DATABASE_URL:-}" ]]; then
-  echo "Detected DATABASE_URL in .env. Using external PostgreSQL."
+  echo "DATABASE_URL is set — using docker-compose.yml only (deploy / external Postgres)."
   docker compose up --build -d
 else
-  echo "No DATABASE_URL detected. Starting local PostgreSQL with docker-compose.localdb.yml."
+  echo "DATABASE_URL unset — using bundled Postgres + Mailpit (docker-compose.localdb.yml)."
   docker compose -f docker-compose.yml -f docker-compose.localdb.yml up --build -d
 fi

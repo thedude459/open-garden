@@ -1,5 +1,9 @@
 FROM node:24-alpine AS builder
 
+# Browser-reachable API URL baked into the static bundle (must match how users reach the API).
+ARG VITE_API_URL=http://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
+
 ENV NODE_ENV=development
 
 WORKDIR /app
@@ -10,7 +14,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html

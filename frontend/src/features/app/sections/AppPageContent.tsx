@@ -29,6 +29,9 @@ const PestsPageSection = lazy(() =>
 const CropsPageSection = lazy(() =>
   import("../../crops/CropsPageSection").then((m) => ({ default: m.CropsPageSection })),
 );
+const JournalPageSection = lazy(() =>
+  import("../../journal/JournalPageSection").then((m) => ({ default: m.JournalPageSection })),
+);
 
 function PageRouteFallback() {
   return (
@@ -55,7 +58,7 @@ export function AppPageContent({
   confirm,
   notices,
 }: AppPageContentProps) {
-  const { activePage, setActivePage, navigateTo } = routing;
+  const { activePage, navigateTo } = routing;
   const { selectedGarden, setSelectedGarden, selectedGardenRecord, gardens, publicGardens, beds, placements, cropTemplates } = garden;
   const { today, monthCursor, setMonthCursor, selectedDate, setSelectedDate, selectedCropName } = calendar;
   const {
@@ -67,6 +70,8 @@ export function AppPageContent({
     setSelectedRecommendationPlantingId,
     plantingRecommendation,
     refreshSeasonalPlan,
+    selectedGardenId,
+    applySeasonalSuggestionKinds,
     sensorSummary,
     gardenTimeline,
     loadTimelineForGarden,
@@ -94,7 +99,16 @@ export function AppPageContent({
     isLoadingExtensionResources,
   } = loading;
   const { placementBedId, setPlacementBedId, plannerUndoCount, plannerRedoCount, undoPlannerChange, redoPlannerChange, plantingSettings } = plannerUi;
-  const { taskActions, gardenActions, cropFormState, plannerActions, coachState, pestLogActions, derived } = actions;
+  const {
+    taskActions,
+    gardenActions,
+    cropFormState,
+    plannerActions,
+    coachState,
+    pestLogActions,
+    journalActions,
+    derived,
+  } = actions;
   const { setConfirmState } = confirm;
   const { pushNotice } = notices;
 
@@ -192,7 +206,7 @@ export function AppPageContent({
             isLoadingPlantingWindows={isLoadingPlantingWindows}
             pushNotice={pushNotice}
             setConfirmState={setConfirmState}
-            onGoToCrops={() => setActivePage("crops")}
+            onGoToCrops={() => navigateTo("crops")}
           />
         </Suspense>
       );
@@ -201,11 +215,13 @@ export function AppPageContent({
         <Suspense fallback={<PageRouteFallback />}>
           <SeasonalPlanPage
             selectedGardenName={derived.selectedGardenName}
+            selectedGardenId={selectedGardenId}
             seasonalPlan={seasonalPlan}
             selectedRecommendationPlantingId={selectedRecommendationPlantingId}
             plantingRecommendation={plantingRecommendation}
             setSelectedRecommendationPlantingId={setSelectedRecommendationPlantingId}
             refreshSeasonalPlan={refreshSeasonalPlan}
+            applySeasonalSuggestionKinds={applySeasonalSuggestionKinds}
             isLoadingSeasonalPlan={isLoadingSeasonalPlan}
             isLoadingPlantingRecommendation={isLoadingPlantingRecommendation}
             pushNotice={pushNotice}
@@ -244,6 +260,12 @@ export function AppPageContent({
             pestLogActions={pestLogActions}
             selectedDate={selectedDate}
           />
+        </Suspense>
+      );
+    case "journal":
+      return (
+        <Suspense fallback={<PageRouteFallback />}>
+          <JournalPageSection journalActions={journalActions} selectedDate={selectedDate} />
         </Suspense>
       );
     case "crops":

@@ -13,6 +13,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy import inspect
 
 
 revision: str = "0013"
@@ -22,7 +23,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("tasks", sa.Column("bundled_planting_ids", sa.JSON(), nullable=True))
+    bind = op.get_bind()
+    task_cols = {c["name"] for c in inspect(bind).get_columns("tasks")}
+    if "bundled_planting_ids" not in task_cols:
+        op.add_column("tasks", sa.Column("bundled_planting_ids", sa.JSON(), nullable=True))
 
 
 def downgrade() -> None:

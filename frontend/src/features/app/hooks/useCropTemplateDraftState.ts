@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { cropBaseName } from "../utils/cropUtils";
-import { CropTemplate } from "../../types";
+import { CropLifeCycle, CropTemplate } from "../../types";
 
 export function useCropTemplateDraftState() {
   const [newCropName, setNewCropName] = useState("");
@@ -14,6 +14,7 @@ export function useCropTemplateDraftState() {
   const [newCropWeeksToTransplant, setNewCropWeeksToTransplant] = useState(6);
   const [newCropNotes, setNewCropNotes] = useState("");
   const [newCropImageUrl, setNewCropImageUrl] = useState("");
+  const [newCropLifeCycle, setNewCropLifeCycle] = useState<CropLifeCycle>("annual");
   const [editingCropId, setEditingCropId] = useState<number | null>(null);
   const [showCropValidation, setShowCropValidation] = useState(false);
 
@@ -45,6 +46,7 @@ export function useCropTemplateDraftState() {
     setNewCropWeeksToTransplant(6);
     setNewCropNotes("");
     setNewCropImageUrl("");
+    setNewCropLifeCycle("annual");
   }, []);
 
   const populateCropForm = useCallback((crop: CropTemplate) => {
@@ -61,6 +63,7 @@ export function useCropTemplateDraftState() {
     setNewCropWeeksToTransplant(crop.weeks_to_transplant);
     setNewCropNotes(crop.notes);
     setNewCropImageUrl(crop.image_url || "");
+    setNewCropLifeCycle(crop.life_cycle || "annual");
   }, []);
 
   return {
@@ -86,6 +89,8 @@ export function useCropTemplateDraftState() {
     setNewCropNotes,
     newCropImageUrl,
     setNewCropImageUrl,
+    newCropLifeCycle,
+    setNewCropLifeCycle,
     editingCropId,
     showCropValidation,
     setShowCropValidation,

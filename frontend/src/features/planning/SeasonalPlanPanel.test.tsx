@@ -7,11 +7,13 @@ import { SeasonalPlanProvider, SeasonalPlanContextType } from "./SeasonalPlanCon
 function contextValue(overrides: Partial<SeasonalPlanContextType> = {}): SeasonalPlanContextType {
   return {
     selectedGardenName: "Back Garden",
+    selectedGardenId: 1,
     seasonalPlan: null,
     selectedRecommendationPlantingId: null,
     plantingRecommendation: null,
     setSelectedRecommendationPlantingId: vi.fn(),
     refreshSeasonalPlan: vi.fn(async () => undefined),
+    applySeasonalSuggestionKinds: vi.fn(async () => undefined),
     isLoadingSeasonalPlan: false,
     isLoadingPlantingRecommendation: false,
     pushNotice: vi.fn(),
@@ -64,7 +66,7 @@ describe("SeasonalPlanPanel", () => {
       stage: "vegetative",
       progress_pct: 44,
       expected_harvest_on: "2026-05-20",
-      companion: { good_matches: ["Carrot"], risk_matches: ["Celery"] },
+      companion: { good_matches: ["Carrot"], risk_matches: ["Celery"], suggested_additions: ["Basil"] },
       next_actions: [{ title: "Thin seedlings", detail: "Space to 6 inches." }],
       succession_candidates: [],
     };
@@ -90,6 +92,7 @@ describe("SeasonalPlanPanel", () => {
 
     expect(screen.getByText("Companion positives: Carrot")).toBeInTheDocument();
     expect(screen.getByText("Companion risks: Celery")).toBeInTheDocument();
+    expect(screen.getByText("Ideas to add near this crop: Basil")).toBeInTheDocument();
     expect(screen.getByText("Thin seedlings")).toBeInTheDocument();
   });
 
@@ -168,7 +171,7 @@ describe("SeasonalPlanPanel", () => {
       stage: "seedling",
       progress_pct: 10,
       expected_harvest_on: "2025-07-01",
-      companion: { good_matches: [], risk_matches: [] },
+      companion: { good_matches: [], risk_matches: [], suggested_additions: [] },
       next_actions: [],
       succession_candidates: [
         {

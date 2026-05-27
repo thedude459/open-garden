@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { BedFormState, GardenFormState, MicroclimateFormState, MicroclimateSuggestion } from "../types";
 import { Garden } from "../../types";
 
@@ -33,6 +33,26 @@ export function useGardenDraftState({ selectedGardenRecord }: UseGardenDraftStat
     edge_buffer_in: 6,
   });
   const [microclimateSuggestion, setMicroclimateSuggestion] = useState<MicroclimateSuggestion | null>(null);
+  const [trackedGardenRecord, setTrackedGardenRecord] = useState(selectedGardenRecord);
+
+  if (selectedGardenRecord !== trackedGardenRecord) {
+    setTrackedGardenRecord(selectedGardenRecord);
+    if (selectedGardenRecord) {
+      setYardWidthDraft(selectedGardenRecord.yard_width_ft);
+      setYardLengthDraft(selectedGardenRecord.yard_length_ft);
+      setMicroclimateDraft({
+        orientation: selectedGardenRecord.orientation,
+        sun_exposure: selectedGardenRecord.sun_exposure,
+        wind_exposure: selectedGardenRecord.wind_exposure,
+        thermal_mass: selectedGardenRecord.thermal_mass,
+        slope_position: selectedGardenRecord.slope_position,
+        frost_pocket_risk: selectedGardenRecord.frost_pocket_risk,
+        address_private: selectedGardenRecord.address_private ?? "",
+        edge_buffer_in: selectedGardenRecord.edge_buffer_in,
+      });
+      setMicroclimateSuggestion(null);
+    }
+  }
 
   const gardenFormErrors = useMemo(
     () => ({
@@ -62,24 +82,6 @@ export function useGardenDraftState({ selectedGardenRecord }: UseGardenDraftStat
     }),
     [yardWidthDraft, yardLengthDraft],
   );
-
-  useEffect(() => {
-    if (selectedGardenRecord) {
-      setYardWidthDraft(selectedGardenRecord.yard_width_ft);
-      setYardLengthDraft(selectedGardenRecord.yard_length_ft);
-      setMicroclimateDraft({
-        orientation: selectedGardenRecord.orientation,
-        sun_exposure: selectedGardenRecord.sun_exposure,
-        wind_exposure: selectedGardenRecord.wind_exposure,
-        thermal_mass: selectedGardenRecord.thermal_mass,
-        slope_position: selectedGardenRecord.slope_position,
-        frost_pocket_risk: selectedGardenRecord.frost_pocket_risk,
-        address_private: selectedGardenRecord.address_private ?? "",
-        edge_buffer_in: selectedGardenRecord.edge_buffer_in,
-      });
-      setMicroclimateSuggestion(null);
-    }
-  }, [selectedGardenRecord]);
 
   return {
     gardenDraft,

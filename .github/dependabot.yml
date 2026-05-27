@@ -1,0 +1,59 @@
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      frontend-npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      frontend-npm-major:
+        update-types:
+          - major
+        patterns:
+          - "*"
+
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      backend-pip-minor-patch:
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      backend-pip-major:
+        update-types:
+          - major
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
+    directories:
+      - /frontend
+      - /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      docker-minor-patch:
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - "*"
+      docker-major:
+        update-types:
+          - major
+        patterns:
+          - "*"

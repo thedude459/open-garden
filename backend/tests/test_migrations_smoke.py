@@ -6,7 +6,7 @@ from alembic.config import Config as AlembicConfig
 from sqlalchemy import create_engine, inspect
 
 from app.config import settings
-from app.database import Base
+from app.models import Base  # registers ORM tables (same as alembic/env.py)
 
 
 pytestmark = pytest.mark.integration

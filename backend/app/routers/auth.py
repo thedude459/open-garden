@@ -17,6 +17,7 @@ from ..database import get_db
 from ..core.logging_utils import get_logger
 from ..models import (
     Garden,
+    GardenObservation,
     PestLog,
     Planting,
     Sensor,
@@ -348,6 +349,7 @@ def delete_me(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     gardens = db.query(Garden).filter(Garden.owner_id == user_id).all()
     for garden in gardens:
         gid = garden.id
+        db.query(GardenObservation).filter(GardenObservation.garden_id == gid).delete()
         db.query(PestLog).filter(PestLog.garden_id == gid).delete()
         db.query(Task).filter(Task.garden_id == gid).delete()
         db.query(Planting).filter(Planting.garden_id == gid).delete()

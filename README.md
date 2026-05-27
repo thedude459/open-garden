@@ -33,8 +33,8 @@ cp .env.example .env
 `scripts/rebuild.sh` behavior:
 
 - Rebuilds the `api` and `web` images with `--no-cache`.
-- If `DATABASE_URL` is set in `.env`, it deploys in external PostgreSQL mode.
-- If `DATABASE_URL` is empty, it deploys with local PostgreSQL automatically.
+- If `DATABASE_URL` is set in `.env`, it uses **deploy-style** [`docker-compose.yml`](docker-compose.yml) only (API + web against your Postgres).
+- If `DATABASE_URL` is unset, it merges [`docker-compose.localdb.yml`](docker-compose.localdb.yml) for bundled Postgres + Mailpit.
 
 3. Open apps:
 
@@ -51,7 +51,7 @@ If startup fails with Docker daemon errors, start Docker Desktop (or your Docker
 cp .env.example .env
 ```
 
-2. Leave `DATABASE_URL` empty in `.env` to use local containerized Postgres.
+2. Leave `DATABASE_URL` unset for laptop/docker-desktop dev so `./scripts/rebuild.sh` merges **`docker-compose.yml`** + **`docker-compose.localdb.yml`** (Postgres + Mailpit). Set `DATABASE_URL` when deploying with base compose only (API + web to external Postgres).
 
 3. Rebuild and start services:
 
@@ -71,6 +71,13 @@ docker compose -f docker-compose.yml -f docker-compose.localdb.yml down
 docker compose -f docker-compose.yml -f docker-compose.localdb.yml down -v
 ```
 
+Deploy-only stack (`DATABASE_URL` set — single compose file):
+
+```bash
+docker compose down
+docker compose down -v   # drops volumes only defined on base compose; external DB unaffected
+```
+
 Optional fast start without forced no-cache rebuild:
 
 ```bash
@@ -79,7 +86,7 @@ Optional fast start without forced no-cache rebuild:
 
 ## Local SMTP testing (Mailpit)
 
-When `DATABASE_URL` is empty (local Docker mode), [docker-compose.localdb.yml](docker-compose.localdb.yml) starts a Mailpit SMTP catcher automatically.
+[`docker-compose.localdb.yml`](docker-compose.localdb.yml) adds Mailpit for local auth emails (merged when `DATABASE_URL` is unset).
 
 - SMTP host from API container: `mailpit`
 - SMTP port: `1025`
@@ -111,8 +118,8 @@ cp .env.example .env
 
 3. Choose DB mode in `.env`:
 
-- Set `DATABASE_URL` to use an external Postgres service, or
-- Leave `DATABASE_URL` empty to run local Postgres in Docker.
+- **Deploy-style**: set `DATABASE_URL` to your Postgres and run `./scripts/rebuild.sh` (uses [`docker-compose.yml`](docker-compose.yml) only — API + web).
+- **All-in-one on the NAS**: leave `DATABASE_URL` unset and use both compose files (Postgres + Mailpit + API + web), same as local dev.
 
 4. For remote access, set API URL used by the web container:
 

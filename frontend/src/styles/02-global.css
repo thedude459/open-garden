@@ -730,6 +730,15 @@ a {
   max-width: min(var(--tool-max), 100%);
 }
 
+@media (max-width: 639px) {
+  .shell.shell--tool.shell--planner-mobile {
+    max-width: 100%;
+    min-height: 100dvh;
+    padding-inline: var(--space-3);
+    padding-bottom: var(--space-8);
+  }
+}
+
 .page-heading {
   margin-bottom: var(--space-5);
   padding-bottom: var(--space-4);

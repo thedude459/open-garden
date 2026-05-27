@@ -27,6 +27,19 @@ MAX_IMPORT_WORKERS = 12
 logger = get_logger(__name__)
 
 ALLOWED_ROOT_SEGMENTS = {"vegetables", "fruits", "flowers", "herbs"}
+
+_PLANT_KIND_BY_CATALOG_ROOT = {
+    "vegetables": "vegetable",
+    "herbs": "herb",
+    "flowers": "flower",
+    "fruits": "fruit",
+}
+
+
+def _catalog_root_to_plant_kind(root_segment: str) -> str:
+    return _PLANT_KIND_BY_CATALOG_ROOT.get(root_segment.strip().lower(), "vegetable")
+
+
 EXCLUDED_PATH_SEGMENTS = {
     "microgreens",
     "shoots",
@@ -332,6 +345,7 @@ class JohnnysCropRecord:
     frost_hardy: bool
     weeks_to_transplant: int
     notes: str
+    plant_kind: str
 
 
 LEGACY_STARTER_SIGNATURES = {
@@ -807,6 +821,7 @@ def _build_high_mowing_record_from_url(
             "Imported from High Mowing Organic Seeds sitemap metadata. "
             f"Catalog path: {parsed.path}."
         ),
+        plant_kind=_catalog_root_to_plant_kind(root_segment),
     )
 
 
@@ -985,6 +1000,7 @@ def _parse_product_page(url: str, spacing_provider: SpacingProvider) -> JohnnysC
         frost_hardy=frost_hardy,
         weeks_to_transplant=_derive_weeks_to_transplant(crop_name, direct_sow),
         notes=_build_notes(product_id, breadcrumbs, quick_facts),
+        plant_kind=_catalog_root_to_plant_kind(root_segment),
     )
 
 
@@ -1079,6 +1095,7 @@ class JohnnysSelectedSeedsProvider:
                     frost_hardy=record.frost_hardy,
                     weeks_to_transplant=record.weeks_to_transplant,
                     notes=record.notes,
+                    plant_kind=record.plant_kind,
                 )
             )
         return normalized

@@ -197,6 +197,7 @@ export type PlantingAction = {
 export type PlantingCompanionSummary = {
   good_matches: string[];
   risk_matches: string[];
+  suggested_additions: string[];
   reason: string;
 };
 
@@ -268,6 +269,8 @@ export type Planting = {
   yield_notes: string;
 };
 
+export type CropLifeCycle = "annual" | "biennial" | "perennial";
+
 export type CropTemplate = {
   id: number;
   name: string;
@@ -286,6 +289,10 @@ export type CropTemplate = {
   frost_hardy: boolean;
   weeks_to_transplant: number;
   notes: string;
+  /** Present for templates saved after lifecycle tagging shipped; defaults to annual in the UI when absent */
+  life_cycle?: CropLifeCycle;
+  /** vegetable | herb | flower | fruit — defaults to vegetable when absent */
+  plant_kind?: string;
 };
 
 export type CropTemplateSyncStatus = {
@@ -325,6 +332,17 @@ export type PestLog = {
   title: string;
   observed_on: string;
   treatment: string;
+};
+
+export type GardenObservation = {
+  id: number;
+  garden_id: number;
+  observed_on: string;
+  title: string;
+  notes: string;
+  photo_url: string;
+  planting_id: number | null;
+  bed_id: number | null;
 };
 
 export type SensorKind = "soil_moisture" | "soil_temperature" | "air_temperature" | "humidity";
@@ -383,6 +401,8 @@ export type AiCoachSuggestedAction = {
   detail: string;
   priority: string;
   category: string;
+  /** Optional for backward compatibility with cached responses */
+  why?: string;
 };
 
 export type AiCoachScenarioOutcome = {

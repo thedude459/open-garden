@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { ConfirmState } from "../types";
 import { createClearAllCaches } from "../utils/cacheUtils";
 import { useCropLibrarySync } from "./useCropLibrarySync";
@@ -52,7 +52,9 @@ export function useGardenDataFlow({
     weatherCacheRef,
   } = useGardenCoreState();
 
-  const insights = useGardenInsightsData({ fetchAuthed });
+  const selectedGardenRecord = gardens.find((g) => g.id === selectedGarden);
+
+  const insights = useGardenInsightsData({ fetchAuthed, selectedGarden, gardens });
   const {
     gardenClimate,
     plantingWindows,
@@ -86,12 +88,12 @@ export function useGardenDataFlow({
     invalidateSeasonalPlanCache,
     resetForNoGarden,
     clearPlantingRecommendationCacheEntry,
+    applySeasonalSuggestionKinds,
   } = insights;
 
-  const clearAllCaches = useMemo(
-    () => createClearAllCaches(weatherCacheRef.current),
-    [weatherCacheRef],
-  );
+  const clearAllCaches = useCallback(() => {
+    createClearAllCaches(weatherCacheRef.current)();
+  }, [weatherCacheRef]);
 
   const noticeUnlessExpired = useCallback((msg: string) => {
     return (err: unknown) => {
@@ -152,8 +154,6 @@ export function useGardenDataFlow({
     refreshCropTemplateDatabase,
     requestLegacyCropCleanup,
   } = cropSync;
-
-  const selectedGardenRecord = gardens.find((g) => g.id === selectedGarden);
 
   useGardenDataFlowEffects({
     token,
@@ -238,6 +238,7 @@ export function useGardenDataFlow({
     invalidateGardenInsightCaches,
     invalidateSensorCaches,
     invalidateSeasonalPlanCache,
+    applySeasonalSuggestionKinds,
 
     noticeUnlessExpired,
   };

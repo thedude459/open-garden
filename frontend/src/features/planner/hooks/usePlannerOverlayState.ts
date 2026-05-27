@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Bed, CropTemplate, Garden, GardenSunPath, Placement } from "../../types";
 import { buildCanopyPreview } from "../engine/growthSim";
 import { buildShadeMap } from "../engine/shadeMap";
@@ -26,17 +26,19 @@ export function usePlannerOverlayState({
   const [showSunOverlay, setShowSunOverlay] = useState(false);
   const [showShadeOverlay, setShowShadeOverlay] = useState(false);
   const [showGrowthPreview, setShowGrowthPreview] = useState(false);
-  const [sunHour, setSunHour] = useState(12);
-  const [growthDayOffset, setGrowthDayOffset] = useState(21);
-
   const defaultSunHour = useMemo(() => {
     if (!gardenSunPath) return 12;
     return Math.round((gardenSunPath.sunrise_hour + gardenSunPath.sunset_hour) / 2);
   }, [gardenSunPath]);
 
-  useEffect(() => {
+  const [sunHour, setSunHour] = useState(defaultSunHour);
+  const [trackedDefaultSunHour, setTrackedDefaultSunHour] = useState(defaultSunHour);
+  const [growthDayOffset, setGrowthDayOffset] = useState(21);
+
+  if (defaultSunHour !== trackedDefaultSunHour) {
+    setTrackedDefaultSunHour(defaultSunHour);
     setSunHour(defaultSunHour);
-  }, [defaultSunHour]);
+  }
 
   const setOverlayPreset = useCallback((preset: "layout" | "sun" | "shade" | "growth") => {
     setShowSunOverlay(preset === "sun");

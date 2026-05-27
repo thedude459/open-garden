@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ALL_PLANT_KINDS,
+  type PlantKind,
+  readStoredSuggestionKinds,
+  suggestionKindsSearchSuffix,
+  suggestionKindsSignature,
+  writeStoredSuggestionKinds,
+} from "../../planning/suggestionKindsStorage";
 import {
   Garden,
   GardenClimate,
@@ -14,16 +22,52 @@ import {
   CacheEntry,
   createInvalidateCaches,
   getCachedData,
+  isCacheValid,
   setCachedData,
 } from "../utils/cacheUtils";
 
 type UseGardenInsightsDataParams = {
   fetchAuthed: (path: string, opts?: RequestInit) => Promise<unknown>;
+  selectedGarden: number | null;
+  gardens: Garden[];
 };
 
 const NO_TTL = Number.POSITIVE_INFINITY;
 
-export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataParams) {
+function seasonalPlanCacheKey(gardenId: number, kindsSig: string): string {
+  return `${gardenId}:${kindsSig}`;
+}
+
+function plantingRecCacheKey(plantingId: number, kindsSig: string): string {
+  return `${plantingId}:${kindsSig}`;
+}
+
+function getStringCached<T>(
+  cache: Map<string, CacheEntry<T>>,
+  key: string,
+  ttlMs: number,
+): T | undefined {
+  const entry = cache.get(key);
+  if (!entry) return undefined;
+  if (!isCacheValid(entry, ttlMs)) {
+    cache.delete(key);
+    return undefined;
+  }
+  return entry.data;
+}
+
+function setStringCached<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T): void {
+  cache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
+}
+
+export function useGardenInsightsData({
+  fetchAuthed,
+  selectedGarden,
+  gardens,
+}: UseGardenInsightsDataParams) {
   const [gardenClimate, setGardenClimate] = useState<GardenClimate | null>(null);
   const [plantingWindows, setPlantingWindows] = useState<GardenClimatePlantingWindows | null>(null);
   const [gardenSunPath, setGardenSunPath] = useState<GardenSunPath | null>(null);
@@ -46,11 +90,26 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
   const climateCacheRef = useRef<Map<number, CacheEntry<GardenClimate>>>(new Map());
   const plantingWindowCacheRef = useRef<Map<number, CacheEntry<GardenClimatePlantingWindows>>>(new Map());
   const sunPathCacheRef = useRef<Map<number, CacheEntry<GardenSunPath>>>(new Map());
-  const seasonalPlanCacheRef = useRef<Map<number, CacheEntry<GardenSeasonalPlan>>>(new Map());
+  const seasonalPlanCacheRef = useRef<Map<string, CacheEntry<GardenSeasonalPlan>>>(new Map());
   const sensorSummaryCacheRef = useRef<Map<number, CacheEntry<GardenSensorsSummary>>>(new Map());
   const timelineCacheRef = useRef<Map<number, CacheEntry<GardenTimeline>>>(new Map());
-  const plantingRecommendationCacheRef = useRef<Map<number, CacheEntry<PlantingRecommendations>>>(new Map());
+  const plantingRecommendationCacheRef = useRef<Map<string, CacheEntry<PlantingRecommendations>>>(new Map());
   const extensionResourcesCacheRef = useRef<Map<number, CacheEntry<GardenExtensionResources>>>(new Map());
+
+  const seasonalSuggestionKindsRef = useRef<PlantKind[]>([...ALL_PLANT_KINDS]);
+  const selectedRecommendationPlantingIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    selectedRecommendationPlantingIdRef.current = selectedRecommendationPlantingId;
+  }, [selectedRecommendationPlantingId]);
+
+  useEffect(() => {
+    if (selectedGarden == null) {
+      seasonalSuggestionKindsRef.current = [...ALL_PLANT_KINDS];
+      return;
+    }
+    seasonalSuggestionKindsRef.current = readStoredSuggestionKinds(selectedGarden);
+  }, [selectedGarden]);
 
   const loadClimateForGarden = useCallback(async (garden: Garden) => {
     const cached = getCachedData(climateCacheRef.current, garden.id, NO_TTL);
@@ -121,8 +180,12 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
   }, [fetchAuthed]);
 
   const loadSeasonalPlanForGarden = useCallback(async (garden: Garden, forceRefresh = false) => {
+    const kinds = seasonalSuggestionKindsRef.current;
+    const kindsSig = suggestionKindsSignature(kinds);
+    const cacheKey = seasonalPlanCacheKey(garden.id, kindsSig);
+
     if (!forceRefresh) {
-      const cached = getCachedData(seasonalPlanCacheRef.current, garden.id, NO_TTL);
+      const cached = getStringCached(seasonalPlanCacheRef.current, cacheKey, NO_TTL);
       if (cached) {
         setSeasonalPlan(cached);
         return;
@@ -131,8 +194,9 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
 
     setIsLoadingSeasonalPlan(true);
     try {
-      const planData = await fetchAuthed(`/gardens/${garden.id}/plan/seasonal`) as GardenSeasonalPlan;
-      setCachedData(seasonalPlanCacheRef.current, garden.id, planData);
+      const suffix = suggestionKindsSearchSuffix(kinds);
+      const planData = await fetchAuthed(`/gardens/${garden.id}/plan/seasonal${suffix}`) as GardenSeasonalPlan;
+      setStringCached(seasonalPlanCacheRef.current, cacheKey, planData);
       setSeasonalPlan(planData);
     } finally {
       setIsLoadingSeasonalPlan(false);
@@ -178,7 +242,11 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
   }, [fetchAuthed]);
 
   const loadPlantingRecommendation = useCallback(async (plantingId: number) => {
-    const cached = getCachedData(plantingRecommendationCacheRef.current, plantingId, NO_TTL);
+    const kinds = seasonalSuggestionKindsRef.current;
+    const kindsSig = suggestionKindsSignature(kinds);
+    const cacheKey = plantingRecCacheKey(plantingId, kindsSig);
+
+    const cached = getStringCached(plantingRecommendationCacheRef.current, cacheKey, NO_TTL);
     if (cached) {
       setPlantingRecommendation(cached);
       return;
@@ -186,35 +254,39 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
 
     setIsLoadingPlantingRecommendation(true);
     try {
-      const recData = await fetchAuthed(`/plantings/${plantingId}/recommendations`) as PlantingRecommendations;
-      setCachedData(plantingRecommendationCacheRef.current, plantingId, recData);
+      const suffix = suggestionKindsSearchSuffix(kinds);
+      const recData = await fetchAuthed(`/plantings/${plantingId}/recommendations${suffix}`) as PlantingRecommendations;
+      setStringCached(plantingRecommendationCacheRef.current, cacheKey, recData);
       setPlantingRecommendation(recData);
     } finally {
       setIsLoadingPlantingRecommendation(false);
     }
   }, [fetchAuthed]);
 
-  const invalidateGardenInsightCaches = useMemo(
-    () => createInvalidateCaches(
+  const invalidateGardenInsightCaches = useCallback((gardenId: number) => {
+    createInvalidateCaches(
       climateCacheRef.current,
       plantingWindowCacheRef.current,
       sunPathCacheRef.current,
-      seasonalPlanCacheRef.current,
       extensionResourcesCacheRef.current,
-    ),
-    [],
-  );
+    )(gardenId);
+    for (const key of [...seasonalPlanCacheRef.current.keys()]) {
+      if (key.startsWith(`${gardenId}:`)) {
+        seasonalPlanCacheRef.current.delete(key);
+      }
+    }
+  }, []);
 
-  const invalidateSensorCaches = useMemo(
-    () => createInvalidateCaches(
-      sensorSummaryCacheRef.current,
-      timelineCacheRef.current,
-    ),
-    [],
-  );
+  const invalidateSensorCaches = useCallback((gardenId: number) => {
+    createInvalidateCaches(sensorSummaryCacheRef.current, timelineCacheRef.current)(gardenId);
+  }, []);
 
   const invalidateSeasonalPlanCache = useCallback((gardenId: number) => {
-    seasonalPlanCacheRef.current.delete(gardenId);
+    for (const key of [...seasonalPlanCacheRef.current.keys()]) {
+      if (key.startsWith(`${gardenId}:`)) {
+        seasonalPlanCacheRef.current.delete(key);
+      }
+    }
   }, []);
 
   const resetForNoGarden = useCallback(() => {
@@ -227,11 +299,46 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
     setPlantingRecommendation(null);
     setSelectedRecommendationPlantingId(null);
     setGardenExtensionResources(null);
+    plantingRecommendationCacheRef.current.clear();
   }, []);
 
   const clearPlantingRecommendationCacheEntry = useCallback((plantingId: number) => {
-    plantingRecommendationCacheRef.current.delete(plantingId);
+    for (const key of [...plantingRecommendationCacheRef.current.keys()]) {
+      if (key.startsWith(`${plantingId}:`)) {
+        plantingRecommendationCacheRef.current.delete(key);
+      }
+    }
   }, []);
+
+  const applySeasonalSuggestionKinds = useCallback(
+    async (kinds: PlantKind[]) => {
+      seasonalSuggestionKindsRef.current = kinds;
+      if (selectedGarden == null) {
+        return;
+      }
+      writeStoredSuggestionKinds(selectedGarden, kinds);
+      const garden = gardens.find((g) => g.id === selectedGarden);
+      if (!garden) {
+        return;
+      }
+      invalidateSeasonalPlanCache(garden.id);
+      await loadSeasonalPlanForGarden(garden, true);
+
+      const recId = selectedRecommendationPlantingIdRef.current;
+      if (recId) {
+        clearPlantingRecommendationCacheEntry(recId);
+        await loadPlantingRecommendation(recId);
+      }
+    },
+    [
+      selectedGarden,
+      gardens,
+      invalidateSeasonalPlanCache,
+      loadSeasonalPlanForGarden,
+      clearPlantingRecommendationCacheEntry,
+      loadPlantingRecommendation,
+    ],
+  );
 
   return {
     gardenClimate,
@@ -270,5 +377,6 @@ export function useGardenInsightsData({ fetchAuthed }: UseGardenInsightsDataPara
 
     resetForNoGarden,
     clearPlantingRecommendationCacheEntry,
+    applySeasonalSuggestionKinds,
   };
 }

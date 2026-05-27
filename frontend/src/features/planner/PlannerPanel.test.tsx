@@ -179,6 +179,7 @@ function renderPlanner(options?: {
         onUndoPlanner: vi.fn(),
         onRedoPlanner: vi.fn(),
       }}
+      pushNotice={vi.fn()}
     />,
   );
 
@@ -334,5 +335,177 @@ describe("PlannerPanel", () => {
 
     expect(setupTab).toHaveClass("active");
     expect(screen.getByText("Create Bed")).toBeInTheDocument();
+  });
+
+  it("opens Manage Plantings when the first bed appears after none", async () => {
+    const pushNotice = vi.fn();
+    const manyCrops = Array.from({ length: 17 }, (_, i) =>
+      makeCrop({ id: i + 1, name: `Crop ${i + 1}` }),
+    );
+    const layoutEmpty = {
+      isLoadingGardenData: false,
+      beds: [] as Bed[],
+      placements: [],
+      cropTemplates: manyCrops,
+      yardWidthFt: 12,
+      yardLengthFt: 12,
+      gardenSunPath: null,
+      isLoadingSunPath: false,
+      isLoadingPlantingWindows: false,
+      gardenOrientation: "south" as const,
+    };
+    const { rerender } = render(
+      <PlannerPanel
+        layout={layoutEmpty}
+        forms={{
+          bedName: "",
+          bedWidthFt: 4,
+          bedLengthFt: 8,
+          yardWidthDraft: 20,
+          yardLengthDraft: 20,
+          bedErrors: { name: "", width_ft: "", length_ft: "" },
+          yardErrors: { yard_width_ft: "", yard_length_ft: "" },
+          onBedNameChange: vi.fn(),
+          onBedWidthFtChange: vi.fn(),
+          onBedLengthFtChange: vi.fn(),
+          onYardWidthDraftChange: vi.fn(),
+          onYardLengthDraftChange: vi.fn(),
+          onCreateBed: vi.fn(),
+          onUpdateYardSize: vi.fn(),
+          onGoToCrops: vi.fn(),
+        }}
+        crop={{
+          cropSearchQuery: "",
+          onCropSearchQueryChange: vi.fn(),
+          onCropSearchKeyDown: vi.fn(),
+          filteredCropTemplates: manyCrops,
+          cropSearchActiveIndex: 0,
+          selectedCropName: "",
+          selectedCrop: undefined,
+          selectedCropWindow: undefined,
+          onSelectCrop: vi.fn(),
+          cropBaseName: (crop: CropTemplate) => crop.name,
+        }}
+        planner={{
+          placementBedId: null,
+          onPlacementBedIdChange: vi.fn(),
+          yardGridRef: createRef<HTMLDivElement>(),
+          yardCellPx: 24,
+          onMoveBedInYard: vi.fn(),
+          onNudgeBed: vi.fn(),
+          onRotateBed: vi.fn().mockResolvedValue(undefined),
+          onRenameBed: vi.fn(),
+          onDeleteBed: vi.fn(),
+          onAddPlacement: vi.fn(),
+          onMovePlacement: vi.fn(),
+          onNudgePlacement: vi.fn(),
+          onBulkMovePlacements: vi.fn(),
+          onBulkRemovePlacements: vi.fn(),
+          onRequestRemovePlacement: vi.fn(),
+          onRelocatePlanting: vi.fn(),
+          onUpdatePlantingDates: vi.fn(),
+          plantingMethod: "direct_seed",
+          setPlantingMethod: vi.fn(),
+          plantingLocation: "in_bed",
+          setPlantingLocation: vi.fn(),
+          plantingDate: "2026-04-01",
+          setPlantingDate: vi.fn(),
+          plantingMovedOn: null,
+          setPlantingMovedOn: vi.fn(),
+          onBlockedPlacementMove: vi.fn(),
+          placementSpacingConflict: vi.fn().mockReturnValue(null),
+          isCellBlockedForSelectedCrop: vi.fn().mockReturnValue(false),
+          isCellInBuffer: vi.fn().mockReturnValue(false),
+        }}
+        history={{
+          canUndoPlanner: false,
+          canRedoPlanner: false,
+          onUndoPlanner: vi.fn(),
+          onRedoPlanner: vi.fn(),
+        }}
+        pushNotice={pushNotice}
+      />,
+    );
+
+    expect(screen.getByRole("tab", { name: /setup yard/i })).toHaveClass("active");
+
+    rerender(
+      <PlannerPanel
+        layout={{ ...layoutEmpty, beds: [makeBed()] }}
+        forms={{
+          bedName: "",
+          bedWidthFt: 4,
+          bedLengthFt: 8,
+          yardWidthDraft: 20,
+          yardLengthDraft: 20,
+          bedErrors: { name: "", width_ft: "", length_ft: "" },
+          yardErrors: { yard_width_ft: "", yard_length_ft: "" },
+          onBedNameChange: vi.fn(),
+          onBedWidthFtChange: vi.fn(),
+          onBedLengthFtChange: vi.fn(),
+          onYardWidthDraftChange: vi.fn(),
+          onYardLengthDraftChange: vi.fn(),
+          onCreateBed: vi.fn(),
+          onUpdateYardSize: vi.fn(),
+          onGoToCrops: vi.fn(),
+        }}
+        crop={{
+          cropSearchQuery: "",
+          onCropSearchQueryChange: vi.fn(),
+          onCropSearchKeyDown: vi.fn(),
+          filteredCropTemplates: manyCrops,
+          cropSearchActiveIndex: 0,
+          selectedCropName: "",
+          selectedCrop: undefined,
+          selectedCropWindow: undefined,
+          onSelectCrop: vi.fn(),
+          cropBaseName: (crop: CropTemplate) => crop.name,
+        }}
+        planner={{
+          placementBedId: null,
+          onPlacementBedIdChange: vi.fn(),
+          yardGridRef: createRef<HTMLDivElement>(),
+          yardCellPx: 24,
+          onMoveBedInYard: vi.fn(),
+          onNudgeBed: vi.fn(),
+          onRotateBed: vi.fn().mockResolvedValue(undefined),
+          onRenameBed: vi.fn(),
+          onDeleteBed: vi.fn(),
+          onAddPlacement: vi.fn(),
+          onMovePlacement: vi.fn(),
+          onNudgePlacement: vi.fn(),
+          onBulkMovePlacements: vi.fn(),
+          onBulkRemovePlacements: vi.fn(),
+          onRequestRemovePlacement: vi.fn(),
+          onRelocatePlanting: vi.fn(),
+          onUpdatePlantingDates: vi.fn(),
+          plantingMethod: "direct_seed",
+          setPlantingMethod: vi.fn(),
+          plantingLocation: "in_bed",
+          setPlantingLocation: vi.fn(),
+          plantingDate: "2026-04-01",
+          setPlantingDate: vi.fn(),
+          plantingMovedOn: null,
+          setPlantingMovedOn: vi.fn(),
+          onBlockedPlacementMove: vi.fn(),
+          placementSpacingConflict: vi.fn().mockReturnValue(null),
+          isCellBlockedForSelectedCrop: vi.fn().mockReturnValue(false),
+          isCellInBuffer: vi.fn().mockReturnValue(false),
+        }}
+        history={{
+          canUndoPlanner: false,
+          canRedoPlanner: false,
+          onUndoPlanner: vi.fn(),
+          onRedoPlanner: vi.fn(),
+        }}
+        pushNotice={pushNotice}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("tab", { name: /manage plantings/i })).toHaveClass("active");
+    });
+    const cropList = screen.getByRole("listbox", { name: /planner vegetable search/i });
+    expect(within(cropList).getAllByRole("option")).toHaveLength(17);
   });
 });

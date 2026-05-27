@@ -23,7 +23,15 @@ const messages: CoachMessage[] = [
 const response: AiCoachResponse = {
   reply: "Focus on tomatoes.",
   context_highlights: [],
-  suggested_actions: [{ title: "Mulch beds", detail: "Preserve moisture before a warm spell.", priority: "high", category: "care" }],
+  suggested_actions: [
+    {
+      title: "Mulch beds",
+      detail: "Preserve moisture before a warm spell.",
+      priority: "high",
+      category: "care",
+      why: "Keeps moisture steady ahead of warm spells.",
+    },
+  ],
   scenario_outcomes: [{ title: "Dry week", detail: "Increase irrigation checks." }],
 };
 

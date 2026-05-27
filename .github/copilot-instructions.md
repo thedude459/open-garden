@@ -43,7 +43,7 @@
 
 ## Conventions
 
-- The Docker scripts switch behavior based on `DATABASE_URL` in `.env`: empty means local Postgres via `docker-compose.localdb.yml`, set means external Postgres.
+- `docker-compose.yml` is deployment-focused (API + web; requires `DATABASE_URL`). For local bundled Postgres + Mailpit, merge `docker-compose.localdb.yml` — `./scripts/up.sh` / `./scripts/rebuild.sh` do this when `DATABASE_URL` is unset.
 - If a backend schema field is added without Alembic, also update the startup DDL in `backend/app/main.py` so existing databases can start cleanly.
 - If crop template fields change, update seed data in `backend/app/seed.py` and preserve existing user data where possible.
 - Garden planning UX is a core product surface. Prefer improving the calendar/planner workflows over adding disconnected CRUD screens.

@@ -913,14 +913,29 @@ def test_get_planting_recommendations_returns_engine_output(monkeypatch, db_sess
         return {"daily": {}}
 
     monkeypatch.setattr("app.routers.planner.fetch_weather", fake_fetch_weather)
-    monkeypatch.setattr(
-        "app.routers.planner.build_planting_recommendations",
-        lambda *args: {"status": "ok", "planting_id": planting.id},
-    )
+    allowed_seen: dict[str, object | None] = {"v": object()}
+
+    def fake_build(
+        planting_arg, garden_arg, weather_arg, crop_templates_arg, plantings_arg, allowed=None
+    ):
+        allowed_seen["v"] = allowed
+        return {"status": "ok", "planting_id": planting_arg.id}
+
+    monkeypatch.setattr("app.routers.planner.build_planting_recommendations", fake_build)
 
     result = asyncio.run(get_planting_recommendations(db=db_session, planting=planting))
 
     assert result == {"status": "ok", "planting_id": planting.id}
+    assert allowed_seen["v"] is None
+
+    asyncio.run(
+        get_planting_recommendations(
+            db=db_session,
+            planting=planting,
+            suggestion_kinds="vegetable",
+        )
+    )
+    assert allowed_seen["v"] == {"vegetable"}
 
 
 def test_get_planting_recommendations_translates_weather_errors(monkeypatch, db_session, planting):

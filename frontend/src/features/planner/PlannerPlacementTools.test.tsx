@@ -155,8 +155,7 @@ describe("PlannerPlacementTools", () => {
     render(
       <PlannerPlacementTools {...defaultProps({ beds: [sampleBed], onPlacementBedIdChange })} />,
     );
-    // The <select> has "Apply to any bed" as its first option; use getByDisplayValue to find it
-    const select = screen.getByDisplayValue("Apply to any bed") as HTMLSelectElement;
+    const select = screen.getByDisplayValue("Any bed") as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "1" } });
     expect(onPlacementBedIdChange).toHaveBeenCalledWith(1);
   });

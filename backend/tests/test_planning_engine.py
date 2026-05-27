@@ -2,7 +2,13 @@ from datetime import date, timedelta
 from types import SimpleNamespace
 
 from app.planning_engine import engine
-from app.planning_engine.engine import build_planting_recommendations, build_seasonal_plan
+from app.planning_engine.engine import (
+    ALL_PLANT_KINDS,
+    build_planting_recommendations,
+    build_seasonal_plan,
+    normalize_suggestion_kind_inputs,
+    resolve_allowed_plant_kinds,
+)
 
 
 def test_build_seasonal_plan_groups_growth_rotation_and_next_plantings(monkeypatch):
@@ -65,6 +71,86 @@ def test_build_seasonal_plan_groups_growth_rotation_and_next_plantings(monkeypat
     assert result["rotation_recommendations"][0]["avoid_family"] == "apiaceae"
     assert result["companion_insights"][0]["crop"] == "carrot"
     assert result["recommended_next_plantings"][0]["crop_name"] == "Lettuce"
+
+
+def test_build_seasonal_plan_filters_next_plantings_by_allowed_kind(monkeypatch):
+    garden = SimpleNamespace(id=1, growing_zone="10b")
+    crop_templates = [
+        SimpleNamespace(
+            id=1,
+            name="Tomato",
+            variety="",
+            family="Solanaceae",
+            days_to_harvest=75,
+            plant_kind="vegetable",
+        ),
+        SimpleNamespace(
+            id=2,
+            name="Marigold",
+            variety="",
+            family="Asteraceae",
+            days_to_harvest=50,
+            plant_kind="flower",
+        ),
+    ]
+    monkeypatch.setattr(
+        "app.planning_engine.engine.build_dynamic_planting_windows",
+        lambda g, w, ct: {
+            "microclimate_band": "balanced",
+            "soil_temperature_estimate_f": 62.0,
+            "frost_risk_next_10_days": "low",
+            "windows": [
+                {
+                    "crop_name": "Tomato",
+                    "variety": "",
+                    "method": "transplant",
+                    "window_start": date.today(),
+                    "window_end": date.today() + timedelta(days=14),
+                    "status": "open",
+                    "reason": "Warm",
+                    "indoor_seed_start": None,
+                    "indoor_seed_end": None,
+                },
+                {
+                    "crop_name": "Marigold",
+                    "variety": "",
+                    "method": "direct_sow",
+                    "window_start": date.today(),
+                    "window_end": date.today() + timedelta(days=14),
+                    "status": "open",
+                    "reason": "Ok",
+                    "indoor_seed_start": None,
+                    "indoor_seed_end": None,
+                },
+            ],
+        },
+    )
+
+    result = build_seasonal_plan(
+        garden,
+        weather={},
+        crop_templates=crop_templates,
+        plantings=[],
+        allowed_plant_kinds={"flower"},
+    )
+    assert [r["crop_name"] for r in result["recommended_next_plantings"]] == ["Marigold"]
+
+
+def test_resolve_allowed_plant_kinds_none_when_full_or_omitted():
+    assert resolve_allowed_plant_kinds(None) is None
+    assert resolve_allowed_plant_kinds([]) is None
+    assert resolve_allowed_plant_kinds(sorted(ALL_PLANT_KINDS)) is None
+
+
+def test_resolve_allowed_plant_kinds_partial():
+    assert resolve_allowed_plant_kinds(["herb", "vegetable"]) == {"herb", "vegetable"}
+
+
+def test_normalize_suggestion_kind_inputs_prefers_csv():
+    assert normalize_suggestion_kind_inputs(["vegetable"], "herb,flower") == ["herb", "flower"]
+    assert normalize_suggestion_kind_inputs(None, " Herb , fruit ") == ["herb", "fruit"]
+    assert normalize_suggestion_kind_inputs(None, "") is None
+    assert normalize_suggestion_kind_inputs(None, "nope,stillbad") is None
 
 
 def test_recommended_next_plantings_skip_crops_already_started_indoors(monkeypatch):
@@ -383,6 +469,22 @@ def test_build_planting_recommendations_returns_companions_and_candidates(monkey
         SimpleNamespace(
             id=3, name="Carrot", variety="Napoli", family="Apiaceae", days_to_harvest=60
         ),
+        SimpleNamespace(
+            id=4,
+            name="Basil",
+            variety="",
+            family="Lamiaceae",
+            days_to_harvest=40,
+            plant_kind="herb",
+        ),
+        SimpleNamespace(
+            id=5,
+            name="Marigold",
+            variety="",
+            family="Asteraceae",
+            days_to_harvest=45,
+            plant_kind="flower",
+        ),
     ]
     target = SimpleNamespace(
         id=10,
@@ -451,6 +553,24 @@ def test_build_planting_recommendations_returns_companions_and_candidates(monkey
                     "status": "closed",
                     "reason": "Ignored",
                 },
+                {
+                    "crop_name": "Basil",
+                    "variety": "",
+                    "method": "direct_sow",
+                    "window_start": today,
+                    "window_end": today + timedelta(days=8),
+                    "status": "open",
+                    "reason": "Herb window",
+                },
+                {
+                    "crop_name": "Marigold",
+                    "variety": "",
+                    "method": "direct_sow",
+                    "window_start": today,
+                    "window_end": today + timedelta(days=8),
+                    "status": "open",
+                    "reason": "Flower window",
+                },
             ]
         },
     )
@@ -462,6 +582,7 @@ def test_build_planting_recommendations_returns_companions_and_candidates(monkey
     assert result["stage"] == "vegetative"
     assert result["companion"]["good_matches"] == ["carrot"]
     assert result["companion"]["risk_matches"] == ["potato"]
+    assert result["companion"]["suggested_additions"] == ["Basil", "Marigold", "Onion"]
     assert result["succession_candidates"] == [
         {
             "crop_name": "Lettuce",
@@ -473,3 +594,14 @@ def test_build_planting_recommendations_returns_companions_and_candidates(monkey
             "reason": "Follow-on crop avoids immediate same-family rotation and has a viable window.",
         }
     ]
+
+    herb_only = build_planting_recommendations(
+        target,
+        garden,
+        weather={},
+        crop_templates=crop_templates,
+        plantings=other_plantings,
+        allowed_plant_kinds={"herb"},
+    )
+    assert herb_only["companion"]["suggested_additions"] == ["Basil"]
+    assert herb_only["succession_candidates"] == []

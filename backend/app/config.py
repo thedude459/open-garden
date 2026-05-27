@@ -18,10 +18,20 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24
 
     database_url: str = "postgresql+psycopg2://opengarden:opengarden@db:5432/opengarden"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def default_database_url_when_empty(cls, value):
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return "postgresql+psycopg2://opengarden:opengarden@db:5432/opengarden"
+        return value
+
     weather_base_url: str = "https://api.open-meteo.com/v1/forecast"
     allowed_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://localhost:4173",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
     ]
     frontend_base_url: str = "http://localhost:5173"
     email_verification_expire_minutes: int = 60

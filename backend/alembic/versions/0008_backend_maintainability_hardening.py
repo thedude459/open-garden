@@ -8,7 +8,7 @@ Create Date: 2026-04-04
 from typing import Sequence, Union
 
 from alembic import op
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 
 revision: str = "0008"
@@ -47,11 +47,14 @@ def upgrade() -> None:
         )
     )
 
-    op.execute(
-        text(
-            "CREATE UNIQUE INDEX IF NOT EXISTS uq_placements_bed_grid ON placements (bed_id, grid_x, grid_y)"
+    bind = op.get_bind()
+    if inspect(bind).has_table("placements"):
+        op.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_placements_bed_grid "
+                "ON placements (bed_id, grid_x, grid_y)"
+            )
         )
-    )
     op.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email ON users (email)"))
     op.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_users_username ON users (username)"))
     op.execute(

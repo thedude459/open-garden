@@ -3,19 +3,28 @@ from datetime import date
 import pytest
 from fastapi import HTTPException
 
-from app.models import PestLog, Task
+from app.models import GardenObservation, PestLog, Task
 from app.routers.tasks import (
     add_seed_inventory,
+    create_observation,
     create_pest_log,
     create_task,
+    delete_observation,
     delete_pest_log,
     delete_task,
+    list_observations,
     list_pest_logs,
     list_seed_inventory,
     list_tasks,
     update_task,
 )
-from app.schemas import PestLogCreate, SeedInventoryCreate, TaskCreate, TaskUpdate
+from app.schemas import (
+    GardenObservationCreate,
+    PestLogCreate,
+    SeedInventoryCreate,
+    TaskCreate,
+    TaskUpdate,
+)
 
 
 def test_task_router_create_and_list(db_session, user, garden):
@@ -189,6 +198,42 @@ def test_create_pest_log_rejects_missing_garden(db_session, user):
     with pytest.raises(HTTPException) as exc:
         create_pest_log(
             payload=PestLogCreate(garden_id=999, title="Aphids", observed_on=date.today()),
+            db=db_session,
+            current_user=user,
+        )
+
+    assert exc.value.status_code == 404
+
+
+def test_observations_roundtrip(db_session, user, garden):
+    payload = GardenObservationCreate(
+        garden_id=garden.id,
+        observed_on=date.today(),
+        title="Tomatoes flowering",
+        notes="Healthy truss set.",
+        photo_url="",
+    )
+    created = create_observation(payload=payload, db=db_session, current_user=user)
+    items = list_observations(garden_id=garden.id, db=db_session, current_user=user)
+    assert len(items) == 1
+    assert items[0].title == "Tomatoes flowering"
+
+    delete_observation(observation_id=created.id, db=db_session, current_user=user)
+    assert (
+        db_session.query(GardenObservation).filter(GardenObservation.id == created.id).first()
+        is None
+    )
+
+
+def test_create_observation_rejects_missing_garden(db_session, user):
+    with pytest.raises(HTTPException) as exc:
+        create_observation(
+            payload=GardenObservationCreate(
+                garden_id=999,
+                observed_on=date.today(),
+                title="x",
+                notes="",
+            ),
             db=db_session,
             current_user=user,
         )

@@ -13,6 +13,7 @@ from ..engines.layout import build_garden_sun_path
 from ..models import (
     CropTemplate,
     Garden,
+    GardenObservation,
     PestLog,
     Planting,
     Sensor,
@@ -232,6 +233,7 @@ def get_garden_layout_sun_path(
 
 @router.delete("/gardens/{garden_id}")
 def delete_garden(db: Session = Depends(get_db), garden: Garden = Depends(get_owned_garden)):
+    db.query(GardenObservation).filter(GardenObservation.garden_id == garden.id).delete()
     db.query(PestLog).filter(PestLog.garden_id == garden.id).delete()
     db.query(Task).filter(Task.garden_id == garden.id).delete()
     db.query(Planting).filter(Planting.garden_id == garden.id).delete()

@@ -42,11 +42,11 @@ This file is always read by AI agents working in this repo. It mirrors `.github/
 - Frontend-only build: `cd frontend && npm run build`. If npm warns about unknown `devdir` (some environments set `npm_config_devdir`), use `cd frontend && node ./scripts/run-frontend.mjs build` instead, or `frontend/scripts/npm-without-devdir.sh run build`.
 - Backend tests live in `backend/tests/`. Run with `pytest backend/tests/` inside the Docker container.
 - For behavior changes, prefer targeted smoke checks against the running app or API after rebuilding.
-- When running the stack locally, bring it up with both compose files: `docker compose -f docker-compose.yml -f docker-compose.localdb.yml up -d` (otherwise `DATABASE_URL` is empty and the API fails to boot).
+- Local bundled Postgres + Mailpit: `./scripts/up.sh` with `DATABASE_URL` unset merges `docker-compose.yml` + `docker-compose.localdb.yml`. Deploy / external DB: set `DATABASE_URL` and use base `docker-compose.yml` only (same scripts pick file list automatically).
 
 ## Conventions
 
-- The Docker scripts switch behavior based on `DATABASE_URL` in `.env`: empty means local Postgres via `docker-compose.localdb.yml`, set means external Postgres.
+- The Docker scripts switch on `DATABASE_URL`: unset ⇒ merge `docker-compose.localdb.yml` for laptop Postgres/Mailpit; set ⇒ `docker-compose.yml` only for NAS/cloud-style deploy with your own Postgres.
 - If a backend schema field is added without Alembic, also update the startup DDL in `backend/app/main.py` so existing databases can start cleanly.
 - If crop template fields change, update seed data in `backend/app/seed.py` and preserve existing user data where possible.
 - Garden planning UX is a core product surface. Prefer improving the calendar/planner workflows over adding disconnected CRUD screens.

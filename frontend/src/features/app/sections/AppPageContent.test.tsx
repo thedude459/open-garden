@@ -15,6 +15,7 @@ vi.mock("../../planning/SeasonalPlanPage", () => ({ SeasonalPlanPage: () => <div
 vi.mock("../../sensors/SensorsPageSection", () => ({ SensorsPageSection: () => <div data-testid="sensors-page-section" /> }));
 vi.mock("../../coach/CoachPageSection", () => ({ CoachPageSection: () => <div data-testid="coach-page-section" /> }));
 vi.mock("../../pests/PestsPageSection", () => ({ PestsPageSection: () => <div data-testid="pests-page-section" /> }));
+vi.mock("../../journal/JournalPageSection", () => ({ JournalPageSection: () => <div data-testid="journal-page-section" /> }));
 vi.mock("../../crops/CropsPageSection", () => ({ CropsPageSection: () => <div data-testid="crops-page-section" /> }));
 
 type AppPageContentProps = Parameters<typeof AppPageContent>[0];
@@ -23,7 +24,6 @@ function makeProps(): AppPageContentProps {
   return {
     routing: {
       activePage: "home",
-      setActivePage: vi.fn(),
       navigateTo: vi.fn(),
     },
     garden: {
@@ -53,6 +53,8 @@ function makeProps(): AppPageContentProps {
       setSelectedRecommendationPlantingId: vi.fn(),
       plantingRecommendation: null,
       refreshSeasonalPlan: vi.fn(async () => undefined),
+      selectedGardenId: null,
+      applySeasonalSuggestionKinds: vi.fn(async () => undefined),
       sensorSummary: null,
       gardenTimeline: null,
       loadTimelineForGarden: vi.fn(async () => undefined),
@@ -104,6 +106,7 @@ function makeProps(): AppPageContentProps {
       plannerActions: {} as AppPageContentProps["actions"]["plannerActions"],
       coachState: {} as AppPageContentProps["actions"]["coachState"],
       pestLogActions: {} as AppPageContentProps["actions"]["pestLogActions"],
+      journalActions: {} as AppPageContentProps["actions"]["journalActions"],
       derived: { selectedGardenName: "Backyard", cropMap: new Map(), yardWidthFt: 20, yardLengthFt: 30 } as AppPageContentProps["actions"]["derived"],
     },
     confirm: {
@@ -181,6 +184,7 @@ describe("AppPageContent", () => {
       ["sensors", "sensors-page-section"],
       ["coach", "coach-page-section"],
       ["pests", "pests-page-section"],
+      ["journal", "journal-page-section"],
     ];
 
     for (const [page, testId] of pages) {

@@ -3,6 +3,39 @@ from datetime import date, timedelta
 
 from ..engines.climate import build_dynamic_planting_windows
 
+ALL_PLANT_KINDS = frozenset({"vegetable", "herb", "flower", "fruit"})
+
+
+def normalize_suggestion_kind_inputs(
+    suggestion_kind: list[str] | None,
+    suggestion_kinds_csv: str | None,
+) -> list[str] | None:
+    """Prefer CSV `suggestion_kinds` when sent (single query key survives picky proxies); else repeated `suggestion_kind`."""
+    if suggestion_kinds_csv is not None and suggestion_kinds_csv.strip():
+        parts = [p.strip().lower() for p in suggestion_kinds_csv.split(",") if p.strip()]
+        validated = [p for p in parts if p in ALL_PLANT_KINDS]
+        return validated if validated else None
+    if suggestion_kind:
+        return list(suggestion_kind)
+    return None
+
+
+def resolve_allowed_plant_kinds(param_values: list[str] | None) -> set[str] | None:
+    """Return None when no plant-kind filter should apply."""
+    if param_values is None:
+        return None
+    kinds = {k for k in param_values if k in ALL_PLANT_KINDS}
+    if not kinds or kinds >= ALL_PLANT_KINDS:
+        return None
+    return kinds
+
+
+def _template_plant_kind(template: object | None) -> str:
+    if template is None:
+        return "vegetable"
+    raw = getattr(template, "plant_kind", None) or "vegetable"
+    return raw if raw in ALL_PLANT_KINDS else "vegetable"
+
 
 _COMPANION_RULES = {
     "tomato": {
@@ -240,6 +273,7 @@ def _recommended_next_plantings(
     climate_windows: dict,
     crop_templates_by_name: dict[str, object],
     active_crop_base_names: set[str],
+    allowed_plant_kinds: set[str] | None = None,
 ) -> list[dict]:
     """Skip crops the grower is already cultivating (in bed *or* indoor starts)."""
     today = date.today()
@@ -254,6 +288,11 @@ def _recommended_next_plantings(
             continue
 
         crop = crop_templates_by_name.get(window["crop_name"])
+        if (
+            allowed_plant_kinds is not None
+            and _template_plant_kind(crop) not in allowed_plant_kinds
+        ):
+            continue
         family = crop.family if crop and crop.family else "Unknown"
         priority = 0
         if window["status"] == "open":
@@ -333,7 +372,13 @@ def _recommended_next_plantings(
     return selected
 
 
-def build_seasonal_plan(garden, weather: dict, crop_templates: list, plantings: list) -> dict:
+def build_seasonal_plan(
+    garden,
+    weather: dict,
+    crop_templates: list,
+    plantings: list,
+    allowed_plant_kinds: set[str] | None = None,
+) -> dict:
     today = date.today()
     crop_templates_by_name, _ = _template_lookup_by_name(crop_templates)
 
@@ -371,7 +416,7 @@ def build_seasonal_plan(garden, weather: dict, crop_templates: list, plantings: 
         in_bed_plantings, climate_windows, crop_templates_by_name, active_plantings
     )
     recommended_next = _recommended_next_plantings(
-        climate_windows, crop_templates_by_name, active_crop_base_names
+        climate_windows, crop_templates_by_name, active_crop_base_names, allowed_plant_kinds
     )
 
     stage_counts = Counter(stage["stage"] for stage in growth_stages)
@@ -392,12 +437,43 @@ def build_seasonal_plan(garden, weather: dict, crop_templates: list, plantings: 
     }
 
 
+def _companion_suggested_additions(
+    target_base: str,
+    companion_rule: dict,
+    crop_templates_by_name: dict[str, object],
+    climate_windows: dict,
+    all_active_in_bed_bases: set[str],
+    allowed_plant_kinds: set[str] | None,
+) -> list[str]:
+    bases_with_window: set[str] = set()
+    for window in climate_windows["windows"]:
+        if window["status"] not in {"open", "watch", "upcoming"}:
+            continue
+        bases_with_window.add(_base_crop_name(window["crop_name"]))
+
+    rows: list[tuple[int, str]] = []
+    for buddy_base in sorted(companion_rule["good_with"]):
+        if buddy_base in all_active_in_bed_bases:
+            continue
+        buddy_template = crop_templates_by_name.get(buddy_base)
+        label = buddy_template.name if buddy_template else buddy_base.replace("_", " ").title()
+        kind = _template_plant_kind(buddy_template)
+        if allowed_plant_kinds is not None and kind not in allowed_plant_kinds:
+            continue
+        window_rank = 0 if buddy_base in bases_with_window else 1
+        rows.append((window_rank, label))
+
+    rows.sort(key=lambda item: (item[0], item[1].lower()))
+    return [label for _, label in rows]
+
+
 def build_planting_recommendations(
     planting,
     garden,
     weather: dict,
     crop_templates: list,
     plantings: list,
+    allowed_plant_kinds: set[str] | None = None,
 ) -> dict:
     today = date.today()
     crop_templates_by_name, _ = _template_lookup_by_name(crop_templates)
@@ -417,6 +493,11 @@ def build_planting_recommendations(
         and getattr(item, "location", "in_bed") == "in_bed"
     ]
     active_base_names = {_base_crop_name(item.crop_name) for item in active_plantings}
+    all_active_in_bed_bases = {
+        _base_crop_name(p.crop_name)
+        for p in plantings
+        if p.harvested_on is None and getattr(p, "location", "in_bed") == "in_bed"
+    }
 
     target_base = _base_crop_name(planting.crop_name)
     companion_rule = _COMPANION_RULES.get(target_base, {"good_with": set(), "avoid": set()})
@@ -437,6 +518,12 @@ def build_planting_recommendations(
             else ""
         )
         if current_family and candidate_family == current_family:
+            continue
+        candidate_kind = _template_plant_kind(candidate_template)
+        # Succession slots are main-crop rotations; herbs/flowers surface via companion guidance.
+        if candidate_kind != "vegetable":
+            continue
+        if allowed_plant_kinds is not None and candidate_kind not in allowed_plant_kinds:
             continue
         succession_candidates.append(
             {
@@ -463,6 +550,14 @@ def build_planting_recommendations(
         "companion": {
             "good_matches": good_matches,
             "risk_matches": risk_matches,
+            "suggested_additions": _companion_suggested_additions(
+                target_base,
+                companion_rule,
+                crop_templates_by_name,
+                climate_windows,
+                all_active_in_bed_bases,
+                allowed_plant_kinds,
+            ),
             "reason": "Companion guidance compares this planting to currently active crops in the same garden.",
         },
         "next_actions": [

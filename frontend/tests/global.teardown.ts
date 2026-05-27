@@ -49,7 +49,19 @@ async function deleteUserViaApi() {
 function deleteUserViaApiContainer() {
   const script = `
 from app.database import SessionLocal
-from app.models import Bed, Garden, PestLog, Placement, Planting, SeedInventory, Sensor, SensorReading, Task, User, UserAuthToken
+from app.models import (
+    Bed,
+    Garden,
+    GardenObservation,
+    PestLog,
+    Planting,
+    SeedInventory,
+    Sensor,
+    SensorReading,
+    Task,
+    User,
+    UserAuthToken,
+)
 
 db = SessionLocal()
 username = "${E2E_USER.username}"
@@ -64,13 +76,13 @@ if user is not None:
             db.query(SensorReading).filter(SensorReading.sensor_id.in_(sensor_ids)).delete(synchronize_session=False)
         db.query(Sensor).filter(Sensor.garden_id == gid).delete()
         bed_ids = [row.id for row in db.query(Bed.id).filter(Bed.garden_id == gid).all()]
-        if bed_ids:
-            db.query(Placement).filter(Placement.bed_id.in_(bed_ids)).delete(synchronize_session=False)
-            db.query(Bed).filter(Bed.id.in_(bed_ids)).delete(synchronize_session=False)
+        db.query(GardenObservation).filter(GardenObservation.garden_id == gid).delete()
         db.query(PestLog).filter(PestLog.garden_id == gid).delete()
         db.query(Task).filter(Task.garden_id == gid).delete()
+        if bed_ids:
+            db.query(Planting).filter(Planting.bed_id.in_(bed_ids)).delete(synchronize_session=False)
+            db.query(Bed).filter(Bed.id.in_(bed_ids)).delete(synchronize_session=False)
         db.query(Planting).filter(Planting.garden_id == gid).delete()
-        db.query(Placement).filter(Placement.garden_id == gid).delete()
         db.delete(garden)
     db.query(SeedInventory).filter(SeedInventory.user_id == user_id).delete()
     db.query(UserAuthToken).filter(UserAuthToken.user_id == user_id).delete()
@@ -85,13 +97,21 @@ db.close()
 async function globalTeardown() {
   const deleted = await deleteUserViaApi().catch(() => false);
   if (!deleted) {
-    deleteUserViaApiContainer();
+    try {
+      deleteUserViaApiContainer();
+    } catch (error) {
+      console.warn("E2E container cleanup failed:", error);
+    }
   }
 
   const dir = fileURLToPath(new URL(".", import.meta.url));
   const sessionPath = resolve(dir, ".e2e-session.json");
+  const storageStatePath = resolve(dir, ".auth", "storageState.json");
   if (existsSync(sessionPath)) {
     unlinkSync(sessionPath);
+  }
+  if (existsSync(storageStatePath)) {
+    unlinkSync(storageStatePath);
   }
 }
 

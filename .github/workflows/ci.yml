@@ -45,7 +45,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -305,7 +305,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -345,7 +345,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -353,14 +353,46 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Install Playwright browsers
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-browsers-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-browsers-
+
+      - name: Check Playwright browsers cache
+        id: pw-cache
+        run: |
+          if ls -1 ~/.cache/ms-playwright/chromium-*/chrome-linux/chrome >/dev/null 2>&1 \
+            || ls -1 ~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Playwright browsers (cache miss)
+        if: steps.pw-cache.outputs.found != 'true'
         working-directory: frontend
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
         run: node ./scripts/run-frontend.mjs test:e2e:install --with-deps chromium
+
+      - name: Ensure Playwright browsers (cache hit)
+        if: steps.pw-cache.outputs.found == 'true'
+        working-directory: frontend
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+        run: node ./scripts/run-frontend.mjs test:e2e:install chromium
 
       - name: Set up environment
         run: |
           cp .env.example .env
           sed -i 's/^SECRET_KEY=.*/SECRET_KEY=ci-only-not-for-production-use-replace-me/' .env
+          # Empty DATABASE_URL in .env blocks compose defaults; localdb overlay supplies the URL.
+          sed -i '/^DATABASE_URL=/d' .env
+          # E2E hammers the API from one runner IP; default 180/min causes 429 flakes.
+          echo "GLOBAL_RATE_LIMIT_PER_MINUTE=10000" >> .env
 
       - name: Start app
         run: ./scripts/up.sh
@@ -368,15 +400,22 @@ jobs:
       - name: Wait for API
         run: |
           echo "Waiting for API to be ready..."
-          for i in $(seq 1 30); do
+          ready=0
+          for i in $(seq 1 40); do
             if curl -sf http://localhost:8000/health; then
               echo "API is ready."
+              ready=1
               break
             fi
             echo "Attempt $i: API not ready yet, retrying in 3s..."
             sleep 3
           done
-          curl -sf http://localhost:8000/health
+          if [[ "$ready" -ne 1 ]]; then
+            echo "API failed to become ready. Container logs:"
+            docker compose -f docker-compose.yml -f docker-compose.localdb.yml logs api db --tail=200 || true
+            docker compose -f docker-compose.yml -f docker-compose.localdb.yml ps -a || true
+            exit 1
+          fi
 
       - name: Wait for frontend
         run: |
@@ -397,17 +436,31 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:5173
           PLAYWRIGHT_API_URL: http://localhost:8000
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
           CI: "true"
+
+      - name: Stage Playwright artifacts
+        if: always()
+        working-directory: frontend
+        run: |
+          mkdir -p ../.ci-playwright-artifacts
+          if [ -d test-results ] && [ -n "$(ls -A test-results 2>/dev/null)" ]; then
+            cp -R test-results ../.ci-playwright-artifacts/
+          fi
+          if [ -d playwright-report ]; then
+            cp -R playwright-report ../.ci-playwright-artifacts/
+          fi
+          ls -laR ../.ci-playwright-artifacts || true
 
       - name: Upload Playwright results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: playwright-test-results
-          path: |
-            frontend/test-results/
-            frontend/playwright-report/
+          path: .ci-playwright-artifacts/
           retention-days: 7
+          if-no-files-found: warn
+          include-hidden-files: true
 
       - name: Stop containers
         if: always()

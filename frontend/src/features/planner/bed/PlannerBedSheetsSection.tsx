@@ -1,15 +1,23 @@
+import { MutableRefObject } from "react";
 import { Placement, Bed, PlantingLocation } from "../../types";
 import { PlannerBedSheetSingle } from "./PlannerBedSheetSingle";
 
 type PlannerBedSheetsSectionProps = {
   beds: Bed[];
   placements: Placement[];
+  placementBedId: number | null;
   selectedCropName: string;
   selectedPlacement: Placement | null;
   setSelectedPlacementId: (value: number | null | ((current: number | null) => number | null)) => void;
   bulkMode: boolean;
   selectedPlacementIds: number[];
   toggleBulkMode: () => void;
+  showEdgeBufferOverlay: boolean;
+  onToggleShowEdgeBuffer: () => void;
+  paintMode: boolean;
+  onTogglePaintMode: () => void;
+  isPaintingRef: MutableRefObject<boolean>;
+  onExplainPlantingBlocked: (message: string) => void;
   clearSelection: () => void;
   togglePlacementSelection: (placementId: number) => void;
   startLasso: (bedId: number, x: number, y: number) => void;
@@ -37,12 +45,19 @@ type PlannerBedSheetsSectionProps = {
 export function PlannerBedSheetsSection({
   beds,
   placements,
+  placementBedId,
   selectedCropName,
   selectedPlacement,
   setSelectedPlacementId,
   bulkMode,
   selectedPlacementIds,
   toggleBulkMode,
+  showEdgeBufferOverlay,
+  onToggleShowEdgeBuffer,
+  paintMode,
+  onTogglePaintMode,
+  isPaintingRef,
+  onExplainPlantingBlocked,
   clearSelection,
   togglePlacementSelection,
   startLasso,
@@ -68,7 +83,9 @@ export function PlannerBedSheetsSection({
       <div className="planner-section-head">
         <div>
           <h3>Bed Sheets</h3>
-          <p className="hint">Each square is 3 inches. Place crops directly on the grid or drag existing placements between beds. Undo and redo live in the toolbar above.</p>
+          <p className="hint">
+            Each square is 3 inches. Place crops directly on the grid or drag existing placements between beds. Orange tint shows the no-plant edge buffer when enabled. Undo and redo live in the toolbar above.
+          </p>
         </div>
       </div>
 
@@ -81,6 +98,22 @@ export function PlannerBedSheetsSection({
 
       {beds.length > 0 && (
       <div className="planner-bulk-controls" role="group" aria-label="Bulk placement tools">
+        <button
+          type="button"
+          className={showEdgeBufferOverlay ? "secondary-btn active" : "secondary-btn"}
+          onClick={onToggleShowEdgeBuffer}
+          aria-pressed={showEdgeBufferOverlay}
+        >
+          {showEdgeBufferOverlay ? "Hide edge buffer" : "Show edge buffer"}
+        </button>
+        <button
+          type="button"
+          className={paintMode ? "secondary-btn active" : "secondary-btn"}
+          onClick={onTogglePaintMode}
+          aria-pressed={paintMode}
+        >
+          {paintMode ? "Exit paint mode" : "Paint to plant"}
+        </button>
         <button type="button" className={bulkMode ? "secondary-btn active" : "secondary-btn"} onClick={toggleBulkMode}>
           {bulkMode ? "Exit Bulk Select" : "Bulk Select"}
         </button>
@@ -103,7 +136,16 @@ export function PlannerBedSheetsSection({
         >
           Remove selected
         </button>
-        {bulkMode && <p className="hint">Drag across a bed to lasso select placements. Shift+drag adds to selection.</p>}
+        {paintMode && (
+          <p className="hint planner-bulk-controls__full-width">
+            Paint mode: click and drag across empty squares to plant the selected crop (spacing rules still apply).
+          </p>
+        )}
+        {bulkMode && (
+          <p className="hint planner-bulk-controls__full-width">
+            Drag across a bed to lasso select placements. Shift+drag adds to selection.
+          </p>
+        )}
       </div>
       )}
 
@@ -125,6 +167,7 @@ export function PlannerBedSheetsSection({
               bed={bed}
               placements={bedPlacements}
               allPlacements={placements}
+              placementBedId={placementBedId}
               selectedCropName={selectedCropName}
               selectedPlacement={selectedPlacement}
               setSelectedPlacementId={setSelectedPlacementId}
@@ -134,6 +177,10 @@ export function PlannerBedSheetsSection({
               startLasso={startLasso}
               updateLasso={updateLasso}
               finishLasso={finishLasso}
+              showEdgeBufferOverlay={showEdgeBufferOverlay}
+              paintMode={paintMode}
+              isPaintingRef={isPaintingRef}
+              onExplainPlantingBlocked={onExplainPlantingBlocked}
               onBlockedPlacementMove={onBlockedPlacementMove}
               placementSpacingConflict={placementSpacingConflict}
               onMovePlacement={onMovePlacement}
