@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SeasonalPlanPanel } from "./SeasonalPlanPanel";
 import { SeasonalPlanProvider, SeasonalPlanContextType } from "./SeasonalPlanContext";
+import { writeStoredSuggestionKinds } from "./suggestionKindsStorage";
 
 function contextValue(overrides: Partial<SeasonalPlanContextType> = {}): SeasonalPlanContextType {
   return {
@@ -94,6 +95,74 @@ describe("SeasonalPlanPanel", () => {
     expect(screen.getByText("Companion risks: Celery")).toBeInTheDocument();
     expect(screen.getByText("Ideas to add near this crop: Basil")).toBeInTheDocument();
     expect(screen.getByText("Thin seedlings")).toBeInTheDocument();
+  });
+
+  it("reloads stored suggestion kinds when the selected garden changes", () => {
+    writeStoredSuggestionKinds(2, ["herb", "flower"]);
+
+    const { rerender } = render(
+      <SeasonalPlanProvider value={contextValue({ selectedGardenId: 1 })}>
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Vegetables" })).toHaveAttribute("aria-pressed", "true");
+
+    rerender(
+      <SeasonalPlanProvider value={contextValue({ selectedGardenId: 2 })}>
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+
+    expect(screen.getByRole("button", { name: "Vegetables" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Herbs" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Flowers" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("toggles suggestion categories and persists through applySeasonalSuggestionKinds", async () => {
+    const applySeasonalSuggestionKinds = vi.fn(async () => undefined);
+    const pushNotice = vi.fn();
+
+    render(
+      <SeasonalPlanProvider
+        value={contextValue({ applySeasonalSuggestionKinds, pushNotice })}
+      >
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Vegetables" }));
+    expect(applySeasonalSuggestionKinds).toHaveBeenCalledWith(
+      expect.arrayContaining(["flower", "fruit", "herb"]),
+    );
+    expect(applySeasonalSuggestionKinds.mock.calls[0]?.[0]).toHaveLength(3);
+
+    applySeasonalSuggestionKinds.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Herbs" }));
+    expect(applySeasonalSuggestionKinds).toHaveBeenCalledWith(["flower", "fruit"]);
+  });
+
+  it("shows an error when the last suggestion category would be cleared", async () => {
+    const applySeasonalSuggestionKinds = vi.fn(async () => undefined);
+    const pushNotice = vi.fn();
+
+    render(
+      <SeasonalPlanProvider
+        value={contextValue({ applySeasonalSuggestionKinds, pushNotice })}
+      >
+        <SeasonalPlanPanel />
+      </SeasonalPlanProvider>,
+    );
+
+    for (const label of ["Herbs", "Flowers", "Fruits"] as const) {
+      fireEvent.click(screen.getByRole("button", { name: label }));
+    }
+
+    applySeasonalSuggestionKinds.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Vegetables" }));
+
+    expect(pushNotice).toHaveBeenCalledWith("Select at least one category for suggestions.", "error");
+    expect(applySeasonalSuggestionKinds).not.toHaveBeenCalled();
   });
 
   it("triggers refreshSeasonalPlan when Refresh Plan is clicked", async () => {

@@ -59,7 +59,7 @@ type PlannerPanelProps = {
   planner: {
     placementBedId: number | null;
     onPlacementBedIdChange: (value: number | null) => void;
-    yardGridRef: RefObject<HTMLDivElement>;
+    yardGridRef: RefObject<HTMLDivElement | null>;
     yardCellPx: number;
     onMoveBedInYard: (bedId: number, x: number, y: number) => Promise<void> | void;
     onNudgeBed: (bedId: number, dx: number, dy: number) => void;

@@ -87,7 +87,7 @@ export interface PlannerContextType {
   selectedCropName: string;
   selectedGardenRecord: Garden | undefined;
   gardenSunPath: GardenSunPath | null;
-  yardGridRef: RefObject<HTMLDivElement>;
+  yardGridRef: RefObject<HTMLDivElement | null>;
   derived: DerivedState;
   
   // State management
