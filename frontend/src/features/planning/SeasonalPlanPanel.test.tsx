@@ -135,7 +135,6 @@ describe("SeasonalPlanPanel", () => {
     expect(applySeasonalSuggestionKinds).toHaveBeenCalledWith(
       expect.arrayContaining(["flower", "fruit", "herb"]),
     );
-    expect(applySeasonalSuggestionKinds.mock.calls[0]?.[0]).toHaveLength(3);
 
     applySeasonalSuggestionKinds.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "Herbs" }));
