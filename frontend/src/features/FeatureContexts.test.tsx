@@ -84,7 +84,7 @@ describe("feature contexts", () => {
           selectedCropName: "Tomato",
           selectedGardenRecord: undefined,
           gardenSunPath: null,
-          yardGridRef: { current: null },
+          yardGridRef: { current: null } as import("react").RefObject<HTMLDivElement | null>,
           derived: { yardWidthFt: 20, yardLengthFt: 30, cropMap: new Map(), selectedGardenName: "Backyard" },
           cropFormState: { cropSearchQuery: "", setCropSearchQuery: () => undefined, handleCropSearchKeyDown: () => undefined, filteredCropTemplates: [], cropSearchActiveIndex: 0, selectCrop: () => undefined },
           gardenActions: {
