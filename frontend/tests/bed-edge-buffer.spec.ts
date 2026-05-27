@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "./helpers/fixtures";
-import { waitForGardenListed } from "./helpers/api";
+import { createTestCropTemplate, waitForGardenListed } from "./helpers/api";
 import { gotoGardenPage, openPlannerTab, uid, yardBedButton } from "./helpers/auth";
 
 async function showEdgeBufferOverlay(page: Page) {
@@ -44,22 +44,14 @@ test.describe("bed edge buffer", () => {
     const initialBufferCells = await page.getByRole("button", { name: /buffer zone at column/i }).count();
     expect(initialBufferCells).toBeGreaterThan(0);
 
-    const bedsResponse = await request.get(`${apiBase}/gardens/${garden.id}/beds`, { headers: authHeaders });
-    expect(bedsResponse.ok()).toBeTruthy();
-    const beds = (await bedsResponse.json()) as Array<{ id: number }>;
-    expect(beds.length).toBeGreaterThan(0);
-
-    const templatesResponse = await request.get(`${apiBase}/crop-templates`, { headers: authHeaders });
-    expect(templatesResponse.ok()).toBeTruthy();
-    const templates = (await templatesResponse.json()) as Array<{ name: string }>;
-    expect(templates.length).toBeGreaterThan(0);
+    const crop = await createTestCropTemplate(request, token, { name: uid("Buffer Crop") });
 
     const interiorPlacement = await request.post(`${apiBase}/plantings`, {
       headers: authHeaders,
       data: {
         garden_id: garden.id,
-        bed_id: beds[0].id,
-        crop_name: templates[0].name,
+        bed_id: bed.id,
+        crop_name: crop.name,
         grid_x: 2,
         grid_y: 2,
         planted_on: "2026-03-22",
@@ -76,8 +68,8 @@ test.describe("bed edge buffer", () => {
       headers: authHeaders,
       data: {
         garden_id: garden.id,
-        bed_id: beds[0].id,
-        crop_name: templates[0].name,
+        bed_id: bed.id,
+        crop_name: crop.name,
         grid_x: 0,
         grid_y: 0,
         planted_on: "2026-03-22",

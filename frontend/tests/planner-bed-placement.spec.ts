@@ -1,5 +1,5 @@
 import { expect, test } from "./helpers/fixtures";
-import { waitForGardenListed } from "./helpers/api";
+import { createTestCropTemplate, waitForGardenListed } from "./helpers/api";
 import { gotoGardenPage, openPlannerTab, uid, yardBedButton } from "./helpers/auth";
 
 test.describe("planner bed lifecycle", () => {
@@ -89,27 +89,21 @@ test.describe("planner crop placement lifecycle", () => {
     const authHeaders = { Authorization: `Bearer ${token}` };
     const apiBase = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:8000";
 
-    const templatesRes = await request.get(`${apiBase}/crop-templates`, { headers: authHeaders });
-    expect(templatesRes.ok()).toBeTruthy();
-    const templates = (await templatesRes.json()) as Array<{ name: string }>;
-    expect(templates.length).toBeGreaterThan(0);
+    const crop = await createTestCropTemplate(request, token, { name: uid("Placement Crop") });
 
     const placementRes = await request.post(`${apiBase}/plantings`, {
       headers: authHeaders,
       data: {
         garden_id: garden.id,
         bed_id: bed.id,
-        crop_name: templates[0].name,
+        crop_name: crop.name,
         grid_x: 2,
         grid_y: 2,
         planted_on: "2026-04-05",
         color: "#57a773",
       },
     });
-    if (!placementRes.ok()) {
-      test.skip();
-      return;
-    }
+    expect(placementRes.ok(), await placementRes.text()).toBeTruthy();
 
     await gotoGardenPage(page, garden.id, "planner");
     await openPlannerTab(page, "Manage Plantings");

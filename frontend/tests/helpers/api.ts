@@ -31,6 +31,18 @@ export type BedCreatePayload = {
   grid_y?: number;
 };
 
+export type CropTemplateCreatePayload = {
+  name?: string;
+  variety?: string;
+  spacing_in?: number;
+  days_to_harvest?: number;
+};
+
+export type TestCropTemplate = {
+  id: number;
+  name: string;
+};
+
 export function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
@@ -76,6 +88,32 @@ export async function createTestBed(
   expect(response.ok(), await response.text()).toBeTruthy();
   const bed = (await response.json()) as { id: number; name: string };
   return { id: bed.id, name: bed.name ?? name, garden_id: gardenId };
+}
+
+export async function createTestCropTemplate(
+  request: APIRequestContext,
+  token: string,
+  overrides: CropTemplateCreatePayload = {},
+): Promise<TestCropTemplate> {
+  const name = overrides.name ?? uid("E2E Crop");
+  const response = await request.post(`${API}/crop-templates`, {
+    headers: authHeaders(token),
+    data: {
+      name,
+      variety: overrides.variety ?? "",
+      family: "Testaceae",
+      spacing_in: overrides.spacing_in ?? 12,
+      days_to_harvest: overrides.days_to_harvest ?? 60,
+      planting_window: "Spring",
+      direct_sow: true,
+      frost_hardy: false,
+      weeks_to_transplant: 4,
+      notes: "Playwright test crop",
+    },
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  const crop = (await response.json()) as { id: number; name: string };
+  return { id: crop.id, name: crop.name };
 }
 
 export async function deleteTestGarden(
