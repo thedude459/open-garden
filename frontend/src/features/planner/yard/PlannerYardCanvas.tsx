@@ -15,7 +15,7 @@ type CanopyPreview = {
 };
 
 type PlannerYardCanvasProps = {
-  yardGridRef: RefObject<HTMLDivElement>;
+  yardGridRef: RefObject<HTMLDivElement | null>;
   yardWidthFt: number;
   yardLengthFt: number;
   yardCellPx: number;
