@@ -68,7 +68,7 @@ type PlannerYardLayoutSectionProps = {
   sunExposure: SunExposureCell[];
   shadeMap: ShadeCell[];
   canopyPreview: CanopyPreview[];
-  yardGridRef: RefObject<HTMLDivElement>;
+  yardGridRef: RefObject<HTMLDivElement | null>;
   yardWidthFt: number;
   yardLengthFt: number;
   yardCellPx: number;
