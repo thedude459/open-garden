@@ -364,7 +364,8 @@ jobs:
       - name: Check Playwright browsers cache
         id: pw-cache
         run: |
-          if ls -1 ~/.cache/ms-playwright/chromium-*/chrome-linux/chrome >/dev/null 2>&1; then
+          if ls -1 ~/.cache/ms-playwright/chromium-*/chrome-linux/chrome >/dev/null 2>&1 \
+            || ls -1 ~/.cache/ms-playwright/chromium_headless_shell-*/chrome-headless-shell-linux64/chrome-headless-shell >/dev/null 2>&1; then
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
             echo "found=false" >> "$GITHUB_OUTPUT"
@@ -435,6 +436,7 @@ jobs:
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:5173
           PLAYWRIGHT_API_URL: http://localhost:8000
+          PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
           CI: "true"
 
       - name: Stage Playwright artifacts

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CreateGardenForm } from "./CreateGardenForm";
 import { GardenListSidebar } from "./GardenListSidebar";
 import { HomeHero } from "./HomeHero";
@@ -55,24 +55,18 @@ export function HomePageSection({
   setSelectedGarden,
   onNavigate,
 }: HomePageSectionProps) {
-  const [onboardingSuppressed, setOnboardingSuppressed] = useState(() =>
-    Boolean(localStorage.getItem("open-garden-onboarding-dismissed"))
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() =>
+    Boolean(localStorage.getItem("open-garden-onboarding-dismissed")),
   );
 
-  useEffect(() => {
-    if (gardens.length > 0) {
-      setOnboardingSuppressed(true);
-    }
-  }, [gardens.length]);
-
-  const showOnboarding = gardens.length === 0 && !onboardingSuppressed;
+  const showOnboarding = gardens.length === 0 && !onboardingDismissed;
 
   return (
     <>
       <OnboardingWizard
         open={showOnboarding}
         onDismiss={(remember) => {
-          setOnboardingSuppressed(true);
+          setOnboardingDismissed(true);
           if (remember) {
             localStorage.setItem("open-garden-onboarding-dismissed", "1");
           }
