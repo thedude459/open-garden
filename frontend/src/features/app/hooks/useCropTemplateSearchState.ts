@@ -1,4 +1,4 @@
-import { KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardEvent, useCallback, useMemo, useState } from "react";
 import { cropDisplayName } from "../utils/cropUtils";
 import { CropTemplate } from "../../types";
 
@@ -15,6 +15,7 @@ export function useCropTemplateSearchState({
 }: UseCropTemplateSearchStateParams) {
   const [cropSearchQuery, setCropSearchQuery] = useState("");
   const [cropSearchActiveIndex, setCropSearchActiveIndex] = useState(0);
+  const [trackedSearchQuery, setTrackedSearchQuery] = useState(cropSearchQuery);
 
   const filteredCropTemplates = useMemo(() => {
     const query = cropSearchQuery.trim().toLowerCase();
@@ -25,15 +26,16 @@ export function useCropTemplateSearchState({
     });
   }, [cropSearchQuery, cropTemplates]);
 
-  useEffect(() => {
-    setCropSearchActiveIndex(0);
-  }, [cropSearchQuery]);
+  const maxActiveIndex = Math.max(0, filteredCropTemplates.length - 1);
 
-  useEffect(() => {
-    if (cropSearchActiveIndex > Math.max(0, filteredCropTemplates.length - 1)) {
-      setCropSearchActiveIndex(0);
-    }
-  }, [cropSearchActiveIndex, filteredCropTemplates.length]);
+  if (cropSearchQuery !== trackedSearchQuery) {
+    setTrackedSearchQuery(cropSearchQuery);
+    setCropSearchActiveIndex(0);
+  } else if (cropSearchActiveIndex > maxActiveIndex) {
+    setCropSearchActiveIndex(0);
+  }
+
+  const activeIndex = Math.min(cropSearchActiveIndex, maxActiveIndex);
 
   const selectCrop = useCallback(
     (crop: CropTemplate) => {
@@ -49,7 +51,7 @@ export function useCropTemplateSearchState({
 
       if (event.key === "ArrowDown") {
         event.preventDefault();
-        setCropSearchActiveIndex((prev) => Math.min(prev + 1, filteredCropTemplates.length - 1));
+        setCropSearchActiveIndex((prev) => Math.min(prev + 1, maxActiveIndex));
         return;
       }
       if (event.key === "ArrowUp") {
@@ -59,7 +61,7 @@ export function useCropTemplateSearchState({
       }
       if (event.key === "Enter") {
         event.preventDefault();
-        const crop = filteredCropTemplates[cropSearchActiveIndex] || filteredCropTemplates[0];
+        const crop = filteredCropTemplates[activeIndex] || filteredCropTemplates[0];
         if (crop) selectCrop(crop);
         return;
       }
@@ -71,13 +73,13 @@ export function useCropTemplateSearchState({
         }
       }
     },
-    [filteredCropTemplates, cropSearchActiveIndex, selectCrop, cropTemplates, selectedCropName],
+    [activeIndex, filteredCropTemplates, maxActiveIndex, selectCrop, cropTemplates, selectedCropName],
   );
 
   return {
     cropSearchQuery,
     setCropSearchQuery,
-    cropSearchActiveIndex,
+    cropSearchActiveIndex: activeIndex,
     filteredCropTemplates,
     selectCrop,
     handleCropSearchKeyDown,

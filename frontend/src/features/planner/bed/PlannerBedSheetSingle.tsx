@@ -1,4 +1,4 @@
-import { CSSProperties, MutableRefObject, useEffect, useMemo, useState } from "react";
+import { CSSProperties, MutableRefObject, useMemo, useState } from "react";
 import { Bed, DragPayload, Placement, PlantingLocation } from "../../types";
 
 function getCropInitials(cropName: string) {
@@ -113,13 +113,15 @@ export function PlannerBedSheetSingle({
   const isWideBed = cols >= 24 || cols >= rows * 2;
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameDraft, setRenameDraft] = useState(bed.name);
+  const [trackedBedName, setTrackedBedName] = useState(bed.name);
   const [isSavingRename, setIsSavingRename] = useState(false);
   // Track which placement row currently has its inline date editor open.
   const [editingDatesId, setEditingDatesId] = useState<number | null>(null);
 
-  useEffect(() => {
+  if (bed.name !== trackedBedName) {
+    setTrackedBedName(bed.name);
     setRenameDraft(bed.name);
-  }, [bed.name]);
+  }
 
   const placementIndexes = useMemo(() => {
     const runningCounts = new Map<string, number>();

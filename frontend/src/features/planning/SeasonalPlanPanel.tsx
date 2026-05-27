@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ListChecks,
   RefreshCw,
@@ -38,14 +38,14 @@ export function SeasonalPlanPanel() {
   } = useSeasonalPlanContext();
 
   const [suggestionKinds, setSuggestionKinds] = useState<PlantKind[]>(() => [...ALL_PLANT_KINDS]);
+  const [trackedGardenId, setTrackedGardenId] = useState(selectedGardenId);
 
-  useEffect(() => {
-    if (selectedGardenId == null) {
-      setSuggestionKinds([...ALL_PLANT_KINDS]);
-      return;
-    }
-    setSuggestionKinds(readStoredSuggestionKinds(selectedGardenId));
-  }, [selectedGardenId]);
+  if (selectedGardenId !== trackedGardenId) {
+    setTrackedGardenId(selectedGardenId);
+    setSuggestionKinds(
+      selectedGardenId == null ? [...ALL_PLANT_KINDS] : readStoredSuggestionKinds(selectedGardenId),
+    );
+  }
 
   const handleToggleSuggestionKind = useCallback(
     async (kind: PlantKind) => {
