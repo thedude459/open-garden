@@ -61,7 +61,7 @@ export function PlannerYardCanvas({
     <div className="yard-grid-wrap">
       <div
         className="yard-grid"
-        ref={yardGridRef}
+        ref={yardGridRef as RefObject<HTMLDivElement>}
         style={{ width: yardWidthFt * yardCellPx, height: yardLengthFt * yardCellPx, backgroundSize: `${yardCellPx}px ${yardCellPx}px` }}
         onClick={(event) => {
           if (!selectedBedId) return;
