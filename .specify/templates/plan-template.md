@@ -40,18 +40,22 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Reference: `.specify/memory/constitution.md` (Open Garden v1.0.0+).
+Verify compliance with `.specify/memory/constitution.md`:
 
-| Gate | Requirement | Pass? |
-|------|-------------|-------|
-| Backend layering | Models, schemas, and routers stay aligned; thin routes; services for logic; reuse `dependencies.py` auth helpers | ☐ |
-| Frontend modularity | No new global state layer; logic in `frontend/src/features/**`; `App.tsx` orchestration only | ☐ |
-| Data integrity | Alembic migration (+ `main.py` DDL if needed); crop/planting compatibility preserved | ☐ |
-| Garden UX | Calendar/planner/task flows prioritized; destructive actions confirmed in UI | ☐ |
-| Operations | Structured logging, typed exceptions, rate limits on sensitive endpoints; smoke/pytest plan noted | ☐ |
-| Stack & deploy | Stays on FastAPI + React + PostgreSQL + Docker; no silent stack swaps | ☐ |
-
-If any gate fails, document the violation and justification in **Complexity Tracking** below.
+- [ ] **Horticultural Knowledge Engine (I)**: Feature uses centralized plant/domain
+      knowledge — not ad-hoc per-screen rules
+- [ ] **Layout & Placement Validation (II)**: Plant placement validates companions,
+      spacing, tree rootstock distance; hard limits are non-overridable
+- [ ] **Weather-Aware Task Scheduling (III)**: Generated tasks account for location,
+      forecast, and rainfall adjustments where applicable
+- [ ] **Organic & Safety-First (IV)**: No harmful chemical recommendations; configs
+      blocked when biologically impossible or harmful
+- [ ] **Persistence & Extensibility (V)**: User garden state persists; design does
+      not foreclose listed future modules (soil testing, yield tracking, etc.)
+- [ ] **Domain Requirements**: Plant database fields, garden/orchard layout rules,
+      and climate integration addressed if feature touches those areas
+- [ ] **Spec-Driven Quality Gates**: Acceptance criteria are testable for domain
+      behaviors (validation, scheduling, knowledge lookups)
 
 ## Project Structure
 

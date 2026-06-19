@@ -21,14 +21,22 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **This repo (default)**: `backend/app/` (models, schemas, routers, services,
-  engines), `backend/tests/`, `backend/alembic/versions/`, `frontend/src/features/`
 - **Single project**: `src/`, `tests/` at repository root
-- **Web app (generic)**: `backend/src/`, `frontend/src/`
+- **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume Open Garden layout unless plan.md states otherwise
-- Constitution: schema changes MUST include Alembic tasks; crop changes MUST
-  mention `backend/app/seed.py` and planting/task compatibility
+- Paths shown below assume single project - adjust based on plan.md structure
+
+## Domain Task Categories (Garden System)
+
+When the feature touches horticultural behavior, include tasks in these categories
+as applicable (per `.specify/memory/constitution.md`):
+
+- **Knowledge base**: plant database entries, companion/spacing rules, frost windows
+- **Layout validation**: bed/orchard placement, spacing enforcement, guild suggestions
+- **Task engine**: watering, fertilizing, weeding, harvest, succession, orchard care
+- **Weather integration**: location, forecast, rainfall-driven schedule adjustments
+- **Constraint enforcement**: hard vs. soft warnings, organic-only recommendations
+- **Persistence**: garden layouts, placements, task history, user preferences
 
 <!--
   ============================================================================
