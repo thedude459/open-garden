@@ -1,50 +1,19 @@
-# Deployment-oriented stack: API + web only.
-# Set DATABASE_URL in `.env` to your PostgreSQL instance (managed DB, RDS, etc.).
-#
-# Local laptop/dev with bundled Postgres + Mailpit:
-#   docker compose -f docker-compose.yml -f docker-compose.localdb.yml up -d
-# or `./scripts/up.sh` / `./scripts/rebuild.sh` with DATABASE_URL unset.
 services:
-  api:
-    build:
-      context: ./backend
-    container_name: open-garden-api
-    restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SECRET_KEY: ${SECRET_KEY}
-      ENV: ${ENV:-development}
-      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:4173,http://127.0.0.1:5173,http://127.0.0.1:4173}
-      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
-      EMAIL_VERIFICATION_EXPIRE_MINUTES: ${EMAIL_VERIFICATION_EXPIRE_MINUTES:-60}
-      PASSWORD_RESET_EXPIRE_MINUTES: ${PASSWORD_RESET_EXPIRE_MINUTES:-30}
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-noreply@open-garden.local}
-      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
-      GLOBAL_RATE_LIMIT_PER_MINUTE: ${GLOBAL_RATE_LIMIT_PER_MINUTE:-180}
-      AUTH_LOGIN_LIMIT_PER_MINUTE: ${AUTH_LOGIN_LIMIT_PER_MINUTE:-5}
-      AUTH_REGISTER_LIMIT_PER_MINUTE: ${AUTH_REGISTER_LIMIT_PER_MINUTE:-5}
-      AUTH_VERIFY_LIMIT_PER_MINUTE: ${AUTH_VERIFY_LIMIT_PER_MINUTE:-20}
-      AUTH_RESET_LIMIT_PER_MINUTE: ${AUTH_RESET_LIMIT_PER_MINUTE:-10}
-      AUTH_FORGOT_LIMIT_PER_HOUR: ${AUTH_FORGOT_LIMIT_PER_HOUR:-8}
-      AUTH_RESEND_LIMIT_PER_HOUR: ${AUTH_RESEND_LIMIT_PER_HOUR:-12}
+      POSTGRES_USER: garden
+      POSTGRES_PASSWORD: garden
+      POSTGRES_DB: garden
     volumes:
-      - ./uploads:/app/uploads
-    ports:
-      - "8000:8000"
+      - garden_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U garden -d garden"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  web:
-    build:
-      context: ./frontend
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
-    container_name: open-garden-web
-    restart: unless-stopped
-    depends_on:
-      - api
-    ports:
-      - "5173:5173"
+volumes:
+  garden_pg_data:

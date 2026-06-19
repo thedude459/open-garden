@@ -1,8 +1,0 @@
-@import "tailwindcss";
-@import "./styles/01-tokens.css";
-@import "./styles/02-global.css";
-@import "./styles/03-nav-home.css";
-@import "./styles/04-calendar.css";
-@import "./styles/05-microclimate.css";
-@import "./styles/06-utilities.css";
-@import "./styles/07-planner.css";

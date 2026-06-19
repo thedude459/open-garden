@@ -2,138 +2,180 @@
 Sync Impact Report
 Version change: (template) → 1.0.0
 Modified principles: N/A (initial ratification)
-Added sections: Core Principles (5), Technology Stack & Deployment,
-  Spec-Driven Workflow & Quality Gates, Governance
-Removed sections: None
+Added sections: Purpose, Core Principles (5), Domain Requirements,
+  Task Engine & User Interaction, Governance
+Removed sections: None (template placeholders replaced)
 Templates:
   - .specify/templates/plan-template.md — ✅ updated (Constitution Check gates)
   - .specify/templates/spec-template.md — ✅ no change required
-  - .specify/templates/tasks-template.md — ✅ updated (path conventions)
+  - .specify/templates/tasks-template.md — ✅ updated (domain task categories)
   - .specify/templates/constitution-template.md — ⚠ unchanged (generic template retained)
 Follow-up TODOs: None
 -->
 
-# Open Garden Constitution
+# Garden Planning and Management System Constitution
+
+## Purpose
+
+This system is a garden planning and management assistant. It helps users
+design, plant, track, and maintain home gardens, orchards, and permaculture
+systems. It provides horticultural guidance, enforces biological constraints,
+and generates dynamic task schedules based on climate, weather, plant needs, and
+user-defined garden layouts.
+
+The system acts as a garden planner, horticultural knowledge engine, task
+scheduler, layout validator, permaculture advisor, and weather-aware automation
+system.
 
 ## Core Principles
 
-### I. Domain-Aligned Backend
+### I. Horticultural Knowledge Engine (NON-NEGOTIABLE)
 
-Every backend change MUST keep `backend/app/models.py`, `backend/app/schemas.py`,
-and the relevant domain routers in `backend/app/routers/` in sync.
+The system MUST maintain and apply domain knowledge including frost dates,
+climate-zone planting windows, indoor seed-starting timelines, transplanting and
+direct-seeding rules, plant spacing, companion and incompatible relationships,
+organic fertilizer guidance, watering needs by plant type and growth stage,
+succession planting intervals, tree spacing by species and rootstock, permaculture
+guild principles, and harvest timing with expected yields.
 
-Route handlers MUST stay thin: validate input, delegate to
-`backend/app/services/`, return Pydantic response models. Reuse ownership and
-authorization helpers from `backend/app/core/dependencies.py` instead of
-duplicating query + 404/403 logic. New routers MUST be registered in
-`backend/app/routers/__init__.py` and included from `backend/app/main.py`.
+All scheduling, placement, and recommendation features MUST derive from this
+knowledge base — not hard-coded per-screen logic.
 
-**Rationale**: Consistent layering prevents schema drift, authorization bugs,
-and bloated handlers that are hard to test or extend.
+**Rationale**: Horticultural accuracy is the product's core value. Without a
+centralized knowledge engine, guidance becomes inconsistent and unreliable.
 
-### II. Feature-Modular Frontend
+### II. Layout & Placement Validation (NON-NEGOTIABLE)
 
-`frontend/src/App.tsx` MUST remain composition and orchestration only. Feature
-logic lives under `frontend/src/features/**`, with shared app hooks in
-`frontend/src/features/app/hooks/`. Use fetch-based API calls; do not introduce
-a new global state-management layer without explicit approval in the
-implementation plan.
+The system MUST validate every plant placement against biological constraints.
+It MUST prevent incompatible companion placements, invalid tree spacing based on
+species and rootstock, and overcrowding beyond biological limits. It MUST warn
+when spacing rules are violated and suggest beneficial companions and understory
+guild members for orchard trees.
 
-Once a feature exceeds roughly eight files, organize by concern: `hooks/`,
-`utils/`, and named component subdirectories (see `app/`, `planner/`, and
-`calendar/` as reference). CSS changes MUST follow `frontend/src/styles.css`
-patterns with minimal visual churn outside the requested area.
+Users MAY override non-critical warnings. The system MUST NEVER allow overrides
+for incompatible companions, invalid tree spacing, or overcrowding beyond
+biological limits.
 
-**Rationale**: The planner and calendar are core product surfaces; modular
-features keep those workflows maintainable as the app grows.
+**Rationale**: Invalid layouts cause crop failure and user frustration. Hard
+constraints protect users from biologically harmful configurations.
 
-### III. Data Integrity & Compatibility (NON-NEGOTIABLE)
+### III. Weather-Aware Task Scheduling
 
-Every persisted schema change MUST include an Alembic migration in
-`backend/alembic/versions/`. If a field is added without Alembic, also update
-startup DDL in `backend/app/main.py` so existing databases start cleanly.
+The system MUST generate and dynamically update task schedules for watering,
+fertilizing, weeding, harvesting, succession planting, and orchard care. Tasks
+MUST adjust based on weather events (e.g., skip or reduce watering when rainfall
+is detected). Watering frequency MUST consider plant type, growth stage, soil
+type, and weather forecast.
 
-Crop template or seed changes MUST update `backend/app/seed.py` and preserve
-compatibility with existing plantings, placements, and auto-generated tasks.
-Use UTC-aware datetimes (`DateTime(timezone=True)` with UTC defaults) for
-persisted timestamps.
+**Rationale**: Static schedules ignore real-world conditions. Weather-aware
+automation keeps recommendations timely and actionable.
 
-**Rationale**: Garden data is long-lived; breaking plantings or tasks destroys
-user trust and is costly to repair.
+### IV. Organic & Safety-First Practices (NON-NEGOTIABLE)
 
-### IV. Garden Planning UX First
+The system MUST prioritize organic, regenerative, and permaculture-aligned
+practices. It MUST NEVER recommend harmful chemical fertilizers or pesticides.
+It MUST prevent biologically impossible or harmful garden configurations.
 
-Prefer improvements to calendar, planner, and task/weather workflows over
-disconnected CRUD screens. Destructive user actions MUST be explicit and
-confirmed in the UI. Features that touch layout, spacing, or planting guidance
-MUST respect crop-template-driven behavior.
+**Rationale**: The product serves home gardeners who trust it for safe,
+sustainable guidance. Recommending harmful inputs violates that trust.
 
-**Rationale**: The product value is planning and execution in the garden, not
-generic data administration.
+### V. Persistence, State & Extensibility
 
-### V. Operational Discipline
+The system MUST persist garden layouts, plant placements, planting dates, task
+history, weather-adjusted schedules, and user preferences. Architecture MUST
+support future modules including soil testing integration, pest and disease
+diagnosis, yield tracking, crop rotation planning, greenhouse mode, and
+hydroponic mode without breaking existing data or workflows.
 
-Use structured logging via `backend/app/logging_utils.py`; avoid bare
-`print()`. Use typed domain exceptions from `backend/app/exceptions.py`. Apply
-rate limiting via `backend/app/core/rate_limit.py` for new sensitive or
-abusable endpoints. Do not catch broad `Exception` unless re-raising with
-context and logging.
+**Rationale**: Garden planning spans seasons and years. Durable state and
+extensible design enable long-term user investment in the system.
 
-Validate behavior with targeted smoke checks or API exercises after rebuild
-when changing user-visible flows. Backend tests live in `backend/tests/` and
-SHOULD run via `pytest` inside the Docker stack when behavior changes warrant
-automated coverage.
+## Domain Requirements
 
-**Rationale**: Observable, bounded APIs and verifiable changes keep a
-self-hosted Docker deployment supportable.
+### Plant Database
 
-## Technology Stack & Deployment
+The system MUST support a preloaded database containing vegetables, herbs, fruits,
+berries, fruit trees, nut trees, shrubs, cover crops, companion flowers, and
+permaculture guild plants. Each entry MUST include:
 
-This project is a Dockerized **FastAPI + React + PostgreSQL** application.
+- Botanical and common names
+- Varietal information
+- Days to maturity
+- Indoor seed-starting window
+- Transplanting and direct-seeding rules
+- Spacing requirements
+- Watering and fertilizer needs
+- Companion and incompatible plants
+- Pest and disease notes
+- Harvest window
+- Rootstock and mature size (for trees)
 
-- Local dev: `cp .env.example .env`, then `./scripts/rebuild.sh` or `./scripts/up.sh`.
-- `DATABASE_URL` unset merges `docker-compose.localdb.yml` (bundled Postgres +
-  Mailpit); set `DATABASE_URL` for deploy-style compose against external Postgres.
-- Computation engines live in `backend/app/engines/`; cross-cutting code in
-  `backend/app/core/`; business logic in `backend/app/services/`.
-- Frontend build: `cd frontend && npm run build` (or project wrapper scripts if
-  `npm_config_devdir` warnings appear).
+### Garden Structure & Layout
 
-Features MUST NOT introduce stack replacements (alternate ORMs, state
-libraries, or databases) without a documented constitution amendment and
-migration plan.
+Users MUST be able to create multiple garden areas designated as Garden, Orchard,
+or Mixed-use zone. Within each area, users MUST be able to define bed dimensions,
+orientation, soil type, and sun exposure. The system MUST enforce spacing and
+prevent overcrowding.
+
+For orchards, the system MUST space trees by species, rootstock vigor, and
+mature canopy size; provide understory recommendations based on permaculture
+guild principles; and enforce understory spacing rules.
+
+### Location & Climate Integration
+
+The system MUST use the user's location to determine frost dates, climate zone,
+rainfall events, and temperature trends. All planting windows, task schedules,
+and succession suggestions MUST reflect local climate data.
+
+## Task Engine & User Interaction
+
+### Core Task Types
+
+The system MUST generate and maintain schedules for:
+
+- **Watering** — based on plant type, growth stage, soil type, and forecast;
+  reduced or skipped when rainfall is detected
+- **Fertilizing** — organic recommendations matched to plant, growth stage, and
+  soil amendments
+- **Weeding** — recurring tasks based on bed type, plant density, and season
+- **Harvesting** — predicted windows from variety, planting date, and growth stage
+- **Succession planting** — follow-up plantings from crop type, days to maturity,
+  and local frost dates
+- **Orchard care** — pruning, mulching, pest monitoring, and understory
+  maintenance
+
+### User Interaction Rules
+
+The system MUST validate all plant placements, provide context-aware
+recommendations, and clearly distinguish warnings from hard constraint violations.
+Non-critical warnings MAY be overridden; biological hard limits MUST NOT.
 
 ## Spec-Driven Workflow & Quality Gates
 
-Spec Kit features live under `specs/[###-feature-name]/` with `spec.md`,
-`plan.md`, and `tasks.md` produced by the `/speckit-*` commands.
+All features MUST follow the Spec Kit workflow: constitution → specify → clarify
+→ plan → tasks → implement. Implementation plans MUST include a Constitution
+Check gate verifying compliance with principles I–V before research and again
+after design.
 
-Before Phase 0 research and again after Phase 1 design, the implementation plan
-MUST pass the **Constitution Check** gates (see plan template). Any violation
-MUST be recorded in the plan’s Complexity Tracking table with justification.
-
-Runtime development guidance for agents and contributors is authoritative in
-`AGENTS.md` (mirrored in `.github/copilot-instructions.md`) and `README.md` for
-deploy, backup, and environment setup. When `AGENTS.md` and this constitution
-conflict, this constitution wins; update `AGENTS.md` when amending principles
-that affect day-to-day coding.
+Domain-specific acceptance criteria MUST be testable: placement validation,
+schedule generation, weather adjustment, and knowledge-base lookups MUST have
+verifiable outcomes defined in specs before implementation begins.
 
 ## Governance
 
-This constitution supersedes ad-hoc conventions for Spec Kit–driven feature
-work. Amendments MUST:
+This constitution supersedes ad-hoc feature decisions. All specifications,
+plans, and tasks MUST verify compliance with Core Principles I–V and Domain
+Requirements before implementation.
 
-1. Update `.specify/memory/constitution.md` with a Sync Impact Report comment.
-2. Bump `CONSTITUTION_VERSION` per semantic versioning:
-   - **MAJOR**: Principle removal or backward-incompatible governance change.
-   - **MINOR**: New principle or materially expanded guidance.
-   - **PATCH**: Clarifications and non-semantic wording fixes.
-3. Propagate required changes to `.specify/templates/*` and `AGENTS.md` when
-   principles affect implementation or review expectations.
-4. Set `LAST_AMENDED_DATE` to the amendment date (ISO `YYYY-MM-DD`).
+**Amendment procedure**: Propose changes via `/speckit-constitution` with explicit
+rationale. Version bumps follow semantic versioning — MAJOR for principle
+removals or redefinitions, MINOR for new principles or material expansions, PATCH
+for clarifications. Update dependent templates (plan, spec, tasks) in the same
+change.
 
-Compliance review: every feature `plan.md` Constitution Check and every PR
-touching backend models, migrations, planner/calendar UX, or crop templates MUST
-explicitly confirm adherence or document justified exceptions.
+**Compliance review**: Every `/speckit-plan` Constitution Check and every
+`/speckit-analyze` run MUST flag violations of hard constraints (Principles I,
+II, and IV). Complexity that bypasses validation or knowledge-engine patterns
+MUST be documented in the plan's Complexity Tracking table.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-27 | **Last Amended**: 2026-05-27
+**Version**: 1.0.0 | **Ratified**: 2026-06-12 | **Last Amended**: 2026-06-12
