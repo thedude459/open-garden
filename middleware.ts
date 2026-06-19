@@ -8,10 +8,12 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isCatalogPage = pathname.startsWith("/plants");
+  const isGardenPage = pathname.startsWith("/gardens");
   const isPlantsApi =
     pathname.startsWith("/api/plants") || pathname.startsWith("/api/users/me");
+  const isGardensApi = pathname.startsWith("/api/gardens");
 
-  if ((isCatalogPage || isPlantsApi) && !isLoggedIn) {
+  if ((isCatalogPage || isGardenPage || isPlantsApi || isGardensApi) && !isLoggedIn) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -24,5 +26,11 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/plants/:path*", "/api/plants/:path*", "/api/users/me/:path*"],
+  matcher: [
+    "/plants/:path*",
+    "/gardens/:path*",
+    "/api/plants/:path*",
+    "/api/users/me/:path*",
+    "/api/gardens/:path*",
+  ],
 };
