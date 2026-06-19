@@ -129,3 +129,119 @@ select {
 .field-label {
   color: var(--muted);
 }
+
+.layout-editor {
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  align-items: start;
+}
+
+.layout-canvas-wrap {
+  overflow: hidden;
+}
+
+.layout-canvas {
+  display: block;
+}
+
+.garden-boundary {
+  fill: #faf8f2;
+  stroke: var(--border);
+  stroke-width: 2;
+}
+
+.garden-area-bed {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.garden-area-path {
+  fill: #ece8df;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+
+.garden-area-preview-bed {
+  fill: rgba(47, 107, 58, 0.15);
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+.garden-area-preview-path {
+  fill: rgba(92, 107, 92, 0.12);
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+.garden-area-label {
+  fill: var(--text);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.garden-area-label.path-label {
+  fill: var(--muted);
+}
+
+.layout-canvas.interactive {
+  cursor: crosshair;
+}
+
+.plant-footprint {
+  fill: rgba(47, 107, 58, 0.2);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.plant-footprint.candidate {
+  fill: rgba(47, 107, 58, 0.35);
+  stroke-dasharray: 4 2;
+}
+
+.plant-footprint-label {
+  fill: var(--text);
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.plant-footprint-label.candidate {
+  fill: var(--accent);
+}
+
+.validation-feedback {
+  border-color: #c77;
+  background: #fff5f5;
+}
+
+.validation-warnings {
+  border-color: #c96;
+  background: #fffaf0;
+}
+
+.plant-search-results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plant-search-results .btn.selected {
+  outline: 2px solid var(--accent);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 42, 31, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.dialog-panel {
+  width: min(100%, 480px);
+}

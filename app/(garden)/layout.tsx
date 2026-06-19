@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { auth } from "@/lib/auth/config";
-import { signOut } from "@/lib/auth/config";
+import { auth, signOut } from "@/lib/auth/config";
 
-export default async function CatalogLayout({ children }: { children: React.ReactNode }) {
+export default async function GardenLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
 
   return (
