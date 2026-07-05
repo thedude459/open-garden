@@ -12,8 +12,9 @@ export async function middleware(req: NextRequest) {
   const isPlantsApi =
     pathname.startsWith("/api/plants") || pathname.startsWith("/api/users/me");
   const isGardensApi = pathname.startsWith("/api/gardens");
+  const isPlannerApi = pathname.startsWith("/api/planner");
 
-  if ((isCatalogPage || isGardenPage || isPlantsApi || isGardensApi) && !isLoggedIn) {
+  if ((isCatalogPage || isGardenPage || isPlantsApi || isGardensApi || isPlannerApi) && !isLoggedIn) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -32,5 +33,6 @@ export const config = {
     "/api/plants/:path*",
     "/api/users/me/:path*",
     "/api/gardens/:path*",
+    "/api/planner/:path*",
   ],
 };

@@ -5,21 +5,30 @@ import {
   canonicalPlants,
   gardenAreas,
   gardens,
+  gardenStructures,
   indoorStarts,
   plantPlacements,
+  structureTypes,
   userGardenPlantRefs,
   userProvisionalPlants,
 } from "@/lib/db/schema";
+import { enrichGardenDetail, enrichGardenSummary } from "@/lib/planner/enrich-garden";
+import { getTemplateById, parseLayoutSnapshot } from "@/lib/planner/templates";
+import type { VisualGardenDetail } from "@/lib/planner/types";
+import type { GardenZoneType } from "./enums";
 import type {
   CreateAreaInput,
   CreateGardenInput,
   CreateIndoorStartInput,
   CreatePlacementInput,
+  CreateStructureInput,
   TransplantIndoorStartInput,
   UpdateAreaInput,
   UpdateGardenInput,
   UpdateIndoorStartInput,
+  UpdateStructureInput,
   ValidatePlacementInput,
+  LayerPatchInput,
 } from "./schemas";
 import {
   InvalidRotationError,
@@ -41,6 +50,7 @@ import { resolvePlantSpacing } from "./plant-context";
 import {
   assertAreasWithinGarden,
   assertValidAreaGeometry,
+  assertValidStructureGeometry,
   AreaGeometryError,
   findAffectedPlacementsForAreaChange,
   findAffectedPlacementsForGardenChange,
@@ -50,6 +60,15 @@ import {
 } from "./validation";
 import { bumpVersion, ConflictError } from "./version";
 import { resolveClimateWarnings } from "./climate-warnings";
+import {
+  findZoneChangeConflicts,
+  resolvePlacementCanopyRadius,
+  ZoneChangeConflictError,
+} from "./orchard";
+import {
+  getOrchardAdvisories,
+  orchardAdvisoriesToWarnings,
+} from "./orchard-advisories";
 import { assertPlantingMethodAllowed, PlantingMethodError } from "./planting-methods";
 import { getPlantById } from "@/lib/catalog/query";
 
@@ -77,7 +96,23 @@ export class IndoorStartStateError extends Error {
   }
 }
 
-export { AreaGeometryError, RotationNotAllowedError, InvalidRotationError, PlacementValidationError, LayoutShrinkError, PlantingMethodError };
+export class StructureNotFoundError extends Error {
+  readonly name = "StructureNotFoundError";
+}
+
+export class StructureTypeNotFoundError extends Error {
+  readonly name = "StructureTypeNotFoundError";
+}
+
+export class StructureZoneError extends Error {
+  readonly name = "StructureZoneError";
+
+  constructor() {
+    super("Structure type is not allowed in this growing-area zone");
+  }
+}
+
+export { AreaGeometryError, RotationNotAllowedError, InvalidRotationError, PlacementValidationError, LayoutShrinkError, PlantingMethodError, ZoneChangeConflictError };
 
 type DbExecutor = Pick<typeof db, "select" | "insert" | "update" | "delete" | "transaction">;
 
@@ -120,7 +155,10 @@ function mapPlantRef(
   };
 }
 
-async function loadGardenDetail(gardenId: string, userId: string): Promise<GardenDetail | null> {
+async function loadGardenDetail(
+  gardenId: string,
+  userId: string,
+): Promise<VisualGardenDetail | null> {
   const [garden] = await db
     .select()
     .from(gardens)
@@ -166,6 +204,13 @@ async function loadGardenDetail(gardenId: string, userId: string): Promise<Garde
     .where(eq(indoorStarts.gardenId, gardenId));
 
   const placements: PlantPlacement[] = [];
+  const placementMeta: Array<{
+    id: string;
+    rootstockId: string | null;
+    zIndex: number;
+    locked: boolean;
+  }> = [];
+
   for (const { placement, canonicalName, provisionalName } of placementRows) {
     const plant = mapPlantRef(
       placement.canonicalPlantId,
@@ -179,6 +224,13 @@ async function loadGardenDetail(gardenId: string, userId: string): Promise<Garde
       userId,
       garden.unit,
     );
+    const spacingRadius = await resolvePlacementCanopyRadius(
+      { plant, rootstock_id: placement.rootstockId },
+      garden.zoneType as GardenZoneType,
+      userId,
+      garden.unit,
+      spacing?.spacing_radius ?? 0,
+    );
     placements.push({
       id: placement.id,
       bed_area_id: placement.bedAreaId,
@@ -187,7 +239,14 @@ async function loadGardenDetail(gardenId: string, userId: string): Promise<Garde
       position_y: toNumber(placement.positionY),
       status: placement.status,
       planted_on: placement.plantedOn,
-      spacing_radius: spacing?.spacing_radius ?? 0,
+      spacing_radius: spacingRadius,
+      rootstock_id: placement.rootstockId,
+    });
+    placementMeta.push({
+      id: placement.id,
+      rootstockId: placement.rootstockId,
+      zIndex: placement.zIndex,
+      locked: placement.locked,
     });
   }
 
@@ -204,7 +263,7 @@ async function loadGardenDetail(gardenId: string, userId: string): Promise<Garde
     status: start.status,
   }));
 
-  return {
+  const baseDetail: GardenDetail = {
     id: garden.id,
     name: garden.name,
     length: toNumber(garden.length),
@@ -212,10 +271,21 @@ async function loadGardenDetail(gardenId: string, userId: string): Promise<Garde
     unit: garden.unit,
     description: garden.description,
     version: garden.version,
+    zone_type: garden.zoneType as GardenZoneType,
     areas: areas.map(mapArea),
     placements,
     indoor_starts,
   };
+
+  return enrichGardenDetail(
+    baseDetail,
+    {
+      zoneType: garden.zoneType as GardenZoneType,
+      visualVersion: garden.visualVersion,
+      thumbnailKey: garden.thumbnailKey,
+    },
+    placementMeta,
+  );
 }
 
 export async function assertGardenOwner(gardenId: string, userId: string) {
@@ -235,7 +305,7 @@ export async function assertGardenOwner(gardenId: string, userId: string) {
 export async function getGardenDetail(
   gardenId: string,
   userId: string,
-): Promise<GardenDetail | null> {
+): Promise<VisualGardenDetail | null> {
   return loadGardenDetail(gardenId, userId);
 }
 
@@ -265,17 +335,26 @@ export async function listGardens(userId: string): Promise<GardenSummary[]> {
       .from(plantPlacements)
       .where(eq(plantPlacements.gardenId, garden.id));
 
-    summaries.push({
-      id: garden.id,
-      name: garden.name,
-      length: toNumber(garden.length),
-      width: toNumber(garden.width),
-      unit: garden.unit,
-      version: garden.version,
-      updated_at: garden.updatedAt.toISOString(),
-      bed_count: bedCountRow?.count ?? 0,
-      placement_count: placementCountRow?.count ?? 0,
-    });
+    summaries.push(
+      enrichGardenSummary(
+        {
+          id: garden.id,
+          name: garden.name,
+          length: toNumber(garden.length),
+          width: toNumber(garden.width),
+          unit: garden.unit,
+          version: garden.version,
+          updated_at: garden.updatedAt.toISOString(),
+          bed_count: bedCountRow?.count ?? 0,
+          placement_count: placementCountRow?.count ?? 0,
+        },
+        {
+          zoneType: garden.zoneType as GardenZoneType,
+          visualVersion: garden.visualVersion,
+          thumbnailKey: garden.thumbnailKey,
+        },
+      ),
+    );
   }
 
   return summaries;
@@ -284,7 +363,19 @@ export async function listGardens(userId: string): Promise<GardenSummary[]> {
 export async function createGarden(
   userId: string,
   input: CreateGardenInput,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
+  let zoneType = input.zone_type ?? "vegetable_garden";
+  let templateSnapshot = null;
+
+  if (input.template_id) {
+    const template = await getTemplateById(input.template_id);
+    if (!template) {
+      throw new TemplateNotFoundError();
+    }
+    zoneType = template.zoneType as GardenZoneType;
+    templateSnapshot = parseLayoutSnapshot(template.layoutSnapshot);
+  }
+
   const [created] = await db
     .insert(gardens)
     .values({
@@ -294,8 +385,13 @@ export async function createGarden(
       length: input.length.toString(),
       width: input.width.toString(),
       unit: input.unit,
+      zoneType,
     })
     .returning();
+
+  if (templateSnapshot) {
+    await instantiateLayoutSnapshot(created.id, userId, templateSnapshot);
+  }
 
   const detail = await loadGardenDetail(created.id, userId);
   if (!detail) {
@@ -303,6 +399,41 @@ export async function createGarden(
   }
   return detail;
 }
+
+export class TemplateNotFoundError extends Error {
+  readonly name = "TemplateNotFoundError";
+}
+
+async function instantiateLayoutSnapshot(
+  gardenId: string,
+  userId: string,
+  snapshot: ReturnType<typeof parseLayoutSnapshot>,
+) {
+  for (const area of snapshot.areas ?? []) {
+    await createArea(gardenId, userId, {
+      area_type: area.area_type,
+      name: area.name ?? null,
+      origin_x: area.origin_x,
+      origin_y: area.origin_y,
+      length: area.length,
+      width: area.width,
+      rotation_degrees: (area.rotation_degrees ?? 0) as RotationDegrees,
+    });
+  }
+
+  for (const structure of snapshot.structures ?? []) {
+    await createStructure(gardenId, userId, {
+      structure_type_slug: structure.structure_type_slug,
+      origin_x: structure.origin_x,
+      origin_y: structure.origin_y,
+      length: structure.length,
+      width: structure.width,
+      rotation_degrees: (structure.rotation_degrees ?? 0) as RotationDegrees,
+    });
+  }
+}
+
+export { listTemplates } from "@/lib/planner/templates";
 
 async function evictPlacements(gardenId: string, placementIds: string[]) {
   if (placementIds.length === 0) {
@@ -319,7 +450,7 @@ export async function updateGarden(
   gardenId: string,
   userId: string,
   input: UpdateGardenInput,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
   const detail = await loadGardenDetail(gardenId, userId);
   if (!detail) {
@@ -341,6 +472,22 @@ export async function updateGarden(
     await evictPlacements(gardenId, affected);
   }
 
+  const currentZoneType = (detail.zone_type ?? "vegetable_garden") as GardenZoneType;
+  const nextZoneType = (input.zone_type ?? currentZoneType) as GardenZoneType;
+
+  if (input.zone_type && input.zone_type !== currentZoneType) {
+    const zoneConflicts = await findZoneChangeConflicts(detail, nextZoneType, userId);
+    if (zoneConflicts.length > 0 && !input.confirm_zone_change) {
+      throw new ZoneChangeConflictError(zoneConflicts);
+    }
+    if (zoneConflicts.length > 0 && input.confirm_zone_change) {
+      await evictPlacements(
+        gardenId,
+        zoneConflicts.map((conflict) => conflict.placement_id),
+      );
+    }
+  }
+
   await db
     .update(gardens)
     .set({
@@ -348,6 +495,7 @@ export async function updateGarden(
       description: input.description !== undefined ? input.description : garden.description,
       length: nextLength.toString(),
       width: nextWidth.toString(),
+      zoneType: nextZoneType,
       version: bumpVersion(garden.version),
       updatedAt: new Date(),
     })
@@ -413,7 +561,7 @@ export async function createArea(
   gardenId: string,
   userId: string,
   input: CreateAreaInput,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
   assertRotationAllowed(input.rotation_degrees);
 
@@ -465,7 +613,7 @@ export async function updateArea(
   userId: string,
   areaId: string,
   input: UpdateAreaInput,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
 
   const [existing] = await db
@@ -548,7 +696,7 @@ export async function deleteArea(
   userId: string,
   areaId: string,
   expectedVersion?: number,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, expectedVersion);
 
   const [existing] = await db
@@ -599,6 +747,7 @@ export async function validatePlacementDryRun(
       plant_provenance: input.plant_provenance,
       position_x: input.position_x,
       position_y: input.position_y,
+      rootstock_id: input.rootstock_id,
     },
     userId,
   );
@@ -611,9 +760,15 @@ export async function validatePlacementDryRun(
     input.planting_context ?? "direct_seed",
   );
 
+  let orchardWarnings: ValidationWarning[] = [];
+  if ((detail.zone_type ?? "vegetable_garden") === "orchard") {
+    const advisories = await getOrchardAdvisories(input.plant_id, input.rootstock_id);
+    orchardWarnings = orchardAdvisoriesToWarnings(advisories);
+  }
+
   return {
     ...result,
-    warnings: [...result.warnings, ...climateWarnings],
+    warnings: [...result.warnings, ...climateWarnings, ...orchardWarnings],
   };
 }
 
@@ -636,6 +791,7 @@ export async function createDirectSeed(
       plant_provenance: input.plant_provenance,
       position_x: input.position_x,
       position_y: input.position_y,
+      rootstock_id: input.rootstock_id,
     },
     userId,
   );
@@ -657,6 +813,7 @@ export async function createDirectSeed(
     positionY: input.position_y.toString(),
     status: "direct_seeded",
     plantedOn: input.planted_on,
+    rootstockId: input.rootstock_id ?? null,
   });
 
   await db.insert(bedPlantingHistory).values({
@@ -692,7 +849,7 @@ export async function deletePlacement(
   userId: string,
   placementId: string,
   expectedVersion?: number,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, expectedVersion);
 
   const [existing] = await db
@@ -793,7 +950,7 @@ export async function cancelIndoorStart(
   userId: string,
   startId: string,
   expectedVersion?: number,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, expectedVersion);
   const start = await loadIndoorStart(gardenId, startId);
 
@@ -820,7 +977,7 @@ export async function reassignIndoorStart(
   userId: string,
   startId: string,
   input: UpdateIndoorStartInput,
-): Promise<GardenDetail> {
+): Promise<VisualGardenDetail> {
   const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
   const start = await loadIndoorStart(gardenId, startId);
 
@@ -946,4 +1103,316 @@ export async function transplantIndoorStart(
   }
 
   return { garden: updated, warnings: climateWarnings };
+}
+
+async function loadStructureTypeBySlug(slug: string) {
+  const [row] = await db
+    .select()
+    .from(structureTypes)
+    .where(eq(structureTypes.slug, slug))
+    .limit(1);
+  return row ?? null;
+}
+
+async function nextLayerZIndex(gardenId: string): Promise<number> {
+  const [structureMax] = await db
+    .select({ maxZ: sql<number>`coalesce(max(${gardenStructures.zIndex}), -1)` })
+    .from(gardenStructures)
+    .where(eq(gardenStructures.gardenId, gardenId));
+  const [placementMax] = await db
+    .select({ maxZ: sql<number>`coalesce(max(${plantPlacements.zIndex}), -1)` })
+    .from(plantPlacements)
+    .where(eq(plantPlacements.gardenId, gardenId));
+  return Math.max(structureMax?.maxZ ?? -1, placementMax?.maxZ ?? -1) + 1;
+}
+
+export async function createStructure(
+  gardenId: string,
+  userId: string,
+  input: CreateStructureInput,
+): Promise<VisualGardenDetail> {
+  const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
+  assertRotationAllowed(input.rotation_degrees);
+
+  const detail = await loadGardenDetail(gardenId, userId);
+  if (!detail) {
+    throw new GardenNotFoundError();
+  }
+
+  const structureType = await loadStructureTypeBySlug(input.structure_type_slug);
+  if (!structureType) {
+    throw new StructureTypeNotFoundError();
+  }
+
+  const zoneType = (detail.zone_type ?? "vegetable_garden") as GardenZoneType;
+  if (!structureType.allowedZoneTypes.includes(zoneType)) {
+    throw new StructureZoneError();
+  }
+
+  const candidate = {
+    origin_x: input.origin_x,
+    origin_y: input.origin_y,
+    length: input.length,
+    width: input.width,
+    rotation_degrees: (input.rotation_degrees ?? 0) as RotationDegrees,
+  };
+
+  assertValidStructureGeometry(
+    candidate,
+    { length: detail.length, width: detail.width },
+    detail.structures.map((structure) => ({
+      id: structure.id,
+      origin_x: structure.origin_x,
+      origin_y: structure.origin_y,
+      length: structure.length,
+      width: structure.width,
+      rotation_degrees: structure.rotation_degrees as RotationDegrees,
+    })),
+  );
+
+  const zIndex = await nextLayerZIndex(gardenId);
+
+  await db.insert(gardenStructures).values({
+    gardenId,
+    structureTypeId: structureType.id,
+    originX: input.origin_x.toString(),
+    originY: input.origin_y.toString(),
+    length: input.length.toString(),
+    width: input.width.toString(),
+    rotationDegrees: input.rotation_degrees ?? 0,
+    zIndex,
+    locked: false,
+  });
+
+  await touchGarden(gardenId, garden.version);
+
+  const updated = await loadGardenDetail(gardenId, userId);
+  if (!updated) {
+    throw new GardenNotFoundError();
+  }
+  return updated;
+}
+
+export async function updateStructure(
+  gardenId: string,
+  userId: string,
+  structureId: string,
+  input: UpdateStructureInput,
+): Promise<VisualGardenDetail> {
+  const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
+
+  const [existing] = await db
+    .select()
+    .from(gardenStructures)
+    .where(and(eq(gardenStructures.id, structureId), eq(gardenStructures.gardenId, gardenId)))
+    .limit(1);
+
+  if (!existing) {
+    throw new StructureNotFoundError();
+  }
+
+  if (
+    existing.locked &&
+    (input.origin_x != null ||
+      input.origin_y != null ||
+      input.length != null ||
+      input.width != null)
+  ) {
+    throw new StructureNotFoundError();
+  }
+
+  assertRotationAllowed(input.rotation_degrees);
+
+  const detail = await loadGardenDetail(gardenId, userId);
+  if (!detail) {
+    throw new GardenNotFoundError();
+  }
+
+  const nextOriginX = input.origin_x ?? toNumber(existing.originX);
+  const nextOriginY = input.origin_y ?? toNumber(existing.originY);
+  const nextLength = input.length ?? toNumber(existing.length);
+  const nextWidth = input.width ?? toNumber(existing.width);
+  const nextRotation = (input.rotation_degrees ?? existing.rotationDegrees) as RotationDegrees;
+
+  if (
+    input.origin_x != null ||
+    input.origin_y != null ||
+    input.length != null ||
+    input.width != null ||
+    input.rotation_degrees != null
+  ) {
+    assertValidStructureGeometry(
+      {
+        origin_x: nextOriginX,
+        origin_y: nextOriginY,
+        length: nextLength,
+        width: nextWidth,
+        rotation_degrees: nextRotation,
+      },
+      { length: detail.length, width: detail.width },
+      detail.structures.map((structure) => ({
+        id: structure.id,
+        origin_x: structure.origin_x,
+        origin_y: structure.origin_y,
+        length: structure.length,
+        width: structure.width,
+        rotation_degrees: structure.rotation_degrees as RotationDegrees,
+      })),
+      structureId,
+    );
+  }
+
+  await db
+    .update(gardenStructures)
+    .set({
+      originX: nextOriginX.toString(),
+      originY: nextOriginY.toString(),
+      length: nextLength.toString(),
+      width: nextWidth.toString(),
+      rotationDegrees: nextRotation,
+      zIndex: input.z_index ?? existing.zIndex,
+      locked: input.locked ?? existing.locked,
+      updatedAt: new Date(),
+    })
+    .where(eq(gardenStructures.id, structureId));
+
+  await touchGarden(gardenId, garden.version);
+
+  const updated = await loadGardenDetail(gardenId, userId);
+  if (!updated) {
+    throw new GardenNotFoundError();
+  }
+  return updated;
+}
+
+export async function deleteStructure(
+  gardenId: string,
+  userId: string,
+  structureId: string,
+  expectedVersion?: number,
+): Promise<VisualGardenDetail> {
+  const garden = await ensureGardenVersion(gardenId, userId, expectedVersion);
+
+  const [existing] = await db
+    .select()
+    .from(gardenStructures)
+    .where(and(eq(gardenStructures.id, structureId), eq(gardenStructures.gardenId, gardenId)))
+    .limit(1);
+
+  if (!existing) {
+    throw new StructureNotFoundError();
+  }
+
+  await db.delete(gardenStructures).where(eq(gardenStructures.id, structureId));
+  await touchGarden(gardenId, garden.version);
+
+  const updated = await loadGardenDetail(gardenId, userId);
+  if (!updated) {
+    throw new GardenNotFoundError();
+  }
+  return updated;
+}
+
+export async function batchLayerUpdate(
+  gardenId: string,
+  userId: string,
+  input: LayerPatchInput,
+): Promise<VisualGardenDetail> {
+  const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
+
+  for (const layer of input.layers) {
+    if (layer.kind === "structure") {
+      const patch: Partial<{ zIndex: number; locked: boolean }> = {};
+      if (layer.z_index != null) {
+        patch.zIndex = layer.z_index;
+      }
+      if (layer.locked != null) {
+        patch.locked = layer.locked;
+      }
+      if (Object.keys(patch).length === 0) {
+        continue;
+      }
+      await db
+        .update(gardenStructures)
+        .set({ ...patch, updatedAt: new Date() })
+        .where(and(eq(gardenStructures.id, layer.id), eq(gardenStructures.gardenId, gardenId)));
+    } else {
+      const patch: Partial<{ zIndex: number; locked: boolean }> = {};
+      if (layer.z_index != null) {
+        patch.zIndex = layer.z_index;
+      }
+      if (layer.locked != null) {
+        patch.locked = layer.locked;
+      }
+      if (Object.keys(patch).length === 0) {
+        continue;
+      }
+      await db
+        .update(plantPlacements)
+        .set(patch)
+        .where(and(eq(plantPlacements.id, layer.id), eq(plantPlacements.gardenId, gardenId)));
+    }
+  }
+
+  await touchGarden(gardenId, garden.version);
+
+  const updated = await loadGardenDetail(gardenId, userId);
+  if (!updated) {
+    throw new GardenNotFoundError();
+  }
+  return updated;
+}
+
+export async function saveGardenThumbnail(
+  gardenId: string,
+  userId: string,
+  expectedVersion: number | undefined,
+  thumbnailKey: string,
+): Promise<{ thumbnail_url: string }> {
+  const garden = await ensureGardenVersion(gardenId, userId, expectedVersion);
+  const nextVisualVersion = garden.visualVersion === 0 ? 1 : garden.visualVersion;
+
+  await db
+    .update(gardens)
+    .set({
+      thumbnailKey,
+      visualVersion: nextVisualVersion,
+      version: bumpVersion(garden.version),
+      updatedAt: new Date(),
+    })
+    .where(eq(gardens.id, gardenId));
+
+  return { thumbnail_url: `/planner/thumbnails/${gardenId}.webp` };
+}
+
+export async function updatePlacementPlantedOn(
+  gardenId: string,
+  userId: string,
+  placementId: string,
+  input: { expected_version?: number; planted_on: string },
+): Promise<VisualGardenDetail> {
+  const garden = await ensureGardenVersion(gardenId, userId, input.expected_version);
+
+  const [placement] = await db
+    .select()
+    .from(plantPlacements)
+    .where(and(eq(plantPlacements.id, placementId), eq(plantPlacements.gardenId, gardenId)))
+    .limit(1);
+
+  if (!placement) {
+    throw new PlacementNotFoundError();
+  }
+
+  await db
+    .update(plantPlacements)
+    .set({ plantedOn: input.planted_on })
+    .where(eq(plantPlacements.id, placementId));
+
+  await touchGarden(gardenId, garden.version);
+
+  const updated = await loadGardenDetail(gardenId, userId);
+  if (!updated) {
+    throw new GardenNotFoundError();
+  }
+  return updated;
 }

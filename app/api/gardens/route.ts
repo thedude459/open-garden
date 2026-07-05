@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/auth/session";
-import { createGarden, listGardens } from "@/lib/garden/service";
+import { createGarden, listGardens, TemplateNotFoundError } from "@/lib/garden/service";
 import { createGardenSchema } from "@/lib/garden/schemas";
 
 export async function GET() {
@@ -25,6 +25,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 422 });
   }
 
-  const garden = await createGarden(session.user.id, parsed.data);
-  return NextResponse.json(garden, { status: 201 });
+  try {
+    const garden = await createGarden(session.user.id, parsed.data);
+    return NextResponse.json(garden, { status: 201 });
+  } catch (error) {
+    if (error instanceof TemplateNotFoundError) {
+      return NextResponse.json({ error: "template_not_found" }, { status: 404 });
+    }
+    throw error;
+  }
 }

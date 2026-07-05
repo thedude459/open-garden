@@ -13,6 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "seed:reference": "tsx scripts/seed-reference-data.ts",
+    "seed:planner-assets": "tsx scripts/seed-planner-assets.ts",
+    "bench:planner-canvas": "tsx scripts/bench-planner-canvas.ts",
     "sync:plants": "tsx scripts/sync-plants.ts",
     "perf:search": "tsx scripts/perf-search.ts"
   },

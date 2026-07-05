@@ -8,6 +8,7 @@ import {
   smallint,
   decimal,
   date,
+  boolean,
   pgEnum,
   index,
   check,
@@ -16,8 +17,15 @@ import { sql } from "drizzle-orm";
 import { users } from "./users";
 import { canonicalPlants } from "./plants";
 import { userProvisionalPlants } from "./user-data";
+import { rootstockOptions } from "./reference";
 
 export const measurementUnitEnum = pgEnum("measurement_unit", ["feet", "meters"]);
+
+export const gardenZoneTypeEnum = pgEnum("garden_zone_type", [
+  "vegetable_garden",
+  "orchard",
+  "container_patio",
+]);
 
 export const gardenAreaTypeEnum = pgEnum("garden_area_type", ["bed", "path"]);
 
@@ -66,6 +74,9 @@ export const gardens = pgTable(
     width: decimal("width", { precision: 10, scale: 2 }).notNull(),
     unit: measurementUnitEnum("unit").notNull(),
     version: integer("version").notNull().default(1),
+    zoneType: gardenZoneTypeEnum("zone_type").notNull().default("vegetable_garden"),
+    thumbnailKey: varchar("thumbnail_key", { length: 256 }),
+    visualVersion: smallint("visual_version").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -140,6 +151,11 @@ export const plantPlacements = pgTable(
     positionY: decimal("position_y", { precision: 10, scale: 2 }).notNull(),
     status: placementStatusEnum("status").notNull(),
     plantedOn: date("planted_on").notNull(),
+    rootstockId: uuid("rootstock_id").references(() => rootstockOptions.id, {
+      onDelete: "set null",
+    }),
+    zIndex: integer("z_index").notNull().default(0),
+    locked: boolean("locked").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

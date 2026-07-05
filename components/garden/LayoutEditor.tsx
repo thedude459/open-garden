@@ -15,6 +15,9 @@ interface LayoutEditorProps {
   initialGarden: GardenDetail;
 }
 
+/**
+ * @deprecated Superseded by PlannerShell (003 visual planner). Retained for reference only.
+ */
 export function LayoutEditor({ initialGarden }: LayoutEditorProps) {
   const [garden, setGarden] = useState(initialGarden);
   const [preview, setPreview] = useState<AreaDraft | null>(null);

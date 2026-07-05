@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { GardenSummary } from "@/lib/garden/types";
+import { zoneTypeLabel } from "@/lib/planner/zone-plants";
 
 interface GardenCardProps {
   garden: GardenSummary;
@@ -44,11 +45,27 @@ export function GardenCard({ garden }: GardenCardProps) {
   }
 
   return (
-    <article className="card stack">
+    <article className="card stack garden-card">
+      {garden.thumbnail_url ? (
+        <img
+          className="garden-card-thumbnail"
+          src={garden.thumbnail_url}
+          alt=""
+          width={320}
+          height={180}
+        />
+      ) : (
+        <div className="garden-card-thumbnail garden-card-thumbnail-placeholder" aria-hidden>
+          No preview yet
+        </div>
+      )}
       <h2>
         <Link href={`/gardens/${garden.id}`}>{garden.name}</Link>
       </h2>
       <p className="field-label">
+        {garden.zone_type ? (
+          <span className="zone-badge">{zoneTypeLabel(garden.zone_type)}</span>
+        ) : null}{" "}
         {garden.length} × {garden.width} {garden.unit} · {garden.bed_count} beds ·{" "}
         {garden.placement_count} plants
       </p>

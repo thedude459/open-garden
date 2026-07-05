@@ -4,6 +4,7 @@ import {
   AreaGeometryError,
   GardenNotFoundError,
   LayoutShrinkError,
+  ZoneChangeConflictError,
   deleteGarden,
   getGardenDetail,
   updateGarden,
@@ -33,6 +34,15 @@ function handleGardenMutationError(error: unknown) {
       {
         error: "placement_eviction_required",
         affected_placement_ids: error.affectedPlacementIds,
+      },
+      { status: 422 },
+    );
+  }
+  if (error instanceof ZoneChangeConflictError) {
+    return NextResponse.json(
+      {
+        error: "zone_change_conflicts",
+        conflicts: error.conflicts,
       },
       { status: 422 },
     );

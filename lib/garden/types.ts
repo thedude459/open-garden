@@ -1,6 +1,7 @@
 import type {
   BedSunExposure,
   GardenAreaType,
+  GardenZoneType,
   IndoorStartStatus,
   MeasurementUnit,
   PlacementStatus,
@@ -39,6 +40,24 @@ export interface PlantPlacement {
   status: PlacementStatus;
   planted_on: string;
   spacing_radius: number;
+  illustration_url?: string;
+  rootstock_id?: string | null;
+  z_index?: number;
+  locked?: boolean;
+}
+
+export interface GardenStructureSummary {
+  id: string;
+  structure_type_slug: string;
+  structure_type_name: string;
+  origin_x: number;
+  origin_y: number;
+  length: number;
+  width: number;
+  rotation_degrees: number;
+  z_index: number;
+  locked: boolean;
+  illustration_url?: string;
 }
 
 export interface IndoorStart {
@@ -59,6 +78,9 @@ export interface GardenSummary {
   updated_at: string;
   bed_count: number;
   placement_count: number;
+  zone_type?: GardenZoneType;
+  visual_version?: number;
+  thumbnail_url?: string | null;
 }
 
 export interface GardenDetail {
@@ -72,6 +94,9 @@ export interface GardenDetail {
   areas: GardenArea[];
   placements: PlantPlacement[];
   indoor_starts: IndoorStart[];
+  zone_type?: GardenZoneType;
+  visual_version?: number;
+  thumbnail_url?: string | null;
 }
 
 export interface ValidationViolation {

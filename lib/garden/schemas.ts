@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   BED_SUN_EXPOSURES,
   GARDEN_AREA_TYPES,
+  GARDEN_ZONE_TYPES,
   MEASUREMENT_UNITS,
   PLACEMENT_STATUSES,
   PLANT_PROVENANCES,
@@ -32,12 +33,16 @@ export const expectedVersionSchema = z.object({
   expected_version: z.number().int().positive().optional(),
 });
 
+export const gardenZoneTypeSchema = z.enum(GARDEN_ZONE_TYPES);
+
 export const createGardenSchema = z.object({
   name: z.string().trim().min(1).max(128),
   length: positiveDimension,
   width: positiveDimension,
   unit: measurementUnitSchema,
   description: z.string().trim().max(2000).optional().nullable(),
+  zone_type: gardenZoneTypeSchema.optional(),
+  template_id: z.string().uuid().optional(),
 });
 
 export const updateGardenSchema = expectedVersionSchema.extend({
@@ -45,6 +50,8 @@ export const updateGardenSchema = expectedVersionSchema.extend({
   length: positiveDimension.optional(),
   width: positiveDimension.optional(),
   description: z.string().trim().max(2000).optional().nullable(),
+  zone_type: gardenZoneTypeSchema.optional(),
+  confirm_zone_change: z.boolean().optional(),
   evict_affected_placements: z.boolean().optional(),
 });
 
@@ -86,6 +93,7 @@ export const createPlacementSchema = expectedVersionSchema.extend({
   position_x: z.number(),
   position_y: z.number(),
   planted_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  rootstock_id: z.string().uuid().nullable().optional(),
 });
 
 export const validatePlacementSchema = z.object({
@@ -96,9 +104,14 @@ export const validatePlacementSchema = z.object({
   position_y: z.number(),
   planted_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   planting_context: z.enum(["direct_seed", "transplant"]).optional(),
+  rootstock_id: z.string().uuid().nullable().optional(),
 });
 
 export const deletePlacementSchema = expectedVersionSchema;
+
+export const updatePlacementSchema = expectedVersionSchema.extend({
+  planted_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
 
 export const createIndoorStartSchema = expectedVersionSchema.extend({
   target_bed_area_id: z.string().uuid(),
@@ -115,19 +128,61 @@ export const transplantIndoorStartSchema = expectedVersionSchema.extend({
   position_x: z.number(),
   position_y: z.number(),
   planted_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  rootstock_id: z.string().uuid().nullable().optional(),
 });
 
 export const deleteIndoorStartSchema = expectedVersionSchema;
+
+export const createStructureSchema = expectedVersionSchema.extend({
+  structure_type_slug: z.string().trim().min(1).max(64),
+  origin_x: z.number().min(0),
+  origin_y: z.number().min(0),
+  length: positiveDimension,
+  width: positiveDimension,
+  rotation_degrees: rotationDegreesSchema.default(0),
+});
+
+export const updateStructureSchema = expectedVersionSchema.extend({
+  origin_x: z.number().min(0).optional(),
+  origin_y: z.number().min(0).optional(),
+  length: positiveDimension.optional(),
+  width: positiveDimension.optional(),
+  rotation_degrees: rotationDegreesSchema.optional(),
+  z_index: z.number().int().optional(),
+  locked: z.boolean().optional(),
+});
+
+export const deleteStructureSchema = expectedVersionSchema;
+
+export const layerPatchSchema = expectedVersionSchema.extend({
+  layers: z.array(
+    z.object({
+      id: z.string().uuid(),
+      kind: z.enum(["structure", "placement"]),
+      z_index: z.number().int().optional(),
+      locked: z.boolean().optional(),
+    }),
+  ),
+});
+
+export const thumbnailPostSchema = expectedVersionSchema.extend({
+  image_data: z.string().min(1),
+});
 
 export type CreateGardenInput = z.infer<typeof createGardenSchema>;
 export type UpdateGardenInput = z.infer<typeof updateGardenSchema>;
 export type CreateAreaInput = z.infer<typeof createAreaSchema>;
 export type UpdateAreaInput = z.infer<typeof updateAreaSchema>;
 export type CreatePlacementInput = z.infer<typeof createPlacementSchema>;
+export type UpdatePlacementInput = z.infer<typeof updatePlacementSchema>;
 export type ValidatePlacementInput = z.infer<typeof validatePlacementSchema>;
 export type CreateIndoorStartInput = z.infer<typeof createIndoorStartSchema>;
 export type UpdateIndoorStartInput = z.infer<typeof updateIndoorStartSchema>;
 export type TransplantIndoorStartInput = z.infer<typeof transplantIndoorStartSchema>;
+export type CreateStructureInput = z.infer<typeof createStructureSchema>;
+export type UpdateStructureInput = z.infer<typeof updateStructureSchema>;
+export type LayerPatchInput = z.infer<typeof layerPatchSchema>;
+export type ThumbnailPostInput = z.infer<typeof thumbnailPostSchema>;
 
 /** Reject non-zero rotation when US6 is not enabled. */
 export function assertRotationAllowed(rotationDegrees: number | undefined): void {

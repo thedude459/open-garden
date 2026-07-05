@@ -1,4 +1,5 @@
 import { areasOverlap, isPointInBed, isWithinBounds } from "./geometry";
+import { isOrchardTreeCategory, resolveOrchardCanopyRadius } from "./orchard";
 import { resolveIncompatiblePlantIds, resolvePlantSpacing } from "./plant-context";
 import type {
   GardenArea,
@@ -9,7 +10,8 @@ import type {
   ValidationResult,
   ValidationViolation,
 } from "./types";
-import type { PlantProvenance } from "./enums";
+import type { GardenZoneType, PlantProvenance, RotationDegrees } from "./enums";
+import { getPlantById } from "@/lib/catalog/query";
 
 export class AreaGeometryError extends Error {
   readonly name = "AreaGeometryError";
@@ -41,7 +43,34 @@ export interface PlacementCandidateInput {
   plant_provenance: PlantProvenance;
   position_x: number;
   position_y: number;
+  rootstock_id?: string | null;
   exclude_placement_id?: string;
+}
+
+async function effectiveSpacingRadius(
+  garden: GardenDetail,
+  plantId: string,
+  provenance: PlantProvenance,
+  rootstockId: string | null | undefined,
+  userId: string,
+  defaultRadius: number,
+): Promise<{ radius: number | null; requiresRootstock: boolean; isTree: boolean }> {
+  const zoneType = (garden.zone_type ?? "vegetable_garden") as GardenZoneType;
+
+  if (zoneType === "orchard") {
+    const orchard = await resolveOrchardCanopyRadius(
+      plantId,
+      provenance,
+      rootstockId,
+      userId,
+      garden.unit,
+    );
+    if (orchard.isTree) {
+      return orchard;
+    }
+  }
+
+  return { radius: defaultRadius, requiresRootstock: false, isTree: false };
 }
 
 function distance(x1: number, y1: number, x2: number, y2: number): number {
@@ -146,6 +175,25 @@ export async function validatePlacement(
     return { valid: false, violations, warnings: [] };
   }
 
+  const candidateOrchard = await effectiveSpacingRadius(
+    garden,
+    candidate.plant_id,
+    candidate.plant_provenance,
+    candidate.rootstock_id,
+    userId,
+    candidatePlant.spacing_radius,
+  );
+
+  if (candidateOrchard.requiresRootstock) {
+    violations.push({
+      code: "TREE_SPACING",
+      message: `Select a rootstock for ${candidatePlant.common_name} before placing in an orchard plan`,
+    });
+    return { valid: false, violations, warnings: [] };
+  }
+
+  const candidateRadius = candidateOrchard.radius ?? candidatePlant.spacing_radius;
+
   const incompatibleIds = await resolveIncompatiblePlantIds(
     candidate.plant_id,
     candidate.plant_provenance,
@@ -154,7 +202,7 @@ export async function validatePlacement(
   const spacingCache = new Map<string, number | null>();
 
   async function spacingRadiusFor(placement: PlantPlacement): Promise<number | null> {
-    const cacheKey = `${placement.plant.provenance}:${placement.plant.id}`;
+    const cacheKey = `${placement.plant.provenance}:${placement.plant.id}:${placement.rootstock_id ?? ""}`;
     if (spacingCache.has(cacheKey)) {
       return spacingCache.get(cacheKey) ?? null;
     }
@@ -164,7 +212,16 @@ export async function validatePlacement(
       userId,
       garden.unit,
     );
-    const radius = resolved?.spacing_radius ?? null;
+    const baseRadius = resolved?.spacing_radius ?? null;
+    const orchard = await effectiveSpacingRadius(
+      garden,
+      placement.plant.id,
+      placement.plant.provenance,
+      placement.rootstock_id,
+      userId,
+      baseRadius ?? 0,
+    );
+    const radius = orchard.radius ?? baseRadius;
     spacingCache.set(cacheKey, radius);
     return radius;
   }
@@ -174,12 +231,12 @@ export async function validatePlacement(
       continue;
     }
 
-    const otherRadius = placement.spacing_radius || (await spacingRadiusFor(placement));
+    const otherRadius = (await spacingRadiusFor(placement)) ?? placement.spacing_radius;
     if (otherRadius == null) {
       continue;
     }
 
-    const minDistance = Math.max(candidatePlant.spacing_radius, otherRadius);
+    const minDistance = Math.max(candidateRadius, otherRadius);
     const actualDistance = distance(
       candidate.position_x,
       candidate.position_y,
@@ -187,10 +244,21 @@ export async function validatePlacement(
       placement.position_y,
     );
 
+    const zoneType = garden.zone_type ?? "vegetable_garden";
+    let otherIsTree = false;
+    if (zoneType === "orchard" && placement.plant.provenance === "authoritative") {
+      const otherPlant = await getPlantById(placement.plant.id, userId);
+      otherIsTree = otherPlant ? isOrchardTreeCategory(otherPlant.plant_category) : false;
+    }
+    const treeSpacingViolation =
+      zoneType === "orchard" && (candidateOrchard.isTree || otherIsTree);
+
     if (actualDistance < minDistance) {
       violations.push({
-        code: "SPACING",
-        message: `Too close to ${placement.plant.common_name}`,
+        code: treeSpacingViolation ? "TREE_SPACING" : "SPACING",
+        message: treeSpacingViolation
+          ? `Too close to ${placement.plant.common_name} (tree canopy spacing)`
+          : `Too close to ${placement.plant.common_name}`,
         other_placement_id: placement.id,
       });
     }
@@ -279,6 +347,62 @@ export function assertAreasWithinGarden(
     }
   }
 
+  if (violations.length > 0) {
+    throw new AreaGeometryError(violations);
+  }
+}
+
+export interface StructureBounds {
+  id: string;
+  origin_x: number;
+  origin_y: number;
+  length: number;
+  width: number;
+  rotation_degrees: RotationDegrees;
+}
+
+export function validateStructureGeometry(
+  candidate: RectAreaInput,
+  garden: GardenBounds,
+  existingStructures: StructureBounds[],
+  excludeStructureId?: string,
+): ValidationViolation[] {
+  const violations: ValidationViolation[] = [];
+
+  if (!isWithinBounds(candidate, garden)) {
+    violations.push({
+      code: "BOUNDARY",
+      message: "Structure extends outside the garden boundary",
+    });
+  }
+
+  for (const existing of existingStructures) {
+    if (excludeStructureId && existing.id === excludeStructureId) {
+      continue;
+    }
+    if (areasOverlap(candidate, toRect(existing))) {
+      violations.push({
+        code: "OVERLAP",
+        message: "Overlaps with another structure",
+      });
+    }
+  }
+
+  return violations;
+}
+
+export function assertValidStructureGeometry(
+  candidate: RectAreaInput,
+  garden: GardenBounds,
+  existingStructures: StructureBounds[],
+  excludeStructureId?: string,
+): void {
+  const violations = validateStructureGeometry(
+    candidate,
+    garden,
+    existingStructures,
+    excludeStructureId,
+  );
   if (violations.length > 0) {
     throw new AreaGeometryError(violations);
   }

@@ -2,12 +2,18 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { MeasurementUnit } from "@/lib/garden/enums";
+import type { GardenZoneType, MeasurementUnit } from "@/lib/garden/enums";
+import { GARDEN_ZONE_TYPES } from "@/lib/garden/enums";
+import { zoneTypeLabel } from "@/lib/planner/zone-plants";
+import { TemplateGallery } from "@/components/planner/TemplateGallery";
+import type { TemplateSummary } from "@/lib/planner/templates";
 
 export function GardenForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [zoneType, setZoneType] = useState<GardenZoneType>("vegetable_garden");
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateSummary | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,6 +27,8 @@ export function GardenForm() {
       width: Number(form.get("width")),
       unit: String(form.get("unit")) as MeasurementUnit,
       description: String(form.get("description") || "") || undefined,
+      zone_type: selectedTemplate?.zone_type ?? zoneType,
+      template_id: selectedTemplate?.id,
     };
 
     const response = await fetch("/api/gardens", {
@@ -66,6 +74,27 @@ export function GardenForm() {
           </select>
         </label>
       </div>
+      <label className="stack">
+        Growing area type
+        <select
+          className="input"
+          name="zone_type"
+          value={selectedTemplate ? selectedTemplate.zone_type : zoneType}
+          onChange={(event) => setZoneType(event.target.value as GardenZoneType)}
+          disabled={selectedTemplate != null}
+        >
+          {GARDEN_ZONE_TYPES.map((option) => (
+            <option key={option} value={option}>
+              {zoneTypeLabel(option)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <TemplateGallery
+        zoneType={zoneType}
+        selectedTemplateId={selectedTemplate?.id ?? null}
+        onSelectTemplate={setSelectedTemplate}
+      />
       <label className="stack">
         Description (optional)
         <textarea className="input" name="description" rows={3} />

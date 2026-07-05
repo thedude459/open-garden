@@ -15,6 +15,13 @@
       "when": 1781896585945,
       "tag": "0001_careless_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783259765562,
+      "tag": "0002_thick_sandman",
+      "breakpoints": true
     }
   ]
 }
