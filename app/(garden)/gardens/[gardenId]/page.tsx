@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireSession } from "@/lib/auth/session";
 import { getGardenDetail } from "@/lib/garden/service";
-import { LayoutEditor } from "@/components/garden/LayoutEditor";
+import { PlannerShell } from "@/components/planner/PlannerShell";
 
 interface GardenDetailPageProps {
   params: Promise<{ gardenId: string }>;
@@ -35,7 +35,7 @@ export default async function GardenDetailPage({ params }: GardenDetailPageProps
           All gardens
         </Link>
       </div>
-      <LayoutEditor initialGarden={garden} />
+      <PlannerShell initialGarden={garden} />
     </div>
   );
 }

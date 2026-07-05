@@ -66,8 +66,26 @@ export const ROTATION_UI_ENABLED = false;
 export const PLANT_PROVENANCES = ["authoritative", "provisional"] as const;
 export type PlantProvenance = (typeof PLANT_PROVENANCES)[number];
 
-export const VALIDATION_VIOLATION_CODES = ["SPACING", "INCOMPATIBLE", "BOUNDARY", "OVERLAP"] as const;
+export const VALIDATION_VIOLATION_CODES = [
+  "SPACING",
+  "INCOMPATIBLE",
+  "BOUNDARY",
+  "OVERLAP",
+  "TREE_SPACING",
+] as const;
 export type ValidationViolationCode = (typeof VALIDATION_VIOLATION_CODES)[number];
 
-export const VALIDATION_WARNING_CODES = ["CLIMATE_DATE", "CROP_ROTATION"] as const;
+export const VALIDATION_WARNING_CODES = [
+  "CLIMATE_DATE",
+  "CROP_ROTATION",
+  "ORCHARD_COMPANION",
+  "ORCHARD_GUILD",
+] as const;
 export type ValidationWarningCode = (typeof VALIDATION_WARNING_CODES)[number];
+
+export const GARDEN_ZONE_TYPES = [
+  "vegetable_garden",
+  "orchard",
+  "container_patio",
+] as const;
+export type GardenZoneType = (typeof GARDEN_ZONE_TYPES)[number];

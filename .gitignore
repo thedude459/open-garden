@@ -33,6 +33,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# planner generated thumbnails
+public/planner/thumbnails/
+
 # drizzle
 drizzle/meta/
 
