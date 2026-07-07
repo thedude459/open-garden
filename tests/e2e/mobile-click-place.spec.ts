@@ -1,20 +1,25 @@
-import { test, expect } from "@playwright/test";
+import {
+  test,
+  expect,
+  registerAndLogin,
+  createGardenWithBed,
+  armPlantInLibrary,
+  placeArmedPlantOnCanvas,
+} from "./fixtures";
 
 test.describe("mobile click-to-place", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test("mobile planner requires login", async ({ page }) => {
-    await page.goto("/gardens");
-    await expect(page).toHaveURL(/\/login/);
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile-chrome", "Mobile project only");
+    await registerAndLogin(page);
   });
 
   test("tap plant then tap bed places with auto-save", async ({ page }) => {
-    test.skip(true, "Requires seeded auth fixture and garden with beds");
-    await page.goto("/gardens/test-garden-id");
+    const { garden } = await createGardenWithBed(page);
+    await page.goto(`/gardens/${garden.id}`);
     await page.getByRole("button", { name: "Add plants" }).click();
-    await page.getByPlaceholder("Search plants…").fill("basil");
-    await page.getByRole("button", { name: /basil/i }).click();
-    await page.locator(".visual-canvas").click({ position: { x: 100, y: 100 } });
-    await expect(page.getByRole("status")).toContainText(/added/i);
+    await armPlantInLibrary(page, "Basil");
+    await placeArmedPlantOnCanvas(page, garden.length, garden.width, { x: 5, y: 5 });
+    await expect(page.getByRole("status")).toContainText(/basil/i);
+    await expect(page.locator(".plant-sprite").first()).toBeVisible();
   });
 });
