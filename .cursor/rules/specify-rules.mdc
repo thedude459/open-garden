@@ -5,10 +5,10 @@ alwaysApply: true
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at
-`specs/003-visual-planner-ui/plan.md` and supporting artifacts:
+`specs/004-garden-drag-drop-ux/plan.md` and supporting artifacts:
 
-- `specs/003-visual-planner-ui/research.md`
-- `specs/003-visual-planner-ui/data-model.md`
-- `specs/003-visual-planner-ui/quickstart.md`
-- `specs/003-visual-planner-ui/contracts/`
+- `specs/004-garden-drag-drop-ux/research.md`
+- `specs/004-garden-drag-drop-ux/data-model.md`
+- `specs/004-garden-drag-drop-ux/quickstart.md`
+- `specs/004-garden-drag-drop-ux/contracts/`
 <!-- SPECKIT END -->

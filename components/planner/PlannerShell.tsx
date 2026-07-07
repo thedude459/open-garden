@@ -4,7 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { VisualGardenDetail } from "@/lib/planner/types";
 import type { ValidationViolation, ValidationWarning, GardenDetail } from "@/lib/garden/types";
 import { isPointInBed } from "@/lib/garden/geometry";
+import { EMPTY_CANVAS_HINT } from "@/lib/garden/messages";
 import { uploadGardenThumbnail } from "@/lib/planner/thumbnail";
+import {
+  INITIAL_PLACEMENT_MODE,
+  armForPlant,
+  armForTransplant,
+  isArmed,
+} from "@/lib/planner/placement-mode";
+import type { PlacementModeState } from "@/lib/planner/types";
+import { useToast } from "@/components/ui/ToastProvider";
 import { AreaEditor, type AreaDraft } from "@/components/garden/AreaEditor";
 import { IndoorStartsPanel } from "@/components/garden/IndoorStartsPanel";
 import { GardenSettingsPanel } from "@/components/garden/GardenSettingsPanel";
@@ -66,12 +75,11 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     valid: boolean;
   } | null>(null);
   const [conflictGarden, setConflictGarden] = useState<VisualGardenDetail | null>(null);
+  const [placementMode, setPlacementMode] = useState<PlacementModeState>(INITIAL_PLACEMENT_MODE);
   const [transplantStartId, setTransplantStartId] = useState<string | null>(null);
-  const [transplantPosition, setTransplantPosition] = useState<{ x: number; y: number } | null>(
-    null,
-  );
+  const [transplantDate, setTransplantDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dropRootstockId, setDropRootstockId] = useState<string | null>(null);
-  const [pendingPlantId, setPendingPlantId] = useState<string | null>(null);
+  const [highlightedBedId, setHighlightedBedId] = useState<string | null>(null);
   const [leftPanelTab, setLeftPanelTab] = useState<"plants" | "structures">("plants");
   const [selectedStructureId, setSelectedStructureId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -81,6 +89,8 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     () => new Date().toISOString().slice(0, 10),
   );
   const canvasSvgRef = useRef<SVGSVGElement>(null);
+  const lastSavedGardenRef = useRef(initialGarden);
+  const { success: toastSuccess, error: toastError } = useToast();
   const { isMobile } = usePlannerViewport();
   const reducedMotion = usePrefersReducedMotion();
 
@@ -109,15 +119,33 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
   }, [selectedPlacement]);
 
   useEffect(() => {
+    lastSavedGardenRef.current = garden;
+  }, [garden]);
+
+  const handleDisarm = useCallback(() => {
+    setPlacementMode(INITIAL_PLACEMENT_MODE);
+    setTransplantStartId(null);
+    setDropPreview(null);
+    setHighlightedBedId(null);
+    setViolations([]);
+    setWarnings([]);
+  }, []);
+
+  useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        if (isArmed(placementMode) || transplantStartId) {
+          handleDisarm();
+          setTransplantStartId(null);
+          return;
+        }
         setSelectedPlacementId(null);
         setSelectedStructureId(null);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [placementMode, transplantStartId, handleDisarm]);
 
   useEffect(() => {
     if (!invalidDrop || reducedMotion) {
@@ -136,6 +164,16 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     }
     return "";
   }, [selectedPlacement, selectedStructure]);
+
+  const armedAnnouncement = useMemo(() => {
+    if (placementMode.armed_payload && placementMode.armed_context === "transplant") {
+      return `Select a location on a bed to transplant ${placementMode.armed_payload.common_name}`;
+    }
+    if (placementMode.armed_payload) {
+      return `Select a location on a bed for ${placementMode.armed_payload.common_name}`;
+    }
+    return selectedItemLabel;
+  }, [placementMode, selectedItemLabel]);
 
   async function handlePlantedOnChange(value: string) {
     setPlantedOn(value);
@@ -173,6 +211,7 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
           visual_version: Math.max(1, current.visual_version),
           version: current.version + 1,
         }));
+        toastSuccess("Garden saved");
       }
     } finally {
       setSaving(false);
@@ -190,8 +229,9 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     plantId: string,
     provenance: "authoritative" | "provisional",
     position: { x: number; y: number },
-    plantedOn: string,
+    plantedOnDate: string,
     rootstockId?: string | null,
+    plantingContext: "direct_seed" | "transplant" = "direct_seed",
   ) {
     const response = await fetch(`/api/gardens/${garden.id}/validate-placement`, {
       method: "POST",
@@ -202,8 +242,8 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
         plant_provenance: provenance,
         position_x: position.x,
         position_y: position.y,
-        planted_on: plantedOn,
-        planting_context: "direct_seed",
+        planted_on: plantedOnDate,
+        planting_context: plantingContext,
         rootstock_id: rootstockId ?? null,
       }),
     });
@@ -218,11 +258,134 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     };
   }
 
+  async function placeAtPoint(
+    payload: DragPlantPayload,
+    position: { x: number; y: number },
+    options?: {
+      context?: "direct_seed" | "transplant";
+      transplantStartId?: string;
+      plantedOnDate?: string;
+      successMessage?: string;
+    },
+  ): Promise<boolean> {
+    const context = options?.context ?? "direct_seed";
+    const bed = findBedAtPoint(garden, position.x, position.y);
+    if (!bed) {
+      setViolations([{ code: "BOUNDARY", message: "Drop inside a bed" }]);
+      setDropPreview({ ...position, spacing_radius: payload.spacing_radius, valid: false });
+      triggerInvalidDrop();
+      return false;
+    }
+
+    const plantedOnDate = options?.plantedOnDate ?? new Date().toISOString().slice(0, 10);
+    const result = await validateAtPoint(
+      bed.id,
+      payload.plant_id,
+      payload.plant_provenance,
+      position,
+      plantedOnDate,
+      payload.rootstock_id ?? dropRootstockId,
+      context,
+    );
+    setViolations(result.violations);
+    setWarnings(result.warnings);
+    setDropPreview({
+      x: position.x,
+      y: position.y,
+      spacing_radius: payload.spacing_radius,
+      valid: result.valid,
+    });
+    setHighlightedBedId(bed.id);
+
+    if (!result.valid) {
+      triggerInvalidDrop();
+      return false;
+    }
+
+    const snapshot = lastSavedGardenRef.current;
+
+    if (context === "transplant" && options?.transplantStartId) {
+      const response = await fetch(
+        `/api/gardens/${garden.id}/indoor-starts/${options.transplantStartId}/transplant`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            expected_version: garden.version,
+            position_x: position.x,
+            position_y: position.y,
+            planted_on: plantedOnDate,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        setGarden(snapshot);
+        if (body?.violations?.length) {
+          setViolations(body.violations);
+        } else if (body?.error === "conflict" && body.current) {
+          setConflictGarden(body.current as VisualGardenDetail);
+        }
+        toastError("Could not transplant — changes reverted");
+        return false;
+      }
+
+      const body = await response.json();
+      setGarden(body.garden as VisualGardenDetail);
+      setWarnings(body.warnings ?? []);
+      setViolations([]);
+      toastSuccess(options?.successMessage ?? `${payload.common_name} transplanted`);
+      handleDisarm();
+      setTransplantStartId(null);
+      setDropPreview(null);
+      setHighlightedBedId(null);
+      return true;
+    }
+
+    const response = await fetch(`/api/gardens/${garden.id}/placements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expected_version: garden.version,
+        bed_area_id: bed.id,
+        plant_id: payload.plant_id,
+        plant_provenance: payload.plant_provenance,
+        position_x: position.x,
+        position_y: position.y,
+        planted_on: plantedOnDate,
+        rootstock_id: payload.rootstock_id ?? dropRootstockId ?? null,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      setGarden(snapshot);
+      if (body?.violations?.length) {
+        setViolations(body.violations);
+      } else if (body?.error === "conflict" && body.current) {
+        setConflictGarden(body.current as VisualGardenDetail);
+      }
+      toastError("Could not save placement — changes reverted");
+      return false;
+    }
+
+    const updated = (await response.json()) as VisualGardenDetail;
+    setGarden(updated);
+    setViolations([]);
+    setWarnings([]);
+    setDropPreview(null);
+    setHighlightedBedId(null);
+    toastSuccess(options?.successMessage ?? `${payload.common_name} added`);
+    handleDisarm();
+    return true;
+  }
+
   async function placePlant(
     bedAreaId: string,
     payload: DragPlantPayload,
     position: { x: number; y: number },
-    plantedOn: string,
+    plantedOnDate: string,
   ) {
     const response = await fetch(`/api/gardens/${garden.id}/placements`, {
       method: "POST",
@@ -234,7 +397,7 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
         plant_provenance: payload.plant_provenance,
         position_x: position.x,
         position_y: position.y,
-        planted_on: plantedOn,
+        planted_on: plantedOnDate,
         rootstock_id: payload.rootstock_id ?? null,
       }),
     });
@@ -246,7 +409,7 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
       } else if (body?.error === "conflict" && body.current) {
         setConflictGarden(body.current as VisualGardenDetail);
       }
-      return;
+      return false;
     }
 
     const updated = (await response.json()) as VisualGardenDetail;
@@ -254,40 +417,65 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     setViolations([]);
     setWarnings([]);
     setDropPreview(null);
+    return true;
   }
 
-  async function handleExternalPlantDrop(payload: DragPlantPayload, position: { x: number; y: number }) {
-    const bed = findBedAtPoint(garden, position.x, position.y);
-    if (!bed) {
-      setViolations([{ code: "BOUNDARY", message: "Drop inside a bed" }]);
-      setDropPreview({ ...position, spacing_radius: payload.spacing_radius, valid: false });
-      triggerInvalidDrop();
+  function handleGardenPointerMove(position: { x: number; y: number } | null) {
+    if (!position) {
+      setHighlightedBedId(null);
+      if (!isArmed(placementMode)) {
+        setDropPreview(null);
+      }
       return;
     }
 
-    const plantedOn = new Date().toISOString().slice(0, 10);
-    const result = await validateAtPoint(
-      bed.id,
-      payload.plant_id,
-      payload.plant_provenance,
-      position,
-      plantedOn,
-      payload.rootstock_id ?? dropRootstockId,
-    );
-    setViolations(result.violations);
-    setWarnings(result.warnings);
+    const payload = placementMode.armed_payload;
+    if (!payload) {
+      const bed = findBedAtPoint(garden, position.x, position.y);
+      setHighlightedBedId(bed?.id ?? null);
+      return;
+    }
+
+    const bed = findBedAtPoint(garden, position.x, position.y);
+    setHighlightedBedId(bed?.id ?? null);
     setDropPreview({
       x: position.x,
       y: position.y,
       spacing_radius: payload.spacing_radius,
-      valid: result.valid,
+      valid: bed != null,
     });
+  }
 
-    if (result.valid) {
-      await placePlant(bed.id, payload, position, plantedOn);
-    } else {
-      triggerInvalidDrop();
+  async function handleGardenClick(position: { x: number; y: number }) {
+    if (!isArmed(placementMode) || !placementMode.armed_payload) {
+      return;
     }
+
+    await placeAtPoint(placementMode.armed_payload, position, {
+      context: placementMode.armed_context ?? "direct_seed",
+      transplantStartId: placementMode.transplant_start_id ?? undefined,
+      plantedOnDate:
+        placementMode.armed_context === "transplant" ? transplantDate : undefined,
+    });
+  }
+
+  function handlePlantArm(payload: DragPlantPayload) {
+    setPlacementMode(armForPlant(INITIAL_PLACEMENT_MODE, payload));
+    setTransplantStartId(null);
+    setSelectedPlacementId(null);
+    setSelectedStructureId(null);
+  }
+
+  async function handleExternalPlantDrop(payload: DragPlantPayload, position: { x: number; y: number }) {
+    if (isArmed(placementMode) && placementMode.armed_context === "transplant") {
+      await placeAtPoint(payload, position, {
+        context: "transplant",
+        transplantStartId: placementMode.transplant_start_id ?? undefined,
+        plantedOnDate: transplantDate,
+      });
+      return;
+    }
+    await placeAtPoint(payload, position);
   }
 
   async function handlePlacementMove(placementId: string, position: { x: number; y: number }) {
@@ -316,9 +504,13 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
     setWarnings(result.warnings);
 
     if (!result.valid || !bed) {
+      if (!bed) {
+        triggerInvalidDrop();
+      }
       return;
     }
 
+    const snapshot = lastSavedGardenRef.current;
     const deleteResponse = await fetch(
       `/api/gardens/${garden.id}/placements/${placementId}`,
       {
@@ -328,12 +520,14 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
       },
     );
     if (!deleteResponse.ok) {
+      setGarden(snapshot);
+      toastError("Could not move plant — changes reverted");
       return;
     }
     const afterDelete = (await deleteResponse.json()) as VisualGardenDetail;
     setGarden(afterDelete);
 
-    await placePlant(
+    const moved = await placePlant(
       bed.id,
       {
         plant_id: placement.plant.id,
@@ -346,6 +540,12 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
       position,
       placement.planted_on,
     );
+    if (moved) {
+      toastSuccess("Plant moved");
+    } else {
+      setGarden(snapshot);
+      toastError("Could not move plant — changes reverted");
+    }
   }
 
   async function handleExternalStructureDrop(
@@ -519,7 +719,7 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
   return (
     <div className="planner-shell stack">
       <div className="sr-only" aria-live="polite">
-        {selectedItemLabel}
+        {armedAnnouncement}
       </div>
       {isMobile ? (
         <MobilePlannerView
@@ -531,11 +731,20 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
           violations={violations}
           warnings={warnings}
           plantedOn={plantedOn}
+          dropRootstockId={dropRootstockId}
+          placementMode={placementMode}
+          highlightedBedId={highlightedBedId}
+          dropPreview={dropPreview}
           onSelectPlacement={setSelectedPlacementId}
           onSelectStructure={setSelectedStructureId}
           onPlantedOnChange={handlePlantedOnChange}
           onDeletePlacement={handleDeletePlacement}
           onDeleteStructure={handleDeleteStructure}
+          onPlantArm={handlePlantArm}
+          onGardenClick={handleGardenClick}
+          onGardenPointerMove={handleGardenPointerMove}
+          onCancelArmed={handleDisarm}
+          onDropRootstockChange={setDropRootstockId}
         />
       ) : (
         <>
@@ -549,7 +758,7 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
             onSave={() => void handleSavePlan()}
           />
           <div className="planner-layout row">
-        <div className="planner-left-panel stack">
+        <div className="planner-left-panel stack" role="region" aria-label="Plant library">
           <div className="row">
             <button
               type="button"
@@ -570,12 +779,14 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
             <PlantLibrary
               zoneType={garden.zone_type}
               dropRootstockId={dropRootstockId}
-              onPlantSelect={(plant) => setPendingPlantId(plant.plant_id)}
+              selectedPlantId={placementMode.armed_payload?.plant_id ?? null}
+              onPlantSelect={handlePlantArm}
             />
           ) : (
             <StructureLibrary zoneType={garden.zone_type} />
           )}
         </div>
+        <div role="region" aria-label="Garden canvas">
         <VisualCanvas
           canvasSvgRef={canvasSvgRef}
           zoom={zoom}
@@ -583,6 +794,9 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
           dragEnabled
           reducedMotion={reducedMotion}
           invalidDrop={invalidDrop}
+          armed={isArmed(placementMode)}
+          highlightedBedId={highlightedBedId}
+          showEmptyBedHints
           gardenLength={garden.length}
           gardenWidth={garden.width}
           unit={garden.unit}
@@ -594,20 +808,27 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
           dropPreview={dropPreview}
           onSelectPlacement={setSelectedPlacementId}
           onSelectStructure={setSelectedStructureId}
+          onGardenClick={handleGardenClick}
+          onGardenPointerMove={handleGardenPointerMove}
           onExternalPlantDrop={handleExternalPlantDrop}
           onExternalStructureDrop={handleExternalStructureDrop}
           onPlacementMove={handlePlacementMove}
           onStructureMove={handleStructureMove}
           onStructureResize={handleStructureResize}
         />
-        <div className="planner-right-panel stack">
+        </div>
+        <div className="planner-right-panel stack" role="region" aria-label="Item details">
           <PropertyPanel
             zoneType={garden.zone_type}
+            areas={garden.areas}
+            unit={garden.unit}
             selectedPlacement={selectedPlacement}
             selectedStructure={selectedStructure}
-            pendingPlantId={pendingPlantId}
+            armedPayload={placementMode.armed_payload}
+            armedContext={placementMode.armed_context}
             dropRootstockId={dropRootstockId}
             onDropRootstockChange={setDropRootstockId}
+            onCancelArmed={handleDisarm}
             violations={violations}
             warnings={warnings}
             plantedOn={plantedOn}
@@ -652,19 +873,28 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
         <IndoorStartsPanel
           garden={garden}
           transplantStartId={transplantStartId}
+          transplantDate={transplantDate}
+          onTransplantDateChange={setTransplantDate}
           onTransplantStartSelect={(startId) => {
             setTransplantStartId(startId);
-            setTransplantPosition(null);
-            if (startId) {
-              const start = garden.indoor_starts.find((item) => item.id === startId);
-              if (start?.target_bed_area_id) {
-                setSelectedBedId(start.target_bed_area_id);
-              }
+            if (!startId) {
+              handleDisarm();
+              return;
+            }
+            const start = garden.indoor_starts.find((item) => item.id === startId);
+            if (start?.target_bed_area_id) {
+              setSelectedBedId(start.target_bed_area_id);
+              setPlacementMode(
+                armForTransplant(INITIAL_PLACEMENT_MODE, startId, {
+                  plant_id: start.plant.id,
+                  plant_provenance: start.plant.provenance,
+                  common_name: start.plant.common_name,
+                  illustration_url: "/planner/categories/default.svg",
+                  spacing_radius: 0.75,
+                }),
+              );
             }
           }}
-          transplantPosition={transplantPosition}
-          onViolationsChange={setViolations}
-          onWarningsChange={setWarnings}
           onGardenUpdate={handleGardenUpdate}
           onConflict={(current) => setConflictGarden(current as VisualGardenDetail)}
         />
@@ -710,11 +940,7 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
       garden.placements.length === 0 &&
       garden.structures.length === 0 ? (
         <p className="field-label planner-empty-hint">
-          {garden.zone_type === "container_patio"
-            ? "Add containers from the Structures tab or choose a template when creating a new plan."
-            : garden.zone_type === "orchard"
-              ? "Add beds for tree rows, then drag fruit trees from the plant library."
-              : "Add beds with the area editor below, drag plants from the library, or start from a template next time."}
+          {EMPTY_CANVAS_HINT}
         </p>
       ) : null}
     </div>

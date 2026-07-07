@@ -26,6 +26,7 @@ export function LayoutEditor({ initialGarden }: LayoutEditorProps) {
   );
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [transplantStartId, setTransplantStartId] = useState<string | null>(null);
+  const [transplantDate, setTransplantDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [transplantPosition, setTransplantPosition] = useState<{ x: number; y: number } | null>(
     null,
   );
@@ -195,6 +196,8 @@ export function LayoutEditor({ initialGarden }: LayoutEditorProps) {
         <IndoorStartsPanel
           garden={garden}
           transplantStartId={transplantStartId}
+          transplantDate={transplantDate}
+          onTransplantDateChange={setTransplantDate}
           onTransplantStartSelect={(startId) => {
             setTransplantStartId(startId);
             setTransplantPosition(null);
@@ -205,9 +208,6 @@ export function LayoutEditor({ initialGarden }: LayoutEditorProps) {
               }
             }
           }}
-          transplantPosition={transplantPosition}
-          onViolationsChange={setViolations}
-          onWarningsChange={setWarnings}
           onGardenUpdate={setGarden}
           onConflict={handleConflict}
         />

@@ -1,5 +1,6 @@
 "use client";
 
+import { formatViolation, formatWarning } from "@/lib/garden/messages";
 import type { ValidationViolation, ValidationWarning } from "@/lib/garden/types";
 
 interface ValidationFeedbackProps {
@@ -19,21 +20,17 @@ export function ValidationFeedback({ violations, warnings = [] }: ValidationFeed
           <h3>Cannot place plant</h3>
           <ul>
             {violations.map((violation, index) => (
-              <li key={`${violation.code}-${index}`}>
-                <strong>{violation.code}</strong>: {violation.message}
-              </li>
+              <li key={`${violation.code}-${index}`}>{formatViolation(violation)}</li>
             ))}
           </ul>
         </div>
       ) : null}
       {warnings.length > 0 ? (
-        <div className="card stack validation-warnings">
+        <div className="card stack validation-warnings" role="status">
           <h3>Advisory warnings</h3>
           <ul>
             {warnings.map((warning, index) => (
-              <li key={`${warning.code}-${index}`}>
-                <strong>{warning.code}</strong>: {warning.message}
-              </li>
+              <li key={`${warning.code}-${index}`}>{formatWarning(warning)}</li>
             ))}
           </ul>
         </div>
