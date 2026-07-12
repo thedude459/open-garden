@@ -5,10 +5,10 @@ alwaysApply: true
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at
-`specs/003-visual-planner-ui/plan.md` and supporting artifacts:
+`specs/005-e2e-test-coverage/plan.md` and supporting artifacts:
 
-- `specs/003-visual-planner-ui/research.md`
-- `specs/003-visual-planner-ui/data-model.md`
-- `specs/003-visual-planner-ui/quickstart.md`
-- `specs/003-visual-planner-ui/contracts/`
+- `specs/005-e2e-test-coverage/research.md`
+- `specs/005-e2e-test-coverage/data-model.md`
+- `specs/005-e2e-test-coverage/quickstart.md`
+- `specs/005-e2e-test-coverage/contracts/`
 <!-- SPECKIT END -->

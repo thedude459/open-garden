@@ -50,6 +50,8 @@ export interface VisualCanvasProps {
   onSelectPlacement?: (placementId: string | null) => void;
   onSelectStructure?: (structureId: string | null) => void;
   onGardenDrop?: (position: { x: number; y: number }) => void;
+  onGardenClick?: (position: { x: number; y: number }) => void;
+  onGardenPointerMove?: (position: { x: number; y: number } | null) => void;
   onPlacementMove?: (placementId: string, position: { x: number; y: number }) => void;
   onStructureMove?: (structureId: string, origin: { x: number; y: number }) => void;
   onStructureResize?: (
@@ -67,6 +69,9 @@ export interface VisualCanvasProps {
   canvasSvgRef?: RefObject<SVGSVGElement | null>;
   reducedMotion?: boolean;
   invalidDrop?: boolean;
+  armed?: boolean;
+  highlightedBedId?: string | null;
+  showEmptyBedHints?: boolean;
 }
 
 export function VisualCanvas({
@@ -82,6 +87,8 @@ export function VisualCanvas({
   onSelectPlacement,
   onSelectStructure,
   onGardenDrop,
+  onGardenClick,
+  onGardenPointerMove,
   onPlacementMove,
   onStructureMove,
   onStructureResize,
@@ -93,6 +100,9 @@ export function VisualCanvas({
   canvasSvgRef,
   reducedMotion = false,
   invalidDrop = false,
+  armed = false,
+  highlightedBedId = null,
+  showEmptyBedHints = false,
 }: VisualCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [internalZoom, setInternalZoom] = useState(1);
@@ -152,6 +162,10 @@ export function VisualCanvas({
     }
     event.preventDefault();
     event.dataTransfer.dropEffect = "copy";
+    const point = resolveGardenPoint(event.clientX, event.clientY);
+    if (point) {
+      onGardenPointerMove?.(point);
+    }
   }
 
   function handleDrop(event: React.DragEvent<SVGSVGElement>) {
@@ -243,7 +257,7 @@ export function VisualCanvas({
 
   return (
     <div
-      className={`visual-canvas-wrap card${invalidDrop && !reducedMotion ? " drop-shake" : ""}`}
+      className={`visual-canvas-wrap card${invalidDrop && !reducedMotion ? " drop-shake" : ""}${armed ? " armed" : ""}`}
       style={{ background: "var(--planner-canvas-bg)", overflow: "hidden" }}
       onWheel={handleWheel}
     >
@@ -261,10 +275,23 @@ export function VisualCanvas({
           height={svgHeight}
           role="img"
           aria-label={`Visual garden ${gardenLength} by ${gardenWidth} ${unit}`}
-          onClick={() => {
+          onClick={(event) => {
+            const point = resolveGardenPoint(event.clientX, event.clientY);
+            if (armed && point && onGardenClick) {
+              event.stopPropagation();
+              onGardenClick(point);
+              return;
+            }
             onSelectPlacement?.(null);
             onSelectStructure?.(null);
           }}
+          onPointerMove={(event) => {
+            if (!armed || !onGardenPointerMove) {
+              return;
+            }
+            onGardenPointerMove(resolveGardenPoint(event.clientX, event.clientY));
+          }}
+          onPointerLeave={() => onGardenPointerMove?.(null)}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
@@ -280,7 +307,11 @@ export function VisualCanvas({
           {areas.map((area) => (
             <rect
               key={area.id}
-              className={area.area_type === "bed" ? "garden-area-bed" : "garden-area-path"}
+              className={
+                area.area_type === "bed"
+                  ? `garden-area-bed${highlightedBedId === area.id ? " highlighted" : ""}`
+                  : "garden-area-path"
+              }
               x={toSvgX(area.origin_x, scale)}
               y={toSvgY(area.origin_y, scale)}
               width={area.length * scale}
@@ -289,6 +320,29 @@ export function VisualCanvas({
               stroke="var(--border)"
             />
           ))}
+          {showEmptyBedHints
+            ? areas
+                .filter((area) => area.area_type === "bed")
+                .map((bed) => {
+                  const occupied = placements.some((placement) => placement.bed_area_id === bed.id);
+                  if (occupied) {
+                    return null;
+                  }
+                  return (
+                    <text
+                      key={`hint-${bed.id}`}
+                      className="bed-empty-hint"
+                      x={toSvgX(bed.origin_x + bed.length / 2, scale)}
+                      y={toSvgY(bed.origin_y + bed.width / 2, scale)}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={Math.max(10, 12 / zoom)}
+                    >
+                      Drag or tap to add plants
+                    </text>
+                  );
+                })
+            : null}
           {renderables.map((item) =>
             item.kind === "structure" ? (
               <StructureSprite

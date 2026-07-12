@@ -1,21 +1,41 @@
 :root {
-  --bg: #f6f3ec;
-  --surface: #ffffff;
-  --text: #1f2a1f;
-  --muted: #5c6b5c;
-  --accent: #2f6b3a;
-  --accent-soft: #e4efe6;
-  --border: #d8dfd4;
-  --warn: #8a5a00;
+  /* Semantic design tokens (004) */
+  --color-bg: #f6f3ec;
+  --color-surface: #ffffff;
+  --color-on-surface: #1a261a;
+  --color-muted: #4a5c4a;
+  --color-primary: #2d5a36;
+  --color-on-primary: #ffffff;
+  --color-secondary: #dce8de;
+  --color-on-secondary: #1a3d22;
+  --color-border: #c5cfc5;
+  --color-focus-ring: #2563eb;
+  --color-success: #2d6a3e;
+  --color-error: #9b2c2c;
+  --color-warning: #7a4f00;
+  --color-success-bg: #e8f3ea;
+  --color-error-bg: #fdeaea;
+  --color-warning-bg: #fff6e6;
+
+  /* Legacy aliases */
+  --bg: var(--color-bg);
+  --surface: var(--color-surface);
+  --text: var(--color-on-surface);
+  --muted: var(--color-muted);
+  --accent: var(--color-primary);
+  --accent-soft: var(--color-secondary);
+  --border: var(--color-border);
+  --warn: var(--color-warning);
   --gap: #9a6b2f;
 
-  /* Visual planner (003) — earthy palette per planner-ui.md */
-  --planner-toolbar-bg: #3d5a3e;
-  --planner-panel-bg: #faf6ef;
+  /* Visual planner (003) — mapped to semantic tokens */
+  --planner-toolbar-bg: var(--color-primary);
+  --planner-panel-bg: var(--color-surface);
   --planner-canvas-bg: #e8e0d0;
-  --planner-accent-green: #4a7c59;
+  --planner-accent-green: var(--color-primary);
   --planner-bed-fill: #c4a574;
   --planner-path-fill: #d4cbb8;
+  --planner-tree-canopy: #6b8e4e;
 }
 
 * {
@@ -33,6 +53,11 @@ body {
 
 a {
   color: var(--accent);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 button,
@@ -73,24 +98,40 @@ select {
 }
 
 .btn {
-  background: var(--accent);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
   border: none;
   border-radius: 8px;
   padding: 0.6rem 1rem;
   cursor: pointer;
 }
 
+.btn:hover {
+  filter: brightness(0.95);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .btn.secondary {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--color-secondary);
+  color: var(--color-on-secondary);
 }
 
 .input {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
+}
+
+.input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }
 
 .badge {
@@ -417,8 +458,17 @@ select {
 }
 
 .planner-toolbar .btn.secondary {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--color-on-primary);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.planner-toolbar .btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.planner-toolbar .btn.secondary.active {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .planner-plan-name {
@@ -452,6 +502,11 @@ select {
   border-top: 1px solid var(--border);
   padding: 0.75rem;
   max-height: 45vh;
+  overflow: auto;
+}
+
+.mobile-plant-library-sheet {
+  max-height: 40vh;
   overflow: auto;
 }
 
@@ -508,4 +563,93 @@ select {
   .drop-shake {
     animation: none;
   }
+}
+
+.visual-canvas-wrap.armed {
+  cursor: crosshair;
+}
+
+.visual-canvas-wrap.armed .visual-canvas {
+  cursor: crosshair;
+}
+
+.garden-area-bed.highlighted {
+  stroke: var(--color-focus-ring);
+  stroke-width: 3;
+}
+
+.bed-empty-hint {
+  fill: var(--color-muted);
+  pointer-events: none;
+  user-select: none;
+}
+
+.planner-plant-card.selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.placement-hint {
+  padding: 0.5rem 0.75rem;
+  background: var(--color-secondary);
+  border-radius: 8px;
+  color: var(--color-on-secondary);
+  font-size: 0.9rem;
+}
+
+.toast-stack {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 100;
+  max-width: min(90vw, 420px);
+  width: 100%;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-weight: 500;
+}
+
+.toast-success {
+  background: var(--color-success-bg);
+  color: var(--color-on-surface);
+  border-color: var(--color-success);
+}
+
+.toast-error {
+  background: var(--color-error-bg);
+  color: var(--color-on-surface);
+  border-color: var(--color-error);
+}
+
+.toast-info {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+}
+
+.toast-dismiss {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  padding: 0 0.25rem;
+}
+
+.toast-dismiss:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
 }

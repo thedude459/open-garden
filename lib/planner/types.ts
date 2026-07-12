@@ -91,3 +91,31 @@ export interface CanvasLayerItem {
   z_index: number;
   locked: boolean;
 }
+
+export type PlacementModeKind = "idle" | "armed" | "dragging";
+export type ArmedContext = "direct_seed" | "transplant" | null;
+export type ToastVariant = "success" | "error" | "info";
+
+export interface ArmedPlantPayload {
+  plant_id: string;
+  plant_provenance: "authoritative" | "provisional";
+  common_name: string;
+  illustration_url: string;
+  spacing_radius: number;
+  rootstock_id?: string | null;
+}
+
+export interface PlacementModeState {
+  mode: PlacementModeKind;
+  armed_payload: ArmedPlantPayload | null;
+  armed_context: ArmedContext;
+  transplant_start_id: string | null;
+}
+
+export interface ToastNotification {
+  id: string;
+  variant: ToastVariant;
+  message: string;
+  created_at: number;
+  duration_ms: number;
+}
