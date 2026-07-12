@@ -370,10 +370,10 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
       return false;
     }
 
-    const updated = (await response.json()) as VisualGardenDetail;
-    setGarden(updated);
+    const body = await response.json();
+    setGarden(body.garden as VisualGardenDetail);
     setViolations([]);
-    setWarnings([]);
+    setWarnings(body.warnings ?? []);
     setDropPreview(null);
     setHighlightedBedId(null);
     toastSuccess(options?.successMessage ?? `${payload.common_name} added`);
@@ -412,10 +412,10 @@ export function PlannerShell({ initialGarden }: PlannerShellProps) {
       return false;
     }
 
-    const updated = (await response.json()) as VisualGardenDetail;
-    setGarden(updated);
+    const body = await response.json();
+    setGarden(body.garden as VisualGardenDetail);
     setViolations([]);
-    setWarnings([]);
+    setWarnings(body.warnings ?? []);
     setDropPreview(null);
     return true;
   }
