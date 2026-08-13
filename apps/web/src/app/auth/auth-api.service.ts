@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
-const API = 'http://localhost:3000/api';
+const API = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {

@@ -9,7 +9,7 @@ import type {
 } from '@open-garden/shared-types';
 import { PlantCatalogCacheService } from './plant-catalog-cache.service';
 
-const API = 'http://localhost:3000/api';
+const API = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class PlantsApiService {

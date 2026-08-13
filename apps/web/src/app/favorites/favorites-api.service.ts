@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { FavoriteListItemDto, PageDto } from '@open-garden/shared-types';
 
-const API = 'http://localhost:3000/api';
+const API = '/api';
 
 interface FavDb extends DBSchema {
   pending: {

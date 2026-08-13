@@ -18,6 +18,7 @@
       "defaultConfiguration": "development",
       "options": {
         "port": 4200,
+        "proxyConfig": "apps/web/proxy.conf.json",
         "buildTarget": "web:build:development"
       }
     },
