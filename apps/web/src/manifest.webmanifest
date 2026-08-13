@@ -1,0 +1,10 @@
+{
+  "name": "Open Garden",
+  "short_name": "OpenGarden",
+  "theme_color": "#2f5d3a",
+  "background_color": "#e8efe4",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "icons": []
+}

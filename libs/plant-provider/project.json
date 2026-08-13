@@ -1,0 +1,27 @@
+{
+  "name": "plant-provider",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plant-provider/src",
+  "projectType": "library",
+  "tags": [
+    "type:lib",
+    "scope:plant",
+    "layer:data-access"
+  ],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run libs/plant-provider --passWithNoTests --config vitest.config.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"libs/plant-provider/**/*.ts\"",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

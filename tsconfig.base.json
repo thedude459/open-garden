@@ -1,0 +1,35 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@open-garden/shared-types": ["libs/shared-types/src/index.ts"],
+      "@open-garden/plant-catalog": ["libs/plant-catalog/src/index.ts"],
+      "@open-garden/plant-provider": ["libs/plant-provider/src/index.ts"],
+      "@open-garden/plant-favorites": ["libs/plant-favorites/src/index.ts"],
+      "@open-garden/plant-catalog-data": ["libs/plant-catalog-data/src/index.ts"],
+      "@open-garden/auth": ["libs/auth/src/index.ts"]
+    },
+    "esModuleInterop": true,
+    "resolveJsonModule": true
+  },
+  "exclude": ["node_modules", "tmp", "dist"]
+}

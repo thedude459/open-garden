@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+tmp/
+out-tsc/
+.angular/
+.nx/cache/
+.nx/workspace-data/
+coverage/
+*.tsbuildinfo
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Test / e2e
+test-output/
+playwright-report/
+test-results/
+
+# Misc
+/.sass-cache
+/connect.lock
+/typings
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md

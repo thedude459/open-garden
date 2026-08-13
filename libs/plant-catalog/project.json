@@ -1,0 +1,27 @@
+{
+  "name": "plant-catalog",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/plant-catalog/src",
+  "projectType": "library",
+  "tags": [
+    "type:lib",
+    "scope:plant",
+    "layer:domain"
+  ],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run libs/plant-catalog --passWithNoTests --config vitest.config.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"libs/plant-catalog/**/*.ts\"",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

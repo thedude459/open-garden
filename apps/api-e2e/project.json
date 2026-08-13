@@ -1,0 +1,17 @@
+{
+  "name": "api-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/api-e2e/src",
+  "projectType": "application",
+  "tags": ["type:e2e", "scope:api"],
+  "implicitDependencies": ["api"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run apps/api-e2e --passWithNoTests --config vitest.config.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
