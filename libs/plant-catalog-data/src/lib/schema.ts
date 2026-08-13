@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -70,6 +71,52 @@ export const favorites = pgTable(
     clientMutationId: text('client_mutation_id'),
   },
   (t) => [uniqueIndex('favorites_user_plant_uidx').on(t.userId, t.plantId)],
+);
+
+export const gardens = pgTable(
+  'gardens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    ownerId: uuid('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    nameNormalized: text('name_normalized').notNull(),
+    notes: text('notes'),
+    hardinessZone: integer('hardiness_zone'),
+    lastFrostMonth: integer('last_frost_month'),
+    lastFrostDay: integer('last_frost_day'),
+    firstFrostMonth: integer('first_frost_month'),
+    firstFrostDay: integer('first_frost_day'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('gardens_owner_name_uidx').on(t.ownerId, t.nameNormalized),
+    index('gardens_owner_id_idx').on(t.ownerId),
+  ],
+);
+
+export const gardenMemberships = pgTable(
+  'garden_memberships',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_memberships_garden_user_uidx').on(t.gardenId, t.userId),
+    uniqueIndex('garden_memberships_one_owner_uidx')
+      .on(t.gardenId)
+      .where(sql`${t.role} = 'owner'`),
+    index('garden_memberships_user_id_idx').on(t.userId),
+  ],
 );
 
 export const catalogSyncRuns = pgTable('catalog_sync_runs', {

@@ -1,5 +1,6 @@
 import {
   Catch,
+  Logger,
   type ArgumentsHost,
   type ExceptionFilter,
   HttpException,
@@ -7,8 +8,18 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 
+const DOMAIN_STATUS: Record<string, HttpStatus> = {
+  VALIDATION_ERROR: HttpStatus.BAD_REQUEST,
+  NOT_FOUND: HttpStatus.NOT_FOUND,
+  UNAUTHORIZED: HttpStatus.UNAUTHORIZED,
+  FORBIDDEN: HttpStatus.FORBIDDEN,
+  CONFLICT: HttpStatus.CONFLICT,
+};
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger(AllExceptionsFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
@@ -24,25 +35,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return;
     }
 
-    const code =
+    const rawCode =
       exception && typeof exception === 'object' && 'code' in exception
-        ? String((exception as { code: string }).code)
+        ? String((exception as { code: unknown }).code)
         : 'INTERNAL';
+    const isDomain = rawCode in DOMAIN_STATUS;
+    if (!isDomain) {
+      this.logger.error(exception);
+    }
     const message =
       exception instanceof Error ? exception.message : 'Unexpected error';
-    const status =
-      code === 'VALIDATION_ERROR'
-        ? HttpStatus.BAD_REQUEST
-        : code === 'NOT_FOUND'
-          ? HttpStatus.NOT_FOUND
-          : code === 'UNAUTHORIZED'
-            ? HttpStatus.UNAUTHORIZED
-            : HttpStatus.INTERNAL_SERVER_ERROR;
+    const exposeDetails = isDomain || process.env['NODE_ENV'] !== 'production';
 
-    res.status(status).json({
+    res.status(DOMAIN_STATUS[rawCode] ?? HttpStatus.INTERNAL_SERVER_ERROR).json({
       error: {
-        code: code === 'INTERNAL' ? 'INTERNAL' : code,
-        message: code === 'INTERNAL' ? 'An unexpected error occurred' : message,
+        code: isDomain ? rawCode : 'INTERNAL',
+        message: exposeDetails ? message : 'An unexpected error occurred',
       },
     });
   }

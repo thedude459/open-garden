@@ -9,10 +9,12 @@
     "web:serve": "nx serve web",
     "migrate": "nx run plant-catalog-data:migrate",
     "migrate:generate": "drizzle-kit generate --config=libs/plant-catalog-data/drizzle.config.ts",
-    "test": "nx run-many -t test --all",
+    "test": "bash scripts/ci/test.sh",
     "test:coverage": "vitest run --coverage",
+    "test:all": "npm test && npm run e2e",
     "lint": "nx run-many -t lint --all",
-    "e2e": "nx e2e web-e2e",
+    "e2e": "bash scripts/ci/e2e.sh",
+    "e2e:only": "nx e2e web-e2e",
     "graph": "nx graph"
   },
   "dependencies": {

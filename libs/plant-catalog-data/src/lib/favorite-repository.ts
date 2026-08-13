@@ -25,7 +25,7 @@ export class FavoriteRepository {
       .from(favorites)
       .where(eq(favorites.userId, userId));
 
-    return { items: rows, totalCount: total?.value ?? 0, page, pageSize };
+    return { items: rows, totalCount: Number(total?.value ?? 0), page, pageSize };
   }
 
   async add(userId: string, plantId: string, clientMutationId?: string) {

@@ -10,6 +10,7 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       <nav class="nav">
         <h1><a routerLink="/plants">Open Garden</a></h1>
         <a routerLink="/plants">Catalog</a>
+        <a routerLink="/gardens">Gardens</a>
         <a routerLink="/favorites">Favorites</a>
         <a routerLink="/login">Login</a>
       </nav>

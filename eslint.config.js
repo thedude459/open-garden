@@ -47,11 +47,11 @@ export default [
             },
             {
               sourceTag: 'scope:web',
-              onlyDependOnLibsWithTags: ['scope:shared', 'scope:plant'],
+              onlyDependOnLibsWithTags: ['scope:shared', 'scope:plant', 'scope:gardens'],
             },
             {
               sourceTag: 'scope:api',
-              onlyDependOnLibsWithTags: ['scope:shared', 'scope:plant'],
+              onlyDependOnLibsWithTags: ['scope:shared', 'scope:plant', 'scope:gardens'],
             },
           ],
         },

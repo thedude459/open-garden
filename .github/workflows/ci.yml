@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, '*-plant-database']
+    branches: [main, '*-plant-database', '*-household-gardens']
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -22,9 +22,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node
       - uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
-      - run: npx nx affected -t test --parallel=3
-      - name: Coverage gate (≥80%)
-        run: npm run test:coverage
+      - run: bash scripts/ci/test.sh
 
   lint:
     name: lint
@@ -116,32 +114,5 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: ./.github/actions/setup-node
-      - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
-      - name: Migrate and seed
-        run: npx nx run api:sync-plants
-      - name: Start API
-        env:
-          PORT: '3000'
-        run: npx tsx apps/api/src/main.ts &
-      # Angular honors $PORT over --port; do not set PORT on the job env or web binds 3000.
-      - name: Start web
-        env:
-          PORT: '4200'
-        run: npx nx serve web --host=0.0.0.0 --port=4200 &
-      - name: Wait for services
-        run: |
-          for i in $(seq 1 90); do
-            WEB=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4200 || true)
-            API=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/plants || true)
-            PROXY=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4200/api/plants || true)
-            if [ "$WEB" = "200" ] && [ "$API" = "401" ] && [ "$PROXY" = "401" ]; then
-              echo "Services ready (web=$WEB api=$API proxy=$PROXY)"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Services did not become ready (web=$WEB api=$API proxy=$PROXY)"
-          exit 1
-      - name: Run Playwright
-        run: npx nx e2e web-e2e
+      - name: End-to-end tests
+        run: bash scripts/ci/e2e.sh

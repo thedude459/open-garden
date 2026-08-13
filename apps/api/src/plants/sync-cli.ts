@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Client } from 'pg';
 import { createDb, PlantRepository } from '@open-garden/plant-catalog-data';
@@ -11,14 +11,17 @@ async function main() {
   const url = process.env['DATABASE_URL'];
   if (!url) throw new Error('DATABASE_URL required');
 
-  // Apply SQL migration if needed (idempotent)
+  // Apply SQL migrations if needed (idempotent)
   const client = new Client({ connectionString: url });
   await client.connect();
-  const sql = readFileSync(
-    resolve(process.cwd(), 'libs/plant-catalog-data/migrations/0001_init.sql'),
-    'utf8',
-  );
-  await client.query(sql);
+  const migrationsDir = resolve(process.cwd(), 'libs/plant-catalog-data/migrations');
+  const files = readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
+  for (const file of files) {
+    const sql = readFileSync(resolve(migrationsDir, file), 'utf8');
+    await client.query(sql);
+  }
   await client.end();
 
   const { db, pool } = createDb(url);

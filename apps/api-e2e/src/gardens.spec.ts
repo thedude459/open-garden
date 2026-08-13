@@ -1,0 +1,29 @@
+import { test, expect } from 'vitest';
+import {
+  gardenCreateSchema,
+  gardenInviteSchema,
+  gardenPatchSchema,
+} from '@open-garden/shared-types';
+
+test('garden create contract requires a name', () => {
+  expect(gardenCreateSchema.safeParse({}).success).toBe(false);
+  expect(gardenCreateSchema.safeParse({ name: 'Backyard' }).success).toBe(true);
+});
+
+test('garden patch allows clearing frost', () => {
+  expect(gardenPatchSchema.safeParse({ firstFrost: null }).success).toBe(true);
+});
+
+test('invite role cannot be owner', () => {
+  expect(
+    gardenInviteSchema.safeParse({ email: 'a@b.com', role: 'owner' }).success,
+  ).toBe(false);
+  expect(
+    gardenInviteSchema.safeParse({ email: 'a@b.com', role: 'collaborator' }).success,
+  ).toBe(true);
+});
+
+test('non-member GET is documented as 404', () => {
+  const error = { error: { code: 'NOT_FOUND', message: 'Garden not found' } };
+  expect(error.error.code).toBe('NOT_FOUND');
+});

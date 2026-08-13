@@ -21,7 +21,7 @@ export class FavoritesService {
       totalCount: result.totalCount,
       items: result.items.map((row) => ({
         favoriteId: row.favoriteId,
-        createdAt: row.createdAt.toISOString(),
+        createdAt: toIso(row.createdAt),
         unavailable: row.plant.status === 'deprecated',
         plant: {
           id: row.plant.id,
@@ -51,11 +51,15 @@ export class FavoritesService {
     return {
       favoriteId: row.id,
       plantId: row.plantId,
-      createdAt: row.createdAt.toISOString(),
+      createdAt: toIso(row.createdAt),
     };
   }
 
   async remove(userId: string, plantId: string): Promise<void> {
     await this.favorites.remove(userId, plantId);
   }
+}
+
+function toIso(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
 }

@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
   createParamDecorator,
@@ -13,7 +14,7 @@ export const CURRENT_USER = 'currentUser';
 
 @Injectable()
 export class SessionGuard implements CanActivate {
-  constructor(private readonly auth: AuthService) {}
+  constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request & { [CURRENT_USER]?: AuthUser }>();

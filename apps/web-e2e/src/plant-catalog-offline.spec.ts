@@ -8,6 +8,7 @@ test('cached catalog readable offline', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
   await expect(page.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first()).toBeVisible();
   await page.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first().click();
+  await expect(page.getByText(/Zones|Sun|Water/i).first()).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
   // Dev server has no service worker; IndexedDB cache is the offline path.

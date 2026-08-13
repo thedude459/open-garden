@@ -22,6 +22,7 @@ export class AuthApiService {
       ),
     );
     this.user = res.user;
+    sessionStorage.setItem('og_user_id', res.user.id);
     return res.user;
   }
 
@@ -34,6 +35,7 @@ export class AuthApiService {
       ),
     );
     this.user = res.user;
+    sessionStorage.setItem('og_user_id', res.user.id);
     return res.user;
   }
 
@@ -42,6 +44,11 @@ export class AuthApiService {
       this.http.post(`${API}/auth/logout`, {}, { withCredentials: true }),
     ).catch(() => undefined);
     this.user = null;
+    sessionStorage.removeItem('og_user_id');
+  }
+
+  currentUserId(): string | null {
+    return this.user?.id ?? sessionStorage.getItem('og_user_id');
   }
 
   isAuthenticated(): boolean {

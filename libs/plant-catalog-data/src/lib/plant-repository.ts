@@ -119,7 +119,7 @@ export class PlantRepository {
 
     return {
       items,
-      totalCount: total?.value ?? 0,
+      totalCount: Number(total?.value ?? 0),
       page: filters.page,
       pageSize: filters.pageSize,
     };

@@ -22,4 +22,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./favorites/favorites-list.page').then((m) => m.FavoritesListPage),
   },
+  {
+    path: 'gardens',
+    canActivate: [authGuard],
+    loadComponent: () => import('./gardens/garden-list.page').then((m) => m.GardenListPage),
+  },
+  {
+    path: 'gardens/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./gardens/garden-detail.page').then((m) => m.GardenDetailPage),
+  },
 ];

@@ -21,12 +21,15 @@ export default defineConfig({
         'libs/plant-favorites/src/lib/**/*.ts',
         'libs/plant-provider/src/lib/**/*.ts',
         'libs/auth/src/lib/**/*.ts',
+        'libs/gardens/src/lib/**/*.ts',
       ],
       exclude: [
         '**/*.spec.ts',
         '**/index.ts',
         '**/plant-data-provider.ts',
         '**/plant.ts',
+        '**/garden.ts',
+        '**/test-memory.ts',
         // DB-backed modules need integration fixtures; covered separately later
         'libs/plant-catalog-data/**',
       ],
@@ -43,6 +46,7 @@ export default defineConfig({
         'libs/plant-catalog-data/src/index.ts',
       ),
       '@open-garden/auth': path.resolve(__dirname, 'libs/auth/src/index.ts'),
+      '@open-garden/gardens': path.resolve(__dirname, 'libs/gardens/src/index.ts'),
     },
   },
 });

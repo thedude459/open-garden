@@ -26,7 +26,8 @@
       "@open-garden/plant-provider": ["libs/plant-provider/src/index.ts"],
       "@open-garden/plant-favorites": ["libs/plant-favorites/src/index.ts"],
       "@open-garden/plant-catalog-data": ["libs/plant-catalog-data/src/index.ts"],
-      "@open-garden/auth": ["libs/auth/src/index.ts"]
+      "@open-garden/auth": ["libs/auth/src/index.ts"],
+      "@open-garden/gardens": ["libs/gardens/src/index.ts"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
