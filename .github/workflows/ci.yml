@@ -109,7 +109,6 @@ jobs:
     env:
       DATABASE_URL: postgresql://open_garden:open_garden@localhost:5432/open_garden
       SESSION_SECRET: ci-session-secret
-      PORT: '3000'
       CORS_ORIGIN: http://localhost:4200
       PLANT_PROVIDER: fixture
       CI: true
@@ -121,8 +120,13 @@ jobs:
       - name: Migrate and seed
         run: npx nx run api:sync-plants
       - name: Start API
+        env:
+          PORT: '3000'
         run: npx tsx apps/api/src/main.ts &
+      # Angular honors $PORT over --port; do not set PORT on the job env or web binds 3000.
       - name: Start web
+        env:
+          PORT: '4200'
         run: npx nx serve web --host=0.0.0.0 --port=4200 &
       - name: Wait for services
         run: |
