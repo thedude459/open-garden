@@ -1,23 +1,23 @@
 # Quickstart: Household Gardens
 
-**Feature**: `002-household-gardens` | **Date**: 2026-08-13
+**Feature**: `002-household-gardens` | **Date**: 2026-08-14
 
 ## Prerequisites
 
 - Plant database stack already runs (Compose Postgres, migrate, fixture sync,
   two demo users)
-- Node.js LTS / npm; `npx nx …`
+- Node.js LTS / npm
 
 ## Local stack
 
 ```bash
 docker compose up -d postgres
-nx run plant-catalog-data:migrate
-nx run api:sync-plants
+npm run migrate
+npm run api:sync-plants
 # terminal 1
-nx serve api
+npm run api:serve
 # terminal 2
-nx serve web
+npm run web:serve
 ```
 
 Demo users (from 001 seed):
@@ -27,6 +27,17 @@ Demo users (from 001 seed):
 
 Register a third user from the login page (e.g. `friend@example.com`) for
 sharing checks.
+
+Web is at `http://localhost:4200`. Browser calls go to `/api` and are proxied
+to the Nest API on port 3000 (required for session cookies).
+
+## Automated tests (same as CI)
+
+```bash
+npm test          # Vitest (affected-or-all) + coverage ≥80%
+npm run e2e       # Playwright Chromium; starts Docker Postgres if needed
+npm run test:all  # both
+```
 
 ## Verify create / list / detail (P1)
 
@@ -62,7 +73,8 @@ sharing checks.
 ## Verify offline read
 
 1. Load garden list + one detail while online.
-2. Go offline (DevTools): those views still readable.
+2. Dev server has no service worker: in Playwright, abort `**/api/gardens**`
+   (do not `setOffline` + reload). Cached list/detail stay readable.
 3. Attempt create, edit, invite, or delete — online-required within ~5 seconds;
    membership unchanged.
 

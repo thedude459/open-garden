@@ -1,6 +1,6 @@
 # Research: Household Gardens
 
-**Feature**: `002-household-gardens` | **Date**: 2026-08-13
+**Feature**: `002-household-gardens` | **Date**: 2026-08-14
 
 ## 1. Domain library vs app-only folders
 
@@ -20,7 +20,8 @@ HTTP.
 
 **Decision**: Add `gardens` and `garden_memberships` tables and repositories to
 `libs/plant-catalog-data` (existing Drizzle schema + migrations). Do not create
-`libs/gardens-data`.
+`libs/gardens-data`. The plant-sync CLI applies every `*.sql` in
+`libs/plant-catalog-data/migrations` (not only `0001`).
 
 **Rationale**: One migration pipeline, one DB client. Users/sessions already live
 there. YAGNI for a second data package at household scale.
@@ -35,12 +36,15 @@ there. YAGNI for a second data package at household scale.
 **Decision**: Keep `users.role` as `user` | `admin` (operator sync). Garden
 access is a per-garden membership row: `owner` | `collaborator` | `viewer`.
 Exactly one owner per garden, stored both as `gardens.owner_id` (for unique
-name index) and a membership row with role `owner`.
+name index) and a membership row with role `owner`. Transfer demotes the
+current owner to collaborator **before** promoting the new owner, in one
+transaction, so the partial unique index `garden_memberships_one_owner_uidx`
+is never violated.
 
 **Rationale**: Admin is a product operator; garden owner is a household role.
 Conflating them would let every garden owner run plant sync.
 
-**ADR**: `docs/adr/0004-garden-membership.md` (author at implement).
+**ADR**: `docs/adr/0004-garden-membership.md`
 
 **Alternatives considered**:
 - **Global “gardener” role only**: Cannot share one garden without sharing all.
@@ -55,7 +59,7 @@ Conflating them would let every garden owner run plant sync.
 **garden owner’s** owned names, not the collaborator’s. After hard delete, the
 name is free for that owner. Comparison is case-insensitive.
 
-**Rationale**: Matches spec clarification B. Two households can both have
+**Rationale**: Matches spec clarification. Two households can both have
 “Backyard”.
 
 **Alternatives considered**: Global unique names (collides across households);
@@ -83,21 +87,22 @@ sentinel years on `date` columns.
 **Decision**: UI confirm then `DELETE` the garden row. `ON DELETE CASCADE`
 memberships. No archive column, no undelete API. Last-write-wins does not apply
 to delete (delete is terminal). Cached client copies become stale; after
-reconnect, GET returns 404/NOT_FOUND and the list omits the garden.
+reconnect, GET returns 404 and the client drops the detail cache.
 
-**Rationale**: Clarify A. Cascade is correct before plantings exist; later
-features that FK to gardens must use `ON DELETE CASCADE` or restrict — out of
-scope here.
+**Rationale**: Spec: permanent delete after confirm. Cascade is correct before
+plantings exist; later features that FK to gardens must use `ON DELETE CASCADE`
+or restrict — out of scope here.
 
 **Alternatives considered**: Soft-delete (filters forever); recycle bin (YAGNI).
 
 ## 7. Concurrent edits
 
-**Decision**: Last successful UPDATE wins. No ETag/If-Match in v1. PATCH/PUT
+**Decision**: Last successful UPDATE wins. No ETag/If-Match in v1. PATCH
 responses return the stored garden. Clients re-read after save (response body)
 and on focus/refresh. No merge UI.
 
-**Rationale**: Clarify B; household scale; YAGNI vs optimistic concurrency.
+**Rationale**: Spec clarification; household scale; YAGNI vs optimistic
+concurrency.
 
 **Alternatives considered**: Version column + 409 CONFLICT (more tests, little
 user value for notes/zone).
@@ -116,10 +121,13 @@ SMTP, no pending-invite table.
 
 ## 9. Offline
 
-**Decision**: Reuse the catalog-cache pattern: IndexedDB (or Cache API) keyed by
-user + garden list query / garden id. Read-through when GET succeeds; serve
-cache when GET fails and cache exists. Mutations check `navigator.onLine` (and
-failed fetch): show online-required; do **not** enqueue (unlike favorites).
+**Decision**: IndexedDB keyed by user + garden list query / garden id
+(`garden-cache.service.ts`). Read-through when GET succeeds; serve cache when
+GET fails and cache exists. A 404 on detail deletes that cache entry. Mutations
+check `navigator.onLine` and failed fetch (status 0 / ≥502): show
+online-required; do **not** enqueue (unlike favorites). Angular **dev server has
+no service worker**; Playwright offline coverage aborts `**/api/gardens**` (and
+plant API for catalog) rather than `context.setOffline(true)` + full reload.
 
 **Rationale**: Spec FR-014. Favorites queue is the wrong model for membership.
 
@@ -132,18 +140,55 @@ worker only without IndexedDB (harder to merge list pages).
 membership guard loads membership for `gardenId` + session user. Owner-only
 routes: delete, invite, role change, remove others, transfer. Owner+collaborator:
 PATCH garden fields. Any member: GET garden, GET members. Self DELETE membership
-= leave (forbidden for the sole owner).
+= leave (forbidden for the sole owner). Non-member GET → **404**. Viewer PATCH →
+**403**.
+
+`SessionGuard` MUST `@Inject(AuthService)`. Implicit constructor injection fails
+when the API is hosted with `tsx` (no `emitDecoratorMetadata`), which made
+authenticated catalog/garden GETs 500 in Playwright (`this.auth` was undefined
+after the cookie was present).
 
 **Rationale**: Never trust client-supplied owner id. Isolation tests are
 acceptance-critical (SC-003, SC-013).
 
-## 11. Notes length and pagination
+## 11. Notes length, pagination, and site-profile UI
 
 **Decision**: Notes max 4000 Unicode characters. Garden list `pageSize` default
-20, max 100 (same as catalog).
+20, max 100 (same as catalog). Zone and frost month `<select>` use native
+`value` strings coerced to numbers in the component — not Angular `[ngValue]`
+objects — so Playwright `selectOption` and a reload persist the saved profile.
 
 **Rationale**: Spec deferred “reasonable limit” and paging to planning; match
-catalog defaults.
+catalog defaults. `[ngValue]` options do not round-trip through native select
+APIs used by e2e.
+
+## 12. Same-origin API for session cookies
+
+**Decision**: Web HttpClient uses relative `/api` with `withCredentials: true`.
+Angular dev server proxies `/api` → `http://localhost:3000`. Nest sets
+`og_session` `SameSite=Lax` on that origin.
+
+**Rationale**: Chromium drops the cookie on cross-origin `:4200` → `:3000`
+XHRs. Same-origin proxy is required for Playwright and local PWA auth.
+
+**Alternatives considered**: CORS + `SameSite=None; Secure` (wrong for local
+HTTP); absolute `http://localhost:3000/api` (the cookie bug).
+
+## 13. Testing split (unit vs integration)
+
+**Decision**: `apps/api-e2e` stays Zod/schema contract smokes in the Vitest
+`npm test` job so CI unit tests do not need Postgres. Constitution integration
+tests run as Playwright against Compose (`scripts/ci/e2e.sh`): UI journeys plus
+HTTP request tests in `apps/web-e2e/src/garden-api.spec.ts` (session cookie via
+the `/api` proxy).
+
+**Rationale**: The unit job historically had no live API. Putting HTTP tests in
+Playwright reuses the e2e stack (Postgres, seed, tsx API, proxy) instead of a
+second Nest bootstrap in Vitest.
+
+**Alternatives considered**: Live HTTP in `apps/api-e2e` during `npm test`
+(requires Postgres in the unit job); skip HTTP and call Playwright UI “enough”
+(misses status-code isolation).
 
 ## Resolved Technical Context unknowns
 
@@ -152,7 +197,10 @@ catalog defaults.
 | Performance | <2s list/detail local household load |
 | Scale | Tens of users; tens of gardens per user; page size 20 |
 | Domain lib | `libs/gardens` |
-| Persistence | Extend `plant-catalog-data` |
-| AuthZ | Membership rows + `gardens.owner_id` |
-| Offline | Read cache only |
+| Persistence | Extend `plant-catalog-data`; sync CLI runs all `*.sql` |
+| AuthZ | Membership rows + `gardens.owner_id`; `@Inject(AuthService)` |
+| Offline | Read cache only; abort API routes in Playwright |
 | Frost storage | Month/day smallints + last < first when both set |
+| Cookies | Relative `/api` + Angular proxy |
+| Testing | Unit Vitest + Zod smokes in `npm test`; Playwright HTTP+UI vs Compose |
+| Site UI | Native select `value`, not `[ngValue]` |
