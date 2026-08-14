@@ -1,6 +1,0 @@
-# Constitution Quality & Security Gates: high+ findings block merge.
-# Remaining medium esbuild advisory is drizzle-kit's bundled toolchain (not runtime).
-
-[[IgnoredVulns]]
-id = "GHSA-67mh-4wv8-2f99"
-reason = "Moderate esbuild advisory in drizzle-kit's @esbuild-kit toolchain; no non-breaking drizzle-kit upgrade. Not shipped in the production API or PWA."
