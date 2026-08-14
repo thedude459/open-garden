@@ -1,7 +1,10 @@
 # Household Gardens API Contracts
 
 **Base path**: `/api`  
-**Auth**: Session cookie required on all garden routes  
+**Auth**: Session cookie (`og_session`, SameSite=Lax) required on all garden
+routes. The PWA calls relative `/api` (dev proxy to Nest) so the cookie is
+first-party. `SessionGuard` uses `@Inject(AuthService)` (tsx does not emit
+constructor param types).  
 **Content-Type**: `application/json`  
 **Shared types**: `libs/shared-types` (source of truth; this file is the human contract)
 

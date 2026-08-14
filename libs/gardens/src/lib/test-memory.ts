@@ -94,6 +94,17 @@ export function createGardenMemory() {
         if (key.startsWith(`${id}:`)) memberships.delete(key);
       }
     },
+    async transferOwner(gardenId: string, fromUserId: string, toUserId: string) {
+      const from = memberships.get(`${gardenId}:${fromUserId}`);
+      const to = memberships.get(`${gardenId}:${toUserId}`);
+      if (from) memberships.set(`${gardenId}:${fromUserId}`, { ...from, role: 'collaborator' });
+      if (to) memberships.set(`${gardenId}:${toUserId}`, { ...to, role: 'owner' });
+      const current = gardens.get(gardenId);
+      if (!current) return null;
+      const next = { ...current, ownerId: toUserId, updatedAt: new Date() };
+      gardens.set(gardenId, next);
+      return next;
+    },
   };
 
   const membershipRepo = {

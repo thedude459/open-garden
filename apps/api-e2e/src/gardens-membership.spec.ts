@@ -1,6 +1,10 @@
 import { test, expect } from 'vitest';
 import { gardenInviteSchema, gardenMemberPatchSchema } from '@open-garden/shared-types';
 
+/**
+ * Zod contract smokes for CI without a live DB.
+ * HTTP membership integration lives in apps/web-e2e/src/garden-api.spec.ts.
+ */
 test('member list is not exposed by error payload for strangers', () => {
   const hidden = { error: { code: 'NOT_FOUND', message: 'Garden not found' } };
   expect(hidden).not.toHaveProperty('members');

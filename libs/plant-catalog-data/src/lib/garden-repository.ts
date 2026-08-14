@@ -87,6 +87,27 @@ export class GardenRepository {
     };
   }
 
+  async transferOwner(gardenId: string, fromUserId: string, toUserId: string) {
+    return this.db.transaction(async (tx) => {
+      await tx
+        .update(gardenMemberships)
+        .set({ role: 'collaborator' })
+        .where(
+          and(eq(gardenMemberships.gardenId, gardenId), eq(gardenMemberships.userId, fromUserId)),
+        );
+      await tx
+        .update(gardenMemberships)
+        .set({ role: 'owner' })
+        .where(and(eq(gardenMemberships.gardenId, gardenId), eq(gardenMemberships.userId, toUserId)));
+      const [garden] = await tx
+        .update(gardens)
+        .set({ ownerId: toUserId, updatedAt: new Date() })
+        .where(eq(gardens.id, gardenId))
+        .returning();
+      return garden ?? null;
+    });
+  }
+
   async update(id: string, patch: GardenUpdate) {
     const [row] = await this.db
       .update(gardens)
