@@ -1,6 +1,6 @@
 # Data Model: Household Gardens
 
-**Feature**: `002-household-gardens` | **Date**: 2026-08-13  
+**Feature**: `002-household-gardens` | **Date**: 2026-08-14  
 **Spec**: [spec.md](./spec.md)
 
 ## Entities
@@ -76,8 +76,9 @@ User 1──* Favorite *──1 Plant     -- unchanged; not garden-scoped
 ## Validation rules
 
 - Unauthenticated: all garden routes 401.
-- Non-member GET/PATCH/DELETE: 404 (do not leak existence) or 403; **prefer
-  404** for GET of unknown-or-forbidden id so strangers cannot probe.
+- Non-member GET: **404** (do not leak existence). Viewer PATCH: **403**.
+  Owner-only mutations by a member who is not owner: **403**.
+- Non-member PATCH/DELETE: **404** (same existence policy as GET).
 - Create: session user becomes owner; membership owner row inserted in the same
   transaction as the garden.
 - Name uniqueness: conflict → `CONFLICT`.
@@ -103,7 +104,7 @@ User 1──* Favorite *──1 Plant     -- unchanged; not garden-scoped
 
 - Absent → collaborator | viewer (invite)
 - collaborator ↔ viewer (owner PATCH)
-- collaborator | viewer → owner (transfer; previous owner → collaborator)
+- collaborator | viewer → owner (transfer: demote previous owner to collaborator first, then promote, in one transaction so the unique owner index holds)
 - Present → Absent (leave or owner remove)
 
 ## Indexes

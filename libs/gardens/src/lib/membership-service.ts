@@ -117,9 +117,9 @@ export class MembershipService {
       );
     }
 
-    await this.memberships.updateRole(gardenId, targetUserId, 'owner');
-    await this.memberships.updateRole(gardenId, actorId, 'collaborator');
-    await this.gardens.update(gardenId, { ownerId: targetUserId });
+    // Demote the current owner first so the partial unique owner index is never
+    // violated (two owner rows in the same garden).
+    await this.gardens.transferOwner(gardenId, actorId, targetUserId);
     return this.memberDto(gardenId, targetUserId);
   }
 

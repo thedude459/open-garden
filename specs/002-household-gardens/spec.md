@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-13
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "A household can create a named garden, set site conditions, and share it with specific people. Include: Garden as a first-class resource (name, notes). Site profile on the garden: hardiness zone, last/first frost dates (calendar cannot work without this). Membership: owner / collaborator / viewer; invite by existing user email (no SSO). Isolation: members see only gardens they belong to; catalog stays shared reference data; favorites stay private. Offline: previously loaded garden list/detail readable; membership changes online-only for v1. Exclude: bed geometry, planting dates, calendar math, layout canvas."
 
@@ -70,7 +70,7 @@ An owner invites an existing signed-up user by email as collaborator or viewer. 
 **Acceptance Scenarios**:
 
 1. **Given** an owner and an existing user whose email is known, **When** the owner invites that email as collaborator or viewer, **Then** the invitee is a member with that role and the garden appears on the invitee’s list without a separate sign-up flow.
-2. **Given** an owner, **When** they invite an email that has no account, **Then** they see a clear message that the person must already have an account, and no membership is created (no external identity provider or magic-link invite in this feature).
+2. **Given** an owner, **When** they invite an email that has no account, **Then** they see that the person must already have an account, and no membership is created (no external identity provider or magic-link invite in this feature).
 3. **Given** a collaborator, **When** they edit name, notes, or site conditions, **Then** the changes are saved; **When** they try to invite, change roles, remove members, or delete the garden, **Then** those actions are refused.
 4. **Given** a viewer, **When** they open the garden, **Then** they can read name, notes, site profile, and the member list (each member’s display name when present, email, and role); they cannot change garden fields or membership.
 5. **Given** an owner, **When** they change a member from collaborator to viewer (or the reverse), or remove a member, **Then** the member’s access matches the new role immediately (removed members no longer see the garden).
@@ -91,10 +91,10 @@ An owner invites an existing signed-up user by email as collaborator or viewer. 
 - Previously loaded garden list/detail while online, then the device goes offline: those cached gardens remain readable; creating gardens, editing, inviting, role changes, leaving, and deleting require connectivity and show a clear “you need to be online” state rather than silently failing or queuing.
 - A membership change happens on another device while this device is offline: when back online, list/detail refresh to current membership; stale cached gardens the user was removed from are not treated as still accessible for new actions.
 - Two members save name, notes, or site profile while both are online: the last successful save is kept; there is no merge editor. After save or a later load, each member sees the stored values.
-- Viewer or stranger uses a direct link to a garden they do not belong to: no garden data is exposed; they see not-found or no-access, not another household’s site profile.
+- Viewer or stranger uses a direct link to a garden they do not belong to: no garden data is exposed; they see the same not-found outcome as a missing garden (not a distinct no-access signal that would confirm the garden exists).
 - Frost dates set but zone missing, or zone set but frost dates missing: allowed; detail shows each field’s actual state. A single frost date may be set without the other.
 - Both frost dates set with the same month-day, or last frost on or after first frost in the calendar year: rejected; previously saved valid values remain.
-- Very long notes: accepted up to a documented reasonable limit or rejected clearly; the product does not crash.
+- Very long notes: accepted up to 4000 characters; longer notes are rejected with a validation message; the product does not crash.
 
 ## Requirements *(mandatory)*
 
@@ -102,7 +102,7 @@ An owner invites an existing signed-up user by email as collaborator or viewer. 
 
 - **FR-001**: Authenticated users MUST be able to create a garden with a required non-empty name and optional notes, becoming the garden’s owner. The name MUST be unique among gardens that user currently owns (trim; case-insensitive). The same name MAY appear on gardens the user does not own (joined as collaborator or viewer).
 - **FR-002**: Authenticated users MUST be able to list only the gardens they belong to and open each garden’s detail (name, notes, site profile, membership, and the current user’s role). Every member (owner, collaborator, and viewer) MUST see the same member list: each member’s email, display name when present, and role. Non-members MUST NOT see that list.
-- **FR-003**: Owners and collaborators MUST be able to update a garden’s name and notes; viewers MUST NOT. An owner renaming a garden MUST still satisfy uniqueness among gardens they own. A collaborator renaming MUST NOT create a name collision with another garden owned by that garden’s owner. Concurrent online saves of the same garden MUST keep the last successful save; the product MUST NOT present a merge editor. After a save or a subsequent load, the user MUST see the currently stored values.
+- **FR-003**: Owners and collaborators MUST be able to update a garden’s name and notes; viewers MUST NOT. Notes, when present, MUST be at most 4000 characters. An owner renaming a garden MUST still satisfy uniqueness among gardens they own. A collaborator renaming MUST NOT create a name collision with another garden owned by that garden’s owner. Concurrent online saves of the same garden MUST keep the last successful save; the product MUST NOT present a merge editor. After a save or a subsequent load, the user MUST see the currently stored values.
 - **FR-004**: Owners MUST be able to delete a garden they own; collaborators and viewers MUST NOT. Delete MUST require an explicit confirmation step. After confirmation, deletion is permanent (no undelete or archive in this feature). Deleting a garden MUST NOT delete or alter plant catalog entries or any user’s favorites. The deleted garden’s name MAY be reused by that owner on a new garden.
 - **FR-005**: A garden MUST store a site profile consisting of hardiness zone and last-frost and first-frost dates. Zone, when set, MUST be a single hardiness zone in the same 1–13 model used by the plant catalog. Frost dates, when set, MUST be annual month-and-day values (they repeat every year; they are not a single calendar year). When both frost dates are set, last frost MUST be earlier in the calendar year than first frost (northern-hemisphere spring-then-fall). Same-day and reversed pairs MUST be rejected. Either frost date MAY be unset independently of the other.
 - **FR-006**: Owners and collaborators MUST be able to set, change, and clear site-profile fields; viewers MUST only read them. Unset frost dates or zone MUST display as not set, never as invented values.
@@ -111,7 +111,7 @@ An owner invites an existing signed-up user by email as collaborator or viewer. 
 - **FR-009**: Owners MUST be able to change a member’s role between collaborator and viewer, remove a member, and transfer ownership to an existing member (the previous owner becomes a collaborator unless they leave).
 - **FR-010**: Collaborators and viewers MUST be able to leave a garden. The last owner MUST NOT leave or demote themselves until ownership is transferred or the garden is deleted.
 - **FR-011**: Collaborators MUST be able to update name, notes, and site profile, and MUST NOT invite, change roles, remove others, transfer ownership, or delete the garden. Viewers MUST have read-only access to garden detail and to the full member list (name, email, role).
-- **FR-012**: Users MUST NOT see, open, or modify gardens they do not belong to. Unauthenticated users MUST NOT access any garden data.
+- **FR-012**: Users MUST NOT see, open, or modify gardens they do not belong to. A non-member MUST receive the same not-found outcome as a missing garden (no existence leak; not a distinct forbidden reveal). Unauthenticated users MUST NOT access any garden data.
 - **FR-013**: Plant catalog search, filter, and detail MUST remain available to all authenticated users regardless of garden membership. Favorites MUST remain private to the owning user and MUST NOT become garden-shared in this feature.
 - **FR-014**: After a garden list page and garden detail have been loaded while online, those previously loaded views MUST remain readable while offline. Creating, editing, deleting, inviting, changing roles, leaving, and transferring ownership MUST require connectivity in this feature and MUST surface a clear online-required state (no silent drop and no offline membership queue).
 - **FR-015**: The feature MUST NOT include bed geometry, in-ground planting records, planting-date schedules, planting-calendar calculations, care reminders, or a layout canvas.
@@ -165,6 +165,6 @@ An owner invites an existing signed-up user by email as collaborator or viewer. 
 - Zone is recommended but not mandatory at create time so a gardener can name a garden before they look up frost dates; later calendar work will treat missing frost dates as “calendar not available for this garden.”
 - Invite is immediate membership for an existing account (no pending-invite inbox, expiry, or email-send requirement in v1). If the product later sends notification email, that is out of scope here.
 - Display of members uses account email and display name when present. Owner, collaborator, and viewer all see that same list; it is not hidden from viewers and is not visible to non-members.
-- Notes are plain text for household context (soil, sun, landlord rules); they are not structured bed lists.
+- Notes are plain text for household context (soil, sun, landlord rules); they are not structured bed lists. Maximum length is 4000 characters.
 - Bed geometry, planting dates, planting-calendar math, in-ground inventory, care reminders, layout canvas, purchasing, and companion-planting rules are out of scope.
 - Garden list presentation is suitable for household scale (tens of gardens per user, not thousands); exact paging follows product UX defaults at planning time.
