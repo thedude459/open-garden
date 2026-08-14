@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node10",
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": ["apps/api/**/*.ts", "libs/**/*.ts"],
+  "exclude": ["**/*.spec.ts", "apps/web/**", "apps/web-e2e/**"]
+}

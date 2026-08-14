@@ -1,0 +1,84 @@
+:root {
+  --soil: #1f2a1f;
+  --leaf: #2f5d3a;
+  --moss: #7a9e7e;
+  --sand: #e8efe4;
+  --ink: #142017;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, #dfead8 0%, transparent 40%),
+    linear-gradient(160deg, #f4f7f1 0%, #e4ebe0 55%, #d5e0d4 100%);
+}
+a { color: var(--leaf); }
+button, input, select {
+  font: inherit;
+}
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+.nav {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+}
+.nav h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+}
+.card-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(47,93,58,0.15);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.filters input, .filters select, .filters button, .auth form input, .auth form button {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(47,93,58,0.25);
+  background: #fff;
+}
+.muted { color: #4d5a4f; }
+.badge {
+  font-size: 0.8rem;
+  color: #7a4e00;
+}
+.error { color: #8a1f1f; }
+.stack {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.stack label { display: grid; gap: 0.3rem; }
+textarea, .stack input, .stack select {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(47,93,58,0.25);
+  background: #fff;
+  font: inherit;
+}
+.authform {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 22rem;
+}
