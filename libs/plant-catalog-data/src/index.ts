@@ -5,3 +5,5 @@ export * from './lib/favorite-repository';
 export * from './lib/garden-repository';
 export * from './lib/garden-membership-repository';
 export * from './lib/calendar-entry-repository';
+export * from './lib/bed-repository';
+export * from './lib/planting-repository';

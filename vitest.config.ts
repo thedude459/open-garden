@@ -23,6 +23,7 @@ export default defineConfig({
         'libs/auth/src/lib/**/*.ts',
         'libs/gardens/src/lib/**/*.ts',
         'libs/planting-calendar/src/lib/**/*.ts',
+        'libs/seasonal-plantings/src/lib/**/*.ts',
       ],
       exclude: [
         '**/*.spec.ts',
@@ -31,6 +32,7 @@ export default defineConfig({
         '**/plant.ts',
         '**/garden.ts',
         '**/calendar.ts',
+        '**/planting.ts',
         '**/test-memory.ts',
         // DB-backed modules need integration fixtures; covered separately later
         'libs/plant-catalog-data/**',
@@ -56,6 +58,22 @@ export default defineConfig({
       '@open-garden/planting-calendar/this-week': path.resolve(
         __dirname,
         'libs/planting-calendar/src/lib/this-week.ts',
+      ),
+      '@open-garden/seasonal-plantings': path.resolve(
+        __dirname,
+        'libs/seasonal-plantings/src/index.ts',
+      ),
+      '@open-garden/seasonal-plantings/dates': path.resolve(
+        __dirname,
+        'libs/seasonal-plantings/src/lib/dates.ts',
+      ),
+      '@open-garden/seasonal-plantings/beds': path.resolve(
+        __dirname,
+        'libs/seasonal-plantings/src/lib/beds.ts',
+      ),
+      '@open-garden/seasonal-plantings/group-plantings': path.resolve(
+        __dirname,
+        'libs/seasonal-plantings/src/lib/group-plantings.ts',
       ),
     },
   },

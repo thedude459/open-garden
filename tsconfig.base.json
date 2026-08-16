@@ -29,7 +29,13 @@
       "@open-garden/auth": ["libs/auth/src/index.ts"],
       "@open-garden/gardens": ["libs/gardens/src/index.ts"],
       "@open-garden/planting-calendar": ["libs/planting-calendar/src/index.ts"],
-      "@open-garden/planting-calendar/this-week": ["libs/planting-calendar/src/lib/this-week.ts"]
+      "@open-garden/planting-calendar/this-week": ["libs/planting-calendar/src/lib/this-week.ts"],
+      "@open-garden/seasonal-plantings": ["libs/seasonal-plantings/src/index.ts"],
+      "@open-garden/seasonal-plantings/dates": ["libs/seasonal-plantings/src/lib/dates.ts"],
+      "@open-garden/seasonal-plantings/beds": ["libs/seasonal-plantings/src/lib/beds.ts"],
+      "@open-garden/seasonal-plantings/group-plantings": [
+        "libs/seasonal-plantings/src/lib/group-plantings.ts"
+      ]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
