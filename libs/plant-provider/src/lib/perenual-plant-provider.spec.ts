@@ -21,6 +21,7 @@ describe('PerenualPlantProvider', () => {
     const results = await provider.searchByName('lavender');
     expect(results[0]?.commonName).toBe('Lavender');
     expect(results[0]?.species).toBe('Lavandula');
+    expect(results[0]?.growingGuidance).toBeNull();
   });
 
   it('throws without api key', () => {

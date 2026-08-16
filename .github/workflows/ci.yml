@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, '*-plant-database', '*-household-gardens']
+    branches: [main, '*-plant-database', '*-household-gardens', '*-planting-calendar']
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -21,7 +21,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node
-      - uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - run: bash scripts/ci/test.sh
 
   lint:
@@ -32,7 +32,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node
-      - uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - run: npx nx affected -t lint --parallel=3
 
   build:
@@ -43,7 +43,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-node
-      - uses: nrwl/nx-set-shas@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
+      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - run: npx nx affected -t build --parallel=3
 
   sca:
@@ -82,7 +82,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Gitleaks
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

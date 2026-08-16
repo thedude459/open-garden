@@ -13,23 +13,25 @@ Household planning place. Hard-deleted (no archive).
 |-------|------|-------|
 | id | UUID | PK, generated |
 | owner_id | UUID | FK → User; required; the unique owner |
-| name | string | required; trimmed non-empty; max 120 chars |
+| name | string | required; trimmed non-empty; max 120 chars (FR-001) |
 | name_normalized | string | `lower(trim(name))`; used for uniqueness |
 | notes | string \| null | max 4000 chars; empty string stored as null |
 | hardiness_zone | int \| null | 1–13 inclusive when set |
-| last_frost_month | int \| null | 1–12; null iff `last_frost_day` is null |
+| last_frost_month | int \| null | 1–12; null iff `last_frost_day` is null (month+day pair) |
 | last_frost_day | int \| null | valid day for that month (Feb 29 allowed) |
-| first_frost_month | int \| null | 1–12; null iff `first_frost_day` is null |
+| first_frost_month | int \| null | 1–12; null iff `first_frost_day` is null (month+day pair) |
 | first_frost_day | int \| null | valid day for that month |
 | created_at | timestamptz | required |
 | updated_at | timestamptz | required; bumped on every successful update |
 
 **Constraints**:
 - UNIQUE `(owner_id, name_normalized)`
+- Each frost date is a month+day pair (both columns null or both set). Last frost
+  and first frost may be omitted independently.
 - When both last and first frost pairs are fully set:
   `(last_frost_month, last_frost_day) < (first_frost_month, first_frost_day)`
-- Same-day or reversed frost pairs rejected at domain layer (and DB check if
-  practical)
+- Same-day or reversed last/first frost pairs rejected at domain layer (and DB
+  check if practical)
 
 **Notes**:
 - Unset zone or frost fields stay null; UI shows “not set”.
