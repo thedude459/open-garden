@@ -21,6 +21,15 @@ test('invite requires an email and collaborator/viewer role', () => {
   ).toBe(true);
 });
 
+test('invite role cannot be owner', () => {
+  expect(
+    gardenInviteSchema.safeParse({ email: 'a@b.com', role: 'owner' }).success,
+  ).toBe(false);
+  expect(
+    gardenInviteSchema.safeParse({ email: 'a@b.com', role: 'collaborator' }).success,
+  ).toBe(true);
+});
+
 test('member patch can transfer via role owner', () => {
   expect(gardenMemberPatchSchema.safeParse({ role: 'owner' }).success).toBe(true);
   expect(gardenMemberPatchSchema.safeParse({ role: 'viewer' }).success).toBe(true);
