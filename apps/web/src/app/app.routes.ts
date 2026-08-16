@@ -34,6 +34,12 @@ export const routes: Routes = [
       import('./gardens/garden-calendar.page').then((m) => m.GardenCalendarPage),
   },
   {
+    path: 'gardens/:id/plantings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./gardens/garden-plantings.page').then((m) => m.GardenPlantingsPage),
+  },
+  {
     path: 'gardens/:id',
     canActivate: [authGuard],
     loadComponent: () => import('./gardens/garden-detail.page').then((m) => m.GardenDetailPage),
