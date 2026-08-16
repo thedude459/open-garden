@@ -10,6 +10,17 @@ describe('FixturePlantProvider', () => {
     expect(results[0]?.commonName.toLowerCase()).toContain('tomato');
   });
 
+  it('includes spinach, papaya zone range, and maple without guidance', async () => {
+    const spinach = (await provider.searchByName('spinach'))[0];
+    expect(spinach?.growingGuidance?.outdoorSow?.frostAnchor).toBe('first');
+    const papaya = (await provider.searchByName('papaya'))[0];
+    expect(papaya?.plantType).toBe('fruit');
+    expect(papaya?.zoneMin).toBe(9);
+    expect(papaya?.zoneMax).toBe(11);
+    const maple = (await provider.searchByName('red maple'))[0];
+    expect(maple?.growingGuidance?.indoorStart).toBeNull();
+  });
+
   it('lists pages', async () => {
     const page = await provider.listPage({ limit: 2 });
     expect(page.items).toHaveLength(2);

@@ -65,7 +65,7 @@ Set `PLANT_PROVIDER=perenual` and `PERENUAL_API_KEY` for the HTTP adapter.
 ## CI
 
 GitHub Actions runs on every PR and push to `main` / `*-plant-database` /
-`*-household-gardens`. Local equivalents: `npm test` and `npm run e2e`
+`*-household-gardens` / `*-planting-calendar`. Local equivalents: `npm test` and `npm run e2e`
 (`scripts/ci/test.sh`, `scripts/ci/e2e.sh`).
 
 | Job / workflow | Purpose |
@@ -95,9 +95,12 @@ Dependabot opens weekly npm + Actions PRs. `main` requires the status checks abo
 | `libs/plant-catalog-data` | `plant-catalog-data` | layer:data-access |
 | `libs/plant-provider` | `plant-provider` | layer:data-access |
 | `libs/gardens` | `gardens` | layer:domain |
+| `libs/planting-calendar` | `planting-calendar` | layer:domain |
 | `libs/auth` | `auth` | layer:domain |
 
-See `specs/001-plant-database/quickstart.md` and
-`specs/002-household-gardens/quickstart.md` for architecture details and
+See `specs/001-plant-database/quickstart.md`,
+`specs/002-household-gardens/quickstart.md`, and
+`specs/003-planting-calendar/quickstart.md` for architecture details,
 household-garden verify steps (create/list/detail, site profile, sharing,
-offline read).
+offline read), and planting-calendar verify steps (per-garden ranges, frost
+shift, type filter, this-week emphasis, offline cache).

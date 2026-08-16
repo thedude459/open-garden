@@ -25,6 +25,7 @@ export interface PlantDetailDto extends PlantSummaryDto {
   spacingInches: number | null;
   status: PlantStatus;
   isFavorite: boolean;
+  growingGuidance: import('./calendar').GrowingGuidanceDto;
 }
 
 export interface PageDto<T> {

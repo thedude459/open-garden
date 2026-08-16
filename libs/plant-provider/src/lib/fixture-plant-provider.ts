@@ -13,6 +13,11 @@ const FIXTURES: ProviderPlant[] = [
     waterNeeds: 'Moderate',
     daysToMaturity: 65,
     spacingInches: 24,
+    growingGuidance: {
+      indoorStart: { frostAnchor: 'last', weeksEarliest: -8, weeksLatest: -6 },
+      outdoorSow: null,
+      transplant: { frostAnchor: 'last', weeksEarliest: 1, weeksLatest: 2 },
+    },
   },
   {
     externalId: 'fix-basil-genovese',
@@ -26,6 +31,11 @@ const FIXTURES: ProviderPlant[] = [
     waterNeeds: 'Moderate',
     daysToMaturity: 60,
     spacingInches: 12,
+    growingGuidance: {
+      indoorStart: { frostAnchor: 'last', weeksEarliest: -6, weeksLatest: -4 },
+      outdoorSow: null,
+      transplant: { frostAnchor: 'last', weeksEarliest: 1, weeksLatest: 2 },
+    },
   },
   {
     externalId: 'fix-marigold',
@@ -39,6 +49,11 @@ const FIXTURES: ProviderPlant[] = [
     waterNeeds: 'Low',
     daysToMaturity: 50,
     spacingInches: 10,
+    growingGuidance: {
+      indoorStart: null,
+      outdoorSow: { frostAnchor: 'last', weeksEarliest: 0, weeksLatest: 2 },
+      transplant: null,
+    },
   },
   {
     externalId: 'fix-apple-honeycrisp',
@@ -78,6 +93,47 @@ const FIXTURES: ProviderPlant[] = [
     waterNeeds: 'Moderate',
     daysToMaturity: null,
     spacingInches: 360,
+    growingGuidance: {
+      indoorStart: null,
+      outdoorSow: null,
+      transplant: null,
+    },
+  },
+  {
+    externalId: 'fix-spinach',
+    commonName: 'Spinach',
+    species: 'Spinacia oleracea',
+    cultivar: null,
+    plantType: 'vegetable',
+    zoneMin: 3,
+    zoneMax: 9,
+    sunRequirements: 'Full sun to part shade',
+    waterNeeds: 'Moderate',
+    daysToMaturity: 45,
+    spacingInches: 6,
+    growingGuidance: {
+      indoorStart: null,
+      outdoorSow: { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -6 },
+      transplant: null,
+    },
+  },
+  {
+    externalId: 'fix-papaya',
+    commonName: 'Papaya',
+    species: 'Carica papaya',
+    cultivar: null,
+    plantType: 'fruit',
+    zoneMin: 9,
+    zoneMax: 11,
+    sunRequirements: 'Full sun',
+    waterNeeds: 'High',
+    daysToMaturity: null,
+    spacingInches: 96,
+    growingGuidance: {
+      indoorStart: null,
+      outdoorSow: null,
+      transplant: null,
+    },
   },
 ];
 

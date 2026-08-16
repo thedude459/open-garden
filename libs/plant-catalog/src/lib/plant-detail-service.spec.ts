@@ -25,6 +25,15 @@ describe('PlantDetailService', () => {
         daysToMaturity: 70,
         spacingInches: 24,
         status: 'active',
+        indoorFrostAnchor: 'last',
+        indoorWeeksEarliest: -8,
+        indoorWeeksLatest: -6,
+        sowFrostAnchor: null,
+        sowWeeksEarliest: null,
+        sowWeeksLatest: null,
+        transplantFrostAnchor: 'last',
+        transplantWeeksEarliest: 1,
+        transplantWeeksLatest: 2,
       }),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(true) };
@@ -32,5 +41,11 @@ describe('PlantDetailService', () => {
     const detail = await svc.getById('p1', 'user-1');
     expect(detail?.isFavorite).toBe(true);
     expect(detail?.commonName).toBe('Tomato');
+    expect(detail?.growingGuidance.indoorStart).toEqual({
+      frostAnchor: 'last',
+      weeksEarliest: -8,
+      weeksLatest: -6,
+    });
+    expect(detail?.growingGuidance.outdoorSow).toBeNull();
   });
 });

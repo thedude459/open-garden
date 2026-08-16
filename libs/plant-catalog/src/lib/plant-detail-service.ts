@@ -1,5 +1,11 @@
 import type { FavoriteRepository, PlantRepository } from '@open-garden/plant-catalog-data';
-import type { PlantDetailDto, PlantStatus, PlantType } from '@open-garden/shared-types';
+import type {
+  FrostRelativeWeeksDto,
+  GrowingGuidanceDto,
+  PlantDetailDto,
+  PlantStatus,
+  PlantType,
+} from '@open-garden/shared-types';
 
 export class PlantDetailService {
   constructor(
@@ -25,6 +31,39 @@ export class PlantDetailService {
       spacingInches: row.spacingInches,
       status: row.status as PlantStatus,
       isFavorite,
+      growingGuidance: growingGuidanceFromRow(row),
     };
   }
+}
+
+export function growingGuidanceFromRow(row: {
+  indoorFrostAnchor: string | null;
+  indoorWeeksEarliest: number | null;
+  indoorWeeksLatest: number | null;
+  sowFrostAnchor: string | null;
+  sowWeeksEarliest: number | null;
+  sowWeeksLatest: number | null;
+  transplantFrostAnchor: string | null;
+  transplantWeeksEarliest: number | null;
+  transplantWeeksLatest: number | null;
+}): GrowingGuidanceDto {
+  return {
+    indoorStart: triplet(row.indoorFrostAnchor, row.indoorWeeksEarliest, row.indoorWeeksLatest),
+    outdoorSow: triplet(row.sowFrostAnchor, row.sowWeeksEarliest, row.sowWeeksLatest),
+    transplant: triplet(
+      row.transplantFrostAnchor,
+      row.transplantWeeksEarliest,
+      row.transplantWeeksLatest,
+    ),
+  };
+}
+
+function triplet(
+  anchor: string | null,
+  earliest: number | null,
+  latest: number | null,
+): FrostRelativeWeeksDto | null {
+  if (anchor !== 'last' && anchor !== 'first') return null;
+  if (earliest == null || latest == null) return null;
+  return { frostAnchor: anchor, weeksEarliest: earliest, weeksLatest: latest };
 }

@@ -1,18 +1,19 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { GardenDetailDto, GardenRole } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 
 @Component({
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     @if (garden(); as g) {
       <h2>{{ g.name }}</h2>
       <p class="muted">You are {{ g.myRole }} of this garden.</p>
+      <p><a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a></p>
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }

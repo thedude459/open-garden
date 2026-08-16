@@ -48,6 +48,7 @@ export class CatalogSyncService {
             spacingInches: item.spacingInches,
             provider: this.provider.id,
             providerExternalId: item.externalId,
+            growingGuidance: item.growingGuidance ?? null,
           });
           upserted += 1;
           if (upserted >= limit) break;

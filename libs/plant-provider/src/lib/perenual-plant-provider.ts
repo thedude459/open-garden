@@ -76,6 +76,7 @@ function mapSpecies(s: PerenualSpecies): ProviderPlant {
     waterNeeds: s.watering ?? null,
     daysToMaturity: null,
     spacingInches: null,
+    growingGuidance: null,
   };
 }
 
