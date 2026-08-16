@@ -63,7 +63,7 @@ npm run test:all  # both
 
 1. As owner, invite `friend@example.com` as collaborator — friend sees the
    garden; member list shows emails and roles for owner and friend.
-2. Invite an email with no account — clear failure; no member added.
+2. Invite an email with no account — `That email does not have an account yet`; no member added.
 3. Friend (collaborator) edits notes — saved. Friend invite/delete — refused.
 4. Owner changes friend to viewer — friend can read member emails but cannot
    edit. Owner transfers ownership to friend — friend is owner; original owner
@@ -77,8 +77,14 @@ npm run test:all  # both
    (do not `setOffline` + reload). Cached list/detail stay readable.
 3. Attempt create, edit, invite, or delete — online-required within ~5 seconds;
    membership unchanged.
+4. Reconnect (stop aborting garden API) and refresh: if the user was removed
+   while unreachable, the garden is gone from the list, detail is not found,
+   and save is not offered (stale cache is not treated as membership).
 
 ## Performance gates (manual)
+
+These are the technical first-load targets (plan.md), not the SC-001/SC-002
+two-minute usability studies.
 
 - First garden list/detail <2s on local network after login.
 - Confirm delete is a single extra click, then garden disappears from the list
