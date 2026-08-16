@@ -5,6 +5,12 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    # typescript-eslint does not support TypeScript 7.0 yet
+    # (https://github.com/typescript-eslint/typescript-eslint/issues/10940).
+    ignore:
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
     groups:
       angular:
         patterns:
@@ -20,3 +26,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # CodeQL init and analyze must share one release SHA; grouping keeps them in lockstep.
+    groups:
+      codeql-action:
+        patterns:
+          - 'github/codeql-action*'
