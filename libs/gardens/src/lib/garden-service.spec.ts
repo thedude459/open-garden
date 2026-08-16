@@ -9,6 +9,13 @@ describe('GardenService', () => {
     });
   });
 
+  it('rejects names longer than 120 characters', async () => {
+    const { service, ownerId } = createGardenMemory();
+    await expect(service.create(ownerId, { name: 'x'.repeat(121) })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+  });
+
   it('creates an owned garden and lists it', async () => {
     const { service, ownerId } = createGardenMemory();
     const created = await service.create(ownerId, { name: 'Backyard', notes: 'South fence' });

@@ -68,10 +68,10 @@ unique among all memberships (blocks joining a friend’s “Backyard”).
 ## 5. Frost dates storage and validation
 
 **Decision**: Store four nullable smallints: `last_frost_month/day`,
-`first_frost_month/day`. A pair is either both null or both set (valid calendar
-day for that month, including leap-day Feb 29 as allowed annual value). When
-**both** last and first pairs are set, require last < first by (month, day)
-tuple. Independent omission of one pair remains allowed. No timezone, no year.
+`first_frost_month/day`. Each frost date is a month+day pair (both null or both
+set; valid calendar day for that month, including leap-day Feb 29). Last frost
+and first frost may be omitted independently. When **both** last and first dates
+are set, require last < first by (month, day) tuple. No timezone, no year.
 
 **Rationale**: Spec is annual month-day, northern-hemisphere ordering. Avoids
 sentinel years on `date` columns.
@@ -194,13 +194,13 @@ second Nest bootstrap in Vitest.
 
 | Topic | Resolution |
 |-------|------------|
-| Performance | <2s list/detail local household load |
-| Scale | Tens of users; tens of gardens per user; page size 20 |
+| Performance | Technical gate: <2s list/detail local household load (distinct from SC-001/002 two-minute usability studies) |
+| Scale | Tens of users; tens of gardens per user; page size 20; name max 120; notes max 4000 |
 | Domain lib | `libs/gardens` |
 | Persistence | Extend `plant-catalog-data`; sync CLI runs all `*.sql` |
 | AuthZ | Membership rows + `gardens.owner_id`; `@Inject(AuthService)` |
-| Offline | Read cache only; abort API routes in Playwright |
-| Frost storage | Month/day smallints + last < first when both set |
+| Offline | Read cache only; abort API routes in Playwright; after reconnect + refresh, 404 drops stale detail cache |
+| Frost storage | Month+day pair per frost date (both set or both null); last and first may be omitted independently; last < first when both dates are set |
 | Cookies | Relative `/api` + Angular proxy |
 | Testing | Unit Vitest + Zod smokes in `npm test`; Playwright HTTP+UI vs Compose |
 | Site UI | Native select `value`, not `[ngValue]` |
