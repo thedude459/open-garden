@@ -13,6 +13,27 @@ Error shape and pagination match [001 rest-api](../../001-plant-database/contrac
 
 Non-members requesting a garden by id receive **404** (no existence leak).
 
+### Garden error messages
+
+Clients MUST surface these `error.message` strings (same codes as 001).
+
+| Code | When | Message |
+|------|------|---------|
+| `VALIDATION_ERROR` | Blank or whitespace-only name | `Garden name is required` |
+| `VALIDATION_ERROR` | Name longer than 120 characters | `Garden name must be at most 120 characters` |
+| `VALIDATION_ERROR` | Notes longer than 4000 characters | `Notes must be at most 4000 characters` |
+| `VALIDATION_ERROR` | Zone outside 1–13 | `hardiness zone must be between 1 and 13` |
+| `VALIDATION_ERROR` | Last frost on or after first frost (including same day) | `last frost must be earlier in the calendar year than first frost` |
+| `CONFLICT` | Owner already has that normalized name | `You already own a garden with that name` |
+| `CONFLICT` | Collaborator rename collides with owner's other garden | `The owner already has a garden with that name` |
+| `NOT_FOUND` | Missing garden or caller is not a member | `Garden not found` |
+| `NOT_FOUND` | Invite email has no account | `That email does not have an account yet` |
+| `CONFLICT` | Invitee is already a member | `That person is already a member` |
+| `VALIDATION_ERROR` | Owner invites their own email | `You are already the owner of this garden` |
+| `FORBIDDEN` | Viewer PATCH | `Viewers cannot update this garden` |
+| `FORBIDDEN` | Non-owner DELETE garden | `Only the owner can delete this garden` |
+| `FORBIDDEN` | Non-owner membership manage | `Only the owner can manage membership` |
+
 ---
 
 ## Types
@@ -103,10 +124,10 @@ Create a garden. Caller becomes owner.
 }
 ```
 
-Site fields optional. Name required.
+Site fields optional. Name required (non-empty after trim, max 120 characters).
 
 **Response**: `201` + `GardenDetailDto`  
-**Errors**: `VALIDATION_ERROR`, `CONFLICT` (owned name taken)
+**Errors**: `VALIDATION_ERROR` (blank name, name >120, notes >4000, site profile), `CONFLICT` (owned name taken)
 
 ---
 
