@@ -43,6 +43,15 @@ export const plants = pgTable(
     waterNeeds: text('water_needs'),
     daysToMaturity: integer('days_to_maturity'),
     spacingInches: integer('spacing_inches'),
+    indoorFrostAnchor: text('indoor_frost_anchor'),
+    indoorWeeksEarliest: integer('indoor_weeks_earliest'),
+    indoorWeeksLatest: integer('indoor_weeks_latest'),
+    sowFrostAnchor: text('sow_frost_anchor'),
+    sowWeeksEarliest: integer('sow_weeks_earliest'),
+    sowWeeksLatest: integer('sow_weeks_latest'),
+    transplantFrostAnchor: text('transplant_frost_anchor'),
+    transplantWeeksEarliest: integer('transplant_weeks_earliest'),
+    transplantWeeksLatest: integer('transplant_weeks_latest'),
     provider: text('provider'),
     providerExternalId: text('provider_external_id'),
     status: text('status').notNull().default('active'),
@@ -116,6 +125,24 @@ export const gardenMemberships = pgTable(
       .on(t.gardenId)
       .where(sql`${t.role} = 'owner'`),
     index('garden_memberships_user_id_idx').on(t.userId),
+  ],
+);
+
+export const gardenCalendarEntries = pgTable(
+  'garden_calendar_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    plantId: uuid('plant_id')
+      .notNull()
+      .references(() => plants.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_calendar_entries_garden_plant_uidx').on(t.gardenId, t.plantId),
+    index('garden_calendar_entries_garden_id_idx').on(t.gardenId),
   ],
 );
 

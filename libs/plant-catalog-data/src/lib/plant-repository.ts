@@ -1,5 +1,5 @@
 import { and, asc, count, eq, gte, ilike, lte, or, type SQL } from 'drizzle-orm';
-import type { PlantType } from '@open-garden/shared-types';
+import type { GrowingGuidanceDto, PlantType } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { plants } from './schema';
 
@@ -17,6 +17,7 @@ export interface PlantUpsertInput {
   spacingInches: number | null;
   provider: string | null;
   providerExternalId: string | null;
+  growingGuidance?: GrowingGuidanceDto | null;
 }
 
 export interface PlantListFilters {
@@ -32,6 +33,7 @@ export class PlantRepository {
   constructor(private readonly db: AppDatabase) {}
 
   async upsertByVarietyKey(input: PlantUpsertInput) {
+    const guidance = flattenGuidance(input.growingGuidance);
     const [row] = await this.db
       .insert(plants)
       .values({
@@ -51,6 +53,7 @@ export class PlantRepository {
         status: 'active',
         updatedAt: new Date(),
         lastSyncedAt: new Date(),
+        ...guidance,
       })
       .onConflictDoUpdate({
         target: plants.varietyKey,
@@ -70,6 +73,7 @@ export class PlantRepository {
           status: 'active',
           updatedAt: new Date(),
           lastSyncedAt: new Date(),
+          ...guidance,
         },
       })
       .returning();
@@ -124,6 +128,35 @@ export class PlantRepository {
       pageSize: filters.pageSize,
     };
   }
+}
+
+function flattenGuidance(guidance: GrowingGuidanceDto | null | undefined) {
+  const indoor = sanitizeWindow(guidance?.indoorStart);
+  const sow = sanitizeWindow(guidance?.outdoorSow);
+  const transplant = sanitizeWindow(guidance?.transplant);
+  return {
+    indoorFrostAnchor: indoor?.frostAnchor ?? null,
+    indoorWeeksEarliest: indoor?.weeksEarliest ?? null,
+    indoorWeeksLatest: indoor?.weeksLatest ?? null,
+    sowFrostAnchor: sow?.frostAnchor ?? null,
+    sowWeeksEarliest: sow?.weeksEarliest ?? null,
+    sowWeeksLatest: sow?.weeksLatest ?? null,
+    transplantFrostAnchor: transplant?.frostAnchor ?? null,
+    transplantWeeksEarliest: transplant?.weeksEarliest ?? null,
+    transplantWeeksLatest: transplant?.weeksLatest ?? null,
+  };
+}
+
+function sanitizeWindow(
+  window: GrowingGuidanceDto['indoorStart'] | undefined,
+): GrowingGuidanceDto['indoorStart'] {
+  if (!window) return null;
+  const { frostAnchor, weeksEarliest, weeksLatest } = window;
+  if (frostAnchor !== 'last' && frostAnchor !== 'first') return null;
+  if (!Number.isInteger(weeksEarliest) || !Number.isInteger(weeksLatest)) return null;
+  if (Math.abs(weeksEarliest) > 52 || Math.abs(weeksLatest) > 52) return null;
+  if (weeksEarliest > weeksLatest) return null;
+  return { frostAnchor, weeksEarliest, weeksLatest };
 }
 
 function escapeLike(value: string): string {

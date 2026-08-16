@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, '*-plant-database', '*-household-gardens']
+    branches: [main, '*-plant-database', '*-household-gardens', '*-planting-calendar']
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
