@@ -5,6 +5,7 @@ import {
   text,
   integer,
   timestamp,
+  date,
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
@@ -143,6 +144,48 @@ export const gardenCalendarEntries = pgTable(
   (t) => [
     uniqueIndex('garden_calendar_entries_garden_plant_uidx').on(t.gardenId, t.plantId),
     index('garden_calendar_entries_garden_id_idx').on(t.gardenId),
+  ],
+);
+
+export const gardenBeds = pgTable(
+  'garden_beds',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    nameNormalized: text('name_normalized').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_beds_garden_name_uidx').on(t.gardenId, t.nameNormalized),
+    index('garden_beds_garden_id_idx').on(t.gardenId),
+  ],
+);
+
+export const gardenPlantings = pgTable(
+  'garden_plantings',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    plantId: uuid('plant_id')
+      .notNull()
+      .references(() => plants.id, { onDelete: 'restrict' }),
+    bedId: uuid('bed_id').references(() => gardenBeds.id, { onDelete: 'set null' }),
+    plantedOn: date('planted_on', { mode: 'string' }),
+    harvestedOn: date('harvested_on', { mode: 'string' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    clientMutationId: text('client_mutation_id'),
+  },
+  (t) => [
+    index('garden_plantings_garden_created_idx').on(t.gardenId, t.createdAt),
+    index('garden_plantings_bed_id_idx').on(t.bedId),
+    index('garden_plantings_plant_id_idx').on(t.plantId),
   ],
 );
 
