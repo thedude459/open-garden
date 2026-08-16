@@ -72,8 +72,8 @@ implementation and testing of each story.
 
 ### Tests for User Story 1 (REQUIRED)
 
-- [x] T017 [P] [US1] Vitest unit tests for name trim/blank reject, owner-scoped case-insensitive uniqueness, last-write-wins update, hard delete, and non-member isolation in `libs/gardens/src/lib/garden-service.spec.ts`
-- [x] T018 [P] [US1] Zod contract smokes (no live DB) for garden create/patch/invite schemas and documented 404 error shape in `apps/api-e2e/src/gardens.spec.ts`
+- [x] T017 [P] [US1] Vitest unit tests for name trim/blank reject, name max 120, owner-scoped case-insensitive uniqueness, last-write-wins update, hard delete, and non-member isolation in `libs/gardens/src/lib/garden-service.spec.ts`
+- [x] T018 [P] [US1] Zod contract smokes (no live DB) for garden create/patch schemas and documented 404 error shape in `apps/api-e2e/src/gardens.spec.ts`
 - [x] T019 [P] [US1] Playwright E2E: empty state, create, list, detail, rename/notes, cancel delete vs confirm delete and name reuse in `apps/web-e2e/src/garden-list.spec.ts`
 - [x] T020 [P] [US1] Playwright E2E: after list+detail online, abort `**/api/gardens**` (not `setOffline` + reload) and still read cache; create/edit/delete while unreachable shows online-required within 5 seconds and does not mutate in `apps/web-e2e/src/garden-offline.spec.ts`
 
@@ -100,7 +100,7 @@ implementation and testing of each story.
 
 ### Tests for User Story 2 (REQUIRED)
 
-- [x] T029 [P] [US2] Vitest unit tests for zone 1–13, frost pair both-or-neither per date, last < first when both set, Feb 29 allowed, independent omission in `libs/gardens/src/lib/site-profile.spec.ts`
+- [x] T029 [P] [US2] Vitest unit tests for zone 1–13; each frost date is a month+day pair (both set or both null); last and first frost may be omitted independently; last < first when both dates are set; Feb 29 allowed in `libs/gardens/src/lib/site-profile.spec.ts`
 - [x] T030 [P] [US2] Zod contract smokes (no live DB) for site PATCH zone 1–13 and frost month-day shape in `apps/api-e2e/src/gardens-site.spec.ts`
 - [x] T031 [P] [US2] Playwright E2E: set zone 7 + Apr 15 / Oct 20, reopen; clear first frost only; reject reversed and same-day in `apps/web-e2e/src/garden-site.spec.ts`
 
@@ -124,9 +124,10 @@ implementation and testing of each story.
 ### Tests for User Story 3 (REQUIRED)
 
 - [x] T036 [P] [US3] Vitest unit tests for invite unknown email, self-invite, duplicate member, collaborator/viewer permissions, last-owner cannot leave/demote, transfer (including owned-name CONFLICT) in `libs/gardens/src/lib/membership-service.spec.ts`
-- [x] T037 [P] [US3] Zod contract smokes (no live DB) for invite/member-patch schemas and documented non-member 404 error shape in `apps/api-e2e/src/gardens-membership.spec.ts`
+- [x] T037 [P] [US3] Zod contract smokes (no live DB) for invite/member-patch schemas (including invite role cannot be owner) and documented non-member 404 error shape in `apps/api-e2e/src/gardens-membership.spec.ts`
 - [x] T038 [P] [US3] Playwright E2E: unknown-email invite failure, invite collaborator, collaborator edit vs refused invite/delete, demote to viewer, member list visible, stranger isolation, transfer/leave/remove in `apps/web-e2e/src/garden-share.spec.ts`
 - [x] T039 [P] [US3] Playwright regression: two users sharing a garden still have private favorites and a shared plant catalog in `apps/web-e2e/src/garden-share-catalog.spec.ts`
+- [x] T053 [P] [US3] Playwright E2E: collaborator caches list/detail, owner removes them while garden API is aborted, then restore routes and refresh — garden is gone from the list, detail is not-found, and save is not offered in `apps/web-e2e/src/garden-offline.spec.ts`
 
 ### Implementation for User Story 3
 
@@ -149,7 +150,7 @@ implementation and testing of each story.
 - [x] T047 Confirm Vitest coverage ≥80% for `libs/gardens` (and that `vitest.config.ts` coverage include lists it)
 - [x] T048 [P] Wire CI-parity scripts `scripts/ci/test.sh` and `scripts/ci/e2e.sh` to `npm test` / `npm run e2e` in `package.json` and `.github/workflows/ci.yml`
 - [x] T049 YAGNI pass: no planting calendar, bed geometry, layout canvas, in-ground plantings, or care reminders in `apps/web` or `apps/api`
-- [x] T050 Run `specs/002-household-gardens/quickstart.md` validation (create/list/detail, site profile, sharing, offline read, <2s local list/detail)
+- [x] T050 Run `specs/002-household-gardens/quickstart.md` validation (create/list/detail, site profile, sharing, offline read, reconnect stale membership, <2s local list/detail)
 - [x] T051 Security pass: GET non-member stays 404, notes/name limits enforced, no secrets in garden code, errors use existing `ApiErrorDto` in `apps/api/src/gardens/`
 - [x] T052 Playwright HTTP integration against live API+Postgres (401, stranger 404, CONFLICT duplicate owned name, last-write-wins, site PATCH validation, invite/list/viewer 403/transfer/leave) in `apps/web-e2e/src/garden-api.spec.ts`
 
@@ -186,7 +187,7 @@ implementation and testing of each story.
 - Phase 2: T004–T005 parallel; T009–T010 parallel after T007; T012, T014, T015 parallel with schema work
 - US1: T017–T020 tests parallel; T023–T024 parallel; T025–T026 parallel after API client
 - US2: T029–T031 parallel; T032 parallel with tests
-- US3: T036–T039 parallel; T040 parallel with tests
+- US3: T036–T039 and T053 tests parallel; T040 parallel with tests
 - Polish: T045–T046, T048 parallel
 
 ---
@@ -219,6 +220,7 @@ Task: "membership-service.ts"
 Task: "garden-members.controller.ts"
 Task: "Vitest membership-service.spec.ts"
 Task: "API gardens-membership.spec.ts"
+Task: "Playwright garden-offline reconnect stale membership"
 ```
 
 ---

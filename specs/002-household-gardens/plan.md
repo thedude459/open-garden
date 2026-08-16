@@ -46,9 +46,7 @@ proxied to Nest (`apps/web/proxy.conf.json`) so session cookies stay first-party
 
 **Project Type**: Nx monorepo — `apps/api` + `apps/web` + feature/domain libs
 
-**Performance Goals**: Garden list and detail feel responsive (<2s first load on
-local network under household load). Delete confirm is a client step before one
-DELETE. Last-write-wins saves return the stored garden in the same response.
+**Performance Goals**: Technical first-load gate (distinct from SC-001/SC-002 two-minute usability studies): garden list and detail <2s first load on local network under household load. Delete confirm is a client step before one DELETE. Last-write-wins saves return the stored garden in the same response.
 
 **Constraints**: REST API only; library-first `libs/gardens`; no new plant
 provider calls; garden membership authZ first-class (distinct from
@@ -56,7 +54,8 @@ provider calls; garden membership authZ first-class (distinct from
 (003–006 stay spec-only until this feature is done)
 
 **Scale/Scope**: Household multi-user (tens of users, tens of gardens per user);
-default garden list page size 20; notes max 4000 characters
+default garden list page size 20; garden name max 120 characters; notes max
+4000 characters
 
 ## Constitution Check
 
