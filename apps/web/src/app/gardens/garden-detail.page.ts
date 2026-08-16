@@ -13,7 +13,11 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
     @if (garden(); as g) {
       <h2>{{ g.name }}</h2>
       <p class="muted">You are {{ g.myRole }} of this garden.</p>
-      <p><a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a></p>
+      <p>
+        <a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a>
+        ·
+        <a [routerLink]="['/gardens', g.id, 'plantings']">Plantings</a>
+      </p>
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }

@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Seasonal Plantings
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-08-13
+**Created**: 2026-08-16
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Validation iteration 1: In-ground/planned plantings as a list, optional named beds without geometry, offline queue for planting mutations. Depends on Household Gardens and the plant catalog. Excludes layout canvas, calendar math, and care reminders.
-- All checklist items pass. Spec is ready for `/speckit-clarify` or `/speckit-plan` after prerequisite features.
+- Validation iteration 1 (2026-08-16): Refreshed from the original list-not-map description now that Household Gardens and Planting Calendar exist. Plantings are actual/planned in-ground records, distinct from calendar plans. Named beds are labels only. Offline queue-and-sync for planting and bed mutations. Non-members get the same not-found outcome as a missing garden. Last-write-wins for concurrent online edits. No quantity field, no auto-convert from calendar, no layout geometry, no care reminders.
+- All checklist items pass. Spec is ready for `/speckit-clarify` or `/speckit-plan`.
