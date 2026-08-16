@@ -83,6 +83,7 @@ function toUpsert(
     waterNeeds: string | null;
     daysToMaturity: number | null;
     spacingInches: number | null;
+    growingGuidance?: import('@open-garden/shared-types').GrowingGuidanceDto | null;
   },
   providerId: string,
 ): PlantUpsertInput {
@@ -100,6 +101,7 @@ function toUpsert(
     spacingInches: item.spacingInches,
     provider: providerId,
     providerExternalId: item.externalId,
+    growingGuidance: item.growingGuidance ?? null,
   };
 }
 

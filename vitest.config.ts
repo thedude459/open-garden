@@ -22,6 +22,7 @@ export default defineConfig({
         'libs/plant-provider/src/lib/**/*.ts',
         'libs/auth/src/lib/**/*.ts',
         'libs/gardens/src/lib/**/*.ts',
+        'libs/planting-calendar/src/lib/**/*.ts',
       ],
       exclude: [
         '**/*.spec.ts',
@@ -29,6 +30,7 @@ export default defineConfig({
         '**/plant-data-provider.ts',
         '**/plant.ts',
         '**/garden.ts',
+        '**/calendar.ts',
         '**/test-memory.ts',
         // DB-backed modules need integration fixtures; covered separately later
         'libs/plant-catalog-data/**',
@@ -47,6 +49,14 @@ export default defineConfig({
       ),
       '@open-garden/auth': path.resolve(__dirname, 'libs/auth/src/index.ts'),
       '@open-garden/gardens': path.resolve(__dirname, 'libs/gardens/src/index.ts'),
+      '@open-garden/planting-calendar': path.resolve(
+        __dirname,
+        'libs/planting-calendar/src/index.ts',
+      ),
+      '@open-garden/planting-calendar/this-week': path.resolve(
+        __dirname,
+        'libs/planting-calendar/src/lib/this-week.ts',
+      ),
     },
   },
 });
