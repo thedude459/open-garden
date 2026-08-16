@@ -27,7 +27,7 @@
     "@angular/service-worker": "~22.1.1",
     "@nestjs/common": "^11.1.29",
     "@nestjs/core": "^11.1.29",
-    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/platform-express": "^11.1.29",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "drizzle-orm": "^0.45.2",
