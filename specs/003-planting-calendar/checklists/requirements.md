@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Planting Calendar
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-08-13
+**Created**: 2026-08-16
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,5 +31,6 @@
 
 ## Notes
 
-- Validation iteration 1: Per-garden frost-relative calendar, catalog growing guidance with unavailable windows, favorites as a private picker, online-only calendar-set mutations. Depends on Household Gardens; excludes layout, plantings-in-ground, and watering reminders.
-- All checklist items pass. Spec is ready for `/speckit-clarify` or `/speckit-plan` after 002 is planned/implemented as needed.
+- Validation iteration 1 (2026-08-16): Per-garden frost-relative calendar; catalog growing guidance with unavailable windows; favorites as a private picker; online-only calendar-set mutations; last-write-wins for concurrent edits; non-member not-found isolation matching Household Gardens. Depends on implemented Household Gardens and the plant catalog. Excludes layout, in-ground plantings, and watering/care reminders. Calendar entries do not become seasonal plantings.
+- Analysis remediation (2026-08-16): Unavailable vs N/A collapsed to a single unavailable state in spec assumptions and FR-004. Zone-mismatch fixture is Papaya (zones 9–11).
+- All checklist items pass.

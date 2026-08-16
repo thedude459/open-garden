@@ -82,3 +82,21 @@ textarea, .stack input, .stack select {
   gap: 0.75rem;
   max-width: 22rem;
 }
+.this-week {
+  display: inline-block;
+  margin-right: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1f4d2a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.this-week-row {
+  border-color: rgba(47, 93, 58, 0.55);
+  background: rgba(122, 158, 126, 0.22);
+}
+.banner {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 244, 214, 0.9);
+  border: 1px solid rgba(122, 78, 0, 0.25);
+}

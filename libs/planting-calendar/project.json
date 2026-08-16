@@ -1,0 +1,23 @@
+{
+  "name": "planting-calendar",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/planting-calendar/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:calendar", "layer:domain"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run libs/planting-calendar --passWithNoTests --config vitest.config.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"libs/planting-calendar/**/*.ts\"",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import type { PlantType } from '@open-garden/shared-types';
+import type { GrowingGuidanceDto } from '@open-garden/shared-types';
 
 export interface ProviderPlant {
   externalId: string;
@@ -12,6 +13,7 @@ export interface ProviderPlant {
   waterNeeds: string | null;
   daysToMaturity: number | null;
   spacingInches: number | null;
+  growingGuidance?: GrowingGuidanceDto | null;
 }
 
 export interface PlantDataProvider {
