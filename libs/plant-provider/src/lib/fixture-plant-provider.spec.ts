@@ -10,7 +10,7 @@ describe('FixturePlantProvider', () => {
     expect(results[0]?.commonName.toLowerCase()).toContain('tomato');
   });
 
-  it('includes spinach, papaya zone range, and maple without guidance', async () => {
+  it('includes spinach, papaya zone range, maple without guidance, and unknown spacing', async () => {
     const spinach = (await provider.searchByName('spinach'))[0];
     expect(spinach?.growingGuidance?.outdoorSow?.frostAnchor).toBe('first');
     const papaya = (await provider.searchByName('papaya'))[0];
@@ -19,6 +19,8 @@ describe('FixturePlantProvider', () => {
     expect(papaya?.zoneMax).toBe(11);
     const maple = (await provider.searchByName('red maple'))[0];
     expect(maple?.growingGuidance?.indoorStart).toBeNull();
+    const unknown = (await provider.searchByName('unknown herb'))[0];
+    expect(unknown?.spacingInches).toBeNull();
   });
 
   it('lists pages', async () => {

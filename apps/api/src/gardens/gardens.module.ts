@@ -4,6 +4,7 @@ import { GardenMembersController } from './garden-members.controller';
 import { GardenCalendarController } from './garden-calendar.controller';
 import { GardenPlantingsController } from './garden-plantings.controller';
 import { GardenBedsController } from './garden-beds.controller';
+import { GardenLayoutController } from './garden-layout.controller';
 import { GardenMembershipGuard } from './garden-membership.guard';
 
 @Module({
@@ -13,6 +14,7 @@ import { GardenMembershipGuard } from './garden-membership.guard';
     GardenCalendarController,
     GardenPlantingsController,
     GardenBedsController,
+    GardenLayoutController,
   ],
   providers: [GardenMembershipGuard],
 })

@@ -1,0 +1,23 @@
+{
+  "name": "garden-layout",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/garden-layout/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:layout", "layer:domain"],
+  "targets": {
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run libs/garden-layout --passWithNoTests --config vitest.config.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint \"libs/garden-layout/**/*.ts\"",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}

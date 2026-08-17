@@ -35,7 +35,12 @@
       "@open-garden/seasonal-plantings/beds": ["libs/seasonal-plantings/src/lib/beds.ts"],
       "@open-garden/seasonal-plantings/group-plantings": [
         "libs/seasonal-plantings/src/lib/group-plantings.ts"
-      ]
+      ],
+      "@open-garden/garden-layout": ["libs/garden-layout/src/index.ts"],
+      "@open-garden/garden-layout/evaluate": [
+        "libs/garden-layout/src/lib/evaluate-layout.ts"
+      ],
+      "@open-garden/garden-layout/rotate": ["libs/garden-layout/src/lib/rotate.ts"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true

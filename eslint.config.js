@@ -53,6 +53,7 @@ export default [
                 'scope:gardens',
                 'scope:calendar',
                 'scope:plantings',
+                'scope:layout',
               ],
             },
             {
@@ -63,6 +64,7 @@ export default [
                 'scope:gardens',
                 'scope:calendar',
                 'scope:plantings',
+                'scope:layout',
               ],
             },
           ],

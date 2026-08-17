@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { AppDatabase } from './db';
-import { gardenBeds } from './schema';
+import { gardenBeds, gardenPlantings } from './schema';
 
 export class BedRepository {
   constructor(private readonly db: AppDatabase) {}
@@ -65,7 +65,53 @@ export class BedRepository {
     return row ?? null;
   }
 
+  async setGeometry(
+    gardenId: string,
+    id: string,
+    geometry: {
+      originXInches: number;
+      originYInches: number;
+      lengthInches: number;
+      widthInches: number;
+      orientation: number;
+    },
+  ) {
+    const [row] = await this.db
+      .update(gardenBeds)
+      .set({
+        originXInches: geometry.originXInches,
+        originYInches: geometry.originYInches,
+        lengthInches: geometry.lengthInches,
+        widthInches: geometry.widthInches,
+        orientation: geometry.orientation,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  async clearGeometry(gardenId: string, id: string) {
+    const [row] = await this.db
+      .update(gardenBeds)
+      .set({
+        originXInches: null,
+        originYInches: null,
+        lengthInches: null,
+        widthInches: null,
+        orientation: 0,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
   async delete(gardenId: string, id: string): Promise<boolean> {
+    await this.db
+      .update(gardenPlantings)
+      .set({ layoutXInches: null, layoutYInches: null, updatedAt: new Date() })
+      .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.bedId, id)));
     const deleted = await this.db
       .delete(gardenBeds)
       .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))
@@ -73,3 +119,4 @@ export class BedRepository {
     return deleted.length > 0;
   }
 }
+

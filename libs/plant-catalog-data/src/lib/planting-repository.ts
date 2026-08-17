@@ -63,6 +63,8 @@ export class PlantingRepository {
         bedId: gardenPlantings.bedId,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
+        layoutXInches: gardenPlantings.layoutXInches,
+        layoutYInches: gardenPlantings.layoutYInches,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -70,6 +72,7 @@ export class PlantingRepository {
         cultivar: plants.cultivar,
         plantType: plants.plantType,
         status: plants.status,
+        spacingInches: plants.spacingInches,
       })
       .from(gardenPlantings)
       .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
@@ -133,4 +136,63 @@ export class PlantingRepository {
       .returning({ id: gardenPlantings.id });
     return deleted.length > 0;
   }
+
+  async listAllForLayout(gardenId: string) {
+    return this.db
+      .select({
+        id: gardenPlantings.id,
+        gardenId: gardenPlantings.gardenId,
+        plantId: gardenPlantings.plantId,
+        bedId: gardenPlantings.bedId,
+        layoutXInches: gardenPlantings.layoutXInches,
+        layoutYInches: gardenPlantings.layoutYInches,
+        createdAt: gardenPlantings.createdAt,
+        updatedAt: gardenPlantings.updatedAt,
+        commonName: plants.commonName,
+        species: plants.species,
+        cultivar: plants.cultivar,
+        plantType: plants.plantType,
+        status: plants.status,
+        spacingInches: plants.spacingInches,
+      })
+      .from(gardenPlantings)
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(eq(gardenPlantings.gardenId, gardenId))
+      .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
+  }
+
+  async setPlacement(
+    gardenId: string,
+    id: string,
+    placement: { bedId: string; xInches: number; yInches: number },
+  ) {
+    const [row] = await this.db
+      .update(gardenPlantings)
+      .set({
+        bedId: placement.bedId,
+        layoutXInches: placement.xInches,
+        layoutYInches: placement.yInches,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  async clearLayoutCoords(gardenId: string, id: string) {
+    const [row] = await this.db
+      .update(gardenPlantings)
+      .set({ layoutXInches: null, layoutYInches: null, updatedAt: new Date() })
+      .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  async clearLayoutForBed(gardenId: string, bedId: string) {
+    await this.db
+      .update(gardenPlantings)
+      .set({ layoutXInches: null, layoutYInches: null, updatedAt: new Date() })
+      .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.bedId, bedId)));
+  }
 }
+
