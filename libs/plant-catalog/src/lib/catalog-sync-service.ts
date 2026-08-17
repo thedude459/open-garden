@@ -46,6 +46,8 @@ export class CatalogSyncService {
             waterNeeds: item.waterNeeds,
             daysToMaturity: item.daysToMaturity,
             spacingInches: item.spacingInches,
+            waterIntervalDays: item.waterIntervalDays ?? null,
+            fertilizeIntervalDays: item.fertilizeIntervalDays ?? null,
             provider: this.provider.id,
             providerExternalId: item.externalId,
             growingGuidance: item.growingGuidance ?? null,

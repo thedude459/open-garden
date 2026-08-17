@@ -25,6 +25,7 @@ export default defineConfig({
         'libs/planting-calendar/src/lib/**/*.ts',
         'libs/seasonal-plantings/src/lib/**/*.ts',
         'libs/garden-layout/src/lib/**/*.ts',
+        'libs/care-reminders/src/lib/**/*.ts',
       ],
       exclude: [
         '**/*.spec.ts',
@@ -85,6 +86,11 @@ export default defineConfig({
       '@open-garden/garden-layout/rotate': path.resolve(
         __dirname,
         'libs/garden-layout/src/lib/rotate.ts',
+      ),
+      '@open-garden/care-reminders': path.resolve(__dirname, 'libs/care-reminders/src/index.ts'),
+      '@open-garden/care-reminders/derive': path.resolve(
+        __dirname,
+        'libs/care-reminders/src/lib/derive-export.ts',
       ),
     },
   },

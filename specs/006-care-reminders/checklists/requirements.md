@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Care Reminders
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-08-13
+**Created**: 2026-08-17
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,5 +31,7 @@
 
 ## Notes
 
-- Validation iteration 1: Water/fertilize/harvest reminders derived from plantings, garden-shared complete/dismiss, offline queue for those actions. Depends on Seasonal Plantings. Excludes layout editing, calendar generation, and purchasing.
-- All checklist items pass. Spec is ready for `/speckit-clarify` or `/speckit-plan` after prerequisite features.
+- All items passed on 2026-08-17 after refresh against completed Seasonal Plantings (004) and Garden Layout (005).
+- Informed defaults (no clarification markers): qualitative catalog water labels do not invent a watering cadence; fertilize only when an interval exists; completing harvest does not auto-write the planting harvest date; due dates are household calendar days; v1 kinds are water, fertilize, harvest only.
+- Ready for `/speckit-clarify` (optional) or `/speckit-plan`.
+- **2026-08-17 analyze remediation**: spec/contracts/tasks aligned on harvest one-shot (any event), stale POST acceptance, interval boundary fixture, planting delete, deprecated complete/dismiss, concurrent offline clear, undated per-planting rows, cold offline UX.

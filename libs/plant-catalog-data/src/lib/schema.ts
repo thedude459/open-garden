@@ -45,6 +45,8 @@ export const plants = pgTable(
     waterNeeds: text('water_needs'),
     daysToMaturity: integer('days_to_maturity'),
     spacingInches: integer('spacing_inches'),
+    waterIntervalDays: integer('water_interval_days'),
+    fertilizeIntervalDays: integer('fertilize_interval_days'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
     indoorWeeksLatest: integer('indoor_weeks_latest'),
@@ -207,3 +209,26 @@ export const catalogSyncRuns = pgTable('catalog_sync_runs', {
   plantsUpserted: integer('plants_upserted').notNull().default(0),
   errorMessage: text('error_message'),
 });
+
+export const gardenCareEvents = pgTable(
+  'garden_care_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    plantingId: uuid('planting_id')
+      .notNull()
+      .references(() => gardenPlantings.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    occurrenceOn: date('occurrence_on', { mode: 'string' }).notNull(),
+    action: text('action').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_care_events_occurrence_uidx').on(
+      t.plantingId,
+      t.kind,
+      t.occurrenceOn,
+    ),
+    index('garden_care_events_planting_id_idx').on(t.plantingId),
+  ],
+);

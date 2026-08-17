@@ -29,6 +29,8 @@ export class PlantDetailService {
       waterNeeds: row.waterNeeds,
       daysToMaturity: row.daysToMaturity,
       spacingInches: row.spacingInches,
+      waterIntervalDays: row.waterIntervalDays,
+      fertilizeIntervalDays: row.fertilizeIntervalDays,
       status: row.status as PlantStatus,
       isFavorite,
       growingGuidance: growingGuidanceFromRow(row),
