@@ -6,8 +6,10 @@ import { gardenCareEvents, gardenPlantings } from './schema';
 export class CareEventRepository {
   constructor(private readonly db: AppDatabase) {}
 
-  async listForGarden(gardenId: string) {
-    return this.db
+  async listForGarden(
+    gardenId: string,
+  ): Promise<Array<{ plantingId: string; kind: CareKind; occurrenceOn: string }>> {
+    const rows = await this.db
       .select({
         plantingId: gardenCareEvents.plantingId,
         kind: gardenCareEvents.kind,
@@ -16,6 +18,12 @@ export class CareEventRepository {
       .from(gardenCareEvents)
       .innerJoin(gardenPlantings, eq(gardenCareEvents.plantingId, gardenPlantings.id))
       .where(eq(gardenPlantings.gardenId, gardenId));
+
+    return rows.map((row) => ({
+      plantingId: row.plantingId,
+      kind: row.kind as CareKind,
+      occurrenceOn: row.occurrenceOn,
+    }));
   }
 
   async upsertEvent(

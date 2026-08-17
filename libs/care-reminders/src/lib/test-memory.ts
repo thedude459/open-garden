@@ -59,7 +59,20 @@ export function createReminderMemory() {
   const gardenId = 'garden-1';
   const otherGardenId = 'garden-2';
 
-  const plants = new Map([
+  const plants = new Map<
+    string,
+    {
+      id: string;
+      commonName: string;
+      species: string;
+      cultivar: string | null;
+      plantType: 'vegetable' | 'herb' | 'tree';
+      status: 'active' | 'deprecated';
+      daysToMaturity: number;
+      waterIntervalDays: number | null;
+      fertilizeIntervalDays: number | null;
+    }
+  >([
     [intervalHerb.id, intervalHerb],
     [tomato.id, tomato],
     [deprecatedMaple.id, deprecatedMaple],
