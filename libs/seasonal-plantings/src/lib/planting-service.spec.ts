@@ -261,6 +261,9 @@ function createMemory() {
       row.updatedAt = new Date();
       return row;
     },
+    async clearLayoutCoords() {
+      return null;
+    },
     async delete(gId: string, id: string) {
       const row = plantingRows.get(id);
       if (!row || row.gardenId !== gId) return false;

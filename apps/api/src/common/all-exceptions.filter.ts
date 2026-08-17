@@ -46,8 +46,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const message =
       exception instanceof Error ? exception.message : 'Unexpected error';
     const exposeDetails = isDomain || process.env['NODE_ENV'] !== 'production';
+    const httpStatus =
+      exception && typeof exception === 'object' && 'httpStatus' in exception
+        ? Number((exception as { httpStatus?: unknown }).httpStatus)
+        : undefined;
+    const status =
+      httpStatus && Number.isInteger(httpStatus)
+        ? httpStatus
+        : (DOMAIN_STATUS[rawCode] ?? HttpStatus.INTERNAL_SERVER_ERROR);
 
-    res.status(DOMAIN_STATUS[rawCode] ?? HttpStatus.INTERNAL_SERVER_ERROR).json({
+    res.status(status).json({
       error: {
         code: isDomain ? rawCode : 'INTERNAL',
         message: exposeDetails ? message : 'An unexpected error occurred',

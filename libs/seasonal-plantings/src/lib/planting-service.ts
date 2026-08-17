@@ -91,6 +91,11 @@ export class PlantingService {
     const harvestedOn = dto.harvestedOn !== undefined ? dto.harvestedOn : current.harvestedOn;
     assertDatePair(plantedOn, harvestedOn);
     if (dto.bedId) await this.requireBedInGarden(gardenId, dto.bedId);
+    const bedChanging =
+      dto.bedId !== undefined && dto.bedId !== current.bedId;
+    if (bedChanging) {
+      await this.plantings.clearLayoutCoords(gardenId, plantingId);
+    }
     const updated = await this.plantings.update(gardenId, plantingId, {
       plantedOn: dto.plantedOn,
       harvestedOn: dto.harvestedOn,

@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Garden Layout Designer
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-08-13
+**Created**: 2026-08-16
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Validation iteration 1: To-scale rectangular beds, planting placement, catalog spacing checks, offline read / online-only layout edits. Depends on Household Gardens and Seasonal Plantings. Companion-planting rules excluded.
-- All checklist items pass. Spec is ready for `/speckit-clarify` or `/speckit-plan` after prerequisite features.
+- Validation iteration 1 (2026-08-16): Refreshed from the original to-scale beds + spacing description now that Seasonal Plantings exists. Named beds are the same objects as the planting list, with optional geometry. Layout places existing seasonal plantings only (not calendar plans, not catalog-create). Spacing checks use catalog spacing; unknown spacing is marked unavailable. Offline read / online-only layout edits. Non-members get the same not-found outcome as a missing garden. Last-write-wins for concurrent online edits. Companion planting, purchasing, care reminders, polygons, and GPS are out of scope.
+- All checklist items pass. Spec is ready for `/speckit-clarify` or `/speckit-plan`.

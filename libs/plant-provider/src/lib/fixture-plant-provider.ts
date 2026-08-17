@@ -135,6 +135,19 @@ const FIXTURES: ProviderPlant[] = [
       transplant: null,
     },
   },
+  {
+    externalId: 'fix-unknown-herb',
+    commonName: 'Unknown Herb',
+    species: 'Herba ignota',
+    cultivar: null,
+    plantType: 'herb',
+    zoneMin: 3,
+    zoneMax: 10,
+    sunRequirements: 'Full sun',
+    waterNeeds: 'Low',
+    daysToMaturity: null,
+    spacingInches: null,
+  },
 ];
 
 export class FixturePlantProvider implements PlantDataProvider {

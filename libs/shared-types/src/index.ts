@@ -6,3 +6,5 @@ export * from './lib/calendar';
 export * from './lib/calendar.schemas';
 export * from './lib/planting';
 export * from './lib/planting.schemas';
+export * from './lib/layout';
+export * from './lib/layout.schemas';

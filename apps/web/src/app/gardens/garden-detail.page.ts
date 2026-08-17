@@ -17,6 +17,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
         <a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a>
         ·
         <a [routerLink]="['/gardens', g.id, 'plantings']">Plantings</a>
+        ·
+        <a [routerLink]="['/gardens', g.id, 'layout']">Layout</a>
       </p>
       @if (error()) {
         <p class="error">{{ error() }}</p>

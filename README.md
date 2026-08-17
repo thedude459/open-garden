@@ -97,14 +97,17 @@ Dependabot opens weekly npm + Actions PRs. `main` requires the status checks abo
 | `libs/gardens` | `gardens` | layer:domain |
 | `libs/planting-calendar` | `planting-calendar` | layer:domain |
 | `libs/seasonal-plantings` | `seasonal-plantings` | layer:domain |
+| `libs/garden-layout` | `garden-layout` | layer:domain |
 | `libs/auth` | `auth` | layer:domain |
 
 See `specs/001-plant-database/quickstart.md`,
 `specs/002-household-gardens/quickstart.md`,
-`specs/003-planting-calendar/quickstart.md`, and
-`specs/004-seasonal-plantings/quickstart.md` for architecture details,
+`specs/003-planting-calendar/quickstart.md`,
+`specs/004-seasonal-plantings/quickstart.md`, and
+`specs/005-garden-layout/quickstart.md` for architecture details,
 household-garden verify steps (create/list/detail, site profile, sharing,
 offline read), planting-calendar verify steps (per-garden ranges, frost
-shift, type filter, this-week emphasis, offline cache), and seasonal-plantings
+shift, type filter, this-week emphasis, offline cache), seasonal-plantings
 verify steps (record/dates/confirm-delete, named beds/groups/filter, offline
-queue and no-resurrect).
+queue and no-resurrect), and garden-layout verify steps (beds to scale,
+spacing/fit save gate, offline read cache).

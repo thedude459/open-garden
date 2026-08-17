@@ -40,6 +40,11 @@ export const routes: Routes = [
       import('./gardens/garden-plantings.page').then((m) => m.GardenPlantingsPage),
   },
   {
+    path: 'gardens/:id/layout',
+    canActivate: [authGuard],
+    loadComponent: () => import('./gardens/garden-layout.page').then((m) => m.GardenLayoutPage),
+  },
+  {
     path: 'gardens/:id',
     canActivate: [authGuard],
     loadComponent: () => import('./gardens/garden-detail.page').then((m) => m.GardenDetailPage),
