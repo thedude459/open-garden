@@ -24,6 +24,17 @@ async function openReminders(page: Page, name: string) {
   await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
 }
 
+async function goToReminders(page: Page) {
+  const onGardenDetail = page.getByRole('link', { name: 'Reminders' });
+  if (await onGardenDetail.isVisible()) {
+    await onGardenDetail.click();
+  } else {
+    await page.getByRole('link', { name: 'Back to garden' }).click();
+    await page.getByRole('link', { name: 'Reminders' }).click();
+  }
+  await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+}
+
 async function addFromCatalog(page: Page, name: string) {
   await page.getByRole('link', { name: 'Plantings' }).click();
   await page.getByPlaceholder('Search catalog to add').fill(name);
@@ -57,7 +68,7 @@ test('reminders list: harvest, no moderate water, empty CTA, viewer read-only', 
   await fillDate(tomato.locator('input[type="date"]').first(), '2026-01-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
 
-  await owner.getByRole('link', { name: 'Reminders' }).click();
+  await goToReminders(owner);
   await expect(owner.getByText('Harvest')).toBeVisible();
   await expect(owner.locator('li').filter({ hasText: 'Cherry Tomato' }).getByText('Water')).toHaveCount(
     0,

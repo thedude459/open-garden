@@ -15,6 +15,17 @@ async function newUser(browser: Browser, email: string) {
   return page;
 }
 
+async function goToReminders(page: Page) {
+  const onGardenDetail = page.getByRole('link', { name: 'Reminders' });
+  if (await onGardenDetail.isVisible()) {
+    await onGardenDetail.click();
+  } else {
+    await page.getByRole('link', { name: 'Back to garden' }).click();
+    await page.getByRole('link', { name: 'Reminders' }).click();
+  }
+  await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+}
+
 async function setupGardenWithTomato(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill(name);
@@ -32,7 +43,7 @@ async function setupGardenWithTomato(page: Page, name: string) {
     field.dispatchEvent(new Event('change', { bubbles: true }));
   });
   await tomato.getByRole('button', { name: 'Save planting' }).click();
-  await page.getByRole('link', { name: 'Reminders' }).click();
+  await goToReminders(page);
 }
 
 test('collaborator completes harvest; planting remains; viewer read-only', async ({ browser }) => {
