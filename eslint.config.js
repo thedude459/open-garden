@@ -54,6 +54,7 @@ export default [
                 'scope:calendar',
                 'scope:plantings',
                 'scope:layout',
+                'scope:care',
               ],
             },
             {
@@ -65,6 +66,7 @@ export default [
                 'scope:calendar',
                 'scope:plantings',
                 'scope:layout',
+                'scope:care',
               ],
             },
           ],

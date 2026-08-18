@@ -23,6 +23,8 @@ export interface PlantDetailDto extends PlantSummaryDto {
   waterNeeds: string | null;
   daysToMaturity: number | null;
   spacingInches: number | null;
+  waterIntervalDays: number | null;
+  fertilizeIntervalDays: number | null;
   status: PlantStatus;
   isFavorite: boolean;
   growingGuidance: import('./calendar').GrowingGuidanceDto;

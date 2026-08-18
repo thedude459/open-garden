@@ -28,6 +28,12 @@ export const routes: Routes = [
     loadComponent: () => import('./gardens/garden-list.page').then((m) => m.GardenListPage),
   },
   {
+    path: 'gardens/:id/reminders',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./gardens/garden-reminders.page').then((m) => m.GardenRemindersPage),
+  },
+  {
     path: 'gardens/:id/calendar',
     canActivate: [authGuard],
     loadComponent: () =>

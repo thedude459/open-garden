@@ -13,6 +13,8 @@ export interface ProviderPlant {
   waterNeeds: string | null;
   daysToMaturity: number | null;
   spacingInches: number | null;
+  waterIntervalDays?: number | null;
+  fertilizeIntervalDays?: number | null;
   growingGuidance?: GrowingGuidanceDto | null;
 }
 
