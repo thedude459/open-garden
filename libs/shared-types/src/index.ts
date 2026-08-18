@@ -10,3 +10,5 @@ export * from './lib/layout';
 export * from './lib/layout.schemas';
 export * from './lib/reminders';
 export * from './lib/reminders.schemas';
+export * from './lib/pipeline';
+export * from './lib/pipeline.schemas';

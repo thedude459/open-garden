@@ -28,7 +28,7 @@ import { PlantsApiService } from './plants-api.service';
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
-      <p class="muted">No plants match. Try clearing filters or run fixture sync.</p>
+      <p class="muted">No plants match. Try clearing filters.</p>
     } @else {
       <div class="card-list">
         @for (p of items(); track p.id) {

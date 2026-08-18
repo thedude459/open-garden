@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
+import { adminGuard } from './admin/admin.guard';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'plants' },
@@ -49,6 +50,11 @@ export const routes: Routes = [
     path: 'gardens/:id/layout',
     canActivate: [authGuard],
     loadComponent: () => import('./gardens/garden-layout.page').then((m) => m.GardenLayoutPage),
+  },
+  {
+    path: 'admin/pipeline',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./admin/pipeline.page').then((m) => m.PipelinePage),
   },
   {
     path: 'gardens/:id',

@@ -4,20 +4,23 @@ Home garden planning PWA — **Nx monorepo** with NestJS API and Angular web cli
 
 ## Quick start
 
+Nx is a local devDependency (`npx nx …` or `npm run …`). Do not expect a global `nx` binary.
+
 ```bash
+npm install
 cp .env.example .env
 docker compose up -d postgres
-nx run api:sync-plants
+npm run api:sync-plants
 # terminal 1
-nx serve api
+npm run api:serve
 # terminal 2
-nx serve web
+npm run web:serve
 ```
 
 Demo users (after sync):
 
 - `gardener@example.com` / `password123`
-- `admin@example.com` / `password123` (admin sync)
+- `admin@example.com` / `password123` (admin pipeline)
 
 ## Tests (same as CI)
 
@@ -40,27 +43,30 @@ on macOS) and waits until the daemon is ready before Compose Postgres.
 ## Common Nx commands
 
 ```bash
-nx show projects
-nx graph
-nx serve api
-nx serve web
-nx test plant-catalog
-nx run-many -t test --all
-nx run api:sync-plants
-nx run plant-catalog-data:migrate
-nx e2e web-e2e
-nx affected -t test
+npx nx show projects
+npx nx graph
+npm run api:serve
+npm run web:serve
+npx nx test plant-catalog
+npx nx run-many -t test --all
+npm run api:sync-plants
+npm run migrate
+npm run e2e:only
+npx nx affected -t test
 ```
 
-## Operator plant sync
+## Operator catalog pipeline
 
 ```bash
-nx run api:sync-plants
-# or authenticated admin:
-# POST /api/admin/plants/sync { "provider": "fixture", "limit": 500 }
+npm run api:sync-plants         # blocking full fixture load (no 500 cap)
+# In-product admin: sign in as admin@example.com and open /admin/pipeline
+# HTTP: POST /api/admin/pipeline/runs (202, continues in-process)
 ```
 
-Set `PLANT_PROVIDER=perenual` and `PERENUAL_API_KEY` for the HTTP adapter.
+Optional live source: set `PERENUAL_API_KEY` and PATCH settings
+`sourceOrder` to `["fixture", "perenual"]`. Local/CI default is fixture only.
+
+See `specs/007-data-pipeline/quickstart.md` for populate / merge / monitor checks.
 
 ## CI
 
@@ -98,14 +104,16 @@ Dependabot opens weekly npm + Actions PRs. `main` requires the status checks abo
 | `libs/planting-calendar` | `planting-calendar` | layer:domain |
 | `libs/seasonal-plantings` | `seasonal-plantings` | layer:domain |
 | `libs/garden-layout` | `garden-layout` | layer:domain |
+| `libs/catalog-pipeline` | `catalog-pipeline` | layer:domain |
 | `libs/auth` | `auth` | layer:domain |
 
 See `specs/001-plant-database/quickstart.md`,
 `specs/002-household-gardens/quickstart.md`,
 `specs/003-planting-calendar/quickstart.md`,
-`specs/004-seasonal-plantings/quickstart.md`, and
-`specs/005-garden-layout/quickstart.md`, and
-`specs/006-care-reminders/quickstart.md` for architecture details,
+`specs/004-seasonal-plantings/quickstart.md`,
+`specs/005-garden-layout/quickstart.md`,
+`specs/006-care-reminders/quickstart.md`, and
+`specs/007-data-pipeline/quickstart.md` for architecture details,
 household-garden verify steps (create/list/detail, site profile, sharing,
 offline read), planting-calendar verify steps (per-garden ranges, frost
 shift, type filter, this-week emphasis, offline cache), seasonal-plantings
