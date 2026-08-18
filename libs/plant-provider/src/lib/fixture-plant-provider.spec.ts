@@ -28,4 +28,14 @@ describe('FixturePlantProvider', () => {
     expect(page.items).toHaveLength(2);
     expect(page.nextCursor).toBeDefined();
   });
+
+  it('lists at least 50 unique varieties including named catalog plants', async () => {
+    const page = await provider.listPage({ limit: 100 });
+    expect(page.items.length).toBeGreaterThanOrEqual(50);
+    const names = new Set(page.items.map((p) => p.commonName));
+    expect(names.has('Cherry Tomato')).toBe(true);
+    expect(names.has('Sweet Basil')).toBe(true);
+    expect(names.has('Interval Herb')).toBe(true);
+    expect(names.size).toBe(page.items.length);
+  });
 });

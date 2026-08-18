@@ -42,7 +42,8 @@
       ],
       "@open-garden/garden-layout/rotate": ["libs/garden-layout/src/lib/rotate.ts"],
       "@open-garden/care-reminders": ["libs/care-reminders/src/index.ts"],
-      "@open-garden/care-reminders/derive": ["libs/care-reminders/src/lib/derive-export.ts"]
+      "@open-garden/care-reminders/derive": ["libs/care-reminders/src/lib/derive-export.ts"],
+      "@open-garden/catalog-pipeline": ["libs/catalog-pipeline/src/index.ts"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true

@@ -1,6 +1,6 @@
 import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
 
-const FIXTURES: ProviderPlant[] = [
+const NAMED_FIXTURES: ProviderPlant[] = [
   {
     externalId: 'fix-tomato-cherry',
     commonName: 'Cherry Tomato',
@@ -164,6 +164,25 @@ const FIXTURES: ProviderPlant[] = [
     fertilizeIntervalDays: 21,
   },
 ];
+
+const EXTRA_FIXTURES: ProviderPlant[] = Array.from({ length: 40 }, (_, i) => {
+  const n = String(i + 1).padStart(2, '0');
+  return {
+    externalId: `fix-extra-${n}`,
+    commonName: `Pipeline Extra ${n}`,
+    species: `Brassica pipeline ${n}`,
+    cultivar: null,
+    plantType: 'vegetable',
+    zoneMin: 3,
+    zoneMax: 9,
+    sunRequirements: 'Full sun',
+    waterNeeds: 'Moderate',
+    daysToMaturity: 50 + i,
+    spacingInches: 12,
+  };
+});
+
+const FIXTURES: ProviderPlant[] = [...NAMED_FIXTURES, ...EXTRA_FIXTURES];
 
 export class FixturePlantProvider implements PlantDataProvider {
   readonly id = 'fixture';

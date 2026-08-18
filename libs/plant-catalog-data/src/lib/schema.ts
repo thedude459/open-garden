@@ -7,6 +7,7 @@ import {
   smallint,
   timestamp,
   date,
+  jsonb,
   uniqueIndex,
   index,
 } from 'drizzle-orm/pg-core';
@@ -208,6 +209,87 @@ export const catalogSyncRuns = pgTable('catalog_sync_runs', {
   status: text('status').notNull().default('running'),
   plantsUpserted: integer('plants_upserted').notNull().default(0),
   errorMessage: text('error_message'),
+});
+
+export const catalogPipelineRuns = pgTable(
+  'catalog_pipeline_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    triggeredBy: text('triggered_by').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    status: text('status').notNull().default('running'),
+    plantsUpserted: integer('plants_upserted').notNull().default(0),
+    plantsDeprecated: integer('plants_deprecated').notNull().default(0),
+    plantsReactivated: integer('plants_reactivated').notNull().default(0),
+    recordsRejected: integer('records_rejected').notNull().default(0),
+    errorMessage: text('error_message'),
+  },
+  (t) => [
+    uniqueIndex('catalog_pipeline_runs_one_running_uidx')
+      .on(t.status)
+      .where(sql`${t.status} = 'running'`),
+    index('catalog_pipeline_runs_started_at_idx').on(t.startedAt),
+  ],
+);
+
+export const catalogPipelineRunSources = pgTable(
+  'catalog_pipeline_run_sources',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => catalogPipelineRuns.id, { onDelete: 'cascade' }),
+    sourceId: text('source_id').notNull(),
+    status: text('status').notNull(),
+    recordsAccepted: integer('records_accepted').notNull().default(0),
+    recordsRejected: integer('records_rejected').notNull().default(0),
+    errorMessage: text('error_message'),
+  },
+  (t) => [uniqueIndex('catalog_pipeline_run_sources_run_source_uidx').on(t.runId, t.sourceId)],
+);
+
+export const catalogPipelineMergeDecisions = pgTable(
+  'catalog_pipeline_merge_decisions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => catalogPipelineRuns.id, { onDelete: 'cascade' }),
+    varietyKey: text('variety_key').notNull(),
+    contributingSources: text('contributing_sources').array().notNull(),
+    fieldWinners: jsonb('field_winners').$type<Record<string, string>>().notNull(),
+  },
+  (t) => [
+    uniqueIndex('catalog_pipeline_merge_decisions_run_key_uidx').on(t.runId, t.varietyKey),
+  ],
+);
+
+export const catalogPlantSources = pgTable(
+  'catalog_plant_sources',
+  {
+    plantId: uuid('plant_id')
+      .notNull()
+      .references(() => plants.id, { onDelete: 'cascade' }),
+    sourceId: text('source_id').notNull(),
+    externalId: text('external_id').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('catalog_plant_sources_plant_source_uidx').on(t.plantId, t.sourceId),
+    index('catalog_plant_sources_source_id_idx').on(t.sourceId),
+  ],
+);
+
+export const catalogPipelineSettings = pgTable('catalog_pipeline_settings', {
+  id: integer('id').primaryKey(),
+  cadence: text('cadence').notNull().default('daily'),
+  runAtHourUtc: integer('run_at_hour_utc').notNull().default(6),
+  sourceOrder: text('source_order').array().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedByUserId: uuid('updated_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
 });
 
 export const gardenCareEvents = pgTable(

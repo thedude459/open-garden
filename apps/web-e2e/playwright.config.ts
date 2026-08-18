@@ -9,5 +9,19 @@ export default defineConfig({
     baseURL: 'http://localhost:4200',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /pipeline-/,
+    },
+    {
+      name: 'pipeline',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /pipeline-.*\.spec\.ts/,
+      dependencies: ['chromium'],
+      fullyParallel: false,
+      workers: 1,
+    },
+  ],
 });

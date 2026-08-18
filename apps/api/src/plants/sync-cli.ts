@@ -2,16 +2,21 @@ import 'dotenv/config';
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Client } from 'pg';
-import { createDb, PlantRepository } from '@open-garden/plant-catalog-data';
-import { CatalogSyncService } from '@open-garden/plant-catalog';
+import { CatalogPipelineService } from '@open-garden/catalog-pipeline';
+import {
+  createDb,
+  PipelineRunRepository,
+  PipelineSettingsRepository,
+  PlantRepository,
+  PlantSourceRepository,
+} from '@open-garden/plant-catalog-data';
 import { AuthService } from '@open-garden/auth';
-import { createProvider } from './plants.controller';
+import { createPipelineSources } from '../admin/pipeline-sources';
 
 async function main() {
   const url = process.env['DATABASE_URL'];
   if (!url) throw new Error('DATABASE_URL required');
 
-  // Apply SQL migrations if needed (idempotent)
   const client = new Client({ connectionString: url });
   await client.connect();
   const migrationsDir = resolve(process.cwd(), 'libs/plant-catalog-data/migrations');
@@ -29,11 +34,21 @@ async function main() {
   await auth.ensureAdmin('admin@example.com', 'password123');
   await auth.register('gardener@example.com', 'password123', 'Gardener').catch(() => undefined);
 
-  const provider = createProvider();
   const plants = new PlantRepository(db);
-  const sync = new CatalogSyncService(db, plants, provider);
-  const result = await sync.runOperatorSync(500);
-  console.log(`Synced ${result.upserted} plants via ${provider.id}`);
+  const plantSources = new PlantSourceRepository(db);
+  const runs = new PipelineRunRepository(db);
+  const settings = new PipelineSettingsRepository(db);
+  const pipeline = new CatalogPipelineService(
+    runs,
+    settings,
+    {
+      listSnapshots: () => plants.listSnapshots(),
+      listSourceLinks: () => plantSources.listAll(),
+    },
+    createPipelineSources(),
+  );
+  const result = await pipeline.runAndWait('operator');
+  console.log(`Pipeline ${result.status}: upserted ${result.plantsUpserted} plants`);
   await pool.end();
 }
 
