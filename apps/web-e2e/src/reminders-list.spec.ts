@@ -76,7 +76,9 @@ test('reminders list: harvest, no moderate water, empty CTA, viewer read-only', 
 
   await owner.getByRole('link', { name: 'Back to garden' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-list-viewer-${stamp}@example.com`);
+  await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
+  await expect(owner.getByText(`rem-list-viewer-${stamp}@example.com`)).toBeVisible();
   await owner.getByRole('link', { name: 'Reminders' }).click();
   await expect(owner.getByRole('button', { name: 'Complete' })).toBeVisible();
 

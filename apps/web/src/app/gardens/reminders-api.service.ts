@@ -4,7 +4,6 @@ import { firstValueFrom } from 'rxjs';
 import type { ReminderListDto, ReminderMutationDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardenRemindersCacheService } from './garden-reminders-cache.service';
-import { OnlineRequiredError } from './gardens-api.service';
 import {
   RemindersOfflineQueue,
   type ClientReminderList,
@@ -154,8 +153,10 @@ export class RemindersApiService {
   }
 
   private async drain(gardenId: string) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     const pending = await this.queue.listForGarden(gardenId);
     for (const item of pending) {
+      if (item.failedMessage) continue;
       const path =
         item.action === 'complete'
           ? `${API}/gardens/${gardenId}/reminders/complete`
@@ -170,7 +171,7 @@ export class RemindersApiService {
         );
         await this.queue.delete(item.key);
       } catch (err) {
-        if (isNotFound(err)) {
+        if (isGardenGone(err)) {
           const userId = this.userId();
           if (userId) {
             await this.cache.delete(userId, gardenId);
@@ -178,9 +179,9 @@ export class RemindersApiService {
           }
           return;
         }
-        const message = errorMessage(err) ?? 'Sync failed';
-        await this.queue.markFailed(item.key, message);
-        throw err;
+        if (isClientError(err)) {
+          await this.queue.markFailed(item.key, errorMessage(err) ?? 'Sync failed');
+        }
       }
     }
   }
@@ -198,6 +199,14 @@ export class RemindersApiService {
 
 function isNotFound(err: unknown): boolean {
   return err instanceof HttpErrorResponse && err.status === 404;
+}
+
+function isGardenGone(err: unknown): boolean {
+  return isNotFound(err) && errorMessage(err) === 'Garden not found';
+}
+
+function isClientError(err: unknown): boolean {
+  return err instanceof HttpErrorResponse && err.status >= 400 && err.status < 500;
 }
 
 function isOfflineFetch(err: unknown): boolean {

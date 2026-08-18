@@ -69,6 +69,7 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await owner.getByRole('link', { name: 'Reminders' }).click();
   await expect(owner.getByText('Harvest')).toHaveCount(0);
 
+  await owner.getByRole('link', { name: 'Back to garden' }).click();
   await owner.getByRole('link', { name: 'Plantings' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
   await expect(owner.locator('input[name^="harvested-"]').first()).toHaveValue('');
