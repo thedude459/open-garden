@@ -8,3 +8,5 @@ export * from './lib/planting';
 export * from './lib/planting.schemas';
 export * from './lib/layout';
 export * from './lib/layout.schemas';
+export * from './lib/reminders';
+export * from './lib/reminders.schemas';

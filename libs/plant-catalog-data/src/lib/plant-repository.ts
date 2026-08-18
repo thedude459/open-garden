@@ -15,6 +15,8 @@ export interface PlantUpsertInput {
   waterNeeds: string | null;
   daysToMaturity: number | null;
   spacingInches: number | null;
+  waterIntervalDays?: number | null;
+  fertilizeIntervalDays?: number | null;
   provider: string | null;
   providerExternalId: string | null;
   growingGuidance?: GrowingGuidanceDto | null;
@@ -48,6 +50,8 @@ export class PlantRepository {
         waterNeeds: input.waterNeeds,
         daysToMaturity: input.daysToMaturity,
         spacingInches: input.spacingInches,
+        waterIntervalDays: input.waterIntervalDays ?? null,
+        fertilizeIntervalDays: input.fertilizeIntervalDays ?? null,
         provider: input.provider,
         providerExternalId: input.providerExternalId,
         status: 'active',
@@ -68,6 +72,8 @@ export class PlantRepository {
           waterNeeds: input.waterNeeds,
           daysToMaturity: input.daysToMaturity,
           spacingInches: input.spacingInches,
+          waterIntervalDays: input.waterIntervalDays ?? null,
+          fertilizeIntervalDays: input.fertilizeIntervalDays ?? null,
           provider: input.provider,
           providerExternalId: input.providerExternalId,
           status: 'active',

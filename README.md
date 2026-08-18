@@ -104,7 +104,8 @@ See `specs/001-plant-database/quickstart.md`,
 `specs/002-household-gardens/quickstart.md`,
 `specs/003-planting-calendar/quickstart.md`,
 `specs/004-seasonal-plantings/quickstart.md`, and
-`specs/005-garden-layout/quickstart.md` for architecture details,
+`specs/005-garden-layout/quickstart.md`, and
+`specs/006-care-reminders/quickstart.md` for architecture details,
 household-garden verify steps (create/list/detail, site profile, sharing,
 offline read), planting-calendar verify steps (per-garden ranges, frost
 shift, type filter, this-week emphasis, offline cache), seasonal-plantings

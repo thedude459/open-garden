@@ -148,6 +148,21 @@ const FIXTURES: ProviderPlant[] = [
     daysToMaturity: null,
     spacingInches: null,
   },
+  {
+    externalId: 'fix-interval-herb',
+    commonName: 'Interval Herb',
+    species: 'Herba intervalis',
+    cultivar: null,
+    plantType: 'herb',
+    zoneMin: 4,
+    zoneMax: 10,
+    sunRequirements: 'Full sun',
+    waterNeeds: 'Moderate',
+    daysToMaturity: 45,
+    spacingInches: 6,
+    waterIntervalDays: 7,
+    fertilizeIntervalDays: 21,
+  },
 ];
 
 export class FixturePlantProvider implements PlantDataProvider {

@@ -188,6 +188,28 @@ export class PlantingRepository {
     return row ?? null;
   }
 
+  async listAllForReminders(gardenId: string) {
+    return this.db
+      .select({
+        id: gardenPlantings.id,
+        plantId: gardenPlantings.plantId,
+        commonName: plants.commonName,
+        species: plants.species,
+        cultivar: plants.cultivar,
+        plantType: plants.plantType,
+        status: plants.status,
+        plantedOn: gardenPlantings.plantedOn,
+        harvestedOn: gardenPlantings.harvestedOn,
+        daysToMaturity: plants.daysToMaturity,
+        waterIntervalDays: plants.waterIntervalDays,
+        fertilizeIntervalDays: plants.fertilizeIntervalDays,
+      })
+      .from(gardenPlantings)
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(eq(gardenPlantings.gardenId, gardenId))
+      .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
+  }
+
   async clearLayoutForBed(gardenId: string, bedId: string) {
     await this.db
       .update(gardenPlantings)
