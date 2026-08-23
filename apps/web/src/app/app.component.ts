@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { NavigationStart, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs/operators';
+import { NoticeHost } from './ui/notice-host';
+import { NoticeService } from './ui/notice.service';
 
 @Component({
   selector: 'og-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, NoticeHost],
   template: `
     <div class="shell">
       <nav class="nav">
@@ -16,6 +19,14 @@ import { RouterLink, RouterOutlet } from '@angular/router';
       </nav>
       <router-outlet />
     </div>
+    <og-notice-host />
   `,
 })
-export class AppComponent {}
+export class AppComponent {
+  constructor() {
+    const notices = inject(NoticeService);
+    inject(Router)
+      .events.pipe(filter((e): e is NavigationStart => e instanceof NavigationStart))
+      .subscribe(() => notices.clear());
+  }
+}

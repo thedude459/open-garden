@@ -1,105 +1,45 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { evaluateLayout } from '@open-garden/garden-layout/evaluate';
-import { bedPlanSize, localToPlan, rotateBed90 } from '@open-garden/garden-layout/rotate';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { originFromCenter, drawableBeds } from '@open-garden/garden-layout';
+import { rotateBed90 } from '@open-garden/garden-layout/rotate';
 import type {
   BedGeometryDto,
-  GardenLayoutDto,
+  LayoutAreaDto,
   LayoutBedDto,
-  LayoutFlagDto,
-  LayoutPlantingDto,
-  LayoutPutDto,
 } from '@open-garden/shared-types';
+import { GardenPlanCanvas } from './garden-plan-canvas';
 import { LayoutApiService } from './layout-api.service';
-import { PlantingsApiService } from './plantings-api.service';
-import { OnlineRequiredError } from './gardens-api.service';
+import { PlannerDraftService } from './planner-draft.service';
+import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
+import { NoticeService } from '../ui/notice.service';
+import { PlaceMarker } from '../ui/place-marker';
+import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState],
   template: `
     <p><a [routerLink]="['/gardens', gardenId]">Back to garden</a></p>
-    <h2>Layout</h2>
+    <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Garden Overview" />
+    <div class="planner">
+    <h2>Garden Overview</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
+    }
+    @if (status()) {
+      <p role="status">{{ status() }}</p>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (!draft()) {
       <p class="muted">Garden unavailable or not found.</p>
     } @else {
-      @if (!draft()!.beds.length) {
-        <p class="muted">
-          Add a named bed with length and width to draw the garden to scale.
-        </p>
+      @if (dirty()) {
+        <p role="status">Unsaved changes</p>
       }
-      @if (needsSize().length) {
-        <h3>Needs size</h3>
-        <ul class="card-list">
-          @for (bed of needsSize(); track bed.id) {
-            <li class="row">
-              <span>{{ bed.name }}</span>
-              @if (canEdit()) {
-                <form class="filters" (ngSubmit)="sizeBed(bed)">
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    [ngModel]="sizeLength[bed.id] ?? 96"
-                    (ngModelChange)="sizeLength[bed.id] = toInt($event)"
-                    [ngModelOptions]="{ standalone: true }"
-                    [attr.name]="'needs-length-' + bed.id"
-                    placeholder="Length (in)"
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    [ngModel]="sizeWidth[bed.id] ?? 48"
-                    (ngModelChange)="sizeWidth[bed.id] = toInt($event)"
-                    [ngModelOptions]="{ standalone: true }"
-                    [attr.name]="'needs-width-' + bed.id"
-                    placeholder="Width (in)"
-                  />
-                  <button type="submit">Size {{ bed.name }}</button>
-                </form>
-              }
-            </li>
-          }
-        </ul>
-      }
-      @if (canEdit()) {
-        <form class="filters" (ngSubmit)="createBed()">
-          <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
-          <input
-            type="number"
-            min="1"
-            step="1"
-            [(ngModel)]="newLength"
-            name="newLength"
-            placeholder="Length (in)"
-          />
-          <input
-            type="number"
-            min="1"
-            step="1"
-            [(ngModel)]="newWidth"
-            name="newWidth"
-            placeholder="Width (in)"
-          />
-          <button type="submit">Create bed</button>
-        </form>
-      }
-      <div class="filters">
-        <button type="button" (click)="zoomIn()">Zoom in</button>
-        <button type="button" (click)="zoomOut()">Zoom out</button>
-        @if (canEdit()) {
-          <button type="button" (click)="save()">Save layout</button>
-        }
-      </div>
-      @for (flag of liveFlags(); track $index) {
+      @for (flag of flags(); track $index) {
         <p class="needs-attention" role="status">
           @if (flag.kind === 'spacing') {
             Too close
@@ -110,174 +50,250 @@ import { OnlineRequiredError } from './gardens-api.service';
           }
         </p>
       }
-      <svg class="layout-plan" [attr.viewBox]="viewBox()" aria-label="Garden plan">
-        @for (bed of sizedBeds(); track bed.id) {
-          @if (bed.geometry; as geo) {
-            <rect
-              [attr.x]="geo.originXInches"
-              [attr.y]="geo.originYInches"
-              [attr.width]="planSize(geo).width"
-              [attr.height]="planSize(geo).height"
-              class="layout-bed"
-              [class.selected]="selectedId() === bed.id"
-              (click)="selectBed(bed.id)"
-            />
-            <text
-              [attr.x]="geo.originXInches + 4"
-              [attr.y]="geo.originYInches + 14"
-              class="layout-label"
-            >
-              {{ bed.name }}
-            </text>
-            @for (planting of placedIn(bed.id); track planting.id) {
-              @if (planting.placement; as place) {
-                <circle
-                  [attr.cx]="localToPlan(geo, place.xInches, place.yInches).x"
-                  [attr.cy]="localToPlan(geo, place.xInches, place.yInches).y"
-                  r="4"
-                  class="layout-plant"
-                />
-              }
-            }
-          }
-        }
-      </svg>
-      <ul class="card-list">
-        @for (bed of sizedBeds(); track bed.id) {
-          <li class="stack">
-            <button type="button" (click)="selectBed(bed.id)">{{ bed.name }}</button>
-            @if (bed.geometry; as geo) {
-              <span>{{ geo.lengthInches }} × {{ geo.widthInches }} in · {{ geo.orientation }}°</span>
-            }
-            @if (canEdit() && selectedId() === bed.id && bed.geometry) {
-              <form class="filters" (ngSubmit)="save()">
-                <label>
-                  Origin X
-                  <input
-                    type="number"
-                    step="1"
-                    name="originX"
-                    [ngModel]="bed.geometry.originXInches"
-                    (ngModelChange)="patchSelected({ originXInches: toInt($event) })"
-                  />
-                </label>
-                <label>
-                  Origin Y
-                  <input
-                    type="number"
-                    step="1"
-                    name="originY"
-                    [ngModel]="bed.geometry.originYInches"
-                    (ngModelChange)="patchSelected({ originYInches: toInt($event) })"
-                  />
-                </label>
-                <label>
-                  Length (in)
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    name="length"
-                    [ngModel]="bed.geometry.lengthInches"
-                    (ngModelChange)="patchSelected({ lengthInches: toInt($event) })"
-                  />
-                </label>
-                <label>
-                  Width (in)
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    name="width"
-                    [ngModel]="bed.geometry.widthInches"
-                    (ngModelChange)="patchSelected({ widthInches: toInt($event) })"
-                  />
-                </label>
-              </form>
-              <button type="button" (click)="rotateSelected()">Rotate 90°</button>
-              @if (confirmDeleteId() !== bed.id) {
-                <button type="button" (click)="confirmDeleteId.set(bed.id)">
-                  Delete bed {{ bed.name }}
-                </button>
-              } @else {
-                <p>Permanently delete {{ bed.name }}? Plantings will be unassigned.</p>
-                <button type="button" (click)="deleteBed(bed)">Confirm delete {{ bed.name }}</button>
-                <button type="button" (click)="confirmDeleteId.set(null)">Cancel</button>
-              }
-            }
-          </li>
-        }
-      </ul>
-      @if (unplaced().length) {
-        <h3>Unplaced</h3>
+      <div class="planner-toolbar">
+        <button type="button" (click)="zoomIn()">Zoom in</button>
+        <button type="button" (click)="zoomOut()">Zoom out</button>
         @if (canEdit()) {
-          <div class="filters">
-            <select name="unplacedPlanting" [(ngModel)]="placePlantingId">
-              <option value="">Choose a planting</option>
-              @for (p of unplaced(); track p.id) {
-                <option [value]="p.id">{{ plantingLabel(p) }}</option>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="save()"
+            [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
+            [disabled]="notices.busyMap().has('save-layout')"
+          >
+            Save layout
+          </button>
+        }
+        <a [routerLink]="['/gardens', gardenId, 'transplants']">Transplants</a>
+      </div>
+      <div class="planner-stage">
+        <og-garden-plan-canvas
+          [beds]="draft()!.beds"
+          [areas]="draft()!.areas"
+          [plantings]="draft()!.plantings"
+          [selectedId]="selectedId()"
+          [canEdit]="canEdit()"
+          [online]="online()"
+          [allowPlantingDrag]="false"
+          [showPlantingMarks]="true"
+          [allowBedGeometry]="true"
+          [openBedOnClick]="true"
+          [planLabel]="'Garden plan'"
+          (selectBed)="selectBed($event)"
+          (bedGeometry)="onBedGeometry($event)"
+          (areaGeometry)="onAreaGeometry($event)"
+          (gestureEnd)="refreshFlags()"
+          (offlineRequired)="onOfflineRequired()"
+        />
+        <aside class="planner-rail">
+          @if (!draft()!.beds.length) {
+            <og-empty-state title="No beds yet" [body]="emptyBedBody()">
+              @if (canEdit()) {
+                <span class="muted">Use Create bed with a name, length, and width.</span>
               }
-            </select>
-            <select name="placeBed" [(ngModel)]="placeBedId">
-              <option value="">Bed</option>
-              @for (b of sizedBeds(); track b.id) {
-                <option [value]="b.id">{{ b.name }}</option>
-              }
-            </select>
-            <input type="number" step="1" name="placeX" [(ngModel)]="placeX" placeholder="X (in)" />
-            <input type="number" step="1" name="placeY" [(ngModel)]="placeY" placeholder="Y (in)" />
-            <button type="button" (click)="place()">Place planting</button>
-          </div>
-        } @else {
+            </og-empty-state>
+          }
+          @if (canEdit()) {
+            <form class="filters" (ngSubmit)="createBed()">
+              <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="newLength"
+                name="newLength"
+                placeholder="Length (in)"
+              />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="newWidth"
+                name="newWidth"
+                placeholder="Width (in)"
+              />
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [attr.aria-busy]="notices.busyMap().has('create-bed') || null"
+                [disabled]="notices.busyMap().has('create-bed')"
+              >
+                Create bed
+              </button>
+            </form>
+            <form class="filters" (ngSubmit)="createArea()">
+              <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="newAreaLength"
+                name="newAreaLength"
+                placeholder="Length (in)"
+              />
+              <input
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="newAreaWidth"
+                name="newAreaWidth"
+                placeholder="Width (in)"
+              />
+              <button type="submit" class="btn btn-secondary">Create non-planting area</button>
+            </form>
+          }
           <ul class="card-list">
-            @for (p of unplaced(); track p.id) {
-              <li>{{ plantingLabel(p) }}</li>
+            @for (bed of sizedBeds(); track bed.id) {
+              <li class="stack">
+                <button type="button" (click)="selectBed(bed.id)">{{ bed.name }}</button>
+                <button type="button" class="btn btn-secondary" (click)="selectBed(bed.id)">
+                  Open bed {{ bed.name }}
+                </button>
+                <button type="button" (click)="editGeometry(bed.id)">Edit size {{ bed.name }}</button>
+                @if (bed.geometry; as geo) {
+                  <span>{{ geo.lengthInches }} × {{ geo.widthInches }} in · {{ geo.orientation }}°</span>
+                }
+                @if (canEdit() && selectedId() === bed.id && bed.geometry) {
+                  <form class="filters" (ngSubmit)="save()">
+                    <label>
+                      Origin X
+                      <input
+                        type="number"
+                        step="1"
+                        name="originX"
+                        [ngModel]="bed.geometry.originXInches"
+                        (ngModelChange)="patchSelected({ originXInches: toInt($event) })"
+                      />
+                    </label>
+                    <label>
+                      Origin Y
+                      <input
+                        type="number"
+                        step="1"
+                        name="originY"
+                        [ngModel]="bed.geometry.originYInches"
+                        (ngModelChange)="patchSelected({ originYInches: toInt($event) })"
+                      />
+                    </label>
+                    <label>
+                      Length (in)
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        name="length"
+                        [ngModel]="bed.geometry.lengthInches"
+                        (ngModelChange)="patchSelected({ lengthInches: toInt($event) })"
+                      />
+                    </label>
+                    <label>
+                      Width (in)
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        name="width"
+                        [ngModel]="bed.geometry.widthInches"
+                        (ngModelChange)="patchSelected({ widthInches: toInt($event) })"
+                      />
+                    </label>
+                  </form>
+                  <button type="button" (click)="rotateSelected()">Rotate 90°</button>
+                  @if (confirmDeleteId() !== bed.id) {
+                    <button type="button" (click)="confirmDeleteId.set(bed.id)">
+                      Delete bed {{ bed.name }}
+                    </button>
+                  } @else {
+                    <p>Permanently delete {{ bed.name }}? Direct-seed plantings in this bed will be deleted. Transplants return to the tray.</p>
+                    <button
+                      type="button"
+                      class="btn btn-destructive"
+                      (click)="deleteBed(bed)"
+                      [attr.aria-busy]="notices.busyMap().has('delete-bed') || null"
+                      [disabled]="notices.busyMap().has('delete-bed')"
+                    >
+                      Confirm delete {{ bed.name }}
+                    </button>
+                    <button type="button" (click)="confirmDeleteId.set(null)">Cancel</button>
+                  }
+                }
+              </li>
             }
           </ul>
-        }
-      }
-      @if (placed().length) {
-        <h3>Placed</h3>
-        <ul class="card-list">
-          @for (p of placed(); track p.id) {
-            <li class="row">
-              <span>{{ plantingLabel(p) }}</span>
-              @if (canEdit()) {
-                <button type="button" (click)="unplace(p)">Unplace {{ p.commonName }}</button>
+          @if (draft()!.areas.length) {
+            <h3>Non-planting areas</h3>
+            <ul class="card-list">
+              @for (area of draft()!.areas; track area.id) {
+                <li class="stack">
+                  <span>{{ area.name }} · {{ area.lengthInches }} × {{ area.widthInches }} in</span>
+                  @if (canEdit()) {
+                    @if (confirmDeleteAreaId() !== area.id) {
+                      <button type="button" (click)="confirmDeleteAreaId.set(area.id)">
+                        Delete area {{ area.name }}
+                      </button>
+                    } @else {
+                      <p>Permanently delete {{ area.name }}?</p>
+                      <button
+                        type="button"
+                        class="btn btn-destructive"
+                        (click)="deleteArea(area)"
+                        [attr.aria-busy]="notices.busyMap().has('delete-area') || null"
+                        [disabled]="notices.busyMap().has('delete-area')"
+                      >
+                        Confirm delete {{ area.name }}
+                      </button>
+                      <button type="button" (click)="confirmDeleteAreaId.set(null)">Cancel</button>
+                    }
+                  }
+                </li>
               }
-            </li>
+            </ul>
           }
-        </ul>
-      }
+        </aside>
+      </div>
     }
+    </div>
   `,
 })
 export class GardenLayoutPage implements OnInit {
   private readonly api = inject(LayoutApiService);
-  private readonly plantings = inject(PlantingsApiService);
+  private readonly gardensApi = inject(GardensApiService);
+  private readonly planner = inject(PlannerDraftService);
+  readonly notices = inject(NoticeService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly canvas = viewChild(GardenPlanCanvas);
   gardenId = '';
-  draft = signal<GardenLayoutDto | null>(null);
-  loading = signal(true);
+  gardenName = signal('Garden');
+  readonly draft = this.planner.draft;
+  readonly loading = this.planner.loading;
+  readonly flags = this.planner.flags;
   error = signal('');
+  status = signal('');
   selectedId = signal<string | null>(null);
   confirmDeleteId = signal<string | null>(null);
-  zoom = signal(1);
+  online = signal(typeof navigator === 'undefined' || navigator.onLine);
   newBedName = '';
   newLength: number | null = 96;
   newWidth: number | null = 48;
-  sizeLength: Record<string, number> = {};
-  sizeWidth: Record<string, number> = {};
-  placePlantingId = '';
-  placeBedId = '';
-  placeX: number | null = 24;
-  placeY: number | null = 24;
-  readonly localToPlan = localToPlan;
-  readonly planSize = bedPlanSize;
+  newAreaName = '';
+  newAreaLength: number | null = 48;
+  newAreaWidth: number | null = 48;
+  confirmDeleteAreaId = signal<string | null>(null);
 
   ngOnInit() {
     this.gardenId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.gardenId) void this.load();
+  }
+
+  @HostListener('window:online')
+  onWindowOnline() {
+    this.online.set(true);
+  }
+
+  @HostListener('window:offline')
+  onWindowOffline() {
+    this.online.set(false);
   }
 
   canEdit() {
@@ -285,61 +301,29 @@ export class GardenLayoutPage implements OnInit {
     return role === 'owner' || role === 'collaborator';
   }
 
-  needsSize() {
-    return this.draft()?.beds.filter((b) => b.geometry === null) ?? [];
+  dirty() {
+    return this.planner.dirty();
   }
 
   sizedBeds() {
-    return this.draft()?.beds.filter((b) => b.geometry) ?? [];
-  }
-
-  unplaced() {
-    return this.draft()?.plantings.filter((p) => p.placement === null) ?? [];
-  }
-
-  placed() {
-    return this.draft()?.plantings.filter((p) => p.placement) ?? [];
-  }
-
-  placedIn(bedId: string) {
-    return this.placed().filter((p) => p.placement?.bedId === bedId);
-  }
-
-  liveFlags(): LayoutFlagDto[] {
-    const d = this.draft();
-    if (!d) return [];
-    return evaluateLayout(d.beds, d.plantings);
-  }
-
-  plantingLabel(p: LayoutPlantingDto) {
-    return p.status === 'active' ? p.commonName : `${p.commonName} (removed from catalog)`;
-  }
-
-  viewBox() {
-    const beds = this.sizedBeds();
-    if (!beds.length) return '0 0 200 120';
-    let maxX = 200;
-    let maxY = 120;
-    for (const bed of beds) {
-      const geo = bed.geometry!;
-      const size = bedPlanSize(geo);
-      maxX = Math.max(maxX, geo.originXInches + size.width + 12);
-      maxY = Math.max(maxY, geo.originYInches + size.height + 12);
-    }
-    const z = this.zoom();
-    return `0 0 ${Math.ceil(maxX / z)} ${Math.ceil(maxY / z)}`;
+    return drawableBeds(this.draft()?.beds ?? []);
   }
 
   selectBed(id: string) {
+    if (!id) return;
+    void this.router.navigate(['/gardens', this.gardenId, 'layout', 'beds', id]);
+  }
+
+  editGeometry(id: string) {
     this.selectedId.set(id);
   }
 
   zoomIn() {
-    this.zoom.update((z) => Math.min(4, z + 0.25));
+    this.canvas()?.zoomIn();
   }
 
   zoomOut() {
-    this.zoom.update((z) => Math.max(0.5, z - 0.25));
+    this.canvas()?.zoomOut();
   }
 
   toInt(value: string | number): number {
@@ -348,162 +332,211 @@ export class GardenLayoutPage implements OnInit {
   }
 
   patchSelected(patch: Partial<BedGeometryDto>) {
+    if (!this.guardMutate()) {
+      const d = this.draft();
+      if (d) this.planner.setDraft({ ...d, beds: d.beds.map((b) => ({ ...b })) });
+      return;
+    }
     const id = this.selectedId();
     const d = this.draft();
     if (!id || !d) return;
-    this.draft.set({
+    this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) =>
         b.id === id && b.geometry ? { ...b, geometry: { ...b.geometry, ...patch } } : b,
       ),
     });
+    this.refreshFlags();
   }
 
   rotateSelected() {
+    if (!this.guardMutate()) return;
     const id = this.selectedId();
     const d = this.draft();
     if (!id || !d) return;
-    this.draft.set({
+    this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) =>
         b.id === id && b.geometry ? { ...b, geometry: rotateBed90(b.geometry) } : b,
       ),
     });
+    this.refreshFlags();
+  }
+
+  emptyBedBody() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return new OnlineRequiredError().message;
+    }
+    return 'Add a named bed with length and width to draw the garden to scale.';
   }
 
   async load() {
-    this.loading.set(true);
-    const layout = await this.api.get(this.gardenId);
-    this.draft.set(layout);
-    if (layout?.beds[0]?.geometry) this.selectedId.set(layout.beds[0].id);
-    this.loading.set(false);
-  }
-
-  async sizeBed(bed: LayoutBedDto) {
-    const d = this.draft();
-    if (!d) return;
-    const origin = this.nextOrigin(d.beds);
-    const geometry: BedGeometryDto = {
-      originXInches: origin.x,
-      originYInches: origin.y,
-      lengthInches: Math.max(1, this.sizeLength[bed.id] ?? 96),
-      widthInches: Math.max(1, this.sizeWidth[bed.id] ?? 48),
-      orientation: 0,
-    };
-    this.draft.set({
-      ...d,
-      beds: d.beds.map((b) => (b.id === bed.id ? { ...b, geometry } : b)),
-    });
-    this.selectedId.set(bed.id);
+    await this.planner.load(this.gardenId, { reuseDirty: true });
+    const detail = await this.gardensApi.detail(this.gardenId);
+    if (detail) this.gardenName.set(detail.name);
   }
 
   async createBed() {
     const d = this.draft();
     if (!d) return;
     this.error.set('');
-    try {
-      this.assertOnline();
-      const name = this.newBedName.trim();
-      if (!name) return;
-      const bed = await this.plantings.createBed(this.gardenId, { name });
-      const origin = this.nextOrigin([...d.beds, { id: bed.id, name: bed.name, geometry: null }]);
-      const geometry: BedGeometryDto = {
-        originXInches: origin.x,
-        originYInches: origin.y,
-        lengthInches: Math.max(1, this.newLength ?? 96),
-        widthInches: Math.max(1, this.newWidth ?? 48),
-        orientation: 0,
-      };
-      this.draft.set({
-        ...d,
-        beds: [...d.beds, { id: bed.id, name: bed.name, geometry }],
-      });
-      this.selectedId.set(bed.id);
-      this.newBedName = '';
-    } catch (err) {
-      this.error.set(messageFrom(err));
+    this.status.set('');
+    if (!this.guardMutate()) return;
+    const name = this.newBedName.trim();
+    const length = Math.trunc(Number(this.newLength));
+    const width = Math.trunc(Number(this.newWidth));
+    if (!name || length < 1 || width < 1) return;
+    const id = crypto.randomUUID();
+    const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
+    const origin = originFromCenter(center.x, center.y, length, width);
+    const geometry: BedGeometryDto = {
+      originXInches: origin.originXInches,
+      originYInches: origin.originYInches,
+      lengthInches: length,
+      widthInches: width,
+      orientation: 0,
+    };
+    this.planner.newBedIds.add(id);
+    this.planner.setDraft({
+      ...d,
+      beds: [...d.beds, { id, name, geometry }],
+    });
+    this.selectedId.set(id);
+    this.newBedName = '';
+    this.refreshFlags();
+  }
+
+  async createArea() {
+    const d = this.draft();
+    if (!d || !this.guardMutate()) return;
+    const name = this.newAreaName.trim();
+    const length = Math.trunc(Number(this.newAreaLength));
+    const width = Math.trunc(Number(this.newAreaWidth));
+    if (!name || length < 1 || width < 1) return;
+    const id = crypto.randomUUID();
+    const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
+    const origin = originFromCenter(center.x, center.y, length, width);
+    const area: LayoutAreaDto = {
+      id,
+      name,
+      originXInches: origin.originXInches,
+      originYInches: origin.originYInches,
+      lengthInches: length,
+      widthInches: width,
+    };
+    this.planner.setDraft({ ...d, areas: [...(d.areas ?? []), area] });
+    this.newAreaName = '';
+  }
+
+  async deleteArea(area: LayoutAreaDto) {
+    this.error.set('');
+    if (!this.guardMutate()) return;
+    const d = this.draft();
+    if (!d) return;
+    const inSaved = this.planner.savedPutJson.includes(area.id);
+    if (!inSaved) {
+      this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
+      this.confirmDeleteAreaId.set(null);
+      return;
     }
+    await this.notices.run('delete-area', async () => {
+      try {
+        await this.api.deleteArea(this.gardenId, area.id);
+        this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
+        this.confirmDeleteAreaId.set(null);
+      } catch (err) {
+        this.fail(err);
+      }
+    });
   }
 
   async deleteBed(bed: LayoutBedDto) {
     this.error.set('');
-    try {
-      this.assertOnline();
-      await this.plantings.deleteBed(this.gardenId, bed.id);
+    if (!this.guardMutate()) return;
+    if (this.planner.newBedIds.has(bed.id)) {
+      const d = this.draft();
+      if (!d) return;
+      this.planner.newBedIds.delete(bed.id);
+      this.planner.setDraft({
+        ...d,
+        beds: d.beds.filter((b) => b.id !== bed.id),
+        plantings: d.plantings.map((p) =>
+          p.bedId === bed.id || p.placement?.bedId === bed.id
+            ? { ...p, bedId: null, placement: null }
+            : p,
+        ),
+      });
       this.confirmDeleteId.set(null);
-      await this.load();
-    } catch (err) {
-      this.error.set(messageFrom(err));
+      this.refreshFlags();
+      return;
     }
-  }
-
-  place() {
-    const d = this.draft();
-    if (!d || !this.placePlantingId || !this.placeBedId) return;
-    const x = this.placeX ?? 0;
-    const y = this.placeY ?? 0;
-    this.draft.set({
-      ...d,
-      plantings: d.plantings.map((p) =>
-        p.id === this.placePlantingId
-          ? {
-              ...p,
-              bedId: this.placeBedId,
-              placement: {
-                plantingId: p.id,
-                bedId: this.placeBedId,
-                xInches: x,
-                yInches: y,
-              },
-            }
-          : p,
-      ),
+    await this.notices.run('delete-bed', async () => {
+      try {
+        await this.api.deleteBed(this.gardenId, bed.id);
+        this.confirmDeleteId.set(null);
+        await this.load();
+      } catch (err) {
+        this.fail(err);
+      }
     });
-    this.placePlantingId = '';
   }
 
-  unplace(planting: LayoutPlantingDto) {
+  onBedGeometry(ev: { bedId: string; geometry: BedGeometryDto }) {
+    if (!this.guardMutate()) return;
     const d = this.draft();
     if (!d) return;
-    this.draft.set({
+    this.planner.setDraft({
       ...d,
-      plantings: d.plantings.map((p) => (p.id === planting.id ? { ...p, placement: null } : p)),
+      beds: d.beds.map((b) => (b.id === ev.bedId ? { ...b, geometry: ev.geometry } : b)),
     });
+  }
+
+  onAreaGeometry(ev: { area: LayoutAreaDto }) {
+    if (!this.guardMutate()) return;
+    const d = this.draft();
+    if (!d) return;
+    this.planner.setDraft({
+      ...d,
+      areas: (d.areas ?? []).map((a) => (a.id === ev.area.id ? ev.area : a)),
+    });
+  }
+
+  onOfflineRequired() {
+    this.fail(new OnlineRequiredError());
+  }
+
+  refreshFlags() {
+    this.planner.refreshFlags();
   }
 
   async save() {
-    const d = this.draft();
-    if (!d) return;
     this.error.set('');
-    const body: LayoutPutDto = {
-      beds: d.beds
-        .filter((b) => b.geometry)
-        .map((b) => ({
-          id: b.id,
-          originXInches: b.geometry!.originXInches,
-          originYInches: b.geometry!.originYInches,
-          lengthInches: b.geometry!.lengthInches,
-          widthInches: b.geometry!.widthInches,
-          orientation: b.geometry!.orientation,
-        })),
-      placements: d.plantings.filter((p) => p.placement).map((p) => p.placement!),
-    };
-    try {
-      const saved = await this.api.put(this.gardenId, body);
-      this.draft.set(saved);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    this.status.set('');
+    await this.notices.run('save-layout', async () => {
+      if (!this.guardMutate()) return;
+      this.planner.refreshFlags();
+      try {
+        await this.planner.save();
+        this.notices.success('Layout saved');
+      } catch (err) {
+        this.fail(err);
+      }
+    });
   }
 
-  private nextOrigin(beds: LayoutBedDto[]): { x: number; y: number } {
-    let y = 0;
-    for (const bed of beds) {
-      if (!bed.geometry) continue;
-      const size = bedPlanSize(bed.geometry);
-      y = Math.max(y, bed.geometry.originYInches + size.height);
+  private fail(err: unknown) {
+    this.notices.error(messageFrom(err));
+  }
+
+  private guardMutate(): boolean {
+    if (!this.canEdit()) return false;
+    try {
+      this.assertOnline();
+      return true;
+    } catch (err) {
+      this.fail(err);
+      return false;
     }
-    return { x: 0, y: y === 0 ? 0 : y + 12 };
   }
 
   private assertOnline() {
@@ -519,5 +552,6 @@ function messageFrom(err: unknown): string {
     const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
     if (msg) return msg;
   }
+  if (err instanceof Error) return err.message;
   return 'Could not update layout';
 }

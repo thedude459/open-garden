@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gte, ilike, lte, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, eq, gte, ilike, isNotNull, lte, or, type SQL } from 'drizzle-orm';
 import type { GrowingGuidanceDto, PlantType } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { plants } from './schema';
@@ -96,6 +96,7 @@ export class PlantRepository {
     if (!filters.includeDeprecated) {
       conditions.push(eq(plants.status, 'active'));
     }
+    conditions.push(isNotNull(plants.spacingInches));
     if (filters.plantType) {
       conditions.push(eq(plants.plantType, filters.plantType));
     }

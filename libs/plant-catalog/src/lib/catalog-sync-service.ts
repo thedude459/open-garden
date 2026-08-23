@@ -27,13 +27,16 @@ export class CatalogSyncService {
 
     try {
       let upserted = 0;
+      let scanned = 0;
       let cursor: string | undefined;
-      while (upserted < limit) {
+      while (scanned < limit) {
         const page = await this.provider.listPage({
           cursor,
-          limit: Math.min(50, limit - upserted),
+          limit: Math.min(50, limit - scanned),
         });
         for (const item of page.items) {
+          scanned += 1;
+          if (item.spacingInches == null) continue;
           await this.plants.upsertByVarietyKey({
             varietyKey: buildVarietyKey(item.species, item.cultivar),
             commonName: item.commonName,
@@ -53,7 +56,7 @@ export class CatalogSyncService {
             growingGuidance: item.growingGuidance ?? null,
           });
           upserted += 1;
-          if (upserted >= limit) break;
+          if (scanned >= limit) break;
         }
         if (!page.nextCursor || page.items.length === 0) break;
         cursor = page.nextCursor;

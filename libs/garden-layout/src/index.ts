@@ -1,5 +1,13 @@
 export { domainError, LAYOUT_ERRORS } from './lib/domain-error';
 export { rotateBed90, localToPlan, bedPlanSize } from './lib/rotate';
+export { planToLocal } from './lib/plan-coords';
+export { plantingFootprintRadius } from './lib/footprint';
+export { hitTestPlan, classifyGesture, isClickNotDrag } from './lib/hit-test';
+export { applyPlantingDrop } from './lib/drop';
+export { drawableBeds } from './lib/drawable-beds';
+export { overviewPlantingLabels } from './lib/overview-labels';
+export { originFromCenter, originFromGrabOffset } from './lib/origin';
+export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';
 export { pairRequiredSpacing, fitClearance, placementFits, centerDistance } from './lib/spacing';
 export { evaluateLayout } from './lib/evaluate-layout';

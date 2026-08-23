@@ -44,6 +44,35 @@ describe('CatalogSyncService', () => {
     expect(updateWhere).toHaveBeenCalled();
   });
 
+  it('skips provider items with null spacing', async () => {
+    const upsertByVarietyKey = vi.fn().mockResolvedValue(undefined);
+    const updateWhere = vi.fn().mockResolvedValue(undefined);
+    const db = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({
+          returning: vi.fn().mockResolvedValue([{ id: 'run-3' }]),
+        }),
+      }),
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: updateWhere,
+        }),
+      }),
+    };
+    const provider = {
+      id: 'fixture',
+      listPage: vi.fn().mockResolvedValue({
+        items: [{ ...sample, spacingInches: null }],
+        nextCursor: undefined,
+      }),
+      searchByName: vi.fn(),
+    };
+    const svc = new CatalogSyncService(db as never, { upsertByVarietyKey } as never, provider);
+    const result = await svc.runOperatorSync(10);
+    expect(result.upserted).toBe(0);
+    expect(upsertByVarietyKey).not.toHaveBeenCalled();
+  });
+
   it('marks sync failed when provider throws', async () => {
     const updateWhere = vi.fn().mockResolvedValue(undefined);
     const db = {

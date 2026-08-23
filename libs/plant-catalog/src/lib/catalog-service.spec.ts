@@ -14,6 +14,7 @@ describe('CatalogService', () => {
             plantType: 'herb',
             zoneMin: 4,
             zoneMax: 10,
+            spacingInches: 12,
           },
         ],
         totalCount: 1,
@@ -26,6 +27,7 @@ describe('CatalogService', () => {
     const service = new CatalogService(plants as never, provider as never);
     const page = await service.list({ page: 1, pageSize: 20 });
     expect(page.totalCount).toBe(1);
+    expect(page.items[0]?.spacingInches).toBe(12);
     expect(provider.searchByName).not.toHaveBeenCalled();
   });
 
@@ -52,6 +54,7 @@ describe('CatalogService', () => {
               plantType: 'vegetable',
               zoneMin: 4,
               zoneMax: 10,
+              spacingInches: 24,
             },
           ],
           totalCount: 1,
@@ -84,5 +87,63 @@ describe('CatalogService', () => {
     expect(provider.searchByName).toHaveBeenCalled();
     expect(plants.upsertByVarietyKey).toHaveBeenCalled();
     expect(page.totalCount).toBe(1);
+  });
+
+  it('omits null-spacing rows from summaries', async () => {
+    const plants = {
+      list: vi.fn().mockResolvedValue({
+        items: [
+          {
+            id: '1',
+            commonName: 'Mystery',
+            species: 'Unknown',
+            cultivar: null,
+            plantType: 'herb',
+            zoneMin: 4,
+            zoneMax: 10,
+            spacingInches: null,
+          },
+        ],
+        totalCount: 1,
+        page: 1,
+        pageSize: 20,
+      }),
+      upsertByVarietyKey: vi.fn(),
+    };
+    const service = new CatalogService(
+      plants as never,
+      { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() } as never,
+    );
+    const page = await service.list({});
+    expect(page.items).toEqual([]);
+  });
+
+  it('does not miss-fill upsert when the provider hit has no spacing', async () => {
+    const plants = {
+      list: vi.fn().mockResolvedValue({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
+      upsertByVarietyKey: vi.fn(),
+    };
+    const provider = {
+      id: 'fixture',
+      searchByName: vi.fn().mockResolvedValue([
+        {
+          externalId: 'x',
+          commonName: 'Gap',
+          species: 'Gap sp',
+          cultivar: null,
+          plantType: 'herb',
+          zoneMin: 4,
+          zoneMax: 10,
+          sunRequirements: null,
+          waterNeeds: null,
+          daysToMaturity: null,
+          spacingInches: null,
+        },
+      ]),
+      listPage: vi.fn(),
+    };
+    const service = new CatalogService(plants as never, provider as never);
+    await service.list({ q: 'gap' });
+    expect(plants.upsertByVarietyKey).not.toHaveBeenCalled();
   });
 });

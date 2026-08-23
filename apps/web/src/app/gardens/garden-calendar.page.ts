@@ -45,8 +45,8 @@ import { OnlineRequiredError } from './gardens-api.service';
               name="calendarSearch"
               placeholder="Search catalog to add"
             />
-            <button type="submit">Search catalog</button>
-            <button type="button" (click)="loadFavorites()">Show favorites</button>
+            <button type="submit" class="btn btn-primary">Search catalog</button>
+            <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
           </form>
           @if (catalogHits().length) {
             <ul class="card-list">

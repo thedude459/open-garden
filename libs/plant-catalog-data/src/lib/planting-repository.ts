@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import type { AppDatabase } from './db';
 import { gardenPlantings, plants } from './schema';
 
@@ -17,6 +17,8 @@ export class PlantingRepository {
         bedId: gardenPlantings.bedId,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
+        startMethod: gardenPlantings.startMethod,
+        indoorStartedOn: gardenPlantings.indoorStartedOn,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -65,6 +67,8 @@ export class PlantingRepository {
         harvestedOn: gardenPlantings.harvestedOn,
         layoutXInches: gardenPlantings.layoutXInches,
         layoutYInches: gardenPlantings.layoutYInches,
+        startMethod: gardenPlantings.startMethod,
+        indoorStartedOn: gardenPlantings.indoorStartedOn,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -88,6 +92,8 @@ export class PlantingRepository {
     bedId: string | null;
     plantedOn: string | null;
     harvestedOn: string | null;
+    startMethod?: string;
+    indoorStartedOn?: string | null;
     clientMutationId?: string;
   }) {
     const [row] = await this.db
@@ -99,6 +105,8 @@ export class PlantingRepository {
         bedId: input.bedId,
         plantedOn: input.plantedOn,
         harvestedOn: input.harvestedOn,
+        startMethod: input.startMethod ?? 'direct_seed',
+        indoorStartedOn: input.indoorStartedOn ?? null,
         clientMutationId: input.clientMutationId ?? null,
       })
       .returning();
@@ -146,6 +154,8 @@ export class PlantingRepository {
         bedId: gardenPlantings.bedId,
         layoutXInches: gardenPlantings.layoutXInches,
         layoutYInches: gardenPlantings.layoutYInches,
+        startMethod: gardenPlantings.startMethod,
+        indoorStartedOn: gardenPlantings.indoorStartedOn,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -186,6 +196,84 @@ export class PlantingRepository {
       .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.id, id)))
       .returning();
     return row ?? null;
+  }
+
+  async clearPlacement(gardenId: string, id: string) {
+    const [row] = await this.db
+      .update(gardenPlantings)
+      .set({
+        bedId: null,
+        layoutXInches: null,
+        layoutYInches: null,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  async deleteDirectSeedInBed(gardenId: string, bedId: string) {
+    await this.db
+      .delete(gardenPlantings)
+      .where(
+        and(
+          eq(gardenPlantings.gardenId, gardenId),
+          eq(gardenPlantings.bedId, bedId),
+          eq(gardenPlantings.startMethod, 'direct_seed'),
+        ),
+      );
+  }
+
+  async unassignTransplantsInBed(gardenId: string, bedId: string) {
+    await this.db
+      .update(gardenPlantings)
+      .set({
+        bedId: null,
+        layoutXInches: null,
+        layoutYInches: null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(gardenPlantings.gardenId, gardenId),
+          eq(gardenPlantings.bedId, bedId),
+          eq(gardenPlantings.startMethod, 'transplant'),
+        ),
+      );
+  }
+
+  async listUnplacedTransplants(gardenId: string) {
+    return this.db
+      .select({
+        id: gardenPlantings.id,
+        gardenId: gardenPlantings.gardenId,
+        plantId: gardenPlantings.plantId,
+        bedId: gardenPlantings.bedId,
+        layoutXInches: gardenPlantings.layoutXInches,
+        layoutYInches: gardenPlantings.layoutYInches,
+        startMethod: gardenPlantings.startMethod,
+        indoorStartedOn: gardenPlantings.indoorStartedOn,
+        createdAt: gardenPlantings.createdAt,
+        updatedAt: gardenPlantings.updatedAt,
+        commonName: plants.commonName,
+        species: plants.species,
+        cultivar: plants.cultivar,
+        plantType: plants.plantType,
+        status: plants.status,
+        spacingInches: plants.spacingInches,
+        waterIntervalDays: plants.waterIntervalDays,
+        fertilizeIntervalDays: plants.fertilizeIntervalDays,
+      })
+      .from(gardenPlantings)
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(
+        and(
+          eq(gardenPlantings.gardenId, gardenId),
+          eq(gardenPlantings.startMethod, 'transplant'),
+          isNull(gardenPlantings.bedId),
+        ),
+      )
+      .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
   }
 
   async listAllForReminders(gardenId: string) {

@@ -173,6 +173,28 @@ export const gardenBeds = pgTable(
   ],
 );
 
+export const gardenNonPlantingAreas = pgTable(
+  'garden_non_planting_areas',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    nameNormalized: text('name_normalized').notNull(),
+    originXInches: integer('origin_x_inches').notNull(),
+    originYInches: integer('origin_y_inches').notNull(),
+    lengthInches: integer('length_inches').notNull(),
+    widthInches: integer('width_inches').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_non_planting_areas_garden_name_uidx').on(t.gardenId, t.nameNormalized),
+    index('garden_non_planting_areas_garden_id_idx').on(t.gardenId),
+  ],
+);
+
 export const gardenPlantings = pgTable(
   'garden_plantings',
   {
@@ -188,6 +210,8 @@ export const gardenPlantings = pgTable(
     harvestedOn: date('harvested_on', { mode: 'string' }),
     layoutXInches: integer('layout_x_inches'),
     layoutYInches: integer('layout_y_inches'),
+    startMethod: text('start_method').notNull().default('direct_seed'),
+    indoorStartedOn: date('indoor_started_on', { mode: 'string' }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     clientMutationId: text('client_mutation_id'),

@@ -3,10 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { PlantSummaryDto, PlantType } from '@open-garden/shared-types';
 import { PlantsApiService } from './plants-api.service';
+import { NoticeService } from '../ui/notice.service';
+import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, EmptyState],
   template: `
     <h2>Plant catalog</h2>
     <div class="filters">
@@ -23,12 +25,23 @@ import { PlantsApiService } from './plants-api.service';
           <option [ngValue]="t">{{ t }}</option>
         }
       </select>
-      <button type="button" (click)="load()">Apply</button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="load()"
+        [attr.aria-busy]="notices.busyMap().has('search-catalog') || null"
+        [disabled]="notices.busyMap().has('search-catalog')"
+      >
+        Apply
+      </button>
     </div>
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
-      <p class="muted">No plants match. Try clearing filters or run fixture sync.</p>
+      <og-empty-state
+        title="No plants match"
+        body="Try another name, clear filters, or run fixture sync."
+      />
     } @else {
       <div class="card-list">
         @for (p of items(); track p.id) {
@@ -51,6 +64,7 @@ import { PlantsApiService } from './plants-api.service';
 })
 export class PlantListPage implements OnInit {
   private readonly api = inject(PlantsApiService);
+  readonly notices = inject(NoticeService);
   q = '';
   zone: number | undefined;
   plantType: PlantType | undefined;
@@ -64,15 +78,20 @@ export class PlantListPage implements OnInit {
   }
 
   async load() {
-    this.loading.set(true);
-    const page = await this.api.list({
-      q: this.q || undefined,
-      zone: this.zone,
-      plantType: this.plantType,
-      page: 1,
-      pageSize: 20,
+    await this.notices.run('search-catalog', async () => {
+      this.loading.set(true);
+      try {
+        const page = await this.api.list({
+          q: this.q || undefined,
+          zone: this.zone,
+          plantType: this.plantType,
+          page: 1,
+          pageSize: 20,
+        });
+        this.items.set(page.items);
+      } finally {
+        this.loading.set(false);
+      }
     });
-    this.items.set(page.items);
-    this.loading.set(false);
   }
 }

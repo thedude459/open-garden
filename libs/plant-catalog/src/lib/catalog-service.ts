@@ -35,6 +35,7 @@ export class CatalogService {
       try {
         const remote = await this.provider.searchByName(q, { limit: 20 });
         for (const item of remote) {
+          if (item.spacingInches == null) continue;
           await this.plants.upsertByVarietyKey(toUpsert(item, this.provider.id));
         }
         result = await this.plants.list({
@@ -50,7 +51,9 @@ export class CatalogService {
     }
 
     return {
-      items: result.items.map(toSummary),
+      items: result.items
+        .filter((row) => row.spacingInches != null)
+        .map(toSummary),
       page: result.page,
       pageSize: result.pageSize,
       totalCount: result.totalCount,
@@ -113,6 +116,7 @@ function toSummary(row: {
   plantType: string;
   zoneMin: number;
   zoneMax: number;
+  spacingInches: number | null;
 }): PlantSummaryDto {
   return {
     id: row.id,
@@ -122,6 +126,7 @@ function toSummary(row: {
     plantType: row.plantType as PlantType,
     zoneMin: row.zoneMin,
     zoneMax: row.zoneMax,
+    spacingInches: row.spacingInches as number,
   };
 }
 

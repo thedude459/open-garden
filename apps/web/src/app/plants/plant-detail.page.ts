@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import type { PlantDetailDto } from '@open-garden/shared-types';
 import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
+import { NoticeService } from '../ui/notice.service';
 
 @Component({
   standalone: true,
@@ -23,7 +24,13 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
         <dt>Days to maturity</dt><dd>{{ p.daysToMaturity ?? 'Unavailable' }}</dd>
         <dt>Spacing (in)</dt><dd>{{ p.spacingInches ?? 'Unavailable' }}</dd>
       </dl>
-      <button type="button" (click)="toggleFavorite()">
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="toggleFavorite()"
+        [attr.aria-busy]="notices.busyMap().has('favorite') || null"
+        [disabled]="notices.busyMap().has('favorite')"
+      >
         {{ p.isFavorite ? 'Remove favorite' : 'Save favorite' }}
       </button>
       @if (pending()) {
@@ -38,6 +45,7 @@ export class PlantDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(PlantsApiService);
   private readonly favorites = inject(FavoritesApiService);
+  readonly notices = inject(NoticeService);
   plant = signal<PlantDetailDto | null>(null);
   pending = signal(false);
 
@@ -53,12 +61,20 @@ export class PlantDetailPage implements OnInit {
   async toggleFavorite() {
     const p = this.plant();
     if (!p) return;
-    if (p.isFavorite) {
-      this.pending.set(await this.favorites.remove(p.id));
-      this.plant.set({ ...p, isFavorite: false });
-    } else {
-      this.pending.set(await this.favorites.add(p.id));
-      this.plant.set({ ...p, isFavorite: true });
-    }
+    await this.notices.run('favorite', async () => {
+      try {
+        if (p.isFavorite) {
+          this.pending.set(await this.favorites.remove(p.id));
+          this.plant.set({ ...p, isFavorite: false });
+          this.notices.success('Favorite removed');
+        } else {
+          this.pending.set(await this.favorites.add(p.id));
+          this.plant.set({ ...p, isFavorite: true });
+          this.notices.success('Favorite saved');
+        }
+      } catch {
+        this.notices.error('Could not update favorite');
+      }
+    });
   }
 }

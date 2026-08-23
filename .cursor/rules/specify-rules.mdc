@@ -5,5 +5,5 @@ alwaysApply: true
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/006-care-reminders/plan.md (Care Reminders feature).
+at specs/010-fix-planner-placement/plan.md (Fix Planner Placement feature).
 <!-- SPECKIT END -->

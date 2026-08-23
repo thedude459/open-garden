@@ -96,8 +96,8 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
 
   await owner.getByRole('button', { name: 'Delete bed North bed' }).click();
   await expect(owner.getByRole('heading', { name: 'North bed' })).toHaveCount(0);
-  await expect(owner.getByRole('heading', { name: 'Unassigned' })).toBeVisible();
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
+  await expect(owner.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
 
   await owner.getByRole('link', { name: 'Back to garden' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);

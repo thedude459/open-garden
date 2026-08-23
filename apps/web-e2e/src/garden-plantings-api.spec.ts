@@ -160,15 +160,19 @@ test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-wri
     expect(viewerDel.status()).toBe(403);
     expect(errorMessage(await json(viewerDel))).toBe('Viewers cannot update plantings');
 
-    const bed = await owner.post(`/api/gardens/${garden.id}/beds`, { data: { name: 'Raised bed 1' } });
+    const bed = await owner.post(`/api/gardens/${garden.id}/beds`, {
+      data: { name: 'Raised bed 1', lengthInches: 96, widthInches: 48 },
+    });
     expect(bed.status()).toBe(201);
     const bedBody = (await bed.json()) as { id: string; name: string };
-    const dupBed = await owner.post(`/api/gardens/${garden.id}/beds`, { data: { name: 'raised bed 1' } });
+    const dupBed = await owner.post(`/api/gardens/${garden.id}/beds`, {
+      data: { name: 'raised bed 1', lengthInches: 96, widthInches: 48 },
+    });
     expect(dupBed.status()).toBe(409);
     expect(errorMessage(await json(dupBed))).toBe('That garden already has a bed with that name');
 
     const otherBed = await owner.post(`/api/gardens/${otherGarden.id}/beds`, {
-      data: { name: 'Foreign bed' },
+      data: { name: 'Foreign bed', lengthInches: 96, widthInches: 48 },
     });
     const otherBedId = ((await otherBed.json()) as { id: string }).id;
     const wrongBed = await owner.post(`/api/gardens/${garden.id}/plantings`, {
@@ -180,7 +184,9 @@ test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-wri
     await owner.patch(`/api/gardens/${garden.id}/plantings/${plantingId}`, {
       data: { bedId: bedBody.id },
     });
-    const viewerBed = await friend.post(`/api/gardens/${garden.id}/beds`, { data: { name: 'Nope' } });
+    const viewerBed = await friend.post(`/api/gardens/${garden.id}/beds`, {
+      data: { name: 'Nope', lengthInches: 96, widthInches: 48 },
+    });
     expect(viewerBed.status()).toBe(403);
     expect(errorMessage(await json(viewerBed))).toBe('Viewers cannot update beds');
 
@@ -189,13 +195,10 @@ test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-wri
     const unassigned = (await (
       await owner.get(`/api/gardens/${garden.id}/plantings`)
     ).json()) as PlantingList;
-    expect(unassigned.plantings.find((p) => p.id === plantingId)?.bedId).toBeNull();
+    expect(unassigned.plantings.find((p) => p.id === plantingId)).toBeUndefined();
 
     const del1 = await owner.delete(`/api/gardens/${garden.id}/plantings/${plantingId}`);
-    expect(del1.status()).toBe(204);
-    const del2 = await owner.delete(`/api/gardens/${garden.id}/plantings/${plantingId}`);
-    expect(del2.status()).toBe(404);
-    expect(errorMessage(await json(del2))).toBe('Planting not found');
+    expect(del1.status()).toBe(404);
   } finally {
     await owner.dispose();
     await friend.dispose();

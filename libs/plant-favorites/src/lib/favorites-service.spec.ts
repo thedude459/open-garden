@@ -32,6 +32,7 @@ describe('FavoritesService', () => {
               zoneMin: 4,
               zoneMax: 10,
               status: 'active',
+              spacingInches: 12,
             },
           },
         ],

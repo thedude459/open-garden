@@ -27,4 +27,8 @@ export const LAYOUT_ERRORS = {
   spacingProblems: () =>
     domainError('VALIDATION_ERROR', 'Layout has spacing or fit problems', 422),
   viewerLayout: () => domainError('FORBIDDEN', 'Viewers cannot update layout'),
+  areaNotFound: () => domainError('NOT_FOUND', 'Area not found'),
+  areaNameRequired: () => domainError('VALIDATION_ERROR', 'Area name is required'),
+  areaNameTooLong: () => domainError('VALIDATION_ERROR', 'Area name must be at most 120 characters'),
+  areaNameTaken: () => domainError('CONFLICT', 'That garden already has an area with that name', 409),
 } as const;

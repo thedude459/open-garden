@@ -4,25 +4,47 @@ import { RouterLink } from '@angular/router';
 import type { GardenSummaryDto } from '@open-garden/shared-types';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
+import { NoticeService } from '../ui/notice.service';
+import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, EmptyState],
   template: `
     <h2>Gardens</h2>
-    <form class="filters" (ngSubmit)="create()">
-      <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
-      <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
-      <button type="submit">Create garden</button>
-    </form>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
-      <p class="muted">No gardens yet. Create one to start planning with your household.</p>
+      <og-empty-state title="No gardens yet" [body]="emptyBody()">
+        <form class="filters" (ngSubmit)="create()">
+          <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
+          <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
+            [disabled]="notices.busyMap().has('create-garden')"
+          >
+            Create garden
+          </button>
+        </form>
+      </og-empty-state>
     } @else {
+      <form class="filters" (ngSubmit)="create()">
+        <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
+        <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
+          [disabled]="notices.busyMap().has('create-garden')"
+        >
+          Create garden
+        </button>
+      </form>
       <div class="card-list">
         @for (g of items(); track g.id) {
           <a class="row" [routerLink]="['/gardens', g.id]">
@@ -45,6 +67,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 })
 export class GardenListPage implements OnInit {
   private readonly api = inject(GardensApiService);
+  readonly notices = inject(NoticeService);
   name = '';
   notes = '';
   items = signal<GardenSummaryDto[]>([]);
@@ -53,6 +76,13 @@ export class GardenListPage implements OnInit {
 
   ngOnInit() {
     void this.load();
+  }
+
+  emptyBody() {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return new OnlineRequiredError().message;
+    }
+    return 'Create one to start planning with your household.';
   }
 
   async load() {
@@ -64,17 +94,20 @@ export class GardenListPage implements OnInit {
 
   async create() {
     this.error.set('');
-    try {
-      await this.api.create({
-        name: this.name,
-        notes: this.notes.trim() ? this.notes : null,
-      });
-      this.name = '';
-      this.notes = '';
-      await this.load();
-    } catch (err) {
-      this.error.set(err instanceof OnlineRequiredError ? err.message : userMessage(err));
-    }
+    await this.notices.run('create-garden', async () => {
+      try {
+        await this.api.create({
+          name: this.name,
+          notes: this.notes.trim() ? this.notes : null,
+        });
+        this.name = '';
+        this.notes = '';
+        await this.load();
+        this.notices.success('Garden created');
+      } catch (err) {
+        this.notices.error(userMessage(err));
+      }
+    });
   }
 }
 

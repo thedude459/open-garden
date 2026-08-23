@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Page } from '@playwright/test';
+import { openOverview } from './planner-helpers';
 
 async function register(page: Page, email: string) {
   await page.goto('/login');
@@ -55,17 +56,12 @@ test('layout beds: size planting-list bed, add second, rotate, confirm delete, v
   await addFromCatalog(owner, 'Cherry Tomato');
 
   await owner.getByRole('link', { name: 'Back to garden' }).click();
-  await owner.getByRole('link', { name: 'Layout' }).click();
-  await expect(owner.getByRole('heading', { name: 'Layout' })).toBeVisible();
-  await expect(owner.getByRole('heading', { name: 'Needs size' })).toBeVisible();
-
-  const needs = owner.locator('li').filter({ hasText: 'Raised bed 1' });
-  await needs.getByPlaceholder('Length (in)').fill('96');
-  await needs.getByPlaceholder('Width (in)').fill('48');
-  await owner.getByRole('button', { name: 'Size Raised bed 1' }).click();
+  await openOverview(owner);
+  await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+  await expect(owner.locator('[data-bed-name="Raised bed 1"]')).toBeVisible();
+  await expect(owner.getByLabel('Garden plan')).toContainText('Raised bed 1');
   await saveLayout(owner);
   await expect(owner.getByText('96 × 48 in · 0°')).toBeVisible();
-  await expect(owner.getByRole('heading', { name: 'Needs size' })).toHaveCount(0);
 
   await owner.getByPlaceholder('Bed name').fill('Patio pots');
   await owner.locator('input[name="newLength"]').fill('40');
@@ -80,7 +76,7 @@ test('layout beds: size planting-list bed, add second, rotate, confirm delete, v
   await expect(owner.getByText('96 × 48 in · 0°')).toBeVisible();
   await expect(owner.getByText('40 × 20 in · 0°')).toBeVisible();
 
-  await owner.getByRole('button', { name: 'Raised bed 1', exact: true }).click();
+  await owner.getByRole('button', { name: 'Edit size Raised bed 1' }).click();
   await owner.getByRole('button', { name: 'Rotate 90°' }).click();
   await saveLayout(owner);
   await expect(owner.getByText('96 × 48 in · 90°')).toBeVisible();
@@ -108,7 +104,7 @@ test('layout beds: size planting-list bed, add second, rotate, confirm delete, v
 
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Layout plot/ }).click();
-  await friend.getByRole('link', { name: 'Layout' }).click();
+  await friend.getByRole('link', { name: 'Garden Overview' }).click();
   await expect(friend.getByRole('button', { name: 'Patio pots', exact: true })).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: 'Create bed' })).toHaveCount(0);

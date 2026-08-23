@@ -1,7 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import type { GardenLayoutDto, LayoutPutDto } from '@open-garden/shared-types';
+import type {
+  BedCreateDto,
+  GardenLayoutDto,
+  LayoutPutDto,
+  TransplantListDto,
+} from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardenLayoutCacheService } from './garden-layout-cache.service';
 import { GardenPlantingsCacheService } from './garden-plantings-cache.service';
@@ -33,6 +38,52 @@ export class LayoutApiService {
       }
       if (userId) return this.cache.get(userId, gardenId);
       return null;
+    }
+  }
+
+  async createBed(gardenId: string, body: BedCreateDto): Promise<void> {
+    this.assertOnline();
+    try {
+      await firstValueFrom(
+        this.http.post(`${API}/gardens/${gardenId}/beds`, body, { withCredentials: true }),
+      );
+    } catch (err) {
+      this.rethrowConnectivity(err);
+    }
+  }
+
+  async deleteBed(gardenId: string, bedId: string): Promise<void> {
+    this.assertOnline();
+    try {
+      await firstValueFrom(
+        this.http.delete(`${API}/gardens/${gardenId}/beds/${bedId}`, { withCredentials: true }),
+      );
+    } catch (err) {
+      this.rethrowConnectivity(err);
+    }
+  }
+
+  async deleteArea(gardenId: string, areaId: string): Promise<void> {
+    this.assertOnline();
+    try {
+      await firstValueFrom(
+        this.http.delete(`${API}/gardens/${gardenId}/areas/${areaId}`, { withCredentials: true }),
+      );
+    } catch (err) {
+      this.rethrowConnectivity(err);
+    }
+  }
+
+  async getTransplants(gardenId: string): Promise<TransplantListDto | null> {
+    try {
+      return await firstValueFrom(
+        this.http.get<TransplantListDto>(`${API}/gardens/${gardenId}/transplants`, {
+          withCredentials: true,
+        }),
+      );
+    } catch (err) {
+      if (isNotFound(err)) return null;
+      throw err;
     }
   }
 
@@ -78,5 +129,5 @@ export class LayoutApiService {
 }
 
 function isNotFound(err: unknown): boolean {
-  return err instanceof HttpErrorResponse && err.status === 404;
+  return err instanceof HttpErrorResponse && (err.status === 404 || err.status === 403);
 }

@@ -1,6 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { AppDatabase } from './db';
-import { gardenBeds, gardenPlantings } from './schema';
+import { gardenBeds } from './schema';
 
 export class BedRepository {
   constructor(private readonly db: AppDatabase) {}
@@ -43,6 +43,11 @@ export class BedRepository {
     gardenId: string;
     name: string;
     nameNormalized: string;
+    originXInches: number;
+    originYInches: number;
+    lengthInches: number;
+    widthInches: number;
+    orientation?: number;
   }) {
     const [row] = await this.db
       .insert(gardenBeds)
@@ -51,6 +56,11 @@ export class BedRepository {
         gardenId: input.gardenId,
         name: input.name,
         nameNormalized: input.nameNormalized,
+        originXInches: input.originXInches,
+        originYInches: input.originYInches,
+        lengthInches: input.lengthInches,
+        widthInches: input.widthInches,
+        orientation: input.orientation ?? 0,
       })
       .returning();
     return row!;
@@ -108,10 +118,6 @@ export class BedRepository {
   }
 
   async delete(gardenId: string, id: string): Promise<boolean> {
-    await this.db
-      .update(gardenPlantings)
-      .set({ layoutXInches: null, layoutYInches: null, updatedAt: new Date() })
-      .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.bedId, id)));
     const deleted = await this.db
       .delete(gardenBeds)
       .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))

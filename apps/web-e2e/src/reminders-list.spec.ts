@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Page } from '@playwright/test';
+import { addTransplant } from './planner-helpers';
 
 async function register(page: Page, email: string) {
   await page.goto('/login');
@@ -87,4 +88,21 @@ test('reminders list: harvest, no moderate water, empty CTA, viewer read-only', 
   await viewer.getByRole('link', { name: 'Reminders' }).click();
   await expect(viewer.getByText('Harvest')).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Complete' })).toHaveCount(0);
+});
+
+test('garden reminders list does not include indoor-only transplant tasks', async ({ browser }) => {
+  test.setTimeout(60_000);
+  const owner = await newUser(browser, `rem-indoor-${Date.now()}@example.com`);
+  await owner.goto('/gardens');
+  await owner.getByPlaceholder('Garden name').fill('Indoor split');
+  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('link', { name: /Indoor split/ }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Transplants' }).click();
+  await addTransplant(owner, 'Cherry Tomato');
+  await owner.getByRole('link', { name: 'Back to overview' }).click();
+  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Reminders' }).click();
+  await expect(owner.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+  await expect(owner.locator('li').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
 });

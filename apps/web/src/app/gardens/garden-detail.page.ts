@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { GardenDetailDto, GardenRole } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
+import { NoticeService } from '../ui/notice.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
+import { PlannerDraftService } from './planner-draft.service';
 
 @Component({
   standalone: true,
@@ -20,7 +22,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
         ·
         <a [routerLink]="['/gardens', g.id, 'reminders']">Reminders</a>
         ·
-        <a [routerLink]="['/gardens', g.id, 'layout']">Layout</a>
+        <a [routerLink]="['/gardens', g.id, 'layout']">Garden Overview</a>
+        <a [routerLink]="['/gardens', g.id, 'transplants']">Transplants</a>
       </p>
       @if (error()) {
         <p class="error">{{ error() }}</p>
@@ -101,7 +104,14 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
           />
         </fieldset>
         @if (canEdit()) {
-          <button type="submit">Save garden</button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [attr.aria-busy]="notices.busyMap().has('save-garden') || null"
+            [disabled]="notices.busyMap().has('save-garden')"
+          >
+            Save garden
+          </button>
         }
       </form>
 
@@ -130,7 +140,14 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
             <option value="collaborator">collaborator</option>
             <option value="viewer">viewer</option>
           </select>
-          <button type="submit">Invite</button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [attr.aria-busy]="notices.busyMap().has('invite') || null"
+            [disabled]="notices.busyMap().has('invite')"
+          >
+            Invite
+          </button>
         </form>
       }
       @if (g.myRole !== 'owner') {
@@ -141,7 +158,15 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
           <button type="button" (click)="confirmDelete.set(true)">Delete garden</button>
         } @else {
           <p>Permanently delete this garden? This cannot be undone.</p>
-          <button type="button" (click)="deleteGarden()">Confirm delete</button>
+          <button
+            type="button"
+            class="btn btn-destructive"
+            [attr.aria-busy]="notices.busyMap().has('delete-garden') || null"
+            [disabled]="notices.busyMap().has('delete-garden')"
+            (click)="deleteGarden()"
+          >
+            Confirm delete
+          </button>
           <button type="button" (click)="confirmDelete.set(false)">Cancel</button>
         }
       }
@@ -153,6 +178,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 export class GardenDetailPage implements OnInit {
   private readonly api = inject(GardensApiService);
   private readonly auth = inject(AuthApiService);
+  private readonly planner = inject(PlannerDraftService);
+  readonly notices = inject(NoticeService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   garden = signal<GardenDetailDto | null>(null);
@@ -172,6 +199,7 @@ export class GardenDetailPage implements OnInit {
   months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   ngOnInit() {
+    this.planner.discard();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) void this.load(id);
   }
@@ -193,32 +221,38 @@ export class GardenDetailPage implements OnInit {
     const g = this.garden();
     if (!g) return;
     this.error.set('');
-    try {
-      const updated = await this.api.patch(g.id, {
-        name: this.name,
-        notes: this.notes.trim() ? this.notes : null,
-        hardinessZone: this.zone,
-        lastFrost: toFrost(this.lastMonth, this.lastDay),
-        firstFrost: toFrost(this.firstMonth, this.firstDay),
-      });
-      this.garden.set(updated);
-      this.applyForm(updated);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    await this.notices.run('save-garden', async () => {
+      try {
+        const updated = await this.api.patch(g.id, {
+          name: this.name,
+          notes: this.notes.trim() ? this.notes : null,
+          hardinessZone: this.zone,
+          lastFrost: toFrost(this.lastMonth, this.lastDay),
+          firstFrost: toFrost(this.firstMonth, this.firstDay),
+        });
+        this.garden.set(updated);
+        this.applyForm(updated);
+        this.notices.success('Garden saved');
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    });
   }
 
   async invite() {
     const g = this.garden();
     if (!g) return;
     this.error.set('');
-    try {
-      await this.api.invite(g.id, { email: this.inviteEmail, role: this.inviteRole });
-      this.inviteEmail = '';
-      await this.load(g.id);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    await this.notices.run('invite', async () => {
+      try {
+        await this.api.invite(g.id, { email: this.inviteEmail, role: this.inviteRole });
+        this.inviteEmail = '';
+        await this.load(g.id);
+        this.notices.success('Member invited');
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    });
   }
 
   async setRole(userId: string, role: GardenRole) {
@@ -260,12 +294,14 @@ export class GardenDetailPage implements OnInit {
     const g = this.garden();
     if (!g) return;
     this.error.set('');
-    try {
-      await this.api.remove(g.id);
-      await this.router.navigateByUrl('/gardens');
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    await this.notices.run('delete-garden', async () => {
+      try {
+        await this.api.remove(g.id);
+        await this.router.navigateByUrl('/gardens');
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    });
   }
 
   emptyIfNull(value: number | null): string {

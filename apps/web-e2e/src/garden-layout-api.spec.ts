@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type APIResponse } from '@playwright/test';
+import { Client } from 'pg';
 
 type LayoutDto = {
   gardenId: string;
@@ -47,8 +48,51 @@ async function findPlant(request: APIRequestContext, name: string) {
     items: Array<{ id: string; commonName: string; spacingInches: number | null }>;
   };
   const plant = body.items.find((p) => p.commonName === name) ?? body.items[0];
+  if (plant) return plant;
+  if (name === 'Unknown Herb') {
+    const leftover = await findOrSeedUnknownHerb();
+    expect(leftover, 'missing leftover Unknown Herb').toBeTruthy();
+    return leftover!;
+  }
   expect(plant, `missing plant ${name}`).toBeTruthy();
   return plant!;
+}
+
+async function findOrSeedUnknownHerb(): Promise<{
+  id: string;
+  commonName: string;
+  spacingInches: number | null;
+} | null> {
+  const url = process.env['DATABASE_URL'];
+  if (!url) return null;
+  const client = new Client({ connectionString: url });
+  await client.connect();
+  try {
+    const existing = await client.query<{
+      id: string;
+      commonName: string;
+      spacingInches: number | null;
+    }>(
+      `SELECT id, common_name AS "commonName", spacing_inches AS "spacingInches"
+       FROM plants WHERE common_name = $1 LIMIT 1`,
+      ['Unknown Herb'],
+    );
+    if (existing.rows[0]) return existing.rows[0];
+    const inserted = await client.query<{
+      id: string;
+      commonName: string;
+      spacingInches: number | null;
+    }>(
+      `INSERT INTO plants (
+         variety_key, common_name, species, plant_type, zone_min, zone_max, spacing_inches, status
+       ) VALUES ('herba ignota|', 'Unknown Herb', 'Herba ignota', 'herb', 3, 10, NULL, 'active')
+       ON CONFLICT (variety_key) DO UPDATE SET common_name = EXCLUDED.common_name
+       RETURNING id, common_name AS "commonName", spacing_inches AS "spacingInches"`,
+    );
+    return inserted.rows[0] ?? null;
+  } finally {
+    await client.end();
+  }
 }
 
 async function addPlanting(request: APIRequestContext, gardenId: string, plantId: string) {
@@ -62,7 +106,7 @@ async function addPlanting(request: APIRequestContext, gardenId: string, plantId
 
 async function addBed(request: APIRequestContext, gardenId: string, name: string) {
   const res = await request.post(`/api/gardens/${gardenId}/beds`, {
-    data: { id: crypto.randomUUID(), name },
+    data: { id: crypto.randomUUID(), name, lengthInches: 96, widthInches: 48 },
   });
   expect(res.status(), await res.text()).toBe(201);
   return (await res.json()) as NamedBed;
@@ -185,7 +229,7 @@ test('layout HTTP: isolation, beds, 422 spacing/fit, placements, last-write-wins
     expect(omitWest.status()).toBe(200);
     const omitted = (await omitWest.json()) as LayoutDto;
     expect(omitted.beds.find((bed) => bed.id === west.id)?.name).toBe('West');
-    expect(omitted.beds.find((bed) => bed.id === west.id)?.geometry).toBeNull();
+    expect(omitted.beds.find((bed) => bed.id === west.id)?.geometry?.lengthInches).toBe(40);
 
     const foreign = await owner.put(`/api/gardens/${garden.id}/layout`, {
       data: { beds: [bedPut(otherBed.id)], placements: [] },
@@ -281,5 +325,72 @@ test('layout HTTP: isolation, beds, 422 spacing/fit, placements, last-write-wins
     await owner.dispose();
     await friend.dispose();
     await stranger.dispose();
+  }
+});
+
+test('area DELETE 401/403/404 and PUT empty/duplicate area names', async ({ playwright }) => {
+  const stamp = Date.now();
+  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const friend = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const anon = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  try {
+    await register(owner, `layout-area-owner-${stamp}@example.com`);
+    const friendUser = await register(friend, `layout-area-friend-${stamp}@example.com`);
+    const created = await owner.post('/api/gardens', { data: { name: 'Area API plot' } });
+    expect(created.status()).toBe(201);
+    const garden = (await created.json()) as GardenDetail;
+    const areaId = crypto.randomUUID();
+    const otherId = crypto.randomUUID();
+    const area = {
+      id: areaId,
+      name: 'Path',
+      originXInches: 0,
+      originYInches: 0,
+      lengthInches: 48,
+      widthInches: 24,
+    };
+
+    const emptyName = await owner.put(`/api/gardens/${garden.id}/layout`, {
+      data: { beds: [], placements: [], areas: [{ ...area, name: '' }] },
+    });
+    expect(emptyName.status()).toBe(400);
+
+    const first = await owner.put(`/api/gardens/${garden.id}/layout`, {
+      data: { beds: [], placements: [], areas: [area] },
+    });
+    expect(first.status(), await first.text()).toBe(200);
+
+    const duplicate = await owner.put(`/api/gardens/${garden.id}/layout`, {
+      data: {
+        beds: [],
+        placements: [],
+        areas: [area, { ...area, id: otherId, originYInches: 30 }],
+      },
+    });
+    expect(duplicate.status()).toBe(409);
+    expect(errorMessage(await json(duplicate))).toBe('That garden already has an area with that name');
+
+    const missing = crypto.randomUUID();
+    const anonDel = await anon.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
+    expect(anonDel.status()).toBe(401);
+
+    const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+    await register(stranger, `layout-area-stranger-${stamp}@example.com`);
+    const strangerDel = await stranger.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
+    expect(strangerDel.status()).toBe(404);
+    await stranger.dispose();
+
+    await owner.post(`/api/gardens/${garden.id}/members`, {
+      data: { email: friendUser.email, role: 'viewer' },
+    });
+    const viewerDel = await friend.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
+    expect(viewerDel.status()).toBe(403);
+
+    const missingDel = await owner.delete(`/api/gardens/${garden.id}/areas/${missing}`);
+    expect(missingDel.status()).toBe(404);
+  } finally {
+    await owner.dispose();
+    await friend.dispose();
+    await anon.dispose();
   }
 });
