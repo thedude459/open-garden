@@ -7,10 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
-import {
-  CatalogService,
-  PlantDetailService,
-} from '@open-garden/plant-catalog';
+import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
 import {
   FavoriteRepository,
   PlantRepository,

@@ -32,6 +32,7 @@ export default defineConfig({
         'libs/garden-layout/src/lib/**/*.ts',
         'libs/care-reminders/src/lib/**/*.ts',
         'libs/web-ui/src/lib/**/*.ts',
+        'libs/catalog-pipeline/src/lib/**/*.ts',
       ],
       exclude: [
         '**/*.spec.ts',
@@ -42,6 +43,8 @@ export default defineConfig({
         '**/calendar.ts',
         '**/planting.ts',
         '**/layout.ts',
+        '**/reminders.ts',
+        '**/pipeline.ts',
         '**/test-memory.ts',
         // DB-backed modules need integration fixtures; covered separately later
         'libs/plant-catalog-data/**',
@@ -127,6 +130,10 @@ export default defineConfig({
         'libs/care-reminders/src/lib/derive-export.ts',
       ),
       '@open-garden/web-ui': path.resolve(__dirname, 'libs/web-ui/src/index.ts'),
+      '@open-garden/catalog-pipeline': path.resolve(
+        __dirname,
+        'libs/catalog-pipeline/src/index.ts',
+      ),
     },
   },
 });

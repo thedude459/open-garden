@@ -1,7 +1,12 @@
 import { buildVarietyKey } from './variety-key';
 import type { PlantDataProvider } from '@open-garden/plant-provider';
 import type { PlantRepository, PlantUpsertInput } from '@open-garden/plant-catalog-data';
-import type { PageDto, PlantListQueryDto, PlantSummaryDto, PlantType } from '@open-garden/shared-types';
+import type {
+  PageDto,
+  PlantListQueryDto,
+  PlantSummaryDto,
+  PlantType,
+} from '@open-garden/shared-types';
 import { PLANT_TYPES } from '@open-garden/shared-types';
 
 export class CatalogService {
@@ -51,9 +56,7 @@ export class CatalogService {
     }
 
     return {
-      items: result.items
-        .filter((row) => row.spacingInches != null)
-        .map(toSummary),
+      items: result.items.filter((row) => row.spacingInches != null).map(toSummary),
       page: result.page,
       pageSize: result.pageSize,
       totalCount: result.totalCount,
@@ -61,11 +64,7 @@ export class CatalogService {
   }
 }
 
-export function matchesZone(
-  zoneMin: number,
-  zoneMax: number,
-  zone: number,
-): boolean {
+export function matchesZone(zoneMin: number, zoneMax: number, zone: number): boolean {
   return zoneMin <= zone && zone <= zoneMax;
 }
 

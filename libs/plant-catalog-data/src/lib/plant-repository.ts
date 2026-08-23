@@ -1,4 +1,16 @@
-import { and, asc, count, eq, gte, ilike, isNotNull, lte, or, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  lte,
+  or,
+  type SQL,
+} from 'drizzle-orm';
 import type { GrowingGuidanceDto, PlantType } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { plants } from './schema';
@@ -134,6 +146,26 @@ export class PlantRepository {
       page: filters.page,
       pageSize: filters.pageSize,
     };
+  }
+
+  async listSnapshots() {
+    return this.db
+      .select({
+        id: plants.id,
+        varietyKey: plants.varietyKey,
+        status: plants.status,
+      })
+      .from(plants);
+  }
+
+  async deprecateByVarietyKeys(keys: string[]) {
+    if (keys.length === 0) return 0;
+    const rows = await this.db
+      .update(plants)
+      .set({ status: 'deprecated', updatedAt: new Date() })
+      .where(inArray(plants.varietyKey, keys))
+      .returning({ id: plants.id });
+    return rows.length;
   }
 }
 

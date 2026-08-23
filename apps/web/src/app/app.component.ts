@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { NavigationStart, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { AuthApiService } from './auth/auth-api.service';
 import { NoticeHost } from './ui/notice-host';
 import { NoticeService } from './ui/notice.service';
 
@@ -15,6 +16,9 @@ import { NoticeService } from './ui/notice.service';
         <a routerLink="/plants">Catalog</a>
         <a routerLink="/gardens">Gardens</a>
         <a routerLink="/favorites">Favorites</a>
+        @if (isAdmin()) {
+          <a routerLink="/admin/pipeline">Pipeline</a>
+        }
         <a routerLink="/login">Login</a>
       </nav>
       <router-outlet />
@@ -23,10 +27,16 @@ import { NoticeService } from './ui/notice.service';
   `,
 })
 export class AppComponent {
+  private readonly auth = inject(AuthApiService);
+
   constructor() {
     const notices = inject(NoticeService);
     inject(Router)
       .events.pipe(filter((e): e is NavigationStart => e instanceof NavigationStart))
       .subscribe(() => notices.clear());
+  }
+
+  isAdmin() {
+    return this.auth.isAdmin();
   }
 }

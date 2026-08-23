@@ -63,6 +63,7 @@ export default [
                 'scope:plantings',
                 'scope:layout',
                 'scope:care',
+                'scope:pipeline',
               ],
             },
             {
@@ -75,6 +76,7 @@ export default [
                 'scope:plantings',
                 'scope:layout',
                 'scope:care',
+                'scope:pipeline',
               ],
             },
           ],

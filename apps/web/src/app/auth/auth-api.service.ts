@@ -21,8 +21,7 @@ export class AuthApiService {
         { withCredentials: true },
       ),
     );
-    this.user = res.user;
-    sessionStorage.setItem('og_user_id', res.user.id);
+    this.persistUser(res.user);
     return res.user;
   }
 
@@ -34,8 +33,7 @@ export class AuthApiService {
         { withCredentials: true },
       ),
     );
-    this.user = res.user;
-    sessionStorage.setItem('og_user_id', res.user.id);
+    this.persistUser(res.user);
     return res.user;
   }
 
@@ -45,6 +43,7 @@ export class AuthApiService {
     ).catch(() => undefined);
     this.user = null;
     sessionStorage.removeItem('og_user_id');
+    sessionStorage.removeItem('og_role');
   }
 
   currentUserId(): string | null {
@@ -55,7 +54,18 @@ export class AuthApiService {
     return this.user !== null || Boolean(sessionStorage.getItem('og_authed'));
   }
 
+  isAdmin(): boolean {
+    const role = this.user?.role ?? sessionStorage.getItem('og_role');
+    return role === 'admin';
+  }
+
   markAuthenticated() {
     sessionStorage.setItem('og_authed', '1');
+  }
+
+  private persistUser(user: { id: string; email: string; role: string }) {
+    this.user = user;
+    sessionStorage.setItem('og_user_id', user.id);
+    sessionStorage.setItem('og_role', user.role);
   }
 }
