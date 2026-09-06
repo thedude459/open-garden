@@ -1,4 +1,17 @@
-import { and, asc, count, eq, gte, ilike, inArray, lte, or, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  lte,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { GrowingGuidanceDto, PlantType } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { plants } from './schema';
@@ -86,6 +99,69 @@ export class PlantRepository {
     return row;
   }
 
+  async upsertManyByVarietyKey(inputs: PlantUpsertInput[]) {
+    if (inputs.length === 0) return [];
+    const values = inputs.map((input) => {
+      const guidance = flattenGuidance(input.growingGuidance);
+      return {
+        varietyKey: input.varietyKey,
+        commonName: input.commonName,
+        species: input.species,
+        cultivar: input.cultivar,
+        plantType: input.plantType,
+        zoneMin: input.zoneMin,
+        zoneMax: input.zoneMax,
+        sunRequirements: input.sunRequirements,
+        waterNeeds: input.waterNeeds,
+        daysToMaturity: input.daysToMaturity,
+        spacingInches: input.spacingInches,
+        waterIntervalDays: input.waterIntervalDays ?? null,
+        fertilizeIntervalDays: input.fertilizeIntervalDays ?? null,
+        provider: input.provider,
+        providerExternalId: input.providerExternalId,
+        status: 'active' as const,
+        updatedAt: new Date(),
+        lastSyncedAt: new Date(),
+        ...guidance,
+      };
+    });
+    return this.db
+      .insert(plants)
+      .values(values)
+      .onConflictDoUpdate({
+        target: plants.varietyKey,
+        set: {
+          commonName: sql`excluded.common_name`,
+          species: sql`excluded.species`,
+          cultivar: sql`excluded.cultivar`,
+          plantType: sql`excluded.plant_type`,
+          zoneMin: sql`excluded.zone_min`,
+          zoneMax: sql`excluded.zone_max`,
+          sunRequirements: sql`excluded.sun_requirements`,
+          waterNeeds: sql`excluded.water_needs`,
+          daysToMaturity: sql`excluded.days_to_maturity`,
+          spacingInches: sql`excluded.spacing_inches`,
+          waterIntervalDays: sql`excluded.water_interval_days`,
+          fertilizeIntervalDays: sql`excluded.fertilize_interval_days`,
+          provider: sql`excluded.provider`,
+          providerExternalId: sql`excluded.provider_external_id`,
+          status: sql`excluded.status`,
+          updatedAt: sql`excluded.updated_at`,
+          lastSyncedAt: sql`excluded.last_synced_at`,
+          indoorFrostAnchor: sql`excluded.indoor_frost_anchor`,
+          indoorWeeksEarliest: sql`excluded.indoor_weeks_earliest`,
+          indoorWeeksLatest: sql`excluded.indoor_weeks_latest`,
+          sowFrostAnchor: sql`excluded.sow_frost_anchor`,
+          sowWeeksEarliest: sql`excluded.sow_weeks_earliest`,
+          sowWeeksLatest: sql`excluded.sow_weeks_latest`,
+          transplantFrostAnchor: sql`excluded.transplant_frost_anchor`,
+          transplantWeeksEarliest: sql`excluded.transplant_weeks_earliest`,
+          transplantWeeksLatest: sql`excluded.transplant_weeks_latest`,
+        },
+      })
+      .returning();
+  }
+
   async getById(id: string) {
     const [row] = await this.db.select().from(plants).where(eq(plants.id, id)).limit(1);
     return row ?? null;
@@ -96,6 +172,7 @@ export class PlantRepository {
     if (!filters.includeDeprecated) {
       conditions.push(eq(plants.status, 'active'));
     }
+    conditions.push(isNotNull(plants.spacingInches));
     if (filters.plantType) {
       conditions.push(eq(plants.plantType, filters.plantType));
     }

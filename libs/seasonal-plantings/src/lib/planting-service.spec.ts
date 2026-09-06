@@ -21,6 +21,24 @@ const maple = {
 };
 
 describe('PlantingService', () => {
+  it('requires indoor start date for transplants and forbids it for direct seed', async () => {
+    const mem = createMemory();
+    await expect(
+      mem.service.create(mem.ownerId, mem.gardenId, {
+        plantId: tomato.id,
+        startMethod: 'transplant',
+      }),
+    ).rejects.toMatchObject({ message: 'Indoor start date is required for transplants' });
+    await expect(
+      mem.service.create(mem.ownerId, mem.gardenId, {
+        plantId: tomato.id,
+        startMethod: 'direct_seed',
+        indoorStartedOn: '2026-08-01',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Direct seed plantings cannot have an indoor start date',
+    });
+  });
   it('adds the same variety twice as two rows and lists newest recorded first', async () => {
     const mem = createMemory();
     const first = await mem.service.create(mem.ownerId, mem.gardenId, { plantId: tomato.id });
@@ -97,12 +115,26 @@ describe('PlantingService', () => {
 
   it('creates unique bed names, unassigns plantings on delete, and refuses viewer bed mutate', async () => {
     const mem = createMemory();
-    const bed = await mem.service.createBed(mem.ownerId, mem.gardenId, { name: '  Raised bed 1  ' });
+    const bed = await mem.service.createBed(mem.ownerId, mem.gardenId, {
+      name: '  Raised bed 1  ',
+      lengthInches: 96,
+      widthInches: 48,
+    });
     expect(bed.bed.name).toBe('Raised bed 1');
     await expect(
-      mem.service.createBed(mem.ownerId, mem.gardenId, { name: 'raised bed 1' }),
+      mem.service.createBed(mem.ownerId, mem.gardenId, {
+        name: 'raised bed 1',
+        lengthInches: 96,
+        widthInches: 48,
+      }),
     ).rejects.toMatchObject({ message: 'That garden already has a bed with that name' });
-    await expect(mem.service.createBed(mem.ownerId, mem.gardenId, { name: '   ' })).rejects.toMatchObject({
+    await expect(
+      mem.service.createBed(mem.ownerId, mem.gardenId, {
+        name: '   ',
+        lengthInches: 96,
+        widthInches: 48,
+      }),
+    ).rejects.toMatchObject({
       message: 'Bed name is required',
     });
     const created = await mem.service.create(mem.ownerId, mem.gardenId, {
@@ -113,27 +145,76 @@ describe('PlantingService', () => {
     await mem.service.deleteBed(mem.ownerId, mem.gardenId, bed.bed.id);
     const after = await mem.service.list(mem.ownerId, mem.gardenId);
     expect(after.beds).toHaveLength(0);
-    expect(after.plantings[0]?.bedId).toBeNull();
+    expect(after.plantings).toHaveLength(0);
     await expect(
-      mem.service.createBed(mem.viewerId, mem.gardenId, { name: 'Nope' }),
+      mem.service.createBed(mem.viewerId, mem.gardenId, {
+        name: 'Nope',
+        lengthInches: 96,
+        widthInches: 48,
+      }),
     ).rejects.toMatchObject({ message: 'Viewers cannot update beds' });
+  });
+
+  it('deletes in-bed direct seed and returns transplants to the tray on bed delete', async () => {
+    const mem = createMemory();
+    const bed = await mem.service.createBed(mem.ownerId, mem.gardenId, {
+      name: 'East',
+      lengthInches: 96,
+      widthInches: 48,
+    });
+    await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      bedId: bed.bed.id,
+      startMethod: 'direct_seed',
+    });
+    await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      bedId: bed.bed.id,
+      startMethod: 'transplant',
+      indoorStartedOn: '2026-08-01',
+    });
+    await mem.service.deleteBed(mem.ownerId, mem.gardenId, bed.bed.id);
+    const after = await mem.service.list(mem.ownerId, mem.gardenId);
+    expect(after.plantings).toHaveLength(1);
+    expect(after.plantings[0]?.startMethod).toBe('transplant');
+    expect(after.plantings[0]?.bedId).toBeNull();
+    expect(after.plantings[0]?.indoorStartedOn).toBe('2026-08-01');
   });
 
   it('retries bed client ids, renames, and rejects unknown beds', async () => {
     const mem = createMemory();
     const id = '33333333-3333-4333-8333-333333333333';
-    const first = await mem.service.createBed(mem.ownerId, mem.gardenId, { id, name: 'East' });
-    const retry = await mem.service.createBed(mem.ownerId, mem.gardenId, { id, name: 'East' });
+    const first = await mem.service.createBed(mem.ownerId, mem.gardenId, {
+      id,
+      name: 'East',
+      lengthInches: 96,
+      widthInches: 48,
+    });
+    const retry = await mem.service.createBed(mem.ownerId, mem.gardenId, {
+      id,
+      name: 'East',
+      lengthInches: 96,
+      widthInches: 48,
+    });
     expect(first.created).toBe(true);
     expect(retry.created).toBe(false);
     await expect(
-      mem.service.createBed(mem.ownerId, mem.otherGardenId, { id, name: 'West' }),
+      mem.service.createBed(mem.ownerId, mem.otherGardenId, {
+        id,
+        name: 'West',
+        lengthInches: 96,
+        widthInches: 48,
+      }),
     ).rejects.toMatchObject({ message: 'That id is already in use' });
     const renamed = await mem.service.renameBed(mem.ownerId, mem.gardenId, first.bed.id, {
       name: 'East bed',
     });
     expect(renamed.name).toBe('East bed');
-    const other = await mem.service.createBed(mem.ownerId, mem.gardenId, { name: 'South' });
+    const other = await mem.service.createBed(mem.ownerId, mem.gardenId, {
+      name: 'South',
+      lengthInches: 96,
+      widthInches: 48,
+    });
     await expect(
       mem.service.renameBed(mem.ownerId, mem.gardenId, other.bed.id, { name: 'east bed' }),
     ).rejects.toMatchObject({ message: 'That garden already has a bed with that name' });
@@ -179,6 +260,8 @@ function createMemory() {
     bedId: string | null;
     plantedOn: string | null;
     harvestedOn: string | null;
+    startMethod: string;
+    indoorStartedOn: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -233,6 +316,8 @@ function createMemory() {
       bedId: string | null;
       plantedOn: string | null;
       harvestedOn: string | null;
+      startMethod?: string;
+      indoorStartedOn?: string | null;
     }) {
       const now = new Date();
       const row: PlantingRow = {
@@ -242,6 +327,8 @@ function createMemory() {
         bedId: input.bedId,
         plantedOn: input.plantedOn,
         harvestedOn: input.harvestedOn,
+        startMethod: input.startMethod ?? 'direct_seed',
+        indoorStartedOn: input.indoorStartedOn ?? null,
         createdAt: now,
         updatedAt: now,
       };
@@ -270,6 +357,25 @@ function createMemory() {
       plantingRows.delete(id);
       return true;
     },
+    async deleteDirectSeedInBed(gId: string, bedId: string) {
+      for (const [id, planting] of [...plantingRows.entries()]) {
+        if (planting.gardenId === gId && planting.bedId === bedId && planting.startMethod === 'direct_seed') {
+          plantingRows.delete(id);
+        }
+      }
+    },
+    async unassignTransplantsInBed(gId: string, bedId: string) {
+      for (const planting of plantingRows.values()) {
+        if (planting.gardenId === gId && planting.bedId === bedId && planting.startMethod === 'transplant') {
+          planting.bedId = null;
+        }
+      }
+    },
+    async listUnplacedTransplants(gId: string) {
+      return [...plantingRows.values()]
+        .filter((r) => r.gardenId === gId && r.startMethod === 'transplant' && r.bedId === null)
+        .map((r) => ({ ...withPlant(r), spacingInches: null, layoutXInches: null, layoutYInches: null }));
+    },
   };
   const bedRepo = {
     async listByGarden(gId: string) {
@@ -290,7 +396,16 @@ function createMemory() {
         null
       );
     },
-    async insert(input: { id?: string; gardenId: string; name: string; nameNormalized: string }) {
+    async insert(input: {
+      id?: string;
+      gardenId: string;
+      name: string;
+      nameNormalized: string;
+      originXInches?: number;
+      originYInches?: number;
+      lengthInches?: number;
+      widthInches?: number;
+    }) {
       const now = new Date();
       const row: BedRow = {
         id: input.id ?? `bed-${++seq}`,
@@ -315,9 +430,6 @@ function createMemory() {
       const row = bedRows.get(id);
       if (!row || row.gardenId !== gId) return false;
       bedRows.delete(id);
-      for (const planting of plantingRows.values()) {
-        if (planting.bedId === id) planting.bedId = null;
-      }
       return true;
     },
   };

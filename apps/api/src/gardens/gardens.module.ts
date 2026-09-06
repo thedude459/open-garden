@@ -5,6 +5,7 @@ import { GardenCalendarController } from './garden-calendar.controller';
 import { GardenPlantingsController } from './garden-plantings.controller';
 import { GardenBedsController } from './garden-beds.controller';
 import { GardenLayoutController } from './garden-layout.controller';
+import { GardenTransplantsController } from './garden-transplants.controller';
 import { GardenRemindersController } from './garden-reminders.controller';
 import { GardenMembershipGuard } from './garden-membership.guard';
 
@@ -16,6 +17,7 @@ import { GardenMembershipGuard } from './garden-membership.guard';
     GardenPlantingsController,
     GardenBedsController,
     GardenLayoutController,
+    GardenTransplantsController,
     GardenRemindersController,
   ],
   providers: [GardenMembershipGuard],

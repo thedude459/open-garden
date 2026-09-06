@@ -5,7 +5,12 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['libs/**/*.spec.ts', 'apps/api/**/*.spec.ts', 'apps/api-e2e/**/*.spec.ts'],
+    include: [
+      'libs/**/*.spec.ts',
+      'apps/api/**/*.spec.ts',
+      'apps/api-e2e/**/*.spec.ts',
+      'apps/web/src/app/gardens/planner-draft.service.spec.ts',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -26,6 +31,7 @@ export default defineConfig({
         'libs/seasonal-plantings/src/lib/**/*.ts',
         'libs/garden-layout/src/lib/**/*.ts',
         'libs/care-reminders/src/lib/**/*.ts',
+        'libs/web-ui/src/lib/**/*.ts',
         'libs/catalog-pipeline/src/lib/**/*.ts',
       ],
       exclude: [
@@ -90,11 +96,40 @@ export default defineConfig({
         __dirname,
         'libs/garden-layout/src/lib/rotate.ts',
       ),
+      '@open-garden/garden-layout/plan-coords': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/plan-coords.ts',
+      ),
+      '@open-garden/garden-layout/hit-test': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/hit-test.ts',
+      ),
+      '@open-garden/garden-layout/footprint': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/footprint.ts',
+      ),
+      '@open-garden/garden-layout/drop': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/drop.ts',
+      ),
+      '@open-garden/garden-layout/drawable-beds': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/drawable-beds.ts',
+      ),
+      '@open-garden/garden-layout/overview-labels': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/overview-labels.ts',
+      ),
+      '@open-garden/garden-layout/viewport-center': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/viewport-center.ts',
+      ),
       '@open-garden/care-reminders': path.resolve(__dirname, 'libs/care-reminders/src/index.ts'),
       '@open-garden/care-reminders/derive': path.resolve(
         __dirname,
         'libs/care-reminders/src/lib/derive-export.ts',
       ),
+      '@open-garden/web-ui': path.resolve(__dirname, 'libs/web-ui/src/index.ts'),
       '@open-garden/catalog-pipeline': path.resolve(
         __dirname,
         'libs/catalog-pipeline/src/index.ts',

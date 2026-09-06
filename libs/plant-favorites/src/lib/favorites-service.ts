@@ -31,7 +31,9 @@ export class FavoritesService {
           plantType: row.plant.plantType as PlantType,
           zoneMin: row.plant.zoneMin,
           zoneMax: row.plant.zoneMax,
+          spacingInches: row.plant.spacingInches,
           status: row.plant.status as PlantStatus,
+          illustrationUrl: null,
         },
       })),
     };

@@ -37,8 +37,8 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
             name="plantingSearch"
             placeholder="Search catalog to add"
           />
-          <button type="submit">Search catalog</button>
-          <button type="button" (click)="loadFavorites()">Show favorites</button>
+          <button type="submit" class="btn btn-primary">Search catalog</button>
+          <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
         </form>
         @if (catalogHits().length) {
           <ul class="card-list">
@@ -65,7 +65,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
         }
         <form class="filters" (ngSubmit)="createBed()">
           <input [(ngModel)]="bedName" name="bedName" placeholder="Bed name" />
-          <button type="submit">Create bed</button>
+          <button type="submit" class="btn btn-primary">Create bed</button>
         </form>
       }
       <div class="filters">
@@ -278,7 +278,11 @@ export class GardenPlantingsPage implements OnInit {
     this.favorites.set(page.items);
   }
 
-  async add(plant: PlantSummaryDto & { status?: string }) {
+  async add(
+    plant: Pick<PlantSummaryDto, 'id' | 'commonName' | 'species' | 'cultivar' | 'plantType'> & {
+      status?: string;
+    },
+  ) {
     this.error.set('');
     try {
       this.list.set(
@@ -363,7 +367,11 @@ export class GardenPlantingsPage implements OnInit {
     this.error.set('');
     try {
       const { name } = normalizeBedName(this.bedName);
-      await this.api.createBed(this.gardenId, { name });
+      await this.api.createBed(this.gardenId, {
+        name,
+        lengthInches: 96,
+        widthInches: 48,
+      });
       this.bedName = '';
       await this.load(true);
     } catch (err) {

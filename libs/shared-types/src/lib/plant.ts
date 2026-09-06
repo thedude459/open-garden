@@ -16,9 +16,13 @@ export interface PlantSummaryDto {
   plantType: PlantType;
   zoneMin: number;
   zoneMax: number;
+  /** Present on list items; catalog admission requires a known value. */
+  spacingInches: number;
+  /** Null until a later art feature; clients use the CSS stand-in. */
+  illustrationUrl: string | null;
 }
 
-export interface PlantDetailDto extends PlantSummaryDto {
+export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sunRequirements: string | null;
   waterNeeds: string | null;
   daysToMaturity: number | null;
@@ -47,7 +51,10 @@ export interface PlantListQueryDto {
 
 export interface FavoriteListItemDto {
   favoriteId: string;
-  plant: PlantSummaryDto & { status: PlantStatus };
+  plant: Omit<PlantSummaryDto, 'spacingInches'> & {
+    spacingInches: number | null;
+    status: PlantStatus;
+  };
   createdAt: string;
   unavailable: boolean;
 }

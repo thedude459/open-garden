@@ -2,13 +2,23 @@ import {
   Controller,
   Get,
   Inject,
+  Logger,
   Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
-import { FavoriteRepository, PlantRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
+import {
+  FavoriteRepository,
+  PlantRepository,
+  type AppDatabase,
+} from '@open-garden/plant-catalog-data';
+import {
+  FixturePlantProvider,
+  PerenualPlantProvider,
+  type PlantDataProvider,
+} from '@open-garden/plant-provider';
 import { plantListQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
@@ -16,18 +26,20 @@ import { DATABASE } from '../database/database.tokens';
 @Controller('plants')
 @UseGuards(SessionGuard)
 export class PlantsController {
+  private readonly logger = new Logger(PlantsController.name);
   private readonly catalog: CatalogService;
   private readonly details: PlantDetailService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     const plants = new PlantRepository(bundle.db);
     const favorites = new FavoriteRepository(bundle.db);
-    this.catalog = new CatalogService(plants);
+    const provider = createProvider();
+    this.catalog = new CatalogService(plants, provider);
     this.details = new PlantDetailService(plants, favorites);
   }
 
   @Get()
-  list(
+  async list(
     @Query('q') q?: string,
     @Query('zone') zoneRaw?: string,
     @Query('plantType') plantType?: string,
@@ -48,7 +60,10 @@ export class PlantsController {
       err.code = 'VALIDATION_ERROR';
       throw err;
     }
-    return this.catalog.list(parsed.data);
+    const started = Date.now();
+    const result = await this.catalog.list(parsed.data);
+    this.logger.log(`plants.list.assembly_ms=${Date.now() - started}`);
+    return result;
   }
 
   @Get(':id')
@@ -61,4 +76,13 @@ export class PlantsController {
     }
     return plant;
   }
+}
+
+export function createProvider(): PlantDataProvider {
+  const kind = process.env['PLANT_PROVIDER'] ?? 'fixture';
+  if (kind === 'perenual') {
+    const key = process.env['PERENUAL_API_KEY'] ?? '';
+    return new PerenualPlantProvider(key);
+  }
+  return new FixturePlantProvider();
 }

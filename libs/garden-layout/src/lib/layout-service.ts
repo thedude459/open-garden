@@ -3,11 +3,14 @@ import type {
   BedOrientation,
   GardenLayoutDto,
   GardenRole,
+  LayoutAreaDto,
   LayoutPutDto,
   PlantStatus,
   PlantType,
+  StartMethod,
 } from '@open-garden/shared-types';
 import type {
+  AreaRepository,
   BedRepository,
   GardenMembershipRepository,
   PlantingRepository,
@@ -16,11 +19,19 @@ import { LAYOUT_ERRORS } from './domain-error';
 import { assertCompleteGeometry } from './geometry';
 import { evaluateLayout } from './evaluate-layout';
 
+function normalizeAreaName(raw: string): { name: string; nameNormalized: string } {
+  const name = raw.trim();
+  if (!name) throw LAYOUT_ERRORS.areaNameRequired();
+  if (name.length > 120) throw LAYOUT_ERRORS.areaNameTooLong();
+  return { name, nameNormalized: name.toLowerCase() };
+}
+
 export class LayoutService {
   constructor(
     private readonly memberships: GardenMembershipRepository,
     private readonly plantings: PlantingRepository,
     private readonly beds: BedRepository,
+    private readonly areas: AreaRepository,
   ) {}
 
   async get(userId: string, gardenId: string): Promise<GardenLayoutDto> {
@@ -36,6 +47,7 @@ export class LayoutService {
 
     const bedRows = await this.beds.listByGarden(gardenId);
     const plantingRows = await this.plantings.listAllForLayout(gardenId);
+    const areaRows = await this.areas.listByGarden(gardenId);
     const bedIds = new Set(bedRows.map((b) => b.id));
     const plantingIds = new Set(plantingRows.map((p) => p.id));
 
@@ -46,7 +58,20 @@ export class LayoutService {
     const sizedIds = new Set(dto.beds.map((b) => b.id));
     for (const placement of dto.placements) {
       if (!plantingIds.has(placement.plantingId)) throw LAYOUT_ERRORS.plantingNotFound();
-      if (!sizedIds.has(placement.bedId)) throw LAYOUT_ERRORS.bedNotFound();
+      if (!sizedIds.has(placement.bedId) && !bedIds.has(placement.bedId)) {
+        throw LAYOUT_ERRORS.bedNotFound();
+      }
+    }
+
+    const seenNames = new Map<string, string>();
+    for (const area of dto.areas ?? []) {
+      const names = normalizeAreaName(area.name);
+      const takenId = seenNames.get(names.nameNormalized);
+      if (takenId && takenId !== area.id) throw LAYOUT_ERRORS.areaNameTaken();
+      seenNames.set(names.nameNormalized, area.id);
+      const existing = await this.areas.findByNormalizedName(gardenId, names.nameNormalized);
+      if (existing && existing.id !== area.id) throw LAYOUT_ERRORS.areaNameTaken();
+      if (area.lengthInches < 1 || area.widthInches < 1) throw LAYOUT_ERRORS.sizeMin();
     }
 
     const proposedBeds = bedRows.map((row) => {
@@ -62,7 +87,7 @@ export class LayoutService {
               widthInches: put.widthInches,
               orientation: put.orientation,
             }
-          : null,
+          : toGeometry(row),
       };
     });
     const proposedPlantings = plantingRows.map((row) => {
@@ -82,8 +107,6 @@ export class LayoutService {
       const put = dto.beds.find((b) => b.id === row.id);
       if (put) {
         await this.beds.setGeometry(gardenId, row.id, put);
-      } else if (row.originXInches !== null) {
-        await this.beds.clearGeometry(gardenId, row.id);
       }
     }
     for (const row of plantingRows) {
@@ -95,17 +118,49 @@ export class LayoutService {
           yInches: put.yInches,
         });
       } else if (row.layoutXInches !== null) {
-        await this.plantings.clearLayoutCoords(gardenId, row.id);
+        const startMethod = (row as { startMethod?: string }).startMethod ?? 'direct_seed';
+        if (startMethod === 'transplant') {
+          await this.plantings.clearPlacement(gardenId, row.id);
+        } else {
+          await this.plantings.clearLayoutCoords(gardenId, row.id);
+        }
       }
+    }
+
+    const existingAreaIds = new Set(areaRows.map((a) => a.id));
+    for (const area of dto.areas ?? []) {
+      const names = normalizeAreaName(area.name);
+      if (!existingAreaIds.has(area.id)) {
+        const clash = await this.areas.getInGarden(gardenId, area.id);
+        if (clash) throw LAYOUT_ERRORS.areaNotFound();
+      }
+      await this.areas.upsert(gardenId, {
+        id: area.id,
+        name: names.name,
+        nameNormalized: names.nameNormalized,
+        originXInches: area.originXInches,
+        originYInches: area.originYInches,
+        lengthInches: area.lengthInches,
+        widthInches: area.widthInches,
+      });
     }
 
     return this.snapshot(gardenId, membership.role as GardenRole);
   }
 
+  async deleteArea(userId: string, gardenId: string, areaId: string): Promise<void> {
+    const membership = await this.memberships.get(gardenId, userId);
+    if (!membership) throw LAYOUT_ERRORS.gardenNotFound();
+    if (membership.role === 'viewer') throw LAYOUT_ERRORS.viewerLayout();
+    const deleted = await this.areas.delete(gardenId, areaId);
+    if (!deleted) throw LAYOUT_ERRORS.areaNotFound();
+  }
+
   private async snapshot(gardenId: string, role: GardenRole): Promise<GardenLayoutDto> {
-    const [bedRows, plantingRows] = await Promise.all([
+    const [bedRows, plantingRows, areaRows] = await Promise.all([
       this.beds.listByGarden(gardenId),
       this.plantings.listAllForLayout(gardenId),
+      this.areas.listByGarden(gardenId),
     ]);
     const beds = bedRows.map((row) => ({
       id: row.id,
@@ -125,6 +180,8 @@ export class LayoutService {
         status: row.status as PlantStatus,
         bedId: row.bedId,
         spacingInches: row.spacingInches,
+        startMethod: ((row as { startMethod?: string }).startMethod ?? 'direct_seed') as StartMethod,
+        indoorStartedOn: (row as { indoorStartedOn?: string | null }).indoorStartedOn ?? null,
         placement: placed
           ? {
               plantingId: row.id,
@@ -135,10 +192,19 @@ export class LayoutService {
           : null,
       };
     });
+    const areas: LayoutAreaDto[] = areaRows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      originXInches: row.originXInches,
+      originYInches: row.originYInches,
+      lengthInches: row.lengthInches,
+      widthInches: row.widthInches,
+    }));
     return {
       gardenId,
       myRole: role,
       beds,
+      areas,
       plantings,
       flags: evaluateLayout(beds, plantings),
     };
