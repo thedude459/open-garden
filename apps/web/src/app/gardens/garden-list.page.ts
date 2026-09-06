@@ -69,6 +69,7 @@ export class GardenListPage implements OnInit {
   items = signal<GardenSummaryDto[]>([]);
   loading = signal(false);
   error = signal('');
+  private loadGen = 0;
 
   ngOnInit() {
     void this.load();
@@ -82,8 +83,10 @@ export class GardenListPage implements OnInit {
   }
 
   async load() {
+    const gen = ++this.loadGen;
     this.loading.set(true);
     const page = await this.api.listAll();
+    if (gen !== this.loadGen) return;
     this.items.set(page.items.map(withCounts));
     this.loading.set(false);
   }
