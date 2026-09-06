@@ -140,9 +140,6 @@ else
   npx playwright install chromium
 fi
 
-# Repo SQL files are applied directly; drizzle-kit migrate needs meta/_journal.json.
-export PGPASSWORD="${PGPASSWORD:-open_garden}"
-psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -f libs/plant-catalog-data/migrations/0008_planner_visualization.sql
 npx nx run api:sync-plants
 
 PORT=3000 npx tsx apps/api/src/main.ts &
