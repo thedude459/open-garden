@@ -8,7 +8,9 @@ import { FavoritesApiService } from './favorites-api.service';
   imports: [RouterLink],
   template: `
     <h2>Favorites</h2>
-    @if (items().length === 0) {
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (items().length === 0) {
       <p class="muted">No favorites yet.</p>
     } @else {
       <div class="card-list">
@@ -30,14 +32,19 @@ import { FavoritesApiService } from './favorites-api.service';
 export class FavoritesListPage implements OnInit {
   private readonly api = inject(FavoritesApiService);
   items = signal<FavoriteListItemDto[]>([]);
+  loading = signal(true);
 
   ngOnInit() {
     void this.load();
   }
 
   async load() {
-    const page = await this.api.list();
-    this.items.set(page.items);
+    this.loading.set(true);
+    try {
+      this.items.set((await this.api.list()).items);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async remove(plantId: string) {

@@ -44,6 +44,7 @@ export class AuthApiService {
     this.user = null;
     sessionStorage.removeItem('og_user_id');
     sessionStorage.removeItem('og_role');
+    sessionStorage.removeItem('og_authed');
   }
 
   currentUserId(): string | null {
@@ -67,5 +68,6 @@ export class AuthApiService {
     this.user = user;
     sessionStorage.setItem('og_user_id', user.id);
     sessionStorage.setItem('og_role', user.role);
+    sessionStorage.setItem('og_authed', '1');
   }
 }

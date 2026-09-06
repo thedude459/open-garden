@@ -33,6 +33,7 @@ export class PlantDetailService {
       fertilizeIntervalDays: row.fertilizeIntervalDays,
       status: row.status as PlantStatus,
       isFavorite,
+      illustrationUrl: null,
       growingGuidance: growingGuidanceFromRow(row),
     };
   }

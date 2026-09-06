@@ -120,6 +120,8 @@ export class PlantingsOfflineQueue {
             plantedOn: body.plantedOn ?? existing?.plantedOn ?? null,
             harvestedOn: body.harvestedOn ?? existing?.harvestedOn ?? null,
             bedId: body.bedId ?? existing?.bedId ?? null,
+            startMethod: body.startMethod ?? existing?.startMethod ?? 'direct_seed',
+            indoorStartedOn: body.indoorStartedOn ?? existing?.indoorStartedOn ?? null,
             createdAt: existing?.createdAt ?? new Date(item.updatedAt).toISOString(),
             updatedAt: new Date(item.updatedAt).toISOString(),
             sync: item.failedMessage ? 'failed' : 'pending',

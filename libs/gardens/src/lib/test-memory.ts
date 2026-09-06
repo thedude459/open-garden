@@ -94,6 +94,13 @@ export function createGardenMemory() {
         if (key.startsWith(`${id}:`)) memberships.delete(key);
       }
     },
+    async countsForGardenIds(ids: string[]) {
+      const map = new Map<string, { bedCount: number; placementCount: number }>();
+      for (const id of ids) {
+        map.set(id, { bedCount: 0, placementCount: 0 });
+      }
+      return map;
+    },
     async transferOwner(gardenId: string, fromUserId: string, toUserId: string) {
       const from = memberships.get(`${gardenId}:${fromUserId}`);
       const to = memberships.get(`${gardenId}:${toUserId}`);
@@ -150,6 +157,7 @@ export function createGardenMemory() {
     service,
     membershipService,
     memberships: membershipRepo,
+    gardens: gardenRepo,
     ownerId,
     friendId,
     strangerId,

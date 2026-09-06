@@ -40,7 +40,16 @@ export class GardenCacheService {
 
   async getList(key: string): Promise<PageDto<GardenSummaryDto> | null> {
     const db = await this.db();
-    return (await db.get('lists', key))?.page ?? null;
+    const page = (await db.get('lists', key))?.page ?? null;
+    if (!page) return null;
+    return {
+      ...page,
+      items: page.items.map((g) => ({
+        ...g,
+        bedCount: g.bedCount ?? 0,
+        placementCount: g.placementCount ?? 0,
+      })),
+    };
   }
 
   async saveDetail(detail: GardenDetailDto) {
@@ -50,7 +59,13 @@ export class GardenCacheService {
 
   async getDetail(id: string): Promise<GardenDetailDto | null> {
     const db = await this.db();
-    return (await db.get('details', id)) ?? null;
+    const detail = (await db.get('details', id)) ?? null;
+    if (!detail) return null;
+    return {
+      ...detail,
+      bedCount: detail.bedCount ?? 0,
+      placementCount: detail.placementCount ?? 0,
+    };
   }
 
   async deleteDetail(id: string) {

@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Inject,
+  Logger,
   Param,
   Patch,
   Post,
@@ -30,6 +31,7 @@ import { GardenMembershipGuard } from './garden-membership.guard';
 @Controller('gardens')
 @UseGuards(SessionGuard)
 export class GardensController {
+  private readonly logger = new Logger(GardensController.name);
   private readonly gardens: GardenService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
@@ -40,7 +42,7 @@ export class GardensController {
   }
 
   @Get()
-  list(
+  async list(
     @CurrentUser() user: AuthUser,
     @Query('page') pageRaw?: string,
     @Query('pageSize') pageSizeRaw?: string,
@@ -49,7 +51,10 @@ export class GardensController {
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Invalid list query');
     }
-    return this.gardens.list(user.id, parsed.data.page, parsed.data.pageSize);
+    const started = Date.now();
+    const result = await this.gardens.list(user.id, parsed.data.page, parsed.data.pageSize);
+    this.logger.log(`garden.list.assembly_ms=${Date.now() - started}`);
+    return result;
   }
 
   @Post()

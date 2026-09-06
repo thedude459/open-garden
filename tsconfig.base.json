@@ -41,8 +41,22 @@
         "libs/garden-layout/src/lib/evaluate-layout.ts"
       ],
       "@open-garden/garden-layout/rotate": ["libs/garden-layout/src/lib/rotate.ts"],
+      "@open-garden/garden-layout/plan-coords": ["libs/garden-layout/src/lib/plan-coords.ts"],
+      "@open-garden/garden-layout/hit-test": ["libs/garden-layout/src/lib/hit-test.ts"],
+      "@open-garden/garden-layout/footprint": ["libs/garden-layout/src/lib/footprint.ts"],
+      "@open-garden/garden-layout/drop": ["libs/garden-layout/src/lib/drop.ts"],
+      "@open-garden/garden-layout/drawable-beds": ["libs/garden-layout/src/lib/drawable-beds.ts"],
+      "@open-garden/garden-layout/overview-labels": [
+        "libs/garden-layout/src/lib/overview-labels.ts"
+      ],
+      "@open-garden/garden-layout/origin": ["libs/garden-layout/src/lib/origin.ts"],
+      "@open-garden/garden-layout/catalog-drop": ["libs/garden-layout/src/lib/catalog-drop.ts"],
+      "@open-garden/garden-layout/viewport-center": [
+        "libs/garden-layout/src/lib/viewport-center.ts"
+      ],
       "@open-garden/care-reminders": ["libs/care-reminders/src/index.ts"],
       "@open-garden/care-reminders/derive": ["libs/care-reminders/src/lib/derive-export.ts"],
+      "@open-garden/web-ui": ["libs/web-ui/src/index.ts"],
       "@open-garden/catalog-pipeline": ["libs/catalog-pipeline/src/index.ts"]
     },
     "esModuleInterop": true,

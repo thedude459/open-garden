@@ -106,17 +106,28 @@ Dependabot opens weekly npm + Actions PRs. `main` requires the status checks abo
 | `libs/garden-layout` | `garden-layout` | layer:domain |
 | `libs/catalog-pipeline` | `catalog-pipeline` | layer:domain |
 | `libs/auth` | `auth` | layer:domain |
+| `libs/care-reminders` | `care-reminders` | layer:domain |
+| `libs/web-ui` | `web-ui` | notices and busy helpers |
 
 See `specs/001-plant-database/quickstart.md`,
 `specs/002-household-gardens/quickstart.md`,
 `specs/003-planting-calendar/quickstart.md`,
 `specs/004-seasonal-plantings/quickstart.md`,
 `specs/005-garden-layout/quickstart.md`,
-`specs/006-care-reminders/quickstart.md`, and
-`specs/007-data-pipeline/quickstart.md` for architecture details,
+`specs/006-care-reminders/quickstart.md`,
+`specs/007-data-pipeline/quickstart.md`,
+`specs/008-garden-planner-ux/quickstart.md`,
+`specs/009-ui-feedback-polish/quickstart.md`, and
+`specs/010-fix-planner-placement/quickstart.md` for architecture details,
 household-garden verify steps (create/list/detail, site profile, sharing,
 offline read), planting-calendar verify steps (per-garden ranges, frost
 shift, type filter, this-week emphasis, offline cache), seasonal-plantings
 verify steps (record/dates/confirm-delete, named beds/groups/filter, offline
-queue and no-resurrect), and garden-layout verify steps (beds to scale,
-spacing/fit save gate, offline read cache).
+queue and no-resurrect), garden-layout verify steps (beds to scale,
+spacing/fit save gate, offline read cache), and garden planner UX verify
+steps (Garden Overview map of beds and areas, Transplant View indoor starts,
+Bed View tray of unplaced transplants, shared in-memory draft until Save,
+pan/zoom, offline mutations leave the draft unchanged). Waiting actions show
+busy on the control and a shared **Notification** (success auto-clears;
+errors and **Drop missed a bed** stay until **Dismiss**). Overview uses a
+**You are here** marker, **Open bed {name}**, and **Bed** / **Area** labels.

@@ -9,6 +9,8 @@ import type {
   PlantingPatchDto,
   PlantStatus,
   PlantType,
+  StartMethod,
+  TransplantListDto,
 } from '@open-garden/shared-types';
 import type {
   BedRepository,
@@ -60,6 +62,14 @@ export class PlantingService {
     const plantedOn = dto.plantedOn ?? null;
     const harvestedOn = dto.harvestedOn ?? null;
     assertDatePair(plantedOn, harvestedOn);
+    const startMethod = dto.startMethod ?? 'direct_seed';
+    const indoorStartedOn = dto.indoorStartedOn ?? null;
+    if (startMethod === 'transplant' && !indoorStartedOn) {
+      throw PLANTING_ERRORS.indoorStartRequired();
+    }
+    if (startMethod === 'direct_seed' && indoorStartedOn) {
+      throw PLANTING_ERRORS.indoorStartForbidden();
+    }
     const bedId = dto.bedId ?? null;
     if (bedId) await this.requireBedInGarden(gardenId, bedId);
 
@@ -78,6 +88,8 @@ export class PlantingService {
       bedId,
       plantedOn,
       harvestedOn,
+      startMethod,
+      indoorStartedOn,
       clientMutationId: dto.clientMutationId,
     });
     return { created: true, list: await this.list(userId, gardenId) };
@@ -114,12 +126,26 @@ export class PlantingService {
     if (!deleted) throw PLANTING_ERRORS.plantingNotFound();
   }
 
+  async listUnplacedTransplants(
+    userId: string,
+    gardenId: string,
+  ): Promise<{ myRole: GardenRole; plantings: ReturnType<typeof toLayoutPlanting>[] }> {
+    const membership = await this.memberships.get(gardenId, userId);
+    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
+    const rows = await this.plantings.listUnplacedTransplants(gardenId);
+    return {
+      myRole: membership.role as GardenRole,
+      plantings: rows.map(toLayoutPlanting),
+    };
+  }
+
   async createBed(
     userId: string,
     gardenId: string,
     dto: BedCreateDto,
   ): Promise<{ created: boolean; bed: NamedBedDto }> {
     await this.requireBedEditor(userId, gardenId);
+    if (dto.lengthInches < 1 || dto.widthInches < 1) throw PLANTING_ERRORS.bedSizeRequired();
     const names = normalizeBedName(dto.name);
     if (dto.id) {
       const existing = await this.beds.getById(dto.id);
@@ -135,6 +161,10 @@ export class PlantingService {
       gardenId,
       name: names.name,
       nameNormalized: names.nameNormalized,
+      originXInches: dto.originXInches ?? 0,
+      originYInches: dto.originYInches ?? 0,
+      lengthInches: dto.lengthInches,
+      widthInches: dto.widthInches,
     });
     return { created: true, bed: toBedDto(row) };
   }
@@ -153,6 +183,10 @@ export class PlantingService {
 
   async deleteBed(userId: string, gardenId: string, bedId: string): Promise<void> {
     await this.requireBedEditor(userId, gardenId);
+    const current = await this.beds.getInGarden(gardenId, bedId);
+    if (!current) throw PLANTING_ERRORS.bedNotFound();
+    await this.plantings.deleteDirectSeedInBed(gardenId, bedId);
+    await this.plantings.unassignTransplantsInBed(gardenId, bedId);
     const deleted = await this.beds.delete(gardenId, bedId);
     if (!deleted) throw PLANTING_ERRORS.bedNotFound();
   }
@@ -200,6 +234,8 @@ function toPlantingDto(row: {
   plantedOn: string | null;
   harvestedOn: string | null;
   bedId: string | null;
+  startMethod?: string;
+  indoorStartedOn?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }): PlantingDto {
@@ -214,7 +250,53 @@ function toPlantingDto(row: {
     plantedOn: row.plantedOn,
     harvestedOn: row.harvestedOn,
     bedId: row.bedId,
+    startMethod: (row.startMethod ?? 'direct_seed') as StartMethod,
+    indoorStartedOn: row.indoorStartedOn ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toLayoutPlanting(row: {
+  id: string;
+  plantId: string;
+  commonName: string;
+  species: string;
+  cultivar: string | null;
+  plantType: string;
+  status: string;
+  bedId: string | null;
+  spacingInches: number | null;
+  startMethod?: string;
+  indoorStartedOn?: string | null;
+  layoutXInches?: number | null;
+  layoutYInches?: number | null;
+  waterIntervalDays?: number | null;
+  fertilizeIntervalDays?: number | null;
+}) {
+  const placed =
+    row.layoutXInches != null && row.layoutYInches != null && row.bedId != null;
+  return {
+    id: row.id,
+    plantId: row.plantId,
+    commonName: row.commonName,
+    species: row.species,
+    cultivar: row.cultivar,
+    plantType: row.plantType as PlantType,
+    status: row.status as PlantStatus,
+    bedId: row.bedId,
+    spacingInches: row.spacingInches,
+    startMethod: (row.startMethod ?? 'transplant') as StartMethod,
+    indoorStartedOn: row.indoorStartedOn ?? null,
+    waterIntervalDays: row.waterIntervalDays ?? null,
+    fertilizeIntervalDays: row.fertilizeIntervalDays ?? null,
+    placement: placed
+      ? {
+          plantingId: row.id,
+          bedId: row.bedId!,
+          xInches: row.layoutXInches!,
+          yInches: row.layoutYInches!,
+        }
+      : null,
   };
 }

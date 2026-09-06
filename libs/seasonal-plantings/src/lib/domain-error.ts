@@ -25,4 +25,10 @@ export const PLANTING_ERRORS = {
   idInUse: () => domainError('CONFLICT', 'That id is already in use'),
   viewerPlantings: () => domainError('FORBIDDEN', 'Viewers cannot update plantings'),
   viewerBeds: () => domainError('FORBIDDEN', 'Viewers cannot update beds'),
+  indoorStartRequired: () =>
+    domainError('VALIDATION_ERROR', 'Indoor start date is required for transplants'),
+  indoorStartForbidden: () =>
+    domainError('VALIDATION_ERROR', 'Direct seed plantings cannot have an indoor start date'),
+  bedSizeRequired: () =>
+    domainError('VALIDATION_ERROR', 'Bed length and width must be at least 1 inch'),
 } as const;

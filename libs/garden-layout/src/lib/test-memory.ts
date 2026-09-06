@@ -87,12 +87,26 @@ export function createLayoutMemory() {
     bedId: string | null;
     layoutXInches: number | null;
     layoutYInches: number | null;
+    startMethod: string;
+    indoorStartedOn: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
 
+  type AreaRow = {
+    id: string;
+    gardenId: string;
+    name: string;
+    nameNormalized: string;
+    originXInches: number;
+    originYInches: number;
+    lengthInches: number;
+    widthInches: number;
+  };
+
   const bedRows = new Map<string, BedRow>();
   const plantingRows = new Map<string, PlantingRow>();
+  const areaRows = new Map<string, AreaRow>();
   let seq = 0;
 
   function withPlant(row: PlantingRow) {
@@ -164,12 +178,60 @@ export function createLayoutMemory() {
       row.updatedAt = new Date();
       return row;
     },
+    async clearPlacement(gId: string, id: string) {
+      const row = plantingRows.get(id);
+      if (!row || row.gardenId !== gId) return null;
+      row.bedId = null;
+      row.layoutXInches = null;
+      row.layoutYInches = null;
+      row.updatedAt = new Date();
+      return row;
+    },
+  };
+
+  const areaRepo = {
+    async listByGarden(gId: string) {
+      return [...areaRows.values()].filter((a) => a.gardenId === gId).sort((a, b) => a.name.localeCompare(b.name));
+    },
+    async getInGarden(gId: string, id: string) {
+      const row = areaRows.get(id);
+      return row && row.gardenId === gId ? row : null;
+    },
+    async findByNormalizedName(gId: string, nameNormalized: string) {
+      return (
+        [...areaRows.values()].find((a) => a.gardenId === gId && a.nameNormalized === nameNormalized) ??
+        null
+      );
+    },
+    async upsert(
+      gId: string,
+      input: {
+        id: string;
+        name: string;
+        nameNormalized: string;
+        originXInches: number;
+        originYInches: number;
+        lengthInches: number;
+        widthInches: number;
+      },
+    ) {
+      const row: AreaRow = { gardenId: gId, ...input };
+      areaRows.set(row.id, row);
+      return row;
+    },
+    async delete(gId: string, id: string) {
+      const row = areaRows.get(id);
+      if (!row || row.gardenId !== gId) return false;
+      areaRows.delete(id);
+      return true;
+    },
   };
 
   const service = new LayoutService(
     membershipRepo as never,
     plantingRepo as never,
     bedRepo as never,
+    areaRepo as never,
   );
 
   function addBed(name: string, id?: string) {
@@ -199,6 +261,8 @@ export function createLayoutMemory() {
       bedId,
       layoutXInches: null,
       layoutYInches: null,
+      startMethod: 'direct_seed',
+      indoorStartedOn: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -214,6 +278,7 @@ export function createLayoutMemory() {
     gardenId,
     addBed,
     addPlanting,
+    plantings: plantingRepo,
     tomato,
     basil,
     unknown,

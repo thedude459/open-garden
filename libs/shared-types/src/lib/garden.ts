@@ -17,6 +17,8 @@ export interface GardenSummaryDto {
   name: string;
   hardinessZone: number | null;
   myRole: GardenRole;
+  bedCount: number;
+  placementCount: number;
 }
 
 export interface GardenDetailDto extends GardenSummaryDto {
