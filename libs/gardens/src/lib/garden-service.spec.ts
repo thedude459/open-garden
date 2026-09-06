@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createGardenMemory } from './test-memory';
 
 describe('GardenService', () => {
@@ -59,6 +59,48 @@ describe('GardenService', () => {
     await expect(service.get(ownerId, garden.id)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     const again = await service.create(ownerId, { name: 'Front yard' });
     expect(again.name).toBe('Front yard');
+  });
+
+  it('maps bed and placement counts and calls countsForGardenIds once per list', async () => {
+    const mem = createGardenMemory();
+    const spy = vi.spyOn(mem.gardens, 'countsForGardenIds');
+    const empty = await mem.service.create(mem.ownerId, { name: 'Empty plot' });
+    spy.mockClear();
+    const page = await mem.service.list(mem.ownerId);
+    expect(page.items[0]?.bedCount).toBe(0);
+    expect(page.items[0]?.placementCount).toBe(0);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]?.[0]).toEqual([empty.id]);
+
+    await mem.memberships.insert(empty.id, mem.friendId, 'viewer');
+    const viewerPage = await mem.service.list(mem.friendId);
+    expect(viewerPage.items).toHaveLength(1);
+    expect(viewerPage.items[0]?.bedCount).toBe(0);
+    expect(viewerPage.items[0]?.placementCount).toBe(0);
+
+    const detail = await mem.service.get(mem.ownerId, empty.id);
+    expect(detail.bedCount).toBe(0);
+    expect(detail.placementCount).toBe(0);
+  });
+
+  it('uses one countsForGardenIds call for 20 gardens and for 1 garden', async () => {
+    const many = createGardenMemory();
+    const manySpy = vi.spyOn(many.gardens, 'countsForGardenIds');
+    for (let i = 0; i < 20; i++) {
+      await many.service.create(many.ownerId, { name: `Plot ${String(i).padStart(2, '0')}` });
+    }
+    manySpy.mockClear();
+    await many.service.list(many.ownerId, 1, 20);
+    expect(manySpy).toHaveBeenCalledTimes(1);
+    expect(manySpy.mock.calls[0]?.[0]).toHaveLength(20);
+
+    const one = createGardenMemory();
+    const oneSpy = vi.spyOn(one.gardens, 'countsForGardenIds');
+    await one.service.create(one.ownerId, { name: 'Solo' });
+    oneSpy.mockClear();
+    await one.service.list(one.ownerId);
+    expect(oneSpy).toHaveBeenCalledTimes(1);
+    expect(manySpy.mock.calls.length).toBe(oneSpy.mock.calls.length);
   });
 
   it('rejects collaborator rename that collides with the owner’s other garden', async () => {

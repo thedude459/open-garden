@@ -62,8 +62,8 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   const movedY = await originY.inputValue();
 
   await owner.getByPlaceholder('Area name').fill('Path');
-  await owner.locator('input[name="newAreaLength"]').fill('48');
-  await owner.locator('input[name="newAreaWidth"]').fill('24');
+  await owner.locator('input[name="newAreaLength"]').fill('4');
+  await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   await expect(owner.locator('[data-area-name="Path"]')).toBeVisible();
 
@@ -83,8 +83,8 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
     beds: Array<{ name: string; geometry: { originXInches: number; originYInches: number } }>;
   };
   const stored = layout.beds.find((b) => b.name === 'North');
-  expect(stored?.geometry.originXInches).toBe(Number(movedX));
-  expect(stored?.geometry.originYInches).toBe(Number(movedY));
+  expect(stored?.geometry.originXInches).toBe(Math.round(Number(movedX) * 12));
+  expect(stored?.geometry.originYInches).toBe(Math.round(Number(movedY) * 12));
 
   await inviteViewer(owner, `planner-place-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

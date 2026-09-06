@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Inject,
+  Logger,
   Param,
   Query,
   UseGuards,
@@ -25,6 +26,7 @@ import { DATABASE } from '../database/database.tokens';
 @Controller('plants')
 @UseGuards(SessionGuard)
 export class PlantsController {
+  private readonly logger = new Logger(PlantsController.name);
   private readonly catalog: CatalogService;
   private readonly details: PlantDetailService;
 
@@ -37,7 +39,7 @@ export class PlantsController {
   }
 
   @Get()
-  list(
+  async list(
     @Query('q') q?: string,
     @Query('zone') zoneRaw?: string,
     @Query('plantType') plantType?: string,
@@ -58,7 +60,10 @@ export class PlantsController {
       err.code = 'VALIDATION_ERROR';
       throw err;
     }
-    return this.catalog.list(parsed.data);
+    const started = Date.now();
+    const result = await this.catalog.list(parsed.data);
+    this.logger.log(`plants.list.assembly_ms=${Date.now() - started}`);
+    return result;
   }
 
   @Get(':id')

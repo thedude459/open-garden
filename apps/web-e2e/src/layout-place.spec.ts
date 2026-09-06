@@ -49,11 +49,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   expect((await saveLayout(owner)).status()).toBe(200);
 
   await owner.getByLabel('Search plants').fill('Cherry Tomato');
-  const pendingPlants = owner.waitForResponse(
-    (res) => res.url().includes('/api/plants') && res.request().method() === 'GET',
-  );
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await pendingPlants;
   await owner.getByRole('button', { name: 'Arm Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="Raised bed 1"]'),
   );
@@ -68,9 +64,9 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' }).dragTo(
     owner.locator('[data-bed-name="Raised bed 1"]'),
   );
-  await expect(owner.getByText('Too close')).toBeVisible();
-  await owner.getByRole('button', { name: 'Save layout' }).click();
-  await expect(owner.getByText('Layout has spacing or fit problems')).toBeVisible();
+  await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
+  await expect(owner.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' })).toBeVisible();
+  expect((await saveLayout(owner)).status()).toBe(200);
 
   await inviteViewer(owner, `layout-place-friend-${stamp}@example.com`);
   await friend.goto('/gardens');

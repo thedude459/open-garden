@@ -67,9 +67,9 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await tray.getByRole('button', { name: 'Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="North"]'),
   );
-  await expect(owner.getByText('Too close')).toBeVisible();
-  await owner.getByRole('button', { name: 'Save layout' }).click();
-  await expect(owner.getByText('Layout has spacing or fit problems')).toBeVisible();
+  await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
+  await expect(tray.getByRole('button', { name: 'Cherry Tomato' })).toBeVisible();
+  expect((await saveLayout(owner)).status()).toBe(200);
 
   await inviteViewer(owner, `planner-drag-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

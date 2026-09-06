@@ -1,4 +1,5 @@
 import type { LayoutBedDto, LayoutPlantingDto } from '@open-garden/shared-types';
+import { evaluateLayout } from './evaluate-layout';
 import { planToLocal } from './plan-coords';
 import { bedPlanSize } from './rotate';
 
@@ -64,4 +65,37 @@ function resolveBedId(
     }
   }
   return target.bedId;
+}
+
+export type PlantingDropOutcome = 'ok' | 'spacing' | 'fit';
+
+/** Blocking fit/spacing for the planting that just moved. Tray/empty drops skip this. */
+export function plantingDropOutcome(
+  beds: LayoutBedDto[],
+  plantings: LayoutPlantingDto[],
+  plantingId: string,
+): PlantingDropOutcome {
+  const flags = evaluateLayout(
+    beds.map((bed) => ({
+      id: bed.id,
+      geometry: bed.geometry
+        ? { lengthInches: bed.geometry.lengthInches, widthInches: bed.geometry.widthInches }
+        : null,
+    })),
+    plantings.map((planting) => ({
+      id: planting.id,
+      spacingInches: planting.spacingInches,
+      placement: planting.placement
+        ? {
+            bedId: planting.placement.bedId,
+            xInches: planting.placement.xInches,
+            yInches: planting.placement.yInches,
+          }
+        : null,
+    })),
+  );
+  const blocking = flags.filter((f) => f.blocking && f.plantingIds.includes(plantingId));
+  if (blocking.some((f) => f.kind === 'fit')) return 'fit';
+  if (blocking.some((f) => f.kind === 'spacing')) return 'spacing';
+  return 'ok';
 }

@@ -13,8 +13,8 @@ test('planner diagram: names, distinct areas, grid in Bed View, planting marks o
   await openOverview(owner);
   await createSizedBed(owner, 'Raised bed 1');
   await owner.getByPlaceholder('Area name').fill('Path');
-  await owner.locator('input[name="newAreaLength"]').fill('48');
-  await owner.locator('input[name="newAreaWidth"]').fill('24');
+  await owner.locator('input[name="newAreaLength"]').fill('4');
+  await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   expect((await saveLayout(owner)).status()).toBe(200);
 

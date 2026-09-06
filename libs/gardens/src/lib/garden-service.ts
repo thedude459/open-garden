@@ -50,13 +50,19 @@ export class GardenService {
     const safePage = Math.max(1, page);
     const safeSize = Math.min(100, Math.max(1, pageSize));
     const result = await this.gardens.listForUser(actorId, safePage, safeSize);
+    const counts = await this.gardens.countsForGardenIds(result.items.map((g) => g.id));
     return {
-      items: result.items.map((g) => ({
-        id: g.id,
-        name: g.name,
-        hardinessZone: g.hardinessZone,
-        myRole: g.myRole,
-      })),
+      items: result.items.map((g) => {
+        const c = counts.get(g.id) ?? { bedCount: 0, placementCount: 0 };
+        return {
+          id: g.id,
+          name: g.name,
+          hardinessZone: g.hardinessZone,
+          myRole: g.myRole,
+          bedCount: c.bedCount,
+          placementCount: c.placementCount,
+        };
+      }),
       page: result.page,
       pageSize: result.pageSize,
       totalCount: result.totalCount,
@@ -151,6 +157,8 @@ export class GardenService {
     const members = await this.memberships.listMembers(garden.id);
     const mine = members.find((m) => m.userId === actorId);
     if (!mine) throw domainError('NOT_FOUND', 'Garden not found');
+    const counts = await this.gardens.countsForGardenIds([garden.id]);
+    const c = counts.get(garden.id) ?? { bedCount: 0, placementCount: 0 };
     return {
       id: garden.id,
       name: garden.name,
@@ -162,6 +170,8 @@ export class GardenService {
       ownerUserId: garden.ownerId,
       members: members.map(toMember),
       updatedAt: toIso(garden.updatedAt),
+      bedCount: c.bedCount,
+      placementCount: c.placementCount,
     };
   }
 }

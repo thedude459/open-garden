@@ -30,12 +30,17 @@ export async function addFromCatalog(page: Page, name: string) {
   await expect(page.locator('article').filter({ hasText: name }).first()).toBeVisible();
 }
 
+export async function applyPlantSearch(page: Page, name: string) {
+  await page.getByLabel('Search plants').fill(name);
+  await page.getByRole('button', { name: 'Apply' }).click();
+}
+
 export async function openOverview(page: Page) {
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
 }
 
-export async function createSizedBed(page: Page, name: string, length = '96', width = '48') {
+export async function createSizedBed(page: Page, name: string, length = '8', width = '4') {
   await page.getByPlaceholder('Bed name').fill(name);
   await page.locator('input[name="newLength"]').fill(length);
   await page.locator('input[name="newWidth"]').fill(width);
@@ -47,11 +52,7 @@ export async function addTransplant(page: Page, name: string, date = '2026-03-01
   const search = page.locator('input[name="transplantSearch"]');
   await expect(search).toBeVisible();
   await search.fill(name);
-  const pending = page.waitForResponse(
-    (res) => res.url().includes('/api/plants') && res.request().method() === 'GET',
-  );
   await page.getByRole('button', { name: 'Search catalog' }).click();
-  await pending;
   const add = page.getByRole('button', { name: `Add transplant ${name}` });
   await expect(add).toBeVisible();
   await page.locator('li').filter({ hasText: name }).locator('input[type="date"]').fill(date);

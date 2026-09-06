@@ -11,15 +11,15 @@ test('cached layout stays readable when layout API is aborted', async ({ page })
   await openOverview(page);
   await createSizedBed(page, 'Raised bed 1');
   expect((await saveLayout(page)).status()).toBe(200);
-  await expect(page.getByText('96 × 48 in · 0°')).toBeVisible();
+  await expect(page.getByText('8 × 4 ft · 0°')).toBeVisible();
 
   await page.route('**/api/gardens/**/layout**', (route) => route.abort());
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByText('96 × 48 in · 0°')).toBeVisible();
+  await expect(page.getByText('8 × 4 ft · 0°')).toBeVisible();
 
   await page.context().setOffline(true);
   await page.getByRole('button', { name: 'Edit size Raised bed 1' }).click();
-  await page.locator('input[name="originX"]').fill('12');
+  await page.locator('input[name="originX"]').fill('1');
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.getByText('Unsaved changes')).toHaveCount(0);
 
@@ -41,9 +41,9 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Stale layout/ }).click();
   await openOverview(owner);
-  await createSizedBed(owner, 'East', '48', '24');
+  await createSizedBed(owner, 'East', '4', '2');
   expect((await saveLayout(owner)).status()).toBe(200);
-  await expect(owner.getByText('48 × 24 in · 0°')).toBeVisible();
+  await expect(owner.getByText('4 × 2 ft · 0°')).toBeVisible();
 
   await owner.getByRole('link', { name: 'Back to garden' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`layout-stale-friend-${stamp}@example.com`);
@@ -54,13 +54,13 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Stale layout/ }).click();
   await openOverview(friend);
-  await expect(friend.getByText('48 × 24 in · 0°')).toBeVisible();
+  await expect(friend.getByText('4 × 2 ft · 0°')).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
   const layoutUrl = friend.url();
 
   await friend.route('**/api/gardens/**/layout**', (route) => route.abort());
   await friend.reload({ waitUntil: 'domcontentloaded' });
-  await expect(friend.getByText('48 × 24 in · 0°')).toBeVisible();
+  await expect(friend.getByText('4 × 2 ft · 0°')).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Remove' }).click();
@@ -100,9 +100,32 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ page }) 
   await page.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' }).dragTo(
     page.locator('[data-bed-name="East"]'),
   );
+  await expect(page.getByLabel('Notification')).toContainText('Too close to another plant');
+  await expect(page.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' })).toBeVisible();
+
+  await page.route('**/api/gardens/**/layout**', async (route) => {
+    if (route.request().method() === 'PUT') {
+      return route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: { code: 'VALIDATION_ERROR', message: 'Layout has spacing or fit problems' },
+        }),
+      });
+    }
+    return route.continue();
+  });
+  const tomato = page.getByRole('img', { name: 'Cherry Tomato' });
+  const box = await tomato.boundingBox();
+  expect(box).toBeTruthy();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + box!.width / 2 + 24, box!.y + box!.height / 2);
+  await page.mouse.up();
   await page.getByRole('button', { name: 'Save layout' }).click();
   await expect(page.getByText('Layout has spacing or fit problems')).toBeVisible();
 
+  await page.unroute('**/api/gardens/**/layout**');
   await page.getByRole('link', { name: 'Back to overview' }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await page.route('**/api/gardens/**/layout**', (route) => {
@@ -110,7 +133,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ page }) 
     return route.continue();
   });
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.getByText('96 × 48 in · 0°')).toBeVisible();
+  await expect(page.getByText('8 × 4 ft · 0°')).toBeVisible();
   await expect(page.getByText('Too close')).toHaveCount(0);
 });
 
@@ -127,8 +150,8 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ page }
 
   await page.context().setOffline(true);
   await page.getByPlaceholder('Bed name').fill('Offline bed');
-  await page.locator('input[name="newLength"]').fill('40');
-  await page.locator('input[name="newWidth"]').fill('20');
+  await page.locator('input[name="newLength"]').fill('4');
+  await page.locator('input[name="newWidth"]').fill('2');
   await page.getByRole('button', { name: 'Create bed' }).click();
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.getByRole('button', { name: 'Offline bed', exact: true })).toHaveCount(0);

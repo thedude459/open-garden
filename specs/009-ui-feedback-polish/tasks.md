@@ -240,3 +240,9 @@ Task: "Playwright planner save/offline/transplant/miss in apps/web-e2e/src/ui-fe
 - Plantings/calendar/reminders: CSS inherit only (T041)
 - Commit after each task or logical group
 - Stop at checkpoints to validate the story independently
+
+## Phase 8: Convergence
+
+- [X] T048 Restore **Create garden** as the EmptyState action slot on a zero-garden list (form inside `og-empty-state`, not only a sibling above it) in `apps/web/src/app/gardens/garden-list.page.ts` per FR-011 / T032 (contradicts)
+- [X] T049 Wrap garden-home membership service actions (set role, transfer ownership, remove member, leave) with busy + success/error notices in `apps/web/src/app/gardens/garden-detail.page.ts` per FR-001 / FR-003 (partial)
+

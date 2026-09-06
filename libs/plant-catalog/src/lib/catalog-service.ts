@@ -39,10 +39,10 @@ export class CatalogService {
     if (q && result.totalCount === 0) {
       try {
         const remote = await this.provider.searchByName(q, { limit: 20 });
-        for (const item of remote) {
-          if (item.spacingInches == null) continue;
-          await this.plants.upsertByVarietyKey(toUpsert(item, this.provider.id));
-        }
+        const batch = remote
+          .filter((item) => item.spacingInches != null)
+          .map((item) => toUpsert(item, this.provider.id));
+        await this.plants.upsertManyByVarietyKey(batch);
         result = await this.plants.list({
           q,
           zone,
@@ -126,6 +126,7 @@ function toSummary(row: {
     zoneMin: row.zoneMin,
     zoneMax: row.zoneMax,
     spacingInches: row.spacingInches as number,
+    illustrationUrl: null,
   };
 }
 

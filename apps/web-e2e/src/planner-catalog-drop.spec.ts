@@ -1,20 +1,12 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
+  applyPlantSearch,
   createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
   saveLayout,
 } from './planner-helpers';
-
-async function applySearch(page: Page, name: string) {
-  await page.getByLabel('Search plants').fill(name);
-  const pending = page.waitForResponse(
-    (res) => res.url().includes('/api/plants') && res.request().method() === 'GET',
-  );
-  await page.getByRole('button', { name: 'Apply' }).click();
-  await pending;
-}
 
 test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', async ({
   browser,
@@ -42,18 +34,18 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
 
   await owner.getByLabel('Search plants').fill('Sweet Basil');
   await owner.locator('select[name="plantType"]').selectOption('vegetable');
-  await applySearch(owner, 'Sweet Basil');
+  await applyPlantSearch(owner, 'Sweet Basil');
   await expect(owner.getByRole('button', { name: 'Arm Sweet Basil' })).toHaveCount(0);
 
   await owner.locator('select[name="plantType"]').selectOption({ label: 'Any type' });
-  await applySearch(owner, 'Sweet Basil');
+  await applyPlantSearch(owner, 'Sweet Basil');
   const arm = owner.getByRole('button', { name: 'Arm Sweet Basil' });
   await expect(arm).toBeVisible();
   await expect(owner.getByText(/Fits zone 6/)).toBeVisible();
 
-  await applySearch(owner, 'zzzznotaplantxyz');
+  await applyPlantSearch(owner, 'zzzznotaplantxyz');
   await expect(owner.getByText('No plants match')).toBeVisible();
-  await applySearch(owner, 'Sweet Basil');
+  await applyPlantSearch(owner, 'Sweet Basil');
   await expect(arm).toBeVisible();
 
   await arm.dragTo(owner.locator('[data-bed-name="North"]'));
@@ -79,7 +71,7 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
   await expect(owner.locator('.layout-plant')).toHaveCount(1);
 
   await owner.getByRole('button', { name: 'North', exact: true }).click();
-  await applySearch(owner, 'Cherry Tomato');
+  await applyPlantSearch(owner, 'Cherry Tomato');
   await owner.getByRole('button', { name: 'Arm Cherry Tomato' }).click();
   await expect(owner.getByRole('button', { name: 'Arm Cherry Tomato' })).toHaveAttribute(
     'aria-pressed',

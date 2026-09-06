@@ -18,6 +18,8 @@ export interface PlantSummaryDto {
   zoneMax: number;
   /** Present on list items; catalog admission requires a known value. */
   spacingInches: number;
+  /** Null until a later art feature; clients use the CSS stand-in. */
+  illustrationUrl: string | null;
 }
 
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {

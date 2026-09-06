@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LayoutBedDto, LayoutPlantingDto } from '@open-garden/shared-types';
-import { applyPlantingDrop } from './drop';
+import { applyPlantingDrop, plantingDropOutcome } from './drop';
 
 const east: LayoutBedDto = {
   id: 'east',
@@ -117,5 +117,42 @@ describe('applyPlantingDrop', () => {
       planY: 10,
     });
     expect(next[0]).toEqual(before);
+  });
+
+  it('rejects a drop that lands too close to another planting', () => {
+    const a = planting({ id: 'p1' });
+    const before = planting({
+      id: 'p2',
+      placement: null,
+      bedId: null,
+      startMethod: 'transplant',
+      indoorStartedOn: '2026-03-01',
+    });
+    const next = applyPlantingDrop([a, before], [east], 'p2', before, {
+      kind: 'bed',
+      bedId: 'east',
+      planX: 20,
+      planY: 20,
+    });
+    expect(plantingDropOutcome([east], next, 'p2')).toBe('spacing');
+  });
+
+  it('allows a drop with enough space', () => {
+    const a = planting({ id: 'p1' });
+    const before = planting({
+      id: 'p2',
+      spacingInches: 12,
+      placement: null,
+      bedId: null,
+      startMethod: 'transplant',
+      indoorStartedOn: '2026-03-01',
+    });
+    const next = applyPlantingDrop([a, before], [east], 'p2', before, {
+      kind: 'bed',
+      bedId: 'east',
+      planX: 72,
+      planY: 24,
+    });
+    expect(plantingDropOutcome([east], next, 'p2')).toBe('ok');
   });
 });

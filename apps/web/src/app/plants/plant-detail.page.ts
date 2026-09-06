@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { PlantDetailDto } from '@open-garden/shared-types';
 import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
@@ -7,8 +7,12 @@ import { NoticeService } from '../ui/notice.service';
 
 @Component({
   standalone: true,
+  imports: [RouterLink],
   template: `
-    @if (plant(); as p) {
+    <p><a routerLink="/plants">Back to catalog</a></p>
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (plant(); as p) {
       <h2>{{ p.commonName }}</h2>
       <p class="muted">
         {{ p.species }}
@@ -48,14 +52,21 @@ export class PlantDetailPage implements OnInit {
   readonly notices = inject(NoticeService);
   plant = signal<PlantDetailDto | null>(null);
   pending = signal(false);
+  loading = signal(true);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) void this.load(id);
+    else this.loading.set(false);
   }
 
   async load(id: string) {
-    this.plant.set(await this.api.detail(id));
+    this.loading.set(true);
+    try {
+      this.plant.set(await this.api.detail(id));
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async toggleFavorite() {

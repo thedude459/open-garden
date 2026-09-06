@@ -21,6 +21,12 @@ export class LayoutApiService {
   private readonly plantingsCache = inject(GardenPlantingsCacheService);
   private readonly auth = inject(AuthApiService);
 
+  async peek(gardenId: string): Promise<GardenLayoutDto | null> {
+    const userId = this.userId();
+    if (!userId) return null;
+    return this.cache.get(userId, gardenId);
+  }
+
   async get(gardenId: string): Promise<GardenLayoutDto | null> {
     const userId = this.userId();
     try {

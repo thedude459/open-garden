@@ -278,6 +278,7 @@ export function createLayoutMemory() {
     gardenId,
     addBed,
     addPlanting,
+    plantings: plantingRepo,
     tomato,
     basil,
     unknown,

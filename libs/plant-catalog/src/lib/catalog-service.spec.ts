@@ -22,18 +22,20 @@ describe('CatalogService', () => {
         pageSize: 20,
       }),
       upsertByVarietyKey: vi.fn(),
+      upsertManyByVarietyKey: vi.fn(),
     };
     const provider = { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() };
     const service = new CatalogService(plants as never, provider as never);
     const page = await service.list({ page: 1, pageSize: 20 });
     expect(page.totalCount).toBe(1);
     expect(page.items[0]?.spacingInches).toBe(12);
+    expect(page.items[0]?.illustrationUrl).toBeNull();
     expect(provider.searchByName).not.toHaveBeenCalled();
   });
 
   it('rejects invalid zone', async () => {
     const service = new CatalogService(
-      { list: vi.fn(), upsertByVarietyKey: vi.fn() } as never,
+      { list: vi.fn(), upsertByVarietyKey: vi.fn(), upsertManyByVarietyKey: vi.fn() } as never,
       { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() } as never,
     );
     await expect(service.list({ zone: 99 })).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
@@ -62,6 +64,7 @@ describe('CatalogService', () => {
           pageSize: 20,
         }),
       upsertByVarietyKey: vi.fn(),
+      upsertManyByVarietyKey: vi.fn(),
     };
     const provider = {
       id: 'fixture',
@@ -85,8 +88,10 @@ describe('CatalogService', () => {
     const service = new CatalogService(plants as never, provider as never);
     const page = await service.list({ q: 'tomato' });
     expect(provider.searchByName).toHaveBeenCalled();
-    expect(plants.upsertByVarietyKey).toHaveBeenCalled();
+    expect(plants.upsertManyByVarietyKey).toHaveBeenCalledTimes(1);
+    expect(plants.upsertByVarietyKey).not.toHaveBeenCalled();
     expect(page.totalCount).toBe(1);
+    expect(page.items[0]?.illustrationUrl).toBeNull();
   });
 
   it('omits null-spacing rows from summaries', async () => {
@@ -109,6 +114,7 @@ describe('CatalogService', () => {
         pageSize: 20,
       }),
       upsertByVarietyKey: vi.fn(),
+      upsertManyByVarietyKey: vi.fn(),
     };
     const service = new CatalogService(
       plants as never,
@@ -122,6 +128,7 @@ describe('CatalogService', () => {
     const plants = {
       list: vi.fn().mockResolvedValue({ items: [], totalCount: 0, page: 1, pageSize: 20 }),
       upsertByVarietyKey: vi.fn(),
+      upsertManyByVarietyKey: vi.fn(),
     };
     const provider = {
       id: 'fixture',
@@ -145,5 +152,7 @@ describe('CatalogService', () => {
     const service = new CatalogService(plants as never, provider as never);
     await service.list({ q: 'gap' });
     expect(plants.upsertByVarietyKey).not.toHaveBeenCalled();
+    expect(plants.upsertManyByVarietyKey).toHaveBeenCalledTimes(1);
+    expect(plants.upsertManyByVarietyKey).toHaveBeenCalledWith([]);
   });
 });

@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -9,30 +10,13 @@ import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, EmptyState],
+  imports: [FormsModule, RouterLink, EmptyState, NgTemplateOutlet],
   template: `
     <h2>Gardens</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
-    @if (loading()) {
-      <p class="muted">Loading…</p>
-    } @else if (items().length === 0) {
-      <og-empty-state title="No gardens yet" [body]="emptyBody()">
-        <form class="filters" (ngSubmit)="create()">
-          <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
-          <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
-            [disabled]="notices.busyMap().has('create-garden')"
-          >
-            Create garden
-          </button>
-        </form>
-      </og-empty-state>
-    } @else {
+    <ng-template #createGarden>
       <form class="filters" (ngSubmit)="create()">
         <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
         <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
@@ -45,6 +29,16 @@ import { EmptyState } from '../ui/empty-state';
           Create garden
         </button>
       </form>
+    </ng-template>
+    @if (loading()) {
+      <ng-container [ngTemplateOutlet]="createGarden" />
+      <p class="muted">Loading…</p>
+    } @else if (items().length === 0) {
+      <og-empty-state title="No gardens yet" [body]="emptyBody()">
+        <ng-container [ngTemplateOutlet]="createGarden" />
+      </og-empty-state>
+    } @else {
+      <ng-container [ngTemplateOutlet]="createGarden" />
       <div class="card-list">
         @for (g of items(); track g.id) {
           <a class="row" [routerLink]="['/gardens', g.id]">
@@ -53,6 +47,8 @@ import { EmptyState } from '../ui/empty-state';
               <span class="muted"> · {{ g.myRole }}</span>
             </span>
             <span class="muted">
+              {{ g.bedCount }} beds · {{ g.placementCount }} placements
+              ·
               @if (g.hardinessZone != null) {
                 zone {{ g.hardinessZone }}
               } @else {
@@ -87,8 +83,8 @@ export class GardenListPage implements OnInit {
 
   async load() {
     this.loading.set(true);
-    const page = await this.api.list();
-    this.items.set(page.items);
+    const page = await this.api.listAll();
+    this.items.set(page.items.map(withCounts));
     this.loading.set(false);
   }
 
@@ -118,4 +114,12 @@ function userMessage(err: unknown): string {
     if (msg) return msg;
   }
   return 'Could not save garden';
+}
+
+function withCounts(g: GardenSummaryDto): GardenSummaryDto {
+  return {
+    ...g,
+    bedCount: g.bedCount ?? 0,
+    placementCount: g.placementCount ?? 0,
+  };
 }

@@ -51,8 +51,8 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await expect(owner.getByRole('button', { name: 'Place planting' })).toHaveCount(0);
 
   await owner.getByPlaceholder('Area name').fill('Path');
-  await owner.locator('input[name="newAreaLength"]').fill('48');
-  await owner.locator('input[name="newAreaWidth"]').fill('24');
+  await owner.locator('input[name="newAreaLength"]').fill('4');
+  await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   await expect(owner.locator('[data-area-name="Path"]')).toBeVisible();
   await expect(plan).toContainText('Path');

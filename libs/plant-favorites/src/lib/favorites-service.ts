@@ -33,6 +33,7 @@ export class FavoritesService {
           zoneMax: row.plant.zoneMax,
           spacingInches: row.plant.spacingInches,
           status: row.plant.status as PlantStatus,
+          illustrationUrl: null,
         },
       })),
     };

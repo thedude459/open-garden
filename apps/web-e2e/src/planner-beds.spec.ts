@@ -34,8 +34,8 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await expect(owner.getByText('Unsaved changes')).toHaveCount(0);
 
   await owner.getByPlaceholder('Area name').fill('Compost');
-  await owner.locator('input[name="newAreaLength"]').fill('36');
-  await owner.locator('input[name="newAreaWidth"]').fill('24');
+  await owner.locator('input[name="newAreaLength"]').fill('3');
+  await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   await expect(owner.locator('[data-area-name="Compost"]')).toBeVisible();
   expect((await saveLayout(owner)).status()).toBe(200);
@@ -57,7 +57,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await owner.getByRole('button', { name: 'Edit size East' }).click();
   await owner.getByRole('button', { name: 'Rotate 90°' }).click();
   expect((await saveLayout(owner)).status()).toBe(200);
-  await expect(owner.getByText('96 × 48 in · 90°')).toBeVisible();
+  await expect(owner.getByText('8 × 4 ft · 90°')).toBeVisible();
 
   await inviteViewer(owner, `planner-bed-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

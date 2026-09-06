@@ -48,16 +48,22 @@ export class PlannerDraftService {
       return this.draft();
     }
     this.gardenId = gardenId;
-    this.loading.set(true);
+    const cached = await this.api.peek(gardenId);
+    if (cached) {
+      this.hydrate(cached);
+      this.loading.set(false);
+    } else {
+      this.loading.set(true);
+    }
     const layout = await this.api.get(gardenId);
     if (!layout) {
       this.draft.set(null);
       this.loading.set(false);
       return null;
     }
-    this.hydrate(layout);
+    if (!this.dirty()) this.hydrate(layout);
     this.loading.set(false);
-    return layout;
+    return this.draft();
   }
 
   dirty(): boolean {

@@ -260,3 +260,8 @@ Task: "Playwright garden-offline reconnect stale membership"
 - Avoid: new NgModules, GraphQL/tRPC, duplicated DTOs outside `libs/shared-types`, a second data lib, offline mutation queue, plant-provider calls, conflating garden roles with `users.role`, implicit Nest constructor injection under tsx
 - Catalog and favorites libs stay unmodified except shared-types additions
 - Do not start 003–006 application code until this feature is closed
+
+## Phase 7: Convergence
+
+- [X] T054 Fetch remaining `GET /api/gardens` pages (or otherwise request the full membership set) in `apps/web/src/app/gardens/gardens-api.service.ts` and `apps/web/src/app/gardens/garden-list.page.ts` so every garden the user belongs to appears, not only the first page of 20 per FR-002 (partial)
+

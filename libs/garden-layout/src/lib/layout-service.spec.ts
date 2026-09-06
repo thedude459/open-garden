@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { plantingFootprintRadius } from './footprint';
 import { createLayoutMemory } from './test-memory';
 
 describe('LayoutService beds', () => {
@@ -222,5 +223,40 @@ describe('LayoutService areas', () => {
     await expect(mem.service.deleteArea(mem.strangerId, mem.gardenId, area.id)).rejects.toMatchObject({
       message: 'Garden not found',
     });
+  });
+});
+
+describe('LayoutService load path', () => {
+  it('joins plantings once on GET and derives canopy from spacing', async () => {
+    const mem = createLayoutMemory();
+    const bed = mem.addBed('North bed');
+    const planting = mem.addPlanting(mem.tomato.id);
+    await mem.service.put(mem.ownerId, mem.gardenId, {
+      beds: [
+        {
+          id: bed.id,
+          originXInches: 0,
+          originYInches: 0,
+          lengthInches: 96,
+          widthInches: 48,
+          orientation: 0,
+        },
+      ],
+      areas: [],
+      placements: [
+        { plantingId: planting.id, bedId: bed.id, xInches: 12, yInches: 12 },
+      ],
+    });
+    const spy = vi.spyOn(mem.plantings, 'listAllForLayout');
+    const getById = vi.fn();
+    (mem.plantings as { getById?: () => Promise<unknown> }).getById = getById;
+    const layout = await mem.service.get(mem.ownerId, mem.gardenId);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(getById).not.toHaveBeenCalled();
+    const row = layout.plantings.find((p) => p.id === planting.id);
+    expect(row?.spacingInches).toBe(mem.tomato.spacingInches);
+    expect(plantingFootprintRadius(row?.spacingInches ?? null)).toBe(
+      plantingFootprintRadius(mem.tomato.spacingInches),
+    );
   });
 });

@@ -3,10 +3,19 @@ export { rotateBed90, localToPlan, bedPlanSize } from './lib/rotate';
 export { planToLocal } from './lib/plan-coords';
 export { plantingFootprintRadius } from './lib/footprint';
 export { hitTestPlan, classifyGesture, isClickNotDrag } from './lib/hit-test';
-export { applyPlantingDrop } from './lib/drop';
+export { applyPlantingDrop, plantingDropOutcome } from './lib/drop';
+export { layoutPlantingLabels } from './lib/planting-labels';
 export { drawableBeds } from './lib/drawable-beds';
 export { overviewPlantingLabels } from './lib/overview-labels';
 export { originFromCenter, originFromGrabOffset } from './lib/origin';
+export {
+  INCHES_PER_FOOT,
+  inchesToFeet,
+  inchesToFeetInput,
+  feetToInches,
+  formatFeet,
+  formatPlanSize,
+} from './lib/display-units';
 export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';
 export { pairRequiredSpacing, fitClearance, placementFits, centerDistance } from './lib/spacing';

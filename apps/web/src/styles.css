@@ -35,7 +35,7 @@ button, input, select {
   padding: 1.5rem;
 }
 .shell:has(.planner) {
-  max-width: 1180px;
+  max-width: 1280px;
 }
 .planner-toolbar {
   display: flex;
@@ -47,16 +47,46 @@ button, input, select {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
 }
 @media (min-width: 840px) {
   .planner-stage {
-    grid-template-columns: minmax(0, 1fr) 18.5rem;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  }
+  .planner-rail {
+    position: sticky;
+    top: 0.75rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    padding-right: 0.15rem;
   }
 }
 .planner-rail {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.65rem;
+  align-content: start;
+}
+.planner-rail h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.planner-rail .card-list {
+  gap: 0.45rem;
+}
+.planner-rail .unplaced-tray h3 {
+  margin-bottom: 0.35rem;
+}
+.plant-panel-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.plant-panel-filters input {
+  grid-column: 1 / -1;
+}
+.plant-panel-filters button {
+  grid-column: 1 / -1;
 }
 .plan-viewport {
   overflow: hidden;
@@ -124,10 +154,17 @@ button, input, select {
   stroke-width: 0.7;
   pointer-events: none;
 }
+.layout-plant-invalid {
+  fill: #8a1f1f;
+  stroke: #f4efe4;
+}
 .layout-plant-label {
-  font-size: 4.5px;
-  font-weight: 600;
+  font-size: 4.6px;
+  font-weight: 700;
   fill: #f4efe4;
+  stroke: #1a2418;
+  stroke-width: 1.1px;
+  paint-order: stroke fill;
   pointer-events: none;
 }
 .tray-item {
@@ -143,6 +180,7 @@ button, input, select {
 }
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: baseline;
   margin-bottom: 1.5rem;
@@ -151,6 +189,30 @@ button, input, select {
   margin: 0;
   font-size: 1.75rem;
   letter-spacing: -0.02em;
+}
+.nav a.active {
+  font-weight: 700;
+  color: var(--ink);
+}
+.nav-auth {
+  margin-left: auto;
+}
+.nav-text {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--leaf);
+  cursor: pointer;
+  font: inherit;
+}
+.garden-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+.garden-nav a {
+  font-weight: 600;
 }
 .card-list {
   display: grid;
@@ -166,12 +228,30 @@ button, input, select {
 .row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
   background: rgba(255,255,255,0.55);
   border: 1px solid rgba(47,93,58,0.15);
   border-radius: var(--radius);
   box-shadow: var(--elev-1);
+}
+a.row {
+  text-decoration: none;
+  color: inherit;
+}
+a.row:hover,
+a.row:focus-visible {
+  border-color: var(--leaf);
+  box-shadow: var(--elev-2);
+}
+.card-list img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex: 0 0 auto;
 }
 .btn {
   display: inline-flex;
@@ -364,4 +444,15 @@ textarea, .stack input, .stack select {
   display: flex;
   align-items: center;
   gap: var(--space-2, 8px);
+}
+.planner-rail .row {
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.planner-rail .row > span {
+  min-width: 0;
+}
+.planner-rail .row button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }

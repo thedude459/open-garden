@@ -12,8 +12,8 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   await expect(owner.getByLabel('You are here')).toContainText('Garden Overview');
   await createSizedBed(owner, 'North');
   await owner.getByPlaceholder('Area name').fill('Path');
-  await owner.locator('input[name="newAreaLength"]').fill('48');
-  await owner.locator('input[name="newAreaWidth"]').fill('24');
+  await owner.locator('input[name="newAreaLength"]').fill('4');
+  await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   expect((await saveLayout(owner)).status()).toBe(200);
 

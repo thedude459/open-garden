@@ -61,29 +61,29 @@ test('layout beds: size planting-list bed, add second, rotate, confirm delete, v
   await expect(owner.locator('[data-bed-name="Raised bed 1"]')).toBeVisible();
   await expect(owner.getByLabel('Garden plan')).toContainText('Raised bed 1');
   await saveLayout(owner);
-  await expect(owner.getByText('96 × 48 in · 0°')).toBeVisible();
+  await expect(owner.getByText('8 × 4 ft · 0°')).toBeVisible();
 
   await owner.getByPlaceholder('Bed name').fill('Patio pots');
-  await owner.locator('input[name="newLength"]').fill('40');
-  await owner.locator('input[name="newWidth"]').fill('20');
+  await owner.locator('input[name="newLength"]').fill('4');
+  await owner.locator('input[name="newWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create bed' }).click();
   await expect(owner.getByRole('button', { name: 'Patio pots', exact: true })).toBeVisible();
   await saveLayout(owner);
-  await expect(owner.getByText('40 × 20 in · 0°')).toBeVisible();
+  await expect(owner.getByText('4 × 2 ft · 0°')).toBeVisible();
   await expect(owner.getByRole('button', { name: 'Raised bed 1', exact: true })).toHaveCount(1);
 
   await owner.reload();
-  await expect(owner.getByText('96 × 48 in · 0°')).toBeVisible();
-  await expect(owner.getByText('40 × 20 in · 0°')).toBeVisible();
+  await expect(owner.getByText('8 × 4 ft · 0°')).toBeVisible();
+  await expect(owner.getByText('4 × 2 ft · 0°')).toBeVisible();
 
   await owner.getByRole('button', { name: 'Edit size Raised bed 1' }).click();
   await owner.getByRole('button', { name: 'Rotate 90°' }).click();
   await saveLayout(owner);
-  await expect(owner.getByText('96 × 48 in · 90°')).toBeVisible();
+  await expect(owner.getByText('8 × 4 ft · 90°')).toBeVisible();
 
   await owner.getByRole('button', { name: 'Delete bed Raised bed 1' }).click();
   await owner.getByRole('button', { name: 'Cancel' }).click();
-  await expect(owner.getByText('96 × 48 in · 90°')).toBeVisible();
+  await expect(owner.getByText('8 × 4 ft · 90°')).toBeVisible();
 
   await owner.getByRole('button', { name: 'Delete bed Raised bed 1' }).click();
   await owner.getByRole('button', { name: 'Confirm delete Raised bed 1' }).click();

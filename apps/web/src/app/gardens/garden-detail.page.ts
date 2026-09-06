@@ -13,21 +13,20 @@ import { PlannerDraftService } from './planner-draft.service';
   imports: [FormsModule, RouterLink],
   template: `
     @if (garden(); as g) {
+      <p><a routerLink="/gardens">All gardens</a></p>
       <h2>{{ g.name }}</h2>
       <p class="muted">You are {{ g.myRole }} of this garden.</p>
-      <p>
-        <a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a>
-        ·
-        <a [routerLink]="['/gardens', g.id, 'plantings']">Plantings</a>
-        ·
-        <a [routerLink]="['/gardens', g.id, 'reminders']">Reminders</a>
-        ·
+      <nav class="garden-nav" aria-label="Garden">
         <a [routerLink]="['/gardens', g.id, 'layout']">Garden Overview</a>
+        <a [routerLink]="['/gardens', g.id, 'plantings']">Plantings</a>
+        <a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a>
+        <a [routerLink]="['/gardens', g.id, 'reminders']">Reminders</a>
         <a [routerLink]="['/gardens', g.id, 'transplants']">Transplants</a>
-      </p>
+      </nav>
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }
+      <h3>Garden settings</h3>
       <form class="stack" (ngSubmit)="save()">
         <label>
           Name
@@ -122,12 +121,38 @@ import { PlannerDraftService } from './planner-draft.service';
             <span>{{ m.displayName || m.email }} · {{ m.email }} · {{ m.role }}</span>
             @if (g.myRole === 'owner' && m.userId !== g.ownerUserId) {
               <span>
-                <button type="button" (click)="setRole(m.userId, 'viewer')">Make viewer</button>
-                <button type="button" (click)="setRole(m.userId, 'collaborator')">
+                <button
+                  type="button"
+                  [attr.aria-busy]="memberBusy(m.userId) || null"
+                  [disabled]="memberBusy(m.userId)"
+                  (click)="setRole(m.userId, 'viewer')"
+                >
+                  Make viewer
+                </button>
+                <button
+                  type="button"
+                  [attr.aria-busy]="memberBusy(m.userId) || null"
+                  [disabled]="memberBusy(m.userId)"
+                  (click)="setRole(m.userId, 'collaborator')"
+                >
                   Make collaborator
                 </button>
-                <button type="button" (click)="setRole(m.userId, 'owner')">Transfer ownership</button>
-                <button type="button" (click)="removeMember(m.userId)">Remove</button>
+                <button
+                  type="button"
+                  [attr.aria-busy]="memberBusy(m.userId) || null"
+                  [disabled]="memberBusy(m.userId)"
+                  (click)="setRole(m.userId, 'owner')"
+                >
+                  Transfer ownership
+                </button>
+                <button
+                  type="button"
+                  [attr.aria-busy]="memberBusy(m.userId) || null"
+                  [disabled]="memberBusy(m.userId)"
+                  (click)="removeMember(m.userId)"
+                >
+                  Remove
+                </button>
               </span>
             }
           </li>
@@ -151,7 +176,14 @@ import { PlannerDraftService } from './planner-draft.service';
         </form>
       }
       @if (g.myRole !== 'owner') {
-        <button type="button" (click)="leave()">Leave garden</button>
+        <button
+          type="button"
+          [attr.aria-busy]="notices.busyMap().has('leave-garden') || null"
+          [disabled]="notices.busyMap().has('leave-garden')"
+          (click)="leave()"
+        >
+          Leave garden
+        </button>
       }
       @if (g.myRole === 'owner') {
         @if (!confirmDelete()) {
@@ -170,7 +202,9 @@ import { PlannerDraftService } from './planner-draft.service';
           <button type="button" (click)="confirmDelete.set(false)">Cancel</button>
         }
       }
-    } @else if (!loading()) {
+    } @else if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else {
       <p class="muted">Garden unavailable offline or not found.</p>
     }
   `,
@@ -207,6 +241,10 @@ export class GardenDetailPage implements OnInit {
   canEdit() {
     const role = this.garden()?.myRole;
     return role === 'owner' || role === 'collaborator';
+  }
+
+  memberBusy(userId: string): boolean {
+    return this.notices.busyMap().has(`member:${userId}`);
   }
 
   async load(id: string) {
@@ -259,35 +297,43 @@ export class GardenDetailPage implements OnInit {
     const g = this.garden();
     if (!g) return;
     this.error.set('');
-    try {
-      await this.api.patchMember(g.id, userId, { role });
-      await this.load(g.id);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    await this.notices.run(`member:${userId}`, async () => {
+      try {
+        await this.api.patchMember(g.id, userId, { role });
+        await this.load(g.id);
+        this.notices.success(role === 'owner' ? 'Ownership transferred' : 'Role updated');
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    });
   }
 
   async removeMember(userId: string) {
     const g = this.garden();
     if (!g) return;
-    try {
-      await this.api.removeMember(g.id, userId);
-      await this.load(g.id);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    await this.notices.run(`member:${userId}`, async () => {
+      try {
+        await this.api.removeMember(g.id, userId);
+        await this.load(g.id);
+        this.notices.success('Member removed');
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    });
   }
 
   async leave() {
     const g = this.garden();
     const userId = this.auth.currentUserId();
     if (!g || !userId) return;
-    try {
-      await this.api.removeMember(g.id, userId);
-      await this.router.navigateByUrl('/gardens');
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
+    await this.notices.run('leave-garden', async () => {
+      try {
+        await this.api.removeMember(g.id, userId);
+        await this.router.navigateByUrl('/gardens');
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    });
   }
 
   async deleteGarden() {

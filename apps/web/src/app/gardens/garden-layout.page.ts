@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { originFromCenter, drawableBeds } from '@open-garden/garden-layout';
+import { originFromCenter, drawableBeds, feetToInches, formatPlanSize, inchesToFeetInput } from '@open-garden/garden-layout';
 import { rotateBed90 } from '@open-garden/garden-layout/rotate';
 import type {
   BedGeometryDto,
@@ -51,8 +51,8 @@ import { EmptyState } from '../ui/empty-state';
         </p>
       }
       <div class="planner-toolbar">
-        <button type="button" (click)="zoomIn()">Zoom in</button>
-        <button type="button" (click)="zoomOut()">Zoom out</button>
+        <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
+        <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
         @if (canEdit()) {
           <button
             type="button"
@@ -98,19 +98,21 @@ import { EmptyState } from '../ui/empty-state';
               <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
               <input
                 type="number"
-                min="1"
-                step="1"
+                min="0.5"
+                step="0.5"
                 [(ngModel)]="newLength"
                 name="newLength"
-                placeholder="Length (in)"
+                placeholder="Length (ft)"
+                aria-label="Length in feet"
               />
               <input
                 type="number"
-                min="1"
-                step="1"
+                min="0.5"
+                step="0.5"
                 [(ngModel)]="newWidth"
                 name="newWidth"
-                placeholder="Width (in)"
+                placeholder="Width (ft)"
+                aria-label="Width in feet"
               />
               <button
                 type="submit"
@@ -125,19 +127,21 @@ import { EmptyState } from '../ui/empty-state';
               <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
               <input
                 type="number"
-                min="1"
-                step="1"
+                min="0.5"
+                step="0.5"
                 [(ngModel)]="newAreaLength"
                 name="newAreaLength"
-                placeholder="Length (in)"
+                placeholder="Length (ft)"
+                aria-label="Area length in feet"
               />
               <input
                 type="number"
-                min="1"
-                step="1"
+                min="0.5"
+                step="0.5"
                 [(ngModel)]="newAreaWidth"
                 name="newAreaWidth"
-                placeholder="Width (in)"
+                placeholder="Width (ft)"
+                aria-label="Area width in feet"
               />
               <button type="submit" class="btn btn-secondary">Create non-planting area</button>
             </form>
@@ -151,50 +155,50 @@ import { EmptyState } from '../ui/empty-state';
                 </button>
                 <button type="button" (click)="editGeometry(bed.id)">Edit size {{ bed.name }}</button>
                 @if (bed.geometry; as geo) {
-                  <span>{{ geo.lengthInches }} × {{ geo.widthInches }} in · {{ geo.orientation }}°</span>
+                  <span>{{ formatPlanSize(geo.lengthInches, geo.widthInches, geo.orientation) }}</span>
                 }
                 @if (canEdit() && selectedId() === bed.id && bed.geometry) {
                   <form class="filters" (ngSubmit)="save()">
                     <label>
-                      Origin X
+                      Origin X (ft)
                       <input
                         type="number"
-                        step="1"
+                        step="0.5"
                         name="originX"
-                        [ngModel]="bed.geometry.originXInches"
-                        (ngModelChange)="patchSelected({ originXInches: toInt($event) })"
+                        [ngModel]="inchesToFeetInput(bed.geometry.originXInches)"
+                        (ngModelChange)="patchSelected({ originXInches: feetToInches($event) })"
                       />
                     </label>
                     <label>
-                      Origin Y
+                      Origin Y (ft)
                       <input
                         type="number"
-                        step="1"
+                        step="0.5"
                         name="originY"
-                        [ngModel]="bed.geometry.originYInches"
-                        (ngModelChange)="patchSelected({ originYInches: toInt($event) })"
+                        [ngModel]="inchesToFeetInput(bed.geometry.originYInches)"
+                        (ngModelChange)="patchSelected({ originYInches: feetToInches($event) })"
                       />
                     </label>
                     <label>
-                      Length (in)
+                      Length (ft)
                       <input
                         type="number"
-                        min="1"
-                        step="1"
+                        min="0.5"
+                        step="0.5"
                         name="length"
-                        [ngModel]="bed.geometry.lengthInches"
-                        (ngModelChange)="patchSelected({ lengthInches: toInt($event) })"
+                        [ngModel]="inchesToFeetInput(bed.geometry.lengthInches)"
+                        (ngModelChange)="patchSelected({ lengthInches: sizeInchesFromFeet($event) })"
                       />
                     </label>
                     <label>
-                      Width (in)
+                      Width (ft)
                       <input
                         type="number"
-                        min="1"
-                        step="1"
+                        min="0.5"
+                        step="0.5"
                         name="width"
-                        [ngModel]="bed.geometry.widthInches"
-                        (ngModelChange)="patchSelected({ widthInches: toInt($event) })"
+                        [ngModel]="inchesToFeetInput(bed.geometry.widthInches)"
+                        (ngModelChange)="patchSelected({ widthInches: sizeInchesFromFeet($event) })"
                       />
                     </label>
                   </form>
@@ -225,7 +229,7 @@ import { EmptyState } from '../ui/empty-state';
             <ul class="card-list">
               @for (area of draft()!.areas; track area.id) {
                 <li class="stack">
-                  <span>{{ area.name }} · {{ area.lengthInches }} × {{ area.widthInches }} in</span>
+                  <span>{{ area.name }} · {{ formatPlanSize(area.lengthInches, area.widthInches) }}</span>
                   @if (canEdit()) {
                     @if (confirmDeleteAreaId() !== area.id) {
                       <button type="button" (click)="confirmDeleteAreaId.set(area.id)">
@@ -274,12 +278,19 @@ export class GardenLayoutPage implements OnInit {
   confirmDeleteId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
   newBedName = '';
-  newLength: number | null = 96;
-  newWidth: number | null = 48;
+  newLength: number | null = 8;
+  newWidth: number | null = 4;
   newAreaName = '';
-  newAreaLength: number | null = 48;
-  newAreaWidth: number | null = 48;
+  newAreaLength: number | null = 4;
+  newAreaWidth: number | null = 4;
   confirmDeleteAreaId = signal<string | null>(null);
+  readonly formatPlanSize = formatPlanSize;
+  readonly inchesToFeetInput = inchesToFeetInput;
+  readonly feetToInches = feetToInches;
+
+  sizeInchesFromFeet(feet: string | number): number {
+    return Math.max(1, feetToInches(feet));
+  }
 
   ngOnInit() {
     this.gardenId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -326,11 +337,6 @@ export class GardenLayoutPage implements OnInit {
     this.canvas()?.zoomOut();
   }
 
-  toInt(value: string | number): number {
-    const n = typeof value === 'number' ? value : Number.parseInt(value, 10);
-    return Number.isFinite(n) ? n : 0;
-  }
-
   patchSelected(patch: Partial<BedGeometryDto>) {
     if (!this.guardMutate()) {
       const d = this.draft();
@@ -371,8 +377,10 @@ export class GardenLayoutPage implements OnInit {
   }
 
   async load() {
-    await this.planner.load(this.gardenId, { reuseDirty: true });
-    const detail = await this.gardensApi.detail(this.gardenId);
+    const [, detail] = await Promise.all([
+      this.planner.load(this.gardenId, { reuseDirty: true }),
+      this.gardensApi.detail(this.gardenId),
+    ]);
     if (detail) this.gardenName.set(detail.name);
   }
 
@@ -383,8 +391,8 @@ export class GardenLayoutPage implements OnInit {
     this.status.set('');
     if (!this.guardMutate()) return;
     const name = this.newBedName.trim();
-    const length = Math.trunc(Number(this.newLength));
-    const width = Math.trunc(Number(this.newWidth));
+    const length = feetToInches(this.newLength ?? 0);
+    const width = feetToInches(this.newWidth ?? 0);
     if (!name || length < 1 || width < 1) return;
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
@@ -410,8 +418,8 @@ export class GardenLayoutPage implements OnInit {
     const d = this.draft();
     if (!d || !this.guardMutate()) return;
     const name = this.newAreaName.trim();
-    const length = Math.trunc(Number(this.newAreaLength));
-    const width = Math.trunc(Number(this.newAreaWidth));
+    const length = feetToInches(this.newAreaLength ?? 0);
+    const width = feetToInches(this.newAreaWidth ?? 0);
     if (!name || length < 1 || width < 1) return;
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };

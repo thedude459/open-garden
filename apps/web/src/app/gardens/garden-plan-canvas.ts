@@ -1,5 +1,14 @@
-import { Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
-import { originFromGrabOffset } from '@open-garden/garden-layout';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { originFromGrabOffset, layoutPlantingLabels, catalogDropOutcome, formatPlanSize } from '@open-garden/garden-layout';
 import { classifyGesture, hitTestPlan, isClickNotDrag } from '@open-garden/garden-layout/hit-test';
 import { plantingFootprintRadius } from '@open-garden/garden-layout/footprint';
 import { drawableBeds } from '@open-garden/garden-layout/drawable-beds';
@@ -14,6 +23,8 @@ import type {
 } from '@open-garden/shared-types';
 
 const HANDLE_INCHES = 8;
+const NO_PLANTINGS: LayoutPlantingDto[] = [];
+const NO_NAMES: Array<{ name: string; count: number }> = [];
 
 type Gesture =
   | { type: 'pan'; lastX: number; lastY: number }
@@ -47,6 +58,7 @@ type Gesture =
 @Component({
   standalone: true,
   selector: 'og-garden-plan-canvas',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
       class="plan-viewport"
@@ -110,7 +122,7 @@ type Gesture =
               text-anchor="middle"
               class="layout-label"
             >
-              Bed · {{ bed.name }}
+              Bed · {{ bed.name }} · {{ formatPlanSize(geo.lengthInches, geo.widthInches) }}
             </text>
             @if (!allowPlantingDrag()) {
               @for (label of labelsFor(bed.id); track label.name) {
@@ -143,17 +155,20 @@ type Gesture =
                     [attr.cy]="m.y"
                     [attr.r]="m.r"
                     class="layout-plant"
+                    [class.layout-plant-invalid]="isPreviewInvalid(planting.id)"
                   />
-                  <text
-                    [attr.x]="m.x"
-                    [attr.y]="m.y + 1.5"
-                    text-anchor="middle"
-                    class="layout-plant-label"
-                  >
-                    {{ plantingLabel(planting) }}
-                  </text>
                 </g>
               }
+            }
+            @for (label of markLabels(bed.id, geo); track label.id) {
+              <text
+                [attr.x]="label.x"
+                [attr.y]="label.y"
+                text-anchor="middle"
+                class="layout-plant-label"
+              >
+                {{ label.name }}
+              </text>
             }
             }
           }
@@ -177,7 +192,7 @@ type Gesture =
             text-anchor="middle"
             class="layout-label"
           >
-            Area · {{ area.name }}
+            Area · {{ area.name }} · {{ formatPlanSize(area.lengthInches, area.widthInches) }}
           </text>
           @if (canEdit() && allowBedGeometry()) {
             <rect
@@ -197,6 +212,7 @@ type Gesture =
 export class GardenPlanCanvas {
   readonly handleInches = HANDLE_INCHES;
   readonly planSize = bedPlanSize;
+  readonly formatPlanSize = formatPlanSize;
   readonly beds = input<LayoutBedDto[]>([]);
   readonly areas = input<LayoutAreaDto[]>([]);
   readonly plantings = input<LayoutPlantingDto[]>([]);
@@ -228,30 +244,51 @@ export class GardenPlanCanvas {
   private readonly panY = signal(0);
   private readonly scale = signal(1);
   private readonly previewPlant = signal<{ id: string; x: number; y: number } | null>(null);
+  private readonly previewInvalid = signal(false);
   private readonly previewBed = signal<{ id: string; geometry: BedGeometryDto } | null>(null);
   private readonly previewArea = signal<LayoutAreaDto | null>(null);
   private gesture: Gesture | null = null;
   private pointers = new Map<number, { x: number; y: number }>();
   private pointerStart = { x: 0, y: 0 };
 
-  drawnBeds() {
+  readonly drawnBeds = computed(() => {
     const preview = this.previewBed();
     return drawableBeds(this.beds()).map((bed) =>
       preview && bed.id === preview.id ? { ...bed, geometry: preview.geometry } : bed,
     );
-  }
+  });
 
-  drawnAreas() {
+  readonly drawnAreas = computed(() => {
     const preview = this.previewArea();
     return this.areas().map((area) => (preview && area.id === preview.id ? preview : area));
-  }
+  });
+
+  private readonly plantingsByBed = computed(() => {
+    const map = new Map<string, LayoutPlantingDto[]>();
+    for (const planting of this.plantings()) {
+      const bedId = planting.placement?.bedId;
+      if (!bedId) continue;
+      const list = map.get(bedId);
+      if (list) list.push(planting);
+      else map.set(bedId, [planting]);
+    }
+    return map;
+  });
+
+  private readonly overviewNamesByBed = computed(() => {
+    const map = new Map<string, Array<{ name: string; count: number }>>();
+    for (const label of overviewPlantingLabels(this.plantings())) {
+      map.set(label.bedId, label.names);
+    }
+    return map;
+  });
 
   soilSize(geo: BedGeometryDto): { width: number; height: number } {
     const size = bedPlanSize(geo);
     return { width: Math.max(1, size.width - 6), height: Math.max(1, size.height - 6) };
   }
 
-  viewBox() {
+  readonly viewBox = computed(() => {
     const beds = this.drawnBeds();
     const areas = this.drawnAreas();
     if (!beds.length && !areas.length) return '0 0 240 160';
@@ -277,11 +314,11 @@ export class GardenPlanCanvas {
     const width = Math.max(maxX - minX + pad * 2, 160);
     const height = Math.max(maxY - minY + pad * 2, 120);
     return `${minX - pad} ${minY - pad} ${Math.ceil(width)} ${Math.ceil(height)}`;
-  }
+  });
 
-  cssTransform() {
-    return `translate(${this.panX()}px, ${this.panY()}px) scale(${this.scale()})`;
-  }
+  readonly cssTransform = computed(
+    () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.scale()})`,
+  );
 
   zoomIn() {
     this.scale.update((s) => Math.min(4, s + 0.25));
@@ -353,11 +390,11 @@ export class GardenPlanCanvas {
   }
 
   placedIn(bedId: string) {
-    return this.plantings().filter((p) => p.placement?.bedId === bedId);
+    return this.plantingsByBed().get(bedId) ?? NO_PLANTINGS;
   }
 
   labelsFor(bedId: string) {
-    return overviewPlantingLabels(this.plantings()).find((l) => l.bedId === bedId)?.names ?? [];
+    return this.overviewNamesByBed().get(bedId) ?? NO_NAMES;
   }
 
   mark(planting: LayoutPlantingDto, geo: BedGeometryDto): { x: number; y: number; r: number } | null {
@@ -369,6 +406,27 @@ export class GardenPlanCanvas {
     if (!place) return null;
     const center = localToPlan(geo, place.xInches, place.yInches);
     return { ...center, r: plantingFootprintRadius(planting.spacingInches) };
+  }
+
+  markLabels(bedId: string, geo: BedGeometryDto) {
+    const marks = [];
+    for (const planting of this.placedIn(bedId)) {
+      const m = this.mark(planting, geo);
+      if (!m) continue;
+      marks.push({
+        id: planting.id,
+        name: this.plantingLabel(planting),
+        x: m.x,
+        y: m.y,
+        r: m.r,
+      });
+    }
+    return layoutPlantingLabels(marks);
+  }
+
+  isPreviewInvalid(plantingId: string) {
+    const preview = this.previewPlant();
+    return this.previewInvalid() && preview?.id === plantingId;
   }
 
   plantingLabel(p: LayoutPlantingDto) {
@@ -392,15 +450,13 @@ export class GardenPlanCanvas {
     }
     const plan = this.clientToPlan(ev.clientX, ev.clientY);
     this.pointerStart = { x: ev.clientX, y: ev.clientY };
-    const plantings = this.allowPlantingDrag() ? this.plantings() : [];
     const hit = hitTestPlan(
       this.drawnBeds(),
-      plantings,
+      this.plantings(),
       plan.x,
       plan.y,
       HANDLE_INCHES,
       this.allowBedGeometry() ? this.drawnAreas() : [],
-      this.allowPlantingDrag(),
     );
     if (!this.canEdit()) {
       if (this.openBedOnClick() && (hit.kind === 'bed' || hit.kind === 'bed-handle')) {
@@ -425,7 +481,7 @@ export class GardenPlanCanvas {
       this.gesture = null;
       return;
     }
-    if (kind === 'pan' || hit.kind === 'empty') {
+    if (kind === 'pan' || hit.kind === 'empty' || (hit.kind === 'planting' && !this.allowPlantingDrag())) {
       this.gesture = { type: 'pan', lastX: ev.clientX, lastY: ev.clientY };
       return;
     }
@@ -528,6 +584,7 @@ export class GardenPlanCanvas {
     const plan = this.clientToPlan(ev.clientX, ev.clientY);
     if (g.type === 'move-planting') {
       this.previewPlant.set({ id: g.plantingId, x: plan.x, y: plan.y });
+      this.previewInvalid.set(this.previewWouldBlock(g.plantingId, plan.x, plan.y));
       return;
     }
     if (g.type === 'move-area') {
@@ -587,6 +644,7 @@ export class GardenPlanCanvas {
       Math.hypot(ev.clientX - this.pointerStart.x, ev.clientY - this.pointerStart.y) < 8;
     if (!g || g.type === 'pan' || g.type === 'pinch') {
       this.previewPlant.set(null);
+      this.previewInvalid.set(false);
       this.previewBed.set(null);
       this.previewArea.set(null);
       if (g?.type === 'pan' && click && this.allowPlantingDrag()) {
@@ -602,6 +660,7 @@ export class GardenPlanCanvas {
     }
     if (g.type === 'move-planting') {
       this.previewPlant.set(null);
+      this.previewInvalid.set(false);
       const overTray = Boolean(
         document
           .elementFromPoint(ev.clientX, ev.clientY)
@@ -641,5 +700,24 @@ export class GardenPlanCanvas {
     const bedId = planting?.placement?.bedId;
     if (!bedId) return { kind: 'empty' };
     return { kind: 'bed', bedId, planX: plan.x, planY: plan.y };
+  }
+
+  private previewWouldBlock(plantingId: string, planX: number, planY: number): boolean {
+    const planting = this.plantings().find((p) => p.id === plantingId);
+    if (!planting) return false;
+    const others = this.plantings().filter((p) => p.id !== plantingId);
+    const bed =
+      this.drawnBeds().find((b) => {
+        if (!b.geometry) return false;
+        const size = bedPlanSize(b.geometry);
+        return (
+          planX >= b.geometry.originXInches &&
+          planX <= b.geometry.originXInches + size.width &&
+          planY >= b.geometry.originYInches &&
+          planY <= b.geometry.originYInches + size.height
+        );
+      }) ?? null;
+    if (!bed) return true;
+    return catalogDropOutcome(bed, others, planX, planY, planting.spacingInches ?? 12) !== 'ok';
   }
 }
