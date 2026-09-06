@@ -47,9 +47,21 @@ export const routes: Routes = [
       import('./gardens/garden-plantings.page').then((m) => m.GardenPlantingsPage),
   },
   {
+    path: 'gardens/:id/layout/beds/:bedId',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./gardens/garden-bed-view.page').then((m) => m.GardenBedViewPage),
+  },
+  {
     path: 'gardens/:id/layout',
     canActivate: [authGuard],
     loadComponent: () => import('./gardens/garden-layout.page').then((m) => m.GardenLayoutPage),
+  },
+  {
+    path: 'gardens/:id/transplants',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./gardens/garden-transplants.page').then((m) => m.GardenTransplantsPage),
   },
   {
     path: 'admin/pipeline',

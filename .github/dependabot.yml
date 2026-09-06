@@ -5,32 +5,47 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
+    labels:
+      - dependencies
     # typescript-eslint does not support TypeScript 7.0 yet
     # (https://github.com/typescript-eslint/typescript-eslint/issues/10940).
     ignore:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
-    # Minor/patch bumps share one PR per dependency type. Majors stay ungrouped.
+    # One PR per group. Ungrouped majors stay individual.
     groups:
       production-minor-patch:
+        applies-to: version-updates
         dependency-type: production
         update-types:
           - minor
           - patch
       development-minor-patch:
+        applies-to: version-updates
         dependency-type: development
         update-types:
           - minor
           - patch
+      npm-security:
+        applies-to: security-updates
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
-    # CodeQL init and analyze must share one release SHA; grouping keeps them in lockstep.
+    labels:
+      - dependencies
     groups:
+      # First match wins. Keep CodeQL init + analyze on one SHA.
       codeql-action:
         patterns:
           - 'github/codeql-action*'
+      github-actions-minor-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      github-actions-security:
+        applies-to: security-updates

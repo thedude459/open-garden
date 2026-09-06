@@ -4,6 +4,15 @@
   --moss: #7a9e7e;
   --sand: #e8efe4;
   --ink: #142017;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius: 6px;
+  --elev-1: 0 1px 3px rgba(47, 93, 58, 0.18);
+  --elev-2: 0 4px 12px rgba(31, 42, 31, 0.16);
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
@@ -25,8 +34,153 @@ button, input, select {
   margin: 0 auto;
   padding: 1.5rem;
 }
+.shell:has(.planner) {
+  max-width: 1280px;
+}
+.planner-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.planner-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+@media (min-width: 840px) {
+  .planner-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+  }
+  .planner-rail {
+    position: sticky;
+    top: 0.75rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    padding-right: 0.15rem;
+  }
+}
+.planner-rail {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+.planner-rail h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.planner-rail .card-list {
+  gap: 0.45rem;
+}
+.planner-rail .unplaced-tray h3 {
+  margin-bottom: 0.35rem;
+}
+.plant-panel-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.plant-panel-filters input {
+  grid-column: 1 / -1;
+}
+.plant-panel-filters button {
+  grid-column: 1 / -1;
+}
+.plan-viewport {
+  overflow: hidden;
+  touch-action: none;
+  min-height: 28rem;
+  height: min(68vh, 40rem);
+  border-radius: 4px;
+  border: 1px solid rgba(47, 93, 58, 0.28);
+  background-color: #6f8f5c;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.08) 0.8px, transparent 1.2px),
+    linear-gradient(180deg, #7a9a66 0%, #5f7d4e 100%);
+  background-size: 14px 14px, 100% 100%;
+}
+.layout-plan {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  background: transparent;
+}
+.layout-bed-frame {
+  fill: #8a6239;
+  stroke: #5a3d22;
+  stroke-width: 1.25;
+  cursor: pointer;
+}
+.layout-bed-frame.selected {
+  stroke: #2a1810;
+  stroke-width: 2;
+}
+.layout-area {
+  fill: #6b6b6b;
+  fill-opacity: 0.35;
+  stroke: #4a4a4a;
+  stroke-width: 1;
+}
+.layout-bed {
+  fill: #4e3423;
+  pointer-events: none;
+}
+.layout-bed.selected {
+  fill: #3f2c20;
+}
+.layout-grid {
+  stroke: rgba(232, 214, 180, 0.22);
+  stroke-width: 0.45;
+  pointer-events: none;
+}
+.layout-handle {
+  fill: #c4a574;
+  stroke: #3d2914;
+  stroke-width: 0.6;
+  cursor: nwse-resize;
+}
+.layout-label {
+  font-size: 7px;
+  font-weight: 700;
+  fill: #f4efe4;
+  pointer-events: none;
+}
+.layout-plant {
+  fill: #2f5d3a;
+  stroke: #e8efe4;
+  stroke-width: 0.7;
+  pointer-events: none;
+}
+.layout-plant-invalid {
+  fill: #8a1f1f;
+  stroke: #f4efe4;
+}
+.layout-plant-label {
+  font-size: 4.6px;
+  font-weight: 700;
+  fill: #f4efe4;
+  stroke: #1a2418;
+  stroke-width: 1.1px;
+  paint-order: stroke fill;
+  pointer-events: none;
+}
+.tray-item {
+  cursor: grab;
+  width: 100%;
+  text-align: left;
+}
+.unplaced-tray {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(47, 93, 58, 0.15);
+}
 .nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: baseline;
   margin-bottom: 1.5rem;
@@ -36,17 +190,163 @@ button, input, select {
   font-size: 1.75rem;
   letter-spacing: -0.02em;
 }
+.nav a.active {
+  font-weight: 700;
+  color: var(--ink);
+}
+.nav-auth {
+  margin-left: auto;
+}
+.nav-text {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--leaf);
+  cursor: pointer;
+  font: inherit;
+}
+.garden-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.25rem;
+}
+.garden-nav a {
+  font-weight: 600;
+}
 .card-list {
   display: grid;
   gap: 0.75rem;
 }
+.card {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(47, 93, 58, 0.15);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-1);
+  padding: var(--space-4);
+}
 .row {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.9rem 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   background: rgba(255,255,255,0.55);
   border: 1px solid rgba(47,93,58,0.15);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-1);
+}
+a.row {
+  text-decoration: none;
+  color: inherit;
+}
+a.row:hover,
+a.row:focus-visible {
+  border-color: var(--leaf);
+  box-shadow: var(--elev-2);
+}
+.card-list img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: var(--radius);
+  flex: 0 0 auto;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(47, 93, 58, 0.25);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn-primary {
+  background: var(--leaf);
+  border-color: var(--leaf);
+  color: #fff;
+}
+.btn-secondary {
+  background: #fff;
+  color: var(--ink);
+}
+.btn-destructive {
+  background: #8a1f1f;
+  border-color: #8a1f1f;
+  color: #fff;
+}
+.btn[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: wait;
+}
+.btn[disabled],
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.notice-host {
+  position: fixed;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: 22rem;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-2);
+  background: #fff;
+  border: 1px solid rgba(47, 93, 58, 0.25);
+}
+.notice-host[data-kind="error"],
+.notice-host[data-kind="miss"] {
+  border-color: rgba(138, 31, 31, 0.4);
+  background: #fff6f6;
+}
+.notice-host[data-kind="success"] {
+  border-color: rgba(47, 93, 58, 0.35);
+  background: #f3f8f2;
+}
+.place-marker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: baseline;
+  margin-bottom: var(--space-3);
+  font-size: 0.95rem;
+}
+.empty-state {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(47, 93, 58, 0.15);
+  border-radius: var(--radius);
+  box-shadow: var(--elev-1);
+}
+.empty-state-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.layout-area {
+  fill: url(#og-area-hatch);
+  fill-opacity: 1;
+  stroke: #4a4a4a;
+  stroke-width: 1;
+}
+.layout-bed-frame:focus,
+.layout-area:focus {
+  outline: 2px solid #e8efe4;
+  outline-offset: 1px;
 }
 .filters {
   display: flex;
@@ -121,29 +421,38 @@ textarea, .stack input, .stack select {
   border-color: rgba(138, 31, 31, 0.45);
   background: rgba(255, 230, 230, 0.7);
 }
-.layout-plan {
-  display: block;
-  width: 100%;
-  height: 22rem;
-  margin-bottom: 1rem;
-  background: #fff;
-  border: 1px solid rgba(47, 93, 58, 0.2);
+.plant-stand-in {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius, 6px);
+  background: var(--moss, #7a9e7e);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
-.layout-bed {
-  fill: rgba(47, 93, 58, 0.18);
-  stroke: #2f5d3a;
-  stroke-width: 1;
-  cursor: pointer;
+.plant-stand-in[data-plant-type="vegetable"] { background: #2f5d3a; }
+.plant-stand-in[data-plant-type="herb"] { background: #4a7c59; }
+.plant-stand-in[data-plant-type="flower"] { background: #8a4d6e; }
+.plant-stand-in[data-plant-type="fruit"] { background: #b85c38; }
+.plant-stand-in[data-plant-type="shrub"] { background: #5a6b3f; }
+.plant-stand-in[data-plant-type="tree"] { background: #3d4f2f; }
+.plant-panel-list .row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
 }
-.layout-bed.selected {
-  stroke-width: 3;
-  fill: rgba(47, 93, 58, 0.32);
+.planner-rail .row {
+  align-items: center;
+  flex-wrap: nowrap;
 }
-.layout-label {
-  font-size: 10px;
-  fill: #142017;
-  pointer-events: none;
+.planner-rail .row > span {
+  min-width: 0;
 }
-.layout-plant {
-  fill: #7a4e00;
+.planner-rail .row button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }

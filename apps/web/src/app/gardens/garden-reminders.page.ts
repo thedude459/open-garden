@@ -55,8 +55,8 @@ import { type ClientReminderItem, type ClientReminderList } from './reminders-of
               </div>
               @if (canEdit()) {
                 <div class="filters">
-                  <button type="button" (click)="complete(item)">Complete</button>
-                  <button type="button" (click)="dismiss(item)">Dismiss</button>
+                  <button type="button" class="btn btn-secondary" (click)="complete(item)">Complete</button>
+                  <button type="button" class="btn btn-secondary" (click)="dismiss(item)">Dismiss</button>
                 </div>
               }
             </li>

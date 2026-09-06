@@ -4,6 +4,8 @@ import type { PlantStatus, PlantType } from './plant';
 /** Household calendar date `YYYY-MM-DD`, or null when unset. */
 export type IsoDate = string;
 
+export type StartMethod = 'direct_seed' | 'transplant';
+
 export interface NamedBedDto {
   id: string;
   name: string;
@@ -22,6 +24,8 @@ export interface PlantingDto {
   plantedOn: IsoDate | null;
   harvestedOn: IsoDate | null;
   bedId: string | null;
+  startMethod: StartMethod;
+  indoorStartedOn: IsoDate | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +43,8 @@ export interface PlantingListDto {
 export interface PlantingCreateDto {
   id?: string;
   plantId: string;
+  startMethod?: StartMethod;
+  indoorStartedOn?: IsoDate | null;
   plantedOn?: IsoDate | null;
   harvestedOn?: IsoDate | null;
   bedId?: string | null;
@@ -55,6 +61,10 @@ export interface PlantingPatchDto {
 export interface BedCreateDto {
   id?: string;
   name: string;
+  lengthInches: number;
+  widthInches: number;
+  originXInches?: number;
+  originYInches?: number;
 }
 
 export interface BedPatchDto {

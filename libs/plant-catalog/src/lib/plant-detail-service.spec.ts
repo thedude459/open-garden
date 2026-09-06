@@ -48,4 +48,37 @@ describe('PlantDetailService', () => {
     });
     expect(detail?.growingGuidance.outdoorSow).toBeNull();
   });
+
+  it('returns leftover null spacing on getById', async () => {
+    const plants = {
+      getById: vi.fn().mockResolvedValue({
+        id: 'old',
+        commonName: 'Heirloom',
+        species: 'Unknown',
+        cultivar: null,
+        plantType: 'vegetable',
+        zoneMin: 5,
+        zoneMax: 10,
+        sunRequirements: null,
+        waterNeeds: null,
+        daysToMaturity: null,
+        spacingInches: null,
+        status: 'active',
+        indoorFrostAnchor: null,
+        indoorWeeksEarliest: null,
+        indoorWeeksLatest: null,
+        sowFrostAnchor: null,
+        sowWeeksEarliest: null,
+        sowWeeksLatest: null,
+        transplantFrostAnchor: null,
+        transplantWeeksEarliest: null,
+        transplantWeeksLatest: null,
+      }),
+    };
+    const favorites = { isFavorite: vi.fn().mockResolvedValue(false) };
+    const svc = new PlantDetailService(plants as never, favorites as never);
+    const detail = await svc.getById('old', 'user-1');
+    expect(detail?.spacingInches).toBeNull();
+    expect(detail?.commonName).toBe('Heirloom');
+  });
 });

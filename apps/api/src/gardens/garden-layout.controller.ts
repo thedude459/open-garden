@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Inject, Param, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Logger, Param, Put, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { LayoutService, domainError } from '@open-garden/garden-layout';
 import {
+  AreaRepository,
   BedRepository,
   GardenMembershipRepository,
   PlantingRepository,
@@ -12,9 +13,10 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 
-@Controller('gardens/:id/layout')
+@Controller()
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenLayoutController {
+  private readonly logger = new Logger(GardenLayoutController.name);
   private readonly layouts: LayoutService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
@@ -22,15 +24,19 @@ export class GardenLayoutController {
       new GardenMembershipRepository(bundle.db),
       new PlantingRepository(bundle.db),
       new BedRepository(bundle.db),
+      new AreaRepository(bundle.db),
     );
   }
 
-  @Get()
-  get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.layouts.get(user.id, id);
+  @Get('gardens/:id/layout')
+  async get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    const started = Date.now();
+    const result = await this.layouts.get(user.id, id);
+    this.logger.log(`garden.layout.assembly_ms=${Date.now() - started}`);
+    return result;
   }
 
-  @Put()
+  @Put('gardens/:id/layout')
   put(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
     const parsed = layoutPutSchema.safeParse(body);
     if (!parsed.success) {
@@ -40,5 +46,15 @@ export class GardenLayoutController {
       );
     }
     return this.layouts.put(user.id, id, parsed.data);
+  }
+
+  @Delete('gardens/:id/areas/:areaId')
+  @HttpCode(204)
+  deleteArea(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId') areaId: string,
+  ) {
+    return this.layouts.deleteArea(user.id, id, areaId);
   }
 }

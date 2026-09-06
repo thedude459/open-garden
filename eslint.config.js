@@ -4,7 +4,15 @@ import nxPlugin from '@nx/eslint-plugin';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '.nx/**', 'apps/web/.angular/**'],
+    ignores: [
+      'dist/**',
+      'build/**',
+      'node_modules/**',
+      'coverage/**',
+      '.nx/**',
+      'apps/web/.angular/**',
+      '**/*.min.js',
+    ],
   },
   {
     files: ['**/*.ts'],

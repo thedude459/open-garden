@@ -34,6 +34,19 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   await expect(page.getByRole('link', { name: /Front yard/ })).toBeVisible();
 });
 
+test('list shows every membership past the first page of 20', async ({ page }) => {
+  await register(page, `paged-${Date.now()}@example.com`);
+  for (let i = 0; i < 21; i++) {
+    const res = await page.request.post('/api/gardens', {
+      data: { name: `Paged garden ${String(i).padStart(2, '0')}` },
+    });
+    expect(res.status(), await res.text()).toBe(201);
+  }
+  await page.goto('/gardens');
+  await expect(page.getByRole('link', { name: /Paged garden 00/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Paged garden 20/ })).toBeVisible();
+});
+
 test('stranger cannot see another user’s garden', async ({ browser }) => {
   const ownerPage = await (await browser.newContext()).newPage();
   const strangerPage = await (await browser.newContext()).newPage();

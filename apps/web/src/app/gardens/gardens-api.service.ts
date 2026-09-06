@@ -47,6 +47,20 @@ export class GardensApiService {
     }
   }
 
+  /** Membership list for the gardens hub: every garden, not one page of 20. */
+  async listAll(): Promise<PageDto<GardenSummaryDto>> {
+    const pageSize = 100;
+    const first = await this.list(1, pageSize);
+    if (first.totalCount <= first.items.length) return first;
+    const items = [...first.items];
+    const pages = Math.max(1, Math.ceil(first.totalCount / Math.max(1, first.pageSize)));
+    for (let page = 2; page <= pages; page++) {
+      const next = await this.list(page, first.pageSize);
+      items.push(...next.items);
+    }
+    return { ...first, items };
+  }
+
   async detail(id: string): Promise<GardenDetailDto | null> {
     try {
       const detail = await firstValueFrom(
