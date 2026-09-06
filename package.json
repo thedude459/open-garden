@@ -78,6 +78,7 @@
     "hono": "4.12.34",
     "image-size": "npm:empty-npm-package@1.0.0",
     "esbuild": ">=0.25.0",
-    "fast-uri": "3.1.6"
+    "fast-uri": "3.1.6",
+    "qs": "6.16.0"
   }
 }
