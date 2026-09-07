@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,35 +9,29 @@ import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, EmptyState, NgTemplateOutlet],
+  imports: [FormsModule, RouterLink, EmptyState],
   template: `
     <h2>Gardens</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
-    <ng-template #createGarden>
-      <form class="filters" (ngSubmit)="create()">
-        <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
-        <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
-        <button
-          type="submit"
-          class="btn btn-primary"
-          [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
-          [disabled]="notices.busyMap().has('create-garden')"
-        >
-          Create garden
-        </button>
-      </form>
-    </ng-template>
+    <form class="filters" (ngSubmit)="create()">
+      <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
+      <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
+        [disabled]="notices.busyMap().has('create-garden')"
+      >
+        Create garden
+      </button>
+    </form>
     @if (loading()) {
-      <ng-container [ngTemplateOutlet]="createGarden" />
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
-      <og-empty-state title="No gardens yet" [body]="emptyBody()">
-        <ng-container [ngTemplateOutlet]="createGarden" />
-      </og-empty-state>
+      <og-empty-state title="No gardens yet" [body]="emptyBody()" />
     } @else {
-      <ng-container [ngTemplateOutlet]="createGarden" />
       <div class="card-list">
         @for (g of items(); track g.id) {
           <a class="row" [routerLink]="['/gardens', g.id]">
@@ -95,13 +88,18 @@ export class GardenListPage implements OnInit {
     this.error.set('');
     await this.notices.run('create-garden', async () => {
       try {
-        await this.api.create({
+        const created = await this.api.create({
           name: this.name,
           notes: this.notes.trim() ? this.notes : null,
         });
         this.name = '';
         this.notes = '';
-        await this.load();
+        this.loadGen++;
+        this.items.update((list) => [
+          withCounts(created),
+          ...list.filter((g) => g.id !== created.id),
+        ]);
+        this.loading.set(false);
         this.notices.success('Garden created');
       } catch (err) {
         this.notices.error(userMessage(err));
