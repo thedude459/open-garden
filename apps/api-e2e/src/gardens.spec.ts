@@ -3,7 +3,7 @@ import { gardenCreateSchema, gardenPatchSchema } from '@open-garden/shared-types
 
 /**
  * Zod contract smokes for CI without a live DB.
- * HTTP+Postgres garden integration lives in apps/web-e2e/src/garden-api.spec.ts.
+ * HTTP+Postgres garden integration lives in apps/api-e2e/src/garden-http.spec.ts (E2E_LIVE=1).
  * Invite/member-patch schemas are covered in gardens-membership.spec.ts.
  */
 test('garden create contract requires a name', () => {

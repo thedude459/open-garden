@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { register } from './planner-helpers';
+import { signedInPage } from './session';
 
 async function findPlant(request: APIRequestContext, name: string) {
   const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
@@ -13,10 +13,10 @@ async function findPlant(request: APIRequestContext, name: string) {
 }
 
 test('100-placement overview and bed view are interactive within 2s without per-planting plant GETs', async ({
-  page,
+  browser,
 }) => {
   test.setTimeout(120_000);
-  await register(page, `planner-load-${Date.now()}@example.com`);
+  const page = await signedInPage(browser, `planner-load-${Date.now()}@example.com`);
   const created = await page.request.post('/api/gardens', { data: { name: 'Load planner' } });
   expect(created.status()).toBe(201);
   const garden = (await created.json()) as { id: string };

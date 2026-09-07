@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { signedInPage } from './session';
 
-test('favorites add and remove', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByPlaceholder('Email').fill('gardener@example.com');
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Login' }).click();
+test('favorites add and remove', async ({ browser }) => {
+  const page = await signedInPage(browser, `fav-${Date.now()}@example.com`);
+  await page.goto('/plants');
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
   await expect(
     page.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first(),

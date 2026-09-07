@@ -1,5 +1,7 @@
-import { expect, test, type APIRequestContext, type APIResponse } from '@playwright/test';
+import { describe, expect, test } from 'vitest';
+import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
 
+describe.skipIf(!liveEnabled)('plantings http', () => {
 type PlantingList = {
   gardenId: string;
   myRole: string;
@@ -19,7 +21,7 @@ type PlantingList = {
 
 type GardenDetail = { id: string };
 
-async function register(request: APIRequestContext, email: string) {
+async function register(request: LiveClient, email: string) {
   const res = await request.post('/api/auth/register', {
     data: { email, password: 'password123' },
   });
@@ -27,7 +29,7 @@ async function register(request: APIRequestContext, email: string) {
   return ((await res.json()) as { user: { id: string; email: string } }).user;
 }
 
-async function findPlant(request: APIRequestContext, name: string) {
+async function findPlant(request: LiveClient, name: string) {
   const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
   expect(res.ok()).toBeTruthy();
   const body = (await res.json()) as { items: Array<{ id: string; commonName: string }> };
@@ -50,11 +52,12 @@ function errorMessage(body: unknown): string | undefined {
   return undefined;
 }
 
-async function json(res: APIResponse) {
+async function json(res: LiveResponse) {
   return res.json() as Promise<unknown>;
 }
 
-test('unauthenticated planting routes return 401', async ({ request }) => {
+test('unauthenticated planting routes return 401', async () => {
+  const request = new LiveClient();
   const id = '11111111-1111-4111-8111-111111111111';
   const get = await request.get(`/api/gardens/${id}/plantings`);
   expect(get.status()).toBe(401);
@@ -64,13 +67,11 @@ test('unauthenticated planting routes return 401', async ({ request }) => {
   expect(post.status()).toBe(401);
 });
 
-test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-write-wins, beds', async ({
-  playwright,
-}) => {
+test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-write-wins, beds', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const friend = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const friend = new LiveClient();
+  const stranger = new LiveClient();
   try {
     await register(owner, `plant-api-owner-${stamp}@example.com`);
     const friendUser = await register(friend, `plant-api-friend-${stamp}@example.com`);
@@ -204,4 +205,6 @@ test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-wri
     await friend.dispose();
     await stranger.dispose();
   }
+});
+
 });

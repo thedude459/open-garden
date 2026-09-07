@@ -5,6 +5,7 @@ import {
   inviteViewer,
   newUser,
   openOverview,
+  saveGarden,
   saveLayout,
 } from './planner-helpers';
 
@@ -25,7 +26,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.locator('input[name="lastDay"]').fill('15');
   await owner.locator('select[name="firstMonth"]').selectOption('10');
   await owner.locator('input[name="firstDay"]').fill('20');
-  await owner.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(owner);
 
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await owner.getByPlaceholder('Search catalog to add').fill('Spinach');

@@ -1,6 +1,15 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { signedInPage } from './session';
 
-export async function register(page: Page, email: string) {
+export { signedInContext, signedInPage, uniqueEmail } from './session';
+
+/** API register + cookie. Does not open `/login`. */
+export async function newUser(browser: Parameters<typeof signedInPage>[0], email: string) {
+  return signedInPage(browser, email);
+}
+
+/** Walk the registration screen. Auth-screen checks only. */
+export async function registerViaUi(page: Page, email: string) {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Need an account?' }).click();
   await page.getByPlaceholder('Email').fill(email);
@@ -9,18 +18,22 @@ export async function register(page: Page, email: string) {
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
 }
 
-export async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
-
 export async function saveLayout(page: Page) {
   const pending = page.waitForResponse(
     (res) => res.url().includes('/layout') && res.request().method() === 'PUT',
   );
   await page.getByRole('button', { name: 'Save layout' }).click();
   return pending;
+}
+
+/** Wait for the garden PATCH to finish before navigating away. */
+export async function saveGarden(page: Page) {
+  const pending = page.waitForResponse((res) => {
+    const path = new URL(res.url()).pathname;
+    return res.request().method() === 'PATCH' && /\/api\/gardens\/[^/]+$/.test(path);
+  });
+  await page.getByRole('button', { name: 'Save garden' }).click();
+  expect((await pending).ok()).toBeTruthy();
 }
 
 export async function addFromCatalog(page: Page, name: string) {

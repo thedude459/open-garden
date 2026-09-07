@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { register } from './planner-helpers';
+import { signedInPage } from './session';
 
 test('login shows busy then lands on catalog without leftover notice', async ({ page }) => {
   await page.route('**/api/auth/login', async (route) => {
@@ -16,8 +16,8 @@ test('login shows busy then lands on catalog without leftover notice', async ({ 
   await expect(page.getByLabel('Notification')).toHaveCount(0);
 });
 
-test('Create garden busy + success notice; double click is one garden', async ({ page }) => {
-  await register(page, `ui-create-${Date.now()}@example.com`);
+test('Create garden busy + success notice; double click is one garden', async ({ browser }) => {
+  const page = await signedInPage(browser, `ui-create-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Only One');
   const create = page.getByRole('button', { name: 'Create garden' });
@@ -26,11 +26,9 @@ test('Create garden busy + success notice; double click is one garden', async ({
   await expect(page.getByLabel('Notification')).toContainText('Garden created');
 });
 
-test('catalog search busy and favorite success notice', async ({ page }) => {
-  await page.goto('/login');
-  await page.getByPlaceholder('Email').fill('gardener@example.com');
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Login' }).click();
+test('catalog search busy and favorite success notice', async ({ browser }) => {
+  const page = await signedInPage(browser, `ui-fav-${Date.now()}@example.com`);
+  await page.goto('/plants');
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
   await page.getByPlaceholder('Search name / species / variety').fill('Tomato');
   const apply = page.getByRole('button', { name: 'Apply' });

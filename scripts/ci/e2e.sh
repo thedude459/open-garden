@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CI `e2e` job: Postgres + seed + API + web + Playwright Chromium.
+# CI `e2e` job: Postgres + seed + API + production web + live api-e2e HTTP + Playwright Chromium.
 # GitHub Actions supplies Postgres as a service; locally this script starts
 # docker compose `postgres` when port 5432 is not already accepting connections.
 set -euo pipefail
@@ -131,7 +131,9 @@ wait_for_services() {
   exit 1
 }
 
-ensure_docker
+if ! port_open 5432; then
+  ensure_docker
+fi
 ensure_postgres
 
 if [[ "$(uname -s)" == "Linux" ]]; then
@@ -145,8 +147,19 @@ npx nx run api:sync-plants
 PORT=3000 npx tsx apps/api/src/main.ts &
 API_PID=$!
 
-PORT=4200 npx nx serve web --host=0.0.0.0 --port=4200 &
+PORT=4200 npx nx serve web --configuration=production --host=0.0.0.0 --port=4200 &
 WEB_PID=$!
 
 wait_for_services
-npx nx e2e web-e2e
+LIVE_STATUS=0
+PW_STATUS=0
+E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache &
+LIVE_PID=$!
+npx nx e2e web-e2e &
+PW_PID=$!
+wait "${LIVE_PID}" || LIVE_STATUS=$?
+wait "${PW_PID}" || PW_STATUS=$?
+if [[ "${LIVE_STATUS}" -ne 0 || "${PW_STATUS}" -ne 0 ]]; then
+  echo "e2e failed (live HTTP=${LIVE_STATUS} playwright=${PW_STATUS})"
+  exit 1
+fi

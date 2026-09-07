@@ -1,22 +1,12 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { signedInPage as newUser } from './session';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
-test('cached garden list and detail stay readable when the API is unreachable', async ({ page }) => {
-  await register(page, `off-${Date.now()}@example.com`);
+test('cached garden list and detail stay readable when the API is unreachable', async ({
+  browser,
+}) => {
+  const page = await newUser(browser, `off-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Cached bed');
   await page.getByRole('button', { name: 'Create garden' }).click();

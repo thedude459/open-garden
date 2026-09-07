@@ -1,19 +1,8 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { signedInPage as newUser } from './session';
+import { saveGarden } from './planner-helpers';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
@@ -25,7 +14,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.locator('input[name="lastDay"]').fill('15');
   await page.locator('select[name="firstMonth"]').selectOption('10');
   await page.locator('input[name="firstDay"]').fill('20');
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(page);
   await page.getByRole('link', { name: 'Calendar' }).click();
 }
 
@@ -36,8 +25,8 @@ async function addFromCatalog(page: Page, name: string) {
   await expect(page.locator('article').filter({ hasText: name })).toBeVisible();
 }
 
-test('cached calendar stays readable when calendar API is aborted', async ({ page }) => {
-  await register(page, `cal-off-${Date.now()}@example.com`);
+test('cached calendar stays readable when calendar API is aborted', async ({ browser }) => {
+  const page = await newUser(browser, `cal-off-${Date.now()}@example.com`);
   await createFrostGarden(page, 'Cached calendar');
   await addFromCatalog(page, 'Cherry Tomato');
   await expect(page.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
@@ -55,15 +44,15 @@ test('cached calendar stays readable when calendar API is aborted', async ({ pag
 
   await page.getByRole('link', { name: 'Back to garden' }).click();
   await page.locator('input[name="lastDay"]').fill('29');
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(page);
   await page.unroute('**/api/gardens/**/calendar**');
   await page.getByRole('link', { name: 'Calendar' }).click();
   await expect(page.getByText(/Indoor Mar 4 – Mar 18/)).toBeVisible();
 });
 
-test('this-week emphasis follows view-time date on a cached calendar', async ({ page }) => {
+test('this-week emphasis follows view-time date on a cached calendar', async ({ browser }) => {
+  const page = await newUser(browser, `cal-clock-${Date.now()}@example.com`);
   await page.clock.install({ time: new Date('2026-02-20T15:00:00') });
-  await register(page, `cal-clock-${Date.now()}@example.com`);
   await createFrostGarden(page, 'Clock bed');
   await addFromCatalog(page, 'Cherry Tomato');
   await expect(page.locator('article').filter({ hasText: 'Cherry Tomato' }).getByText('This week')).toBeVisible();

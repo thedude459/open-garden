@@ -8,6 +8,7 @@
   "targets": {
     "test": {
       "executor": "nx:run-commands",
+      "inputs": ["default", { "env": "E2E_LIVE" }, { "env": "DATABASE_URL" }],
       "options": {
         "command": "vitest run apps/api-e2e --passWithNoTests --config vitest.config.ts",
         "cwd": "{workspaceRoot}"

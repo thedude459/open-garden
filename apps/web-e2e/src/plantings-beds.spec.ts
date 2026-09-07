@@ -1,19 +1,7 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { signedInPage as newUser } from './session';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');

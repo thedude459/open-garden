@@ -1,5 +1,7 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import { describe, expect, test } from 'vitest';
+import { liveEnabled, LiveClient } from './live-http';
 
+describe.skipIf(!liveEnabled)('calendar http', () => {
 type CalendarDto = {
   gardenId: string;
   myRole: string;
@@ -25,7 +27,7 @@ type CalendarDto = {
 
 type GardenDetail = { id: string };
 
-async function register(request: APIRequestContext, email: string) {
+async function register(request: LiveClient, email: string) {
   const res = await request.post('/api/auth/register', {
     data: { email, password: 'password123' },
   });
@@ -33,7 +35,7 @@ async function register(request: APIRequestContext, email: string) {
   return ((await res.json()) as { user: { id: string; email: string } }).user;
 }
 
-async function createGarden(request: APIRequestContext, name: string, frost?: {
+async function createGarden(request: LiveClient, name: string, frost?: {
   lastDay: number;
 }) {
   const created = await request.post('/api/gardens', { data: { name } });
@@ -50,7 +52,7 @@ async function createGarden(request: APIRequestContext, name: string, frost?: {
   return garden;
 }
 
-async function findPlant(request: APIRequestContext, name: string) {
+async function findPlant(request: LiveClient, name: string) {
   const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
   expect(res.ok()).toBeTruthy();
   const body = (await res.json()) as { items: Array<{ id: string; commonName: string }> };
@@ -73,17 +75,16 @@ function errorMessage(body: unknown): string | undefined {
   return undefined;
 }
 
-test('unauthenticated calendar routes return 401', async ({ request }) => {
+test('unauthenticated calendar routes return 401', async () => {
+  const request = new LiveClient();
   const get = await request.get('/api/gardens/11111111-1111-4111-8111-111111111111/calendar');
   expect(get.status()).toBe(401);
 });
 
-test('non-member GET is 404 and incomplete frost sets windowsAvailable false', async ({
-  playwright,
-}) => {
+test('non-member GET is 404 and incomplete frost sets windowsAvailable false', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const stranger = new LiveClient();
   try {
     await register(owner, `cal-api-owner-${stamp}@example.com`);
     await register(stranger, `cal-api-stranger-${stamp}@example.com`);
@@ -108,8 +109,8 @@ test('non-member GET is 404 and incomplete frost sets windowsAvailable false', a
   }
 });
 
-test('SC-003 same plant on two gardens with different last frost', async ({ playwright }) => {
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+test('SC-003 same plant on two gardens with different last frost', async () => {
+  const owner = new LiveClient();
   try {
     await register(owner, `cal-sc003-${Date.now()}@example.com`);
     const early = await createGarden(owner, 'Early frost', { lastDay: 1 });
@@ -129,13 +130,11 @@ test('SC-003 same plant on two gardens with different last frost', async ({ play
   }
 });
 
-test('POST 201 then 200, DELETE 204 twice, viewer 403, stranger 404, unknown plant 404', async ({
-  playwright,
-}) => {
+test('POST 201 then 200, DELETE 204 twice, viewer 403, stranger 404, unknown plant 404', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const friend = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const friend = new LiveClient();
+  const stranger = new LiveClient();
   try {
     await register(owner, `cal-mut-owner-${stamp}@example.com`);
     const friendUser = await register(friend, `cal-mut-friend-${stamp}@example.com`);
@@ -188,4 +187,6 @@ test('POST 201 then 200, DELETE 204 twice, viewer 403, stranger 404, unknown pla
     await friend.dispose();
     await stranger.dispose();
   }
+});
+
 });

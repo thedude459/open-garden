@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { waitForPipelineIdleOnPage } from './pipeline-helpers';
+import { signedInPage } from './session';
 
-async function login(page: import('@playwright/test').Page, email: string) {
+async function loginAdmin(page: import('@playwright/test').Page) {
   await page.goto('/login');
-  await page.getByPlaceholder('Email').fill(email);
+  await page.getByPlaceholder('Email').fill('admin@example.com');
   await page.getByPlaceholder('Password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
 }
 
 test('admin can start a run and round-trip cadence settings', async ({ page }) => {
-  await login(page, 'admin@example.com');
+  await loginAdmin(page);
   const pipelineNav = page.locator('nav').getByRole('link', { name: 'Pipeline', exact: true });
   await expect(pipelineNav).toBeVisible();
   await pipelineNav.click();
@@ -31,8 +32,10 @@ test('admin can start a run and round-trip cadence settings', async ({ page }) =
   await page.getByRole('button', { name: 'Save settings' }).click();
 });
 
-test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ page }) => {
-  await login(page, 'gardener@example.com');
+test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ browser }) => {
+  const page = await signedInPage(browser, `pipe-gardener-${Date.now()}@example.com`);
+  await page.goto('/plants');
+  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
   await expect(page.locator('nav').getByRole('link', { name: 'Pipeline', exact: true })).toHaveCount(
     0,
   );
