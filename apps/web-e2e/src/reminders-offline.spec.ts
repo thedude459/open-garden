@@ -1,19 +1,7 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { signedInPage as newUser } from './session';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
 async function abortReminders(page: Page) {
   await page.route('**/api/gardens/**/reminders**', (route) => route.abort());
@@ -77,8 +65,10 @@ test('offline cache readable; pending complete syncs for another member', async 
   await owner.getByRole('link', { name: 'Back to garden' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-off-friend-${stamp}@example.com`);
   await owner.getByRole('button', { name: 'Invite' }).click();
+  await expect(owner.getByText(`rem-off-friend-${stamp}@example.com`)).toBeVisible();
 
   await friend.goto('/gardens');
+  await expect(friend.getByRole('link', { name: /Offline reminders/ })).toBeVisible();
   await friend.getByRole('link', { name: /Offline reminders/ }).click();
   await friend.getByRole('link', { name: 'Reminders' }).click();
   await expect(friend.getByText('Harvest')).toHaveCount(0);
@@ -95,11 +85,13 @@ test('viewer offline reads cache; membership loss drops cache', async ({ browser
   await owner.locator('input[name="inviteEmail"]').fill(`rem-off2-collab-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
   await owner.getByRole('button', { name: 'Invite' }).click();
+  await expect(owner.getByText(`rem-off2-collab-${stamp}@example.com`)).toBeVisible();
 
   await collab.goto('/gardens');
   await collab.getByRole('link', { name: /Membership loss/ }).click();
   await collab.getByRole('link', { name: 'Reminders' }).click();
   await expect(collab.getByText('Harvest')).toBeVisible();
+  const remindersUrl = collab.url();
 
   await abortReminders(collab);
   await collab.reload({ waitUntil: 'domcontentloaded' });
@@ -109,7 +101,8 @@ test('viewer offline reads cache; membership loss drops cache', async ({ browser
   await owner.goto('/gardens');
   await owner.getByRole('link', { name: /Membership loss/ }).click();
   await owner.getByRole('button', { name: 'Remove' }).click();
+  await expect(owner.getByText(`rem-off2-collab-${stamp}@example.com`)).toHaveCount(0);
   await restoreReminders(collab);
-  await collab.reload({ waitUntil: 'domcontentloaded' });
-  await expect(collab.getByText(/Garden unavailable|not found/i)).toBeVisible();
+  await collab.goto(remindersUrl);
+  await expect(collab.getByText(/Garden unavailable or not found/i)).toBeVisible();
 });

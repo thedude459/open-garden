@@ -1,19 +1,8 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { signedInPage as newUser } from './session';
+import { saveGarden } from './planner-helpers';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
 test('invite collaborator, demote to viewer, member list visible', async ({ browser }) => {
   const stamp = Date.now();
@@ -38,12 +27,13 @@ test('invite collaborator, demote to viewer, member list visible', async ({ brow
   await friend.getByRole('link', { name: /Shared yard/ }).click();
   await expect(friend.getByText(/You are collaborator/i)).toBeVisible();
   await friend.locator('textarea[name="notes"]').fill('Collaborator notes');
-  await friend.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(friend);
   await expect(friend.locator('textarea[name="notes"]')).toHaveValue('Collaborator notes');
   await expect(friend.getByPlaceholder('Member email')).toHaveCount(0);
   await expect(friend.getByRole('button', { name: 'Delete garden' })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Make viewer' }).click();
+  await expect(owner.getByLabel('Notification')).toContainText('Role updated');
   await friend.reload();
   await expect(friend.getByText(/You are viewer/i)).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Save garden' })).toHaveCount(0);
@@ -105,6 +95,7 @@ test('owner can transfer, collaborator can leave, owner can remove', async ({ br
   await expect(owner.locator('li.row', { hasText: extraEmail })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Transfer ownership' }).click();
+  await expect(owner.getByLabel('Notification')).toContainText('Ownership transferred');
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Transfer plot/ }).click();
   await expect(friend.getByText(/You are owner/i)).toBeVisible();

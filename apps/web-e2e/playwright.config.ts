@@ -4,25 +4,19 @@ export default defineConfig({
   testDir: './src',
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
-  retries: process.env['CI'] ? 1 : 0,
+  retries: 0,
+  timeout: 90_000,
   workers: process.env['CI'] ? 2 : undefined,
   use: {
     baseURL: 'http://localhost:4200',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    serviceWorkers: 'block',
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: /pipeline-/,
-    },
-    {
-      name: 'pipeline',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: /pipeline-.*\.spec\.ts/,
-      dependencies: ['chromium'],
-      fullyParallel: false,
-      workers: 1,
     },
   ],
 });

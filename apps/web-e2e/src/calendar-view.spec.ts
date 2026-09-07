@@ -1,19 +1,8 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { signedInPage as newUser } from './session';
+import { saveGarden } from './planner-helpers';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
@@ -25,7 +14,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.locator('input[name="lastDay"]').fill('15');
   await page.locator('select[name="firstMonth"]').selectOption('10');
   await page.locator('input[name="firstDay"]').fill('20');
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(page);
   await page.getByRole('link', { name: 'Calendar' }).click();
   await expect(page.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
 }
@@ -58,7 +47,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await owner.getByRole('link', { name: 'Back to garden' }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');
   await owner.locator('input[name="lastDay"]').fill('29');
-  await owner.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByText(/Indoor Mar 4 – Mar 18/)).toBeVisible();
   await expect(owner.getByText(/Sow Aug 25 – Sep 8/)).toBeVisible();
@@ -68,7 +57,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await owner.locator('input[name="lastDay"]').fill('15');
   await owner.locator('select[name="firstMonth"]').selectOption('11');
   await owner.locator('input[name="firstDay"]').fill('3');
-  await owner.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
   await expect(owner.getByText(/Sow Sep 8 – Sep 22/)).toBeVisible();
@@ -88,15 +77,15 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
 
   await owner.locator('select[name="firstMonth"]').selectOption({ label: 'Month' });
   await owner.locator('input[name="firstDay"]').fill('');
-  await owner.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByText(/Windows cannot be produced/)).toBeVisible();
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
 });
 
-test('this-week emphasis uses start windows only', async ({ page }) => {
+test('this-week emphasis uses start windows only', async ({ browser }) => {
+  const page = await newUser(browser, `cal-week-${Date.now()}@example.com`);
   await page.clock.install({ time: new Date('2026-04-15T15:00:00') });
-  await register(page, `cal-week-${Date.now()}@example.com`);
   await createFrostGarden(page, 'Week bed');
   await addFromCatalog(page, 'French Marigold');
   await addFromCatalog(page, 'Cherry Tomato');

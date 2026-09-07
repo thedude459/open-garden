@@ -1,5 +1,8 @@
-import { expect, test, type APIRequestContext, type APIResponse } from '@playwright/test';
+import { describe, expect, test } from 'vitest';
 import { Client } from 'pg';
+import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
+
+describe.skipIf(!liveEnabled)('layout http', () => {
 
 type LayoutDto = {
   gardenId: string;
@@ -33,7 +36,7 @@ type PlantingList = {
 type GardenDetail = { id: string };
 type NamedBed = { id: string; name: string };
 
-async function register(request: APIRequestContext, email: string) {
+async function register(request: LiveClient, email: string) {
   const res = await request.post('/api/auth/register', {
     data: { email, password: 'password123' },
   });
@@ -41,7 +44,7 @@ async function register(request: APIRequestContext, email: string) {
   return ((await res.json()) as { user: { id: string; email: string } }).user;
 }
 
-async function findPlant(request: APIRequestContext, name: string) {
+async function findPlant(request: LiveClient, name: string) {
   const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
   expect(res.ok()).toBeTruthy();
   const body = (await res.json()) as {
@@ -95,7 +98,7 @@ async function findOrSeedUnknownHerb(): Promise<{
   }
 }
 
-async function addPlanting(request: APIRequestContext, gardenId: string, plantId: string) {
+async function addPlanting(request: LiveClient, gardenId: string, plantId: string) {
   const res = await request.post(`/api/gardens/${gardenId}/plantings`, {
     data: { id: crypto.randomUUID(), plantId },
   });
@@ -104,7 +107,7 @@ async function addPlanting(request: APIRequestContext, gardenId: string, plantId
   return list.plantings[0]!;
 }
 
-async function addBed(request: APIRequestContext, gardenId: string, name: string) {
+async function addBed(request: LiveClient, gardenId: string, name: string) {
   const res = await request.post(`/api/gardens/${gardenId}/beds`, {
     data: { id: crypto.randomUUID(), name, lengthInches: 96, widthInches: 48 },
   });
@@ -126,7 +129,7 @@ function errorMessage(body: unknown): string | undefined {
   return undefined;
 }
 
-async function json(res: APIResponse) {
+async function json(res: LiveResponse) {
   return res.json() as Promise<unknown>;
 }
 
@@ -151,7 +154,8 @@ function bedPut(
   };
 }
 
-test('unauthenticated layout routes return 401', async ({ request }) => {
+test('unauthenticated layout routes return 401', async () => {
+  const request = new LiveClient();
   const id = '11111111-1111-4111-8111-111111111111';
   const get = await request.get(`/api/gardens/${id}/layout`);
   expect(get.status()).toBe(401);
@@ -161,13 +165,11 @@ test('unauthenticated layout routes return 401', async ({ request }) => {
   expect(put.status()).toBe(401);
 });
 
-test('layout HTTP: isolation, beds, 422 spacing/fit, placements, last-write-wins', async ({
-  playwright,
-}) => {
+test('layout HTTP: isolation, beds, 422 spacing/fit, placements, last-write-wins', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const friend = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const friend = new LiveClient();
+  const stranger = new LiveClient();
   try {
     await register(owner, `layout-api-owner-${stamp}@example.com`);
     const friendUser = await register(friend, `layout-api-friend-${stamp}@example.com`);
@@ -328,11 +330,11 @@ test('layout HTTP: isolation, beds, 422 spacing/fit, placements, last-write-wins
   }
 });
 
-test('area DELETE 401/403/404 and PUT empty/duplicate area names', async ({ playwright }) => {
+test('area DELETE 401/403/404 and PUT empty/duplicate area names', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const friend = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const anon = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const friend = new LiveClient();
+  const anon = new LiveClient();
   try {
     await register(owner, `layout-area-owner-${stamp}@example.com`);
     const friendUser = await register(friend, `layout-area-friend-${stamp}@example.com`);
@@ -374,7 +376,7 @@ test('area DELETE 401/403/404 and PUT empty/duplicate area names', async ({ play
     const anonDel = await anon.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
     expect(anonDel.status()).toBe(401);
 
-    const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+    const stranger = new LiveClient();
     await register(stranger, `layout-area-stranger-${stamp}@example.com`);
     const strangerDel = await stranger.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
     expect(strangerDel.status()).toBe(404);
@@ -393,4 +395,6 @@ test('area DELETE 401/403/404 and PUT empty/duplicate area names', async ({ play
     await friend.dispose();
     await anon.dispose();
   }
+});
+
 });

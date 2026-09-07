@@ -1,5 +1,7 @@
-import { expect, test, type APIRequestContext, type APIResponse } from '@playwright/test';
+import { describe, expect, test } from 'vitest';
+import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
 
+describe.skipIf(!liveEnabled)('reminders http', () => {
 type ReminderList = {
   gardenId: string;
   myRole: string;
@@ -19,7 +21,7 @@ type PlantingList = {
 
 type GardenDetail = { id: string };
 
-async function register(request: APIRequestContext, email: string) {
+async function register(request: LiveClient, email: string) {
   const res = await request.post('/api/auth/register', {
     data: { email, password: 'password123' },
   });
@@ -27,7 +29,7 @@ async function register(request: APIRequestContext, email: string) {
   return ((await res.json()) as { user: { id: string; email: string } }).user;
 }
 
-async function findPlant(request: APIRequestContext, name: string) {
+async function findPlant(request: LiveClient, name: string) {
   const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
   expect(res.ok()).toBeTruthy();
   const body = (await res.json()) as { items: Array<{ id: string; commonName: string }> };
@@ -43,7 +45,7 @@ function errorMessage(body: unknown): string | undefined {
   return undefined;
 }
 
-async function json(res: APIResponse) {
+async function json(res: LiveResponse) {
   return res.json() as Promise<unknown>;
 }
 
@@ -56,7 +58,7 @@ function todayIso() {
 }
 
 async function addPlanting(
-  request: APIRequestContext,
+  request: LiveClient,
   gardenId: string,
   plantId: string,
   plantedOn?: string,
@@ -76,19 +78,18 @@ async function addPlanting(
   return planting.id;
 }
 
-test('unauthenticated reminder routes return 401', async ({ request }) => {
+test('unauthenticated reminder routes return 401', async () => {
+  const request = new LiveClient();
   const id = '11111111-1111-4111-8111-111111111111';
   const get = await request.get(`/api/gardens/${id}/reminders?asOf=2026-08-17`);
   expect(get.status()).toBe(401);
 });
 
-test('care reminders HTTP: authz, asOf, harvest, intervals, complete/dismiss', async ({
-  playwright,
-}) => {
+test('care reminders HTTP: authz, asOf, harvest, intervals, complete/dismiss', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const viewer = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const viewer = new LiveClient();
+  const stranger = new LiveClient();
   try {
     await register(owner, `rem-api-owner-${stamp}@example.com`);
     const viewerUser = await register(viewer, `rem-api-viewer-${stamp}@example.com`);
@@ -179,4 +180,6 @@ test('care reminders HTTP: authz, asOf, harvest, intervals, complete/dismiss', a
     await viewer.dispose();
     await stranger.dispose();
   }
+});
+
 });

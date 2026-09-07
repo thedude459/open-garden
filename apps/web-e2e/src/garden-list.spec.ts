@@ -1,17 +1,12 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { signedInPage } from './session';
+import { saveGarden } from './planner-helpers';
 
-async function register(page: Page, email: string, password = 'password123') {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill(password);
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
-
-test('empty state, create, list, detail, rename, cancel vs confirm delete', async ({ page }) => {
+test('empty state, create, list, detail, rename, cancel vs confirm delete', async ({
+  browser,
+}) => {
   const email = `owner-${Date.now()}@example.com`;
-  await register(page, email);
+  const page = await signedInPage(browser, email);
   await page.goto('/gardens');
   await expect(page.getByText(/No gardens yet/i)).toBeVisible();
   await page.getByPlaceholder('Garden name').fill('Backyard');
@@ -21,7 +16,7 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   await page.getByRole('link', { name: /Backyard/ }).click();
   await expect(page.getByText(/You are owner/i)).toBeVisible();
   await page.locator('input[name="name"]').fill('Front yard');
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(page);
   await expect(page.getByRole('heading', { name: 'Front yard' })).toBeVisible();
   await page.getByRole('button', { name: 'Delete garden' }).click();
   await page.getByRole('button', { name: 'Cancel' }).click();
@@ -34,8 +29,8 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   await expect(page.getByRole('link', { name: /Front yard/ })).toBeVisible();
 });
 
-test('list shows every membership past the first page of 20', async ({ page }) => {
-  await register(page, `paged-${Date.now()}@example.com`);
+test('list shows every membership past the first page of 20', async ({ browser }) => {
+  const page = await signedInPage(browser, `paged-${Date.now()}@example.com`);
   for (let i = 0; i < 21; i++) {
     const res = await page.request.post('/api/gardens', {
       data: { name: `Paged garden ${String(i).padStart(2, '0')}` },
@@ -48,15 +43,13 @@ test('list shows every membership past the first page of 20', async ({ page }) =
 });
 
 test('stranger cannot see another user’s garden', async ({ browser }) => {
-  const ownerPage = await (await browser.newContext()).newPage();
-  const strangerPage = await (await browser.newContext()).newPage();
   const stamp = Date.now();
-  await register(ownerPage, `iso-owner-${stamp}@example.com`);
+  const ownerPage = await signedInPage(browser, `iso-owner-${stamp}@example.com`);
+  const strangerPage = await signedInPage(browser, `iso-stranger-${stamp}@example.com`);
   await ownerPage.goto('/gardens');
   await ownerPage.getByPlaceholder('Garden name').fill('Secret plot');
   await ownerPage.getByRole('button', { name: 'Create garden' }).click();
   await expect(ownerPage.getByRole('link', { name: /Secret plot/ })).toBeVisible();
-  await register(strangerPage, `iso-stranger-${stamp}@example.com`);
   await strangerPage.goto('/gardens');
   await expect(strangerPage.getByText(/No gardens yet/i)).toBeVisible();
   await expect(strangerPage.getByRole('link', { name: /Secret plot/ })).toHaveCount(0);

@@ -1,5 +1,7 @@
-import { expect, test, type APIRequestContext, type APIResponse } from '@playwright/test';
+import { describe, expect, test } from 'vitest';
+import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
 
+describe.skipIf(!liveEnabled)('garden http', () => {
 type GardenDetail = {
   id: string;
   name: string;
@@ -12,7 +14,7 @@ type GardenDetail = {
   members: { userId: string; email: string; role: string }[];
 };
 
-async function register(request: APIRequestContext, email: string) {
+async function register(request: LiveClient, email: string) {
   const res = await request.post('/api/auth/register', {
     data: { email, password: 'password123' },
   });
@@ -21,7 +23,7 @@ async function register(request: APIRequestContext, email: string) {
   return body.user;
 }
 
-function errorCode(res: APIResponse, body: unknown): string | undefined {
+function errorCode(res: LiveResponse, body: unknown): string | undefined {
   if (body && typeof body === 'object' && 'error' in body) {
     const err = (body as { error?: { code?: string } }).error;
     return err?.code;
@@ -29,17 +31,18 @@ function errorCode(res: APIResponse, body: unknown): string | undefined {
   return undefined;
 }
 
-test('unauthenticated garden routes return 401', async ({ request }) => {
+test('unauthenticated garden routes return 401', async () => {
+  const request = new LiveClient();
   const list = await request.get('/api/gardens');
   expect(list.status()).toBe(401);
   const create = await request.post('/api/gardens', { data: { name: 'Nope' } });
   expect(create.status()).toBe(401);
 });
 
-test('CRUD isolation, duplicate name, last-write-wins, and delete', async ({ playwright }) => {
+test('CRUD isolation, duplicate name, last-write-wins, and delete', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const stranger = new LiveClient();
   try {
     await register(owner, `api-owner-${stamp}@example.com`);
     await register(stranger, `api-stranger-${stamp}@example.com`);
@@ -84,10 +87,8 @@ test('CRUD isolation, duplicate name, last-write-wins, and delete', async ({ pla
   }
 });
 
-test('site profile PATCH persists, clears one frost, and rejects invalid pairs', async ({
-  playwright,
-}) => {
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+test('site profile PATCH persists, clears one frost, and rejects invalid pairs', async () => {
+  const owner = new LiveClient();
   try {
     await register(owner, `api-site-${Date.now()}@example.com`);
     const created = await owner.post('/api/gardens', { data: { name: 'Site bed' } });
@@ -131,11 +132,11 @@ test('site profile PATCH persists, clears one frost, and rejects invalid pairs',
   }
 });
 
-test('membership invite, list visibility, transfer, and leave over HTTP', async ({ playwright }) => {
+test('membership invite, list visibility, transfer, and leave over HTTP', async () => {
   const stamp = Date.now();
-  const owner = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const friend = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
-  const stranger = await playwright.request.newContext({ baseURL: 'http://localhost:4200' });
+  const owner = new LiveClient();
+  const friend = new LiveClient();
+  const stranger = new LiveClient();
   try {
     const ownerUser = await register(owner, `api-mem-owner-${stamp}@example.com`);
     const friendUser = await register(friend, `api-mem-friend-${stamp}@example.com`);
@@ -215,4 +216,6 @@ test('membership invite, list visibility, transfer, and leave over HTTP', async 
     await friend.dispose();
     await stranger.dispose();
   }
+});
+
 });

@@ -1,21 +1,12 @@
-import { test, expect, type Page } from '@playwright/test';
-
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
+import { test, expect } from '@playwright/test';
+import { signedInPage } from './session';
 
 test('sharing a garden does not share favorites; catalog stays available', async ({ browser }) => {
   const stamp = Date.now();
-  const owner = await (await browser.newContext()).newPage();
-  const friend = await (await browser.newContext()).newPage();
-  await register(owner, `fav-owner-${stamp}@example.com`);
-  await register(friend, `fav-friend-${stamp}@example.com`);
+  const owner = await signedInPage(browser, `fav-owner-${stamp}@example.com`);
+  const friend = await signedInPage(browser, `fav-friend-${stamp}@example.com`);
 
+  await owner.goto('/plants');
   await expect(owner.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first()).toBeVisible({
     timeout: 15_000,
   });

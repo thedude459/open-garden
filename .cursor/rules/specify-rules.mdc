@@ -5,5 +5,5 @@ alwaysApply: true
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/011-load-performance/plan.md (Load Performance feature).
+at specs/012-e2e-test-streamline/plan.md (Streamline End-to-End Tests feature).
 <!-- SPECKIT END -->

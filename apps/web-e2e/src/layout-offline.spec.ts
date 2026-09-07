@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant, createSizedBed, newUser, openOverview, register, saveLayout } from './planner-helpers';
+import { addTransplant, createSizedBed, newUser, openOverview, saveLayout } from './planner-helpers';
 
-test('cached layout stays readable when layout API is aborted', async ({ page }) => {
+test('cached layout stays readable when layout API is aborted', async ({ browser }) => {
   test.setTimeout(90_000);
-  await register(page, `layout-off-${Date.now()}@example.com`);
+  const page = await newUser(browser, `layout-off-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Cached layout');
   await page.getByRole('button', { name: 'Create garden' }).click();
@@ -72,9 +72,9 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
 });
 
-test('422 PUT does not overwrite the last valid layout cache', async ({ page }) => {
+test('422 PUT does not overwrite the last valid layout cache', async ({ browser }) => {
   test.setTimeout(90_000);
-  await register(page, `layout-422-${Date.now()}@example.com`);
+  const page = await newUser(browser, `layout-422-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Gate cache');
   await page.getByRole('button', { name: 'Create garden' }).click();
@@ -137,9 +137,9 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ page }) 
   await expect(page.getByText('Too close')).toHaveCount(0);
 });
 
-test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ page }) => {
+test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browser }) => {
   test.setTimeout(90_000);
-  await register(page, `layout-off-mutate-${Date.now()}@example.com`);
+  const page = await newUser(browser, `layout-off-mutate-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Offline mutate');
   await page.getByRole('button', { name: 'Create garden' }).click();

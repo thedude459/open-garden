@@ -10,16 +10,17 @@ export async function waitForPipelineIdle(
   request: APIRequestContext,
   timeoutMs = 30_000,
 ): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const res = await request.get('/api/admin/pipeline/runs?page=1&pageSize=5');
-    if (res.ok()) {
-      const body = (await json(res)) as RunList;
-      if (!body.items.some((item) => item.status === 'running')) return;
-    }
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  throw new Error('timed out waiting for pipeline idle');
+  await expect
+    .poll(
+      async () => {
+        const res = await request.get('/api/admin/pipeline/runs?page=1&pageSize=5');
+        if (!res.ok()) return false;
+        const body = (await json(res)) as RunList;
+        return !body.items.some((item) => item.status === 'running');
+      },
+      { timeout: timeoutMs },
+    )
+    .toBe(true);
 }
 
 export async function startPipelineRun(request: APIRequestContext): Promise<APIResponse> {

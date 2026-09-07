@@ -1,19 +1,8 @@
-import { test, expect, type Browser, type Page } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+import { signedInPage as newUser } from './session';
+import { saveGarden } from './planner-helpers';
 
-async function register(page: Page, email: string) {
-  await page.goto('/login');
-  await page.getByRole('button', { name: 'Need an account?' }).click();
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill('password123');
-  await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-}
 
-async function newUser(browser: Browser, email: string) {
-  const page = await (await browser.newContext()).newPage();
-  await register(page, email);
-  return page;
-}
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
@@ -25,7 +14,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.locator('input[name="lastDay"]').fill('15');
   await page.locator('select[name="firstMonth"]').selectOption('10');
   await page.locator('input[name="firstDay"]').fill('20');
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await saveGarden(page);
   await page.getByRole('link', { name: 'Calendar' }).click();
 }
 
@@ -39,6 +28,7 @@ async function addFromCatalog(page: Page, name: string) {
 test('add from favorites and catalog, filter, remove, zone mismatch, no duplicates', async ({
   browser,
 }) => {
+  test.setTimeout(90_000);
   const stamp = Date.now();
   const ownerEmail = `cal-plants-owner-${stamp}@example.com`;
   const friendEmail = `cal-plants-friend-${stamp}@example.com`;
@@ -89,8 +79,10 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
+  await expect(owner.getByText(friendEmail)).toBeVisible();
 
   await friend.goto('/gardens');
+  await expect(friend.getByRole('link', { name: /Picker bed/ })).toBeVisible();
   await friend.getByRole('link', { name: /Picker bed/ }).click();
   await friend.getByRole('link', { name: 'Calendar' }).click();
   await expect(friend.getByText('Sweet Basil')).toBeVisible();

@@ -5,6 +5,7 @@ import {
   inviteViewer,
   newUser,
   openOverview,
+  saveGarden,
   saveLayout,
 } from './planner-helpers';
 
@@ -21,8 +22,7 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Catalog bed/ }).click();
   await owner.locator('select[name="zone"]').selectOption({ label: 'Zone 6' });
-  await owner.getByRole('button', { name: 'Save garden' }).click();
-  await expect(owner.getByLabel('Notification')).toContainText('Garden saved');
+  await saveGarden(owner);
   await openOverview(owner);
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);

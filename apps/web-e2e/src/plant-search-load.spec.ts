@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { register } from './planner-helpers';
+import { signedInPage } from './session';
 
-test('plant search shows stand-ins within 2s without per-result plant GETs', async ({ page }) => {
-  await register(page, `search-load-${Date.now()}@example.com`);
+test('plant search shows stand-ins within 2s without per-result plant GETs', async ({ browser }) => {
+  const page = await signedInPage(browser, `search-load-${Date.now()}@example.com`);
   const extra: string[] = [];
   page.on('request', (req) => {
     if (req.method() !== 'GET') return;

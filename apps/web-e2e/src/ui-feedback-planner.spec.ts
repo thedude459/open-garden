@@ -4,23 +4,26 @@ import {
   createSizedBed,
   newUser,
   openOverview,
-  register,
   saveLayout,
 } from './planner-helpers';
 
 test('Save layout busy + success notice; offline Save persists until Dismiss', async ({
-  page,
+  browser,
 }) => {
   test.setTimeout(90_000);
-  await page.goto('/login');
-  const email = `ui-save-${Date.now()}@example.com`;
-  await register(page, email);
+  const page = await newUser(browser, `ui-save-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Notice garden');
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Notice garden/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'North');
+  await page.route('**/api/gardens/**/layout**', async (route) => {
+    if (route.request().method() === 'PUT') {
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    await route.continue();
+  });
   const save = page.getByRole('button', { name: 'Save layout' });
   const pending = page.waitForResponse(
     (res) => res.url().includes('/layout') && res.request().method() === 'PUT',

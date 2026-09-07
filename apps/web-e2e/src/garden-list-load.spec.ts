@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { register } from './planner-helpers';
+import { signedInPage } from './session';
 
-test('20-garden list shows counts within 2s without per-row data GETs', async ({ page }) => {
-  await register(page, `list-load-${Date.now()}@example.com`);
+test('20-garden list shows counts within 2s without per-row data GETs', async ({ browser }) => {
+  const page = await signedInPage(browser, `list-load-${Date.now()}@example.com`);
   for (let i = 0; i < 20; i++) {
     const res = await page.request.post('/api/gardens', {
       data: { name: `Load garden ${String(i).padStart(2, '0')}` },
