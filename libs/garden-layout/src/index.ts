@@ -4,7 +4,7 @@ export { planToLocal } from './lib/plan-coords';
 export { plantingFootprintRadius } from './lib/footprint';
 export { hitTestPlan, classifyGesture, isClickNotDrag } from './lib/hit-test';
 export { applyPlantingDrop, plantingDropOutcome } from './lib/drop';
-export { layoutPlantingLabels } from './lib/planting-labels';
+export { layoutPlantingLabels, shortenPlantingMarkName } from './lib/planting-labels';
 export { drawableBeds } from './lib/drawable-beds';
 export { overviewPlantingLabels } from './lib/overview-labels';
 export { originFromCenter, originFromGrabOffset } from './lib/origin';

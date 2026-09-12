@@ -37,6 +37,7 @@ async function registerOnPage(page: Page, email: string): Promise<AuthUser> {
     },
   ]);
   const body = JSON.parse(text) as { user: AuthUser };
+  await page.goto('/gardens');
   await page.evaluate((user) => {
     sessionStorage.setItem('og_user_id', user.id);
     sessionStorage.setItem('og_role', user.role);

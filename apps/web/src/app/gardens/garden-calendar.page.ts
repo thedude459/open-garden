@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
 import type {
   CalendarDto,
@@ -16,12 +16,13 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
 import { CalendarApiService } from './calendar-api.service';
 import { OnlineRequiredError } from './gardens-api.service';
+import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, GardenNav],
   template: `
-    <p><a [routerLink]="['/gardens', gardenId]">Back to garden</a></p>
+    <og-garden-nav [gardenId]="gardenId" />
     <h2>Planting calendar</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
@@ -53,7 +54,14 @@ import { OnlineRequiredError } from './gardens-api.service';
               @for (p of catalogHits(); track p.id) {
                 <li class="row">
                   <span>{{ p.commonName }}</span>
-                  <button type="button" (click)="add(p.id)">Add {{ p.commonName }}</button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Add ' + p.commonName"
+                    (click)="add(p.id)"
+                  >
+                    Add
+                  </button>
                 </li>
               }
             </ul>
@@ -64,8 +72,13 @@ import { OnlineRequiredError } from './gardens-api.service';
               @for (f of favorites(); track f.favoriteId) {
                 <li class="row">
                   <span>{{ f.plant.commonName }}</span>
-                  <button type="button" (click)="add(f.plant.id)">
-                    Add favorite {{ f.plant.commonName }}
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Add favorite ' + f.plant.commonName"
+                    (click)="add(f.plant.id)"
+                  >
+                    Add
                   </button>
                 </li>
               }
@@ -87,7 +100,7 @@ import { OnlineRequiredError } from './gardens-api.service';
           <p class="muted">No plants on this calendar yet.</p>
         } @else if (visible().length === 0) {
           <p class="muted">No plants match this type.</p>
-          <button type="button" (click)="clearFilter()">Clear filter</button>
+          <button type="button" class="btn btn-secondary" (click)="clearFilter()">Clear filter</button>
         } @else {
           <div class="card-list">
             @for (e of visible(); track e.plantId) {
@@ -112,7 +125,14 @@ import { OnlineRequiredError } from './gardens-api.service';
                   </p>
                 </div>
                 @if (canEdit()) {
-                  <button type="button" (click)="remove(e.plantId)">Remove {{ e.commonName }}</button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Remove ' + e.commonName"
+                    (click)="remove(e.plantId)"
+                  >
+                    Remove
+                  </button>
                 }
               </article>
             }

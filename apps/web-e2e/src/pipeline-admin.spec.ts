@@ -7,7 +7,7 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.getByPlaceholder('Email').fill('admin@example.com');
   await page.getByPlaceholder('Password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
 }
 
 test('admin can start a run and round-trip cadence settings', async ({ page }) => {
@@ -40,6 +40,6 @@ test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ bro
     0,
   );
   await page.goto('/admin/pipeline');
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog pipeline' })).toHaveCount(0);
 });

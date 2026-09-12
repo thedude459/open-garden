@@ -34,8 +34,10 @@ async function main() {
 
   const { db, pool } = createDb(url);
   const auth = new AuthService(db);
-  await auth.ensureAdmin('admin@example.com', 'password123');
-  await auth.register('gardener@example.com', 'password123', 'Gardener').catch(() => undefined);
+  if (process.env['SEED_DEMO_USERS'] === 'true') {
+    await auth.ensureAdmin('admin@example.com', 'password123');
+    await auth.register('gardener@example.com', 'password123', 'Gardener').catch(() => undefined);
+  }
 
   const plants = new PlantRepository(db);
   if (seedOnly) {

@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { AuthApiService } from './auth/auth-api.service';
 import { NoticeHost } from './ui/notice-host';
@@ -43,6 +44,14 @@ export class AppComponent {
     this.router.events
       .pipe(filter((e): e is NavigationStart => e instanceof NavigationStart))
       .subscribe(() => notices.clear());
+    const updates = inject(SwUpdate);
+    if (updates.isEnabled) {
+      updates.versionUpdates
+        .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
+        .subscribe(() => {
+          void updates.activateUpdate().then(() => document.location.reload());
+        });
+    }
   }
 
   isAdmin() {

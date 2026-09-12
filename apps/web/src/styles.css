@@ -61,6 +61,11 @@ button, input, select {
     padding-right: 0.15rem;
   }
 }
+@media (max-width: 839px) {
+  .planner-rail {
+    order: -1;
+  }
+}
 .planner-rail {
   display: grid;
   gap: 0.65rem;
@@ -214,6 +219,11 @@ button, input, select {
 .garden-nav a {
   font-weight: 600;
 }
+.garden-nav a.active {
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
 .card-list {
   display: grid;
   gap: 0.75rem;
@@ -259,22 +269,23 @@ a.row:focus-visible {
   justify-content: center;
   gap: var(--space-2);
   padding: 0.55rem 0.75rem;
+  max-width: 100%;
   border: 1px solid rgba(47, 93, 58, 0.25);
   border-radius: var(--radius);
   background: #fff;
   color: var(--ink);
   cursor: pointer;
 }
-.btn-primary {
+.btn.btn-primary {
   background: var(--leaf);
   border-color: var(--leaf);
   color: #fff;
 }
-.btn-secondary {
+.btn.btn-secondary {
   background: #fff;
   color: var(--ink);
 }
-.btn-destructive {
+.btn.btn-destructive {
   background: #8a1f1f;
   border-color: #8a1f1f;
   color: #fff;
@@ -354,9 +365,11 @@ a.row:focus-visible {
   gap: 0.75rem;
   margin-bottom: 1rem;
 }
-.filters input, .filters select, .filters button, .auth form input, .auth form button {
+.filters input,
+.filters select,
+.auth form input {
   padding: 0.55rem 0.75rem;
-  border: 1px solid rgba(47,93,58,0.25);
+  border: 1px solid rgba(47, 93, 58, 0.25);
   background: #fff;
 }
 .muted { color: #4d5a4f; }
@@ -447,12 +460,16 @@ textarea, .stack input, .stack select {
 }
 .planner-rail .row {
   align-items: center;
-  flex-wrap: nowrap;
 }
 .planner-rail .row > span {
   min-width: 0;
 }
 .planner-rail .row button {
   flex: 0 0 auto;
-  white-space: nowrap;
+}
+.member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }

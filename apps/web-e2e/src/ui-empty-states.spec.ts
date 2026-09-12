@@ -18,13 +18,14 @@ test('empty gardens, overview, and bed view next steps; viewer has no Create bed
   await openOverview(owner);
   await expect(owner.getByText(/Add a named bed/i)).toBeVisible();
   await expect(owner.getByRole('button', { name: 'Create bed' })).toBeVisible();
+  await expect(owner.getByRole('link', { name: 'Set your site' })).toBeVisible();
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);
-  await owner.getByRole('button', { name: 'North', exact: true }).click();
+  await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('button', { name: 'Direct seed' })).toBeVisible();
   await owner.getByRole('button', { name: 'Direct seed' }).click();
   await expect(owner.getByLabel('Search plants')).toBeFocused();
-  await expect(owner.getByRole('link', { name: 'Transplants' })).toBeVisible();
+  await expect(owner.getByRole('link', { name: 'Back to overview' })).toBeVisible();
 
   await inviteViewer(owner, `ui-empty-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

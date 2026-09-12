@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import type { PlantSummaryDto, ReminderItemDto, TransplantListDto } from '@open-garden/shared-types';
 import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
@@ -10,12 +10,13 @@ import { RemindersApiService } from './reminders-api.service';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
+import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, PlaceMarker],
+  imports: [FormsModule, PlaceMarker, GardenNav],
   template: `
-    <p><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
+    <og-garden-nav [gardenId]="gardenId" />
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Transplants" />
     <h2>Transplant View</h2>
     @if (error()) {
@@ -52,10 +53,11 @@ import { PlaceMarker } from '../ui/place-marker';
                 <button
                   type="submit"
                   class="btn btn-primary"
+                  [attr.aria-label]="'Add transplant ' + p.commonName"
                   [attr.aria-busy]="notices.busyMap().has('add-transplant') || null"
                   [disabled]="notices.busyMap().has('add-transplant')"
                 >
-                  Add transplant {{ p.commonName }}
+                  Add
                 </button>
               </form>
             </li>
@@ -71,20 +73,28 @@ import { PlaceMarker } from '../ui/place-marker';
               <span>{{ plantingLabel(p) }} · started {{ p.indoorStartedOn }}</span>
               @if (canEdit()) {
                 @if (confirmDeleteId() !== p.id) {
-                  <button type="button" (click)="confirmDeleteId.set(p.id)">
-                    Delete transplant {{ p.commonName }}
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Delete transplant ' + p.commonName"
+                    (click)="confirmDeleteId.set(p.id)"
+                  >
+                    Delete
                   </button>
                 } @else {
                   <button
                     type="button"
                     class="btn btn-destructive"
+                    [attr.aria-label]="'Confirm delete ' + p.commonName"
                     (click)="deleteTransplant(p.id)"
                     [attr.aria-busy]="notices.busyMap().has('delete-transplant') || null"
                     [disabled]="notices.busyMap().has('delete-transplant')"
                   >
-                    Confirm delete {{ p.commonName }}
+                    Confirm delete
                   </button>
-                  <button type="button" (click)="confirmDeleteId.set(null)">Cancel</button>
+                  <button type="button" class="btn btn-secondary" (click)="confirmDeleteId.set(null)">
+                    Cancel
+                  </button>
                 }
               }
             </li>
@@ -155,9 +165,11 @@ export class GardenTransplantsPage implements OnInit {
   async load() {
     this.loading.set(true);
     try {
-      const list = await this.layoutApi.getTransplants(this.gardenId);
+      const [list, detail] = await Promise.all([
+        this.layoutApi.getTransplants(this.gardenId),
+        this.gardensApi.detail(this.gardenId),
+      ]);
       this.list.set(list);
-      const detail = await this.gardensApi.detail(this.gardenId);
       if (detail) this.gardenName.set(detail.name);
     } catch (err) {
       this.list.set(null);

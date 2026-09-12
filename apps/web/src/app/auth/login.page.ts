@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthApiService } from './auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 
@@ -8,9 +8,11 @@ import { NoticeService } from '../ui/notice.service';
   standalone: true,
   imports: [FormsModule],
   template: `
-    <h2>Sign in</h2>
-    <p class="muted">Use gardener&#64;example.com / password123 after seeding.</p>
+    <h2>{{ mode() === 'login' ? 'Sign in' : 'Create account' }}</h2>
     <form class="authform card" (ngSubmit)="submit()">
+      @if (mode() === 'register') {
+        <input [(ngModel)]="displayName" name="displayName" placeholder="Display name" required />
+      }
       <input [(ngModel)]="email" name="email" type="email" placeholder="Email" required />
       <input [(ngModel)]="password" name="password" type="password" placeholder="Password" required />
       <button
@@ -33,10 +35,14 @@ import { NoticeService } from '../ui/notice.service';
 export class LoginPage {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   readonly notices = inject(NoticeService);
-  email = 'gardener@example.com';
-  password = 'password123';
-  mode = signal<'login' | 'register'>('login');
+  email = this.route.snapshot.queryParamMap.get('email') ?? '';
+  password = '';
+  displayName = '';
+  mode = signal<'login' | 'register'>(
+    this.route.snapshot.queryParamMap.get('register') === '1' ? 'register' : 'login',
+  );
   error = signal('');
 
   toggle() {
@@ -50,10 +56,10 @@ export class LoginPage {
         if (this.mode() === 'login') {
           await this.auth.login(this.email, this.password);
         } else {
-          await this.auth.register(this.email, this.password);
+          await this.auth.register(this.email, this.password, this.displayName.trim() || undefined);
         }
         this.auth.markAuthenticated();
-        await this.router.navigateByUrl('/plants');
+        await this.router.navigateByUrl('/gardens');
       } catch {
         this.notices.error('Authentication failed');
       }

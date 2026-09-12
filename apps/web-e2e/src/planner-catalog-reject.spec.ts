@@ -13,10 +13,10 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await openOverview(owner);
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);
-  await owner.getByRole('button', { name: 'North', exact: true }).click();
+  await owner.getByRole('button', { name: 'Open bed North' }).click();
 
   await applyPlantSearch(owner, 'Sweet Basil');
-  const arm = owner.getByRole('button', { name: 'Arm Sweet Basil' });
+  const arm = owner.getByRole('button', { name: 'Place Sweet Basil' });
   await expect(arm).toBeVisible();
   await arm.dragTo(owner.getByRole('heading', { name: 'Bed View' }));
   await expect(owner.getByLabel('Notification')).toContainText('Drop missed a bed');
@@ -28,7 +28,7 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toBeVisible();
 
   await applyPlantSearch(owner, 'Cherry Tomato');
-  await owner.getByRole('button', { name: 'Arm Cherry Tomato' }).dragTo(
+  await owner.getByRole('button', { name: 'Place Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="North"]'),
   );
   await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
@@ -36,7 +36,7 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
 
   await owner.getByRole('button', { name: 'Dismiss' }).click();
   await applyPlantSearch(owner, 'Honeycrisp Apple');
-  await owner.getByRole('button', { name: 'Arm Honeycrisp Apple' }).dragTo(
+  await owner.getByRole('button', { name: 'Place Honeycrisp Apple' }).dragTo(
     owner.locator('[data-bed-name="North"]'),
   );
   await expect(owner.getByLabel('Notification')).toContainText('Does not fit in this bed');
@@ -44,9 +44,9 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
 
   await owner.getByRole('button', { name: 'Dismiss' }).click();
   await applyPlantSearch(owner, 'Spinach');
-  await expect(owner.getByRole('button', { name: 'Arm Spinach' })).toBeVisible();
+  await expect(owner.getByRole('button', { name: 'Place Spinach' })).toBeVisible();
   await owner.context().setOffline(true);
-  await owner.getByRole('button', { name: 'Arm Spinach' }).dragTo(
+  await owner.getByRole('button', { name: 'Place Spinach' }).dragTo(
     owner.locator('[data-bed-name="North"]'),
   );
   await expect(owner.getByLabel('Notification')).toContainText(/need to be online/i);

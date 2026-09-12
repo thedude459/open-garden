@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
+import { openConfiguration } from './planner-helpers';
 
 
 
@@ -12,7 +13,7 @@ test('cached garden list and detail stay readable when the API is unreachable', 
   await page.getByRole('button', { name: 'Create garden' }).click();
   await expect(page.getByRole('link', { name: /Cached bed/ })).toBeVisible();
   await page.getByRole('link', { name: /Cached bed/ }).click();
-  await expect(page.getByRole('heading', { name: 'Cached bed' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await page.goto('/gardens');
   await expect(page.getByRole('link', { name: /Cached bed/ })).toBeVisible();
   await page.route('**/api/gardens**', (route) => route.abort());
@@ -37,6 +38,7 @@ test('after reconnect, a removed member does not keep cached garden access', asy
   await owner.getByPlaceholder('Garden name').fill('Stale cache plot');
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Stale cache plot/ }).click();
+  await openConfiguration(owner);
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(friendEmail)).toBeVisible();
@@ -44,6 +46,7 @@ test('after reconnect, a removed member does not keep cached garden access', asy
   await friend.goto('/gardens');
   await expect(friend.getByRole('link', { name: /Stale cache plot/ })).toBeVisible();
   await friend.getByRole('link', { name: /Stale cache plot/ }).click();
+  await openConfiguration(friend);
   await expect(friend.getByText(/You are collaborator/i)).toBeVisible();
   const gardenUrl = friend.url();
   await friend.goto('/gardens');

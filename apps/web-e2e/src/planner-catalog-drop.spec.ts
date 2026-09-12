@@ -4,12 +4,13 @@ import {
   createSizedBed,
   inviteViewer,
   newUser,
+  openConfiguration,
   openOverview,
   saveGarden,
   saveLayout,
 } from './planner-helpers';
 
-test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', async ({
+test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed marks', async ({
   browser,
 }) => {
   test.setTimeout(120_000);
@@ -21,12 +22,13 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
   await owner.getByPlaceholder('Garden name').fill('Catalog bed');
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Catalog bed/ }).click();
+  await openConfiguration(owner);
   await owner.locator('select[name="zone"]').selectOption({ label: 'Zone 6' });
   await saveGarden(owner);
   await openOverview(owner);
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);
-  await owner.getByRole('button', { name: 'North', exact: true }).click();
+  await owner.getByRole('button', { name: 'Open bed North' }).click();
 
   await expect(owner.getByLabel('Plant panel')).toBeVisible();
   await expect(owner.locator('select[name="plantZone"] option:checked')).toHaveText('Zone 6');
@@ -35,11 +37,11 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
   await owner.getByLabel('Search plants').fill('Sweet Basil');
   await owner.locator('select[name="plantType"]').selectOption('vegetable');
   await applyPlantSearch(owner, 'Sweet Basil');
-  await expect(owner.getByRole('button', { name: 'Arm Sweet Basil' })).toHaveCount(0);
+  await expect(owner.getByRole('button', { name: 'Place Sweet Basil' })).toHaveCount(0);
 
   await owner.locator('select[name="plantType"]').selectOption({ label: 'Any type' });
   await applyPlantSearch(owner, 'Sweet Basil');
-  const arm = owner.getByRole('button', { name: 'Arm Sweet Basil' });
+  const arm = owner.getByRole('button', { name: 'Place Sweet Basil' });
   await expect(arm).toBeVisible();
   await expect(owner.getByText(/Fits zone 6/)).toBeVisible();
 
@@ -68,12 +70,12 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
 
   await owner.getByRole('link', { name: 'Back to overview' }).click();
   await expect(owner.getByLabel('Search plants')).toHaveCount(0);
-  await expect(owner.locator('.layout-plant')).toHaveCount(1);
+  await expect(owner.locator('.layout-plant')).toHaveCount(0);
 
-  await owner.getByRole('button', { name: 'North', exact: true }).click();
+  await owner.getByRole('button', { name: 'Open bed North' }).click();
   await applyPlantSearch(owner, 'Cherry Tomato');
-  await owner.getByRole('button', { name: 'Arm Cherry Tomato' }).click();
-  await expect(owner.getByRole('button', { name: 'Arm Cherry Tomato' })).toHaveAttribute(
+  await owner.getByRole('button', { name: 'Place Cherry Tomato' }).click();
+  await expect(owner.getByRole('button', { name: 'Place Cherry Tomato' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -88,6 +90,6 @@ test('Bed View catalog search, drag, arm-click, Save; Overview shows mark', asyn
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Catalog bed/ }).click();
   await openOverview(viewer);
-  await viewer.getByRole('button', { name: 'North', exact: true }).click();
-  await expect(viewer.getByRole('button', { name: /Arm / })).toHaveCount(0);
+  await viewer.getByRole('button', { name: 'Open bed North' }).click();
+  await expect(viewer.getByRole('button', { name: /Place / })).toHaveCount(0);
 });

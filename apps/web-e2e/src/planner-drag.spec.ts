@@ -27,8 +27,8 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await owner.getByRole('button', { name: 'North', exact: true }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
 
   const tray = owner.getByLabel('Planting tray');
@@ -46,7 +46,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await owner.getByRole('button', { name: 'Direct seed' }).click();
   await owner.getByLabel('Search plants').fill('Sweet Basil');
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await owner.getByRole('button', { name: 'Arm Sweet Basil' }).dragTo(
+  await owner.getByRole('button', { name: 'Place Sweet Basil' }).dragTo(
     owner.locator('[data-bed-name="North"]'),
   );
   await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toBeVisible();
@@ -75,7 +75,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Planner drag/ }).click();
   await openOverview(viewer);
-  await viewer.getByRole('button', { name: 'North', exact: true }).click();
+  await viewer.getByRole('button', { name: 'Open bed North' }).click();
   await expect(viewer.getByLabel('Planting tray')).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Direct seed' })).toHaveCount(0);
   const before = await viewer.getByLabel('Planting tray').locator('button').count();
