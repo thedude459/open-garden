@@ -16,18 +16,21 @@ import { createPipelineSources } from '../admin/pipeline-sources';
 async function main() {
   const url = process.env['DATABASE_URL'];
   if (!url) throw new Error('DATABASE_URL required');
+  const seedOnly = process.argv.includes('--seed-only');
 
-  const client = new Client({ connectionString: url });
-  await client.connect();
-  const migrationsDir = resolve(process.cwd(), 'libs/plant-catalog-data/migrations');
-  const files = readdirSync(migrationsDir)
-    .filter((f) => f.endsWith('.sql'))
-    .sort();
-  for (const file of files) {
-    const sql = readFileSync(resolve(migrationsDir, file), 'utf8');
-    await client.query(sql);
+  if (!seedOnly) {
+    const client = new Client({ connectionString: url });
+    await client.connect();
+    const migrationsDir = resolve(process.cwd(), 'libs/plant-catalog-data/migrations');
+    const files = readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
+    for (const file of files) {
+      const sql = readFileSync(resolve(migrationsDir, file), 'utf8');
+      await client.query(sql);
+    }
+    await client.end();
   }
-  await client.end();
 
   const { db, pool } = createDb(url);
   const auth = new AuthService(db);
@@ -35,6 +38,15 @@ async function main() {
   await auth.register('gardener@example.com', 'password123', 'Gardener').catch(() => undefined);
 
   const plants = new PlantRepository(db);
+  if (seedOnly) {
+    const existing = await plants.listSnapshots();
+    if (existing.length > 0) {
+      console.log('Catalog already present; skipping fixture pipeline');
+      await pool.end();
+      return;
+    }
+  }
+
   const plantSources = new PlantSourceRepository(db);
   const runs = new PipelineRunRepository(db);
   const settings = new PipelineSettingsRepository(db);

@@ -1,0 +1,17 @@
+FROM node:24-bookworm-slim
+
+WORKDIR /app
+
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci
+
+COPY . .
+
+ENV NODE_ENV=production
+ENV COOKIE_SECURE=false
+ENV PORT=3000
+ENV NX_DAEMON=false
+
+EXPOSE 3000
+
+CMD ["sh", "scripts/docker/api-entrypoint.sh"]

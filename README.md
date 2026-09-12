@@ -6,6 +6,8 @@ Home garden planning PWA — **Nx monorepo** with NestJS API and Angular web cli
 
 Nx is a local devDependency (`npx nx …` or `npm run …`). Do not expect a global `nx` binary.
 
+Host workflow (inner loop): Postgres in Compose, API and web on this machine.
+
 ```bash
 npm install
 cp .env.example .env
@@ -17,10 +19,36 @@ npm run api:serve
 npm run web:serve
 ```
 
+Web: `http://localhost:4200`. API: `http://localhost:3000` (proxied as `/api`).
+
 Demo users (after sync):
 
 - `gardener@example.com` / `password123`
 - `admin@example.com` / `password123` (admin pipeline)
+
+### Stacked app (Docker Compose)
+
+One origin for pages and API. Local testing binds **loopback only**.
+
+```bash
+cp -n .env.example .env
+docker compose --profile app up -d --build
+```
+
+Open **`http://127.0.0.1:8080`** on this machine (not a LAN IP). Sign in with the demo gardener above. First boot migrates and loads the fixture catalog; later boots skip the pipeline.
+
+Stop UI and API without wiping gardens: `docker compose --profile app stop api web`. Postgres stays up. `docker compose --profile app down` does **not** remove `pgdata` unless you pass `-v` — do not use `-v` unless you mean to destroy stored data.
+
+If **8080** or **5432** is already in use, Docker/Compose prints a bind error that names the port. Stop the other process or set `WEB_PORT`.
+
+#### NAS production
+
+1. Start Postgres alone: `docker compose up -d postgres` with `POSTGRES_PASSWORD` (and user/db if not the local defaults) from the **NAS Docker UI** — not a file in git.
+2. Start UI and API: `WEB_HOST=0.0.0.0 docker compose --profile app up -d api web` with `SESSION_SECRET` from the same NAS setup.
+3. Gardeners open `http://<NAS-IP>:8080`. Map host **80** → container **8080** in the NAS UI if you want port 80.
+4. Stop UI/API with `docker compose --profile app stop api web`; leave Postgres running.
+
+Do not commit a production `.env`. Local defaults in `.env.example` (`open_garden`, `dev-only-…`) are for laptop testing only.
 
 ## Tests (same as CI)
 
