@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden } from './planner-helpers';
+import { saveGarden, openConfiguration } from './planner-helpers';
 
 
 
@@ -9,6 +9,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
+  await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
   await page.locator('select[name="lastMonth"]').selectOption('4');
   await page.locator('input[name="lastDay"]').fill('15');
@@ -76,6 +77,7 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
 
   await owner.getByRole('link', { name: 'Gardens' }).click();
   await owner.getByRole('link', { name: /Picker bed/ }).click();
+  await openConfiguration(owner);
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();

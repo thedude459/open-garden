@@ -12,10 +12,11 @@ export async function newUser(browser: Parameters<typeof signedInPage>[0], email
 export async function registerViaUi(page: Page, email: string) {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Need an account?' }).click();
+  await page.getByPlaceholder('Display name').fill('E2E');
   await page.getByPlaceholder('Email').fill(email);
   await page.getByPlaceholder('Password').fill('password123');
   await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
 }
 
 export async function saveLayout(page: Page) {
@@ -48,9 +49,37 @@ export async function applyPlantSearch(page: Page, name: string) {
   await page.getByRole('button', { name: 'Apply' }).click();
 }
 
+export async function openPlantingsFromGarden(page: Page) {
+  await page
+    .locator('nav[aria-label="Garden"]')
+    .getByRole('link', { name: 'Plantings', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Plantings' })).toBeVisible();
+}
+
 export async function openOverview(page: Page) {
-  await page.getByRole('link', { name: 'Garden Overview' }).click();
+  await page
+    .locator('nav[aria-label="Garden"]')
+    .getByRole('link', { name: 'Garden Overview', exact: true })
+    .click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+}
+
+export async function openConfiguration(page: Page) {
+  await page.waitForURL(/\/gardens\/[^/?#]+/);
+  await page
+    .locator('nav[aria-label="Garden"]')
+    .getByRole('link', { name: 'Configuration', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Configuration' })).toBeVisible();
+}
+
+export async function inviteViewer(owner: Page, email: string) {
+  await openConfiguration(owner);
+  await owner.locator('input[name="inviteEmail"]').fill(email);
+  await owner.locator('select[name="inviteRole"]').selectOption('viewer');
+  await owner.getByRole('button', { name: 'Invite' }).click();
+  await expect(owner.getByText(email)).toBeVisible();
 }
 
 export async function createSizedBed(page: Page, name: string, length = '8', width = '4') {
@@ -71,17 +100,4 @@ export async function addTransplant(page: Page, name: string, date = '2026-03-01
   await page.locator('li').filter({ hasText: name }).locator('input[type="date"]').fill(date);
   await add.click();
   await expect(page.getByText(new RegExp(`${name} · started`))).toBeVisible();
-}
-
-export async function inviteViewer(owner: Page, email: string) {
-  if (await owner.getByRole('link', { name: 'Back to garden' }).count()) {
-    await owner.getByRole('link', { name: 'Back to garden' }).click();
-  } else {
-    await owner.getByRole('link', { name: 'Back to overview' }).click();
-    await owner.getByRole('link', { name: 'Back to garden' }).click();
-  }
-  await owner.locator('input[name="inviteEmail"]').fill(email);
-  await owner.locator('select[name="inviteRole"]').selectOption('viewer');
-  await owner.getByRole('button', { name: 'Invite' }).click();
-  await expect(owner.getByText(email)).toBeVisible();
 }

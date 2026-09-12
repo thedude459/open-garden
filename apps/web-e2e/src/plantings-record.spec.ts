@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
+import { openPlantingsFromGarden } from './planner-helpers';
 
 
 
@@ -8,8 +9,8 @@ async function openPlantings(page: Page, name: string) {
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
-  await page.getByRole('link', { name: 'Plantings' }).click();
-  await expect(page.getByRole('heading', { name: 'Plantings' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+  await openPlantingsFromGarden(page);
 }
 
 async function fillDate(input: ReturnType<Page['locator']>, value: string) {
@@ -97,7 +98,7 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -105,7 +106,7 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
 
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Record bed/ }).click();
-  await friend.getByRole('link', { name: 'Plantings' }).click();
+  await openPlantingsFromGarden(friend);
   await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' }).first()).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Show favorites' })).toHaveCount(0);
   await expect(friend.getByText('Your favorites')).toHaveCount(0);

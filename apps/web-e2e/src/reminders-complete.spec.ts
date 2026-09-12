@@ -8,7 +8,7 @@ async function goToReminders(page: Page) {
   if (await onGardenDetail.isVisible()) {
     await onGardenDetail.click();
   } else {
-    await page.getByRole('link', { name: 'Back to garden' }).click();
+    await page.getByRole('link', { name: 'Configuration' }).click();
     await page.getByRole('link', { name: 'Reminders' }).click();
   }
   await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
@@ -19,7 +19,7 @@ async function setupGardenWithTomato(page: Page, name: string) {
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
-  await page.getByRole('link', { name: 'Plantings' }).click();
+  await page.getByRole('link', { name: 'Plantings', exact: true }).click();
   await page.getByPlaceholder('Search catalog to add').fill('Cherry Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Cherry Tomato' }).click();
@@ -43,7 +43,7 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await setupGardenWithTomato(owner, 'Complete plot');
   await expect(owner.getByText('Harvest')).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-done-friend-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -59,8 +59,8 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await owner.getByRole('link', { name: 'Reminders' }).click();
   await expect(owner.getByText('Harvest')).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
-  await owner.getByRole('link', { name: 'Plantings' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Plantings', exact: true }).click();
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
   await expect(owner.locator('input[name^="harvested-"]').first()).toHaveValue('');
 });

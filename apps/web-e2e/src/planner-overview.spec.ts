@@ -24,8 +24,8 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await owner.getByRole('button', { name: 'North', exact: true }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="North"]'),
@@ -37,17 +37,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await expect(plan).toContainText('North');
   await expect(plan).toContainText('Cherry Tomato');
   await expect(owner.getByLabel('Planting tray')).toHaveCount(0);
-  await expect(owner.locator('.layout-plant')).toHaveCount(1);
-  const mark = owner.locator('.layout-plant');
-  const markBox = await mark.boundingBox();
-  expect(markBox).toBeTruthy();
-  await owner.mouse.move(markBox!.x + markBox!.width / 2, markBox!.y + markBox!.height / 2);
-  await owner.mouse.down();
-  await owner.mouse.move(markBox!.x + markBox!.width / 2 + 40, markBox!.y + markBox!.height / 2 + 20, {
-    steps: 6,
-  });
-  await owner.mouse.up();
-  await expect(owner.getByText('Unsaved changes')).toHaveCount(0);
+  await expect(owner.locator('.layout-plant')).toHaveCount(0);
   await expect(owner.getByRole('button', { name: 'Place planting' })).toHaveCount(0);
 
   await owner.getByPlaceholder('Area name').fill('Path');
@@ -80,12 +70,12 @@ test('planner overview: transplants with no beds stay off the map until a bed ex
   await openOverview(owner);
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await expect(owner.locator('[data-bed-name]')).toHaveCount(0);
   await expect(owner.getByLabel('Planting tray')).toHaveCount(0);
 
   await createSizedBed(owner, 'First');
   expect((await saveLayout(owner)).status()).toBe(200);
-  await owner.getByRole('button', { name: 'First', exact: true }).click();
+  await owner.getByRole('button', { name: 'Open bed First' }).click();
   await expect(owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' })).toBeVisible();
 });

@@ -77,13 +77,19 @@ export class AuthController {
   ) {
     const token = (res.req as { cookies?: { og_session?: string } }).cookies?.og_session;
     if (token) await this.auth.logout(token);
-    res.clearCookie('og_session', sessionCookieOptions());
+    res.clearCookie('og_session', sessionCookieOptions(forwardedProto(res)));
   }
 }
 
+function forwardedProto(res: Response): string | undefined {
+  const value = res.req.headers['x-forwarded-proto'];
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function setSessionCookie(res: Response, token: string) {
+  const opts = sessionCookieOptions(forwardedProto(res));
   res.cookie('og_session', token, {
-    ...sessionCookieOptions(),
+    ...opts,
     maxAge: 1000 * 60 * 60 * 24 * 14,
   });
 }

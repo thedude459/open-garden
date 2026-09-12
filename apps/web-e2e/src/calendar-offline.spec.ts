@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden } from './planner-helpers';
+import { saveGarden, openConfiguration } from './planner-helpers';
 
 
 
@@ -9,6 +9,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
+  await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
   await page.locator('select[name="lastMonth"]').selectOption('4');
   await page.locator('input[name="lastDay"]').fill('15');
@@ -42,7 +43,7 @@ test('cached calendar stays readable when calendar API is aborted', async ({ bro
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.locator('article').filter({ hasText: 'Spinach' })).toHaveCount(0);
 
-  await page.getByRole('link', { name: 'Back to garden' }).click();
+  await page.getByRole('link', { name: 'Configuration' }).click();
   await page.locator('input[name="lastDay"]').fill('29');
   await saveGarden(page);
   await page.unroute('**/api/gardens/**/calendar**');
@@ -72,7 +73,7 @@ test('removed member drops stale calendar cache after reconnect', async ({ brows
 
   await createFrostGarden(owner, 'Stale calendar');
   await addFromCatalog(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`cal-stale-friend-${stamp}@example.com`);
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(`cal-stale-friend-${stamp}@example.com`)).toBeVisible();

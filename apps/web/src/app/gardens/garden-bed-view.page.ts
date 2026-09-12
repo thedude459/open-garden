@@ -15,11 +15,13 @@ import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
+import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlantingTray, PlaceMarker, EmptyState],
+  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlantingTray, PlaceMarker, EmptyState, GardenNav],
   template: `
+    <og-garden-nav [gardenId]="gardenId" />
     <p><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" [current]="bed()?.name ?? 'Bed'" />
     <div class="planner">
@@ -29,6 +31,9 @@ import { EmptyState } from '../ui/empty-state';
     }
     @if (status()) {
       <p role="status">{{ status() }}</p>
+    }
+    @if (selectedPlantingName()) {
+      <p role="status">{{ selectedPlantingName() }}</p>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
@@ -72,6 +77,8 @@ import { EmptyState } from '../ui/empty-state';
           [online]="online()"
           [allowBedGeometry]="false"
           [allowPlantingDrag]="true"
+          [showPlantingMarks]="true"
+          [showBedCaption]="false"
           [openBedOnClick]="false"
           [planLabel]="'Bed plan'"
           (plantingDrop)="onPlantingDrop($event)"
@@ -80,6 +87,7 @@ import { EmptyState } from '../ui/empty-state';
           (offlineRequired)="onOfflineRequired()"
           (planActivate)="onPlanActivate()"
           (planPointer)="onPlanPointer($event)"
+          (selectPlanting)="onSelectPlanting($event)"
         />
         <aside class="planner-rail">
           <h3>{{ bed()!.name }}</h3>
@@ -148,11 +156,11 @@ import { EmptyState } from '../ui/empty-state';
                       <button
                         type="button"
                         class="btn btn-secondary"
-                        [attr.aria-label]="'Arm ' + p.commonName"
+                        [attr.aria-label]="'Place ' + p.commonName"
                         [attr.aria-pressed]="armedPlant()?.id === p.id"
                         (pointerdown)="onArmPointerDown($event, p)"
                       >
-                        Arm
+                        Place
                       </button>
                     }
                   </li>
@@ -224,6 +232,7 @@ export class GardenBedViewPage implements OnInit, OnDestroy {
   readonly flags = this.planner.flags;
   error = signal('');
   status = signal('');
+  selectedPlantingId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
   searchQ = '';
   zoneFilter: number | undefined;
@@ -340,6 +349,16 @@ export class GardenBedViewPage implements OnInit, OnDestroy {
     return p.status === 'active' ? p.commonName : `${p.commonName} (removed from catalog)`;
   }
 
+  selectedPlantingName() {
+    const id = this.selectedPlantingId();
+    if (!id) return '';
+    return this.draft()?.plantings.find((p) => p.id === id)?.commonName ?? '';
+  }
+
+  onSelectPlanting(id: string | null) {
+    this.selectedPlantingId.set(id);
+  }
+
   zoomIn() {
     this.canvas()?.zoomIn();
   }
@@ -366,11 +385,6 @@ export class GardenBedViewPage implements OnInit, OnDestroy {
       this.gardenName.set(detail.name);
       this.zoneFilter = detail.hardinessZone ?? undefined;
     }
-    void this.plantsApi.list({
-      zone: this.zoneFilter,
-      page: 1,
-      pageSize: 100,
-    });
   }
 
   scheduleSearch() {

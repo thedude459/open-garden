@@ -8,7 +8,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { originFromGrabOffset, layoutPlantingLabels, catalogDropOutcome, formatPlanSize } from '@open-garden/garden-layout';
+import { originFromGrabOffset, shortenPlantingMarkName, catalogDropOutcome, formatPlanSize } from '@open-garden/garden-layout';
 import { classifyGesture, hitTestPlan, isClickNotDrag } from '@open-garden/garden-layout/hit-test';
 import { plantingFootprintRadius } from '@open-garden/garden-layout/footprint';
 import { drawableBeds } from '@open-garden/garden-layout/drawable-beds';
@@ -116,6 +116,7 @@ type Gesture =
                 />
               }
             }
+            @if (showBedCaption()) {
             <text
               [attr.x]="geo.originXInches + planSize(geo).width / 2"
               [attr.y]="geo.originYInches + 10"
@@ -124,6 +125,7 @@ type Gesture =
             >
               Bed · {{ bed.name }} · {{ formatPlanSize(geo.lengthInches, geo.widthInches) }}
             </text>
+            }
             @if (!allowPlantingDrag()) {
               @for (label of labelsFor(bed.id); track label.name) {
                 <text
@@ -156,19 +158,19 @@ type Gesture =
                     [attr.r]="m.r"
                     class="layout-plant"
                     [class.layout-plant-invalid]="isPreviewInvalid(planting.id)"
+                    [attr.data-planting-id]="planting.id"
                   />
+                  <text
+                    [attr.x]="m.x"
+                    [attr.y]="m.y"
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                    class="layout-plant-label"
+                  >
+                    {{ shortenMark(planting, m.r) }}
+                  </text>
                 </g>
               }
-            }
-            @for (label of markLabels(bed.id, geo); track label.id) {
-              <text
-                [attr.x]="label.x"
-                [attr.y]="label.y"
-                text-anchor="middle"
-                class="layout-plant-label"
-              >
-                {{ label.name }}
-              </text>
             }
             }
           }
@@ -222,6 +224,7 @@ export class GardenPlanCanvas {
   readonly allowBedGeometry = input(true);
   readonly allowPlantingDrag = input(true);
   readonly showPlantingMarks = input(true);
+  readonly showBedCaption = input(true);
   readonly openBedOnClick = input(false);
   readonly planLabel = input('Garden plan');
 
@@ -238,6 +241,7 @@ export class GardenPlanCanvas {
   readonly offlineRequired = output<void>();
   readonly planActivate = output<void>();
   readonly planPointer = output<{ clientX: number; clientY: number }>();
+  readonly selectPlanting = output<string | null>();
 
   private readonly svgRef = viewChild<ElementRef<SVGSVGElement>>('planSvg');
   private readonly panX = signal(0);
@@ -408,20 +412,8 @@ export class GardenPlanCanvas {
     return { ...center, r: plantingFootprintRadius(planting.spacingInches) };
   }
 
-  markLabels(bedId: string, geo: BedGeometryDto) {
-    const marks = [];
-    for (const planting of this.placedIn(bedId)) {
-      const m = this.mark(planting, geo);
-      if (!m) continue;
-      marks.push({
-        id: planting.id,
-        name: this.plantingLabel(planting),
-        x: m.x,
-        y: m.y,
-        r: m.r,
-      });
-    }
-    return layoutPlantingLabels(marks);
+  shortenMark(planting: LayoutPlantingDto, radiusInches: number) {
+    return shortenPlantingMarkName(planting.commonName, radiusInches);
   }
 
   isPreviewInvalid(plantingId: string) {
@@ -650,6 +642,9 @@ export class GardenPlanCanvas {
       if (g?.type === 'pan' && click && this.allowPlantingDrag()) {
         this.planPointer.emit({ clientX: ev.clientX, clientY: ev.clientY });
       }
+      if (g?.type === 'pan' && click && this.showPlantingMarks()) {
+        this.emitPlantingSelect(ev.clientX, ev.clientY);
+      }
       return;
     }
     const plan = this.clientToPlan(ev.clientX, ev.clientY);
@@ -661,6 +656,10 @@ export class GardenPlanCanvas {
     if (g.type === 'move-planting') {
       this.previewPlant.set(null);
       this.previewInvalid.set(false);
+      if (click && this.showPlantingMarks()) {
+        this.selectPlanting.emit(g.plantingId);
+        return;
+      }
       const overTray = Boolean(
         document
           .elementFromPoint(ev.clientX, ev.clientY)
@@ -719,5 +718,18 @@ export class GardenPlanCanvas {
       }) ?? null;
     if (!bed) return true;
     return catalogDropOutcome(bed, others, planX, planY, planting.spacingInches ?? 12) !== 'ok';
+  }
+
+  private emitPlantingSelect(clientX: number, clientY: number) {
+    const plan = this.clientToPlan(clientX, clientY);
+    const hit = hitTestPlan(
+      this.drawnBeds(),
+      this.plantings(),
+      plan.x,
+      plan.y,
+      HANDLE_INCHES,
+      [],
+    );
+    this.selectPlanting.emit(hit.kind === 'planting' ? hit.plantingId : null);
   }
 }

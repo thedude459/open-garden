@@ -39,11 +39,11 @@ import { PipelineApiService } from './pipeline-api.service';
         <input name="sourceOrder" [(ngModel)]="sourceOrderText" />
       </label>
       <p class="muted">Registered sources: {{ registeredSources().join(', ') || 'none' }}</p>
-      <button type="button" (click)="saveSettings()">Save settings</button>
+      <button type="button" class="btn btn-primary" (click)="saveSettings()">Save settings</button>
     </section>
     <section class="stack">
       <h3>Run</h3>
-      <button type="button" (click)="startRun()">Start run</button>
+      <button type="button" class="btn btn-primary" (click)="startRun()">Start run</button>
       @if (current(); as run) {
         <p>
           Status: <strong>{{ run.status }}</strong>

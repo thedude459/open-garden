@@ -3,7 +3,7 @@ import { authGuard } from './auth/auth.guard';
 import { adminGuard } from './admin/admin.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'plants' },
+  { path: '', pathMatch: 'full', redirectTo: 'gardens' },
   {
     path: 'login',
     loadComponent: () => import('./auth/login.page').then((m) => m.LoginPage),
@@ -64,13 +64,18 @@ export const routes: Routes = [
       import('./gardens/garden-transplants.page').then((m) => m.GardenTransplantsPage),
   },
   {
+    path: 'gardens/:id/configure',
+    canActivate: [authGuard],
+    loadComponent: () => import('./gardens/garden-detail.page').then((m) => m.GardenDetailPage),
+  },
+  {
     path: 'admin/pipeline',
     canActivate: [authGuard, adminGuard],
     loadComponent: () => import('./admin/pipeline.page').then((m) => m.PipelinePage),
   },
   {
     path: 'gardens/:id',
-    canActivate: [authGuard],
-    loadComponent: () => import('./gardens/garden-detail.page').then((m) => m.GardenDetailPage),
+    pathMatch: 'full',
+    redirectTo: ({ params }) => `/gardens/${params['id']}/layout`,
   },
 ];
