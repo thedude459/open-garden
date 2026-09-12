@@ -1,0 +1,14 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    { "idx": 0, "version": "7", "when": 1720000000001, "tag": "0001_init", "breakpoints": true },
+    { "idx": 1, "version": "7", "when": 1720000000002, "tag": "0002_gardens", "breakpoints": true },
+    { "idx": 2, "version": "7", "when": 1720000000003, "tag": "0003_planting_calendar", "breakpoints": true },
+    { "idx": 3, "version": "7", "when": 1720000000004, "tag": "0004_seasonal_plantings", "breakpoints": true },
+    { "idx": 4, "version": "7", "when": 1720000000005, "tag": "0005_garden_layout", "breakpoints": true },
+    { "idx": 5, "version": "7", "when": 1720000000006, "tag": "0006_care_reminders", "breakpoints": true },
+    { "idx": 6, "version": "7", "when": 1720000000007, "tag": "0007_catalog_pipeline", "breakpoints": true },
+    { "idx": 7, "version": "7", "when": 1720000000008, "tag": "0008_planner_visualization", "breakpoints": true }
+  ]
+}

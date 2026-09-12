@@ -2,18 +2,60 @@ services:
   postgres:
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_USER: open_garden
-      POSTGRES_PASSWORD: open_garden
-      POSTGRES_DB: open_garden
+      POSTGRES_USER: ${POSTGRES_USER:-open_garden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-open_garden}
+      POSTGRES_DB: ${POSTGRES_DB:-open_garden}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U open_garden -d open_garden"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PORT: "3000"
+      PLANT_PROVIDER: ${PLANT_PROVIDER:-fixture}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-open_garden}:${POSTGRES_PASSWORD:-open_garden}@postgres:5432/${POSTGRES_DB:-open_garden}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 300s
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "${WEB_HOST:-127.0.0.1}:${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:

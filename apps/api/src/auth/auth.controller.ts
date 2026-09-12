@@ -13,6 +13,7 @@ import { authLoginSchema, authRegisterSchema } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import { CurrentUser, SessionGuard } from './session.guard';
+import { sessionCookieOptions } from './session-cookie';
 
 @Controller('auth')
 export class AuthController {
@@ -76,16 +77,13 @@ export class AuthController {
   ) {
     const token = (res.req as { cookies?: { og_session?: string } }).cookies?.og_session;
     if (token) await this.auth.logout(token);
-    res.clearCookie('og_session');
+    res.clearCookie('og_session', sessionCookieOptions());
   }
 }
 
 function setSessionCookie(res: Response, token: string) {
   res.cookie('og_session', token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env['NODE_ENV'] === 'production',
+    ...sessionCookieOptions(),
     maxAge: 1000 * 60 * 60 * 24 * 14,
-    path: '/',
   });
 }
