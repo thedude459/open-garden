@@ -54,36 +54,87 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - uses: ./.github/actions/setup-node
-      - name: npm audit (high+)
-        id: audit
-        continue-on-error: true
-        run: npm audit --audit-level=high
-      - name: Trivy filesystem scan (HIGH/CRITICAL)
-        id: trivy
-        continue-on-error: true
+      - name: Checkout base tree for SCA diff
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git worktree add "${{ runner.temp }}/sca-base" "origin/${{ github.base_ref }}"
+      - name: Collect SCA inputs
+        run: |
+          mkdir -p .sca-out/head .sca-out/base
+          npm audit --json --package-lock-only > .sca-out/audit-head.json || true
+          cp package-lock.json .sca-out/head/package-lock.json
+          if [[ -d "${{ runner.temp }}/sca-base" ]]; then
+            (cd "${{ runner.temp }}/sca-base" && npm audit --json --package-lock-only > "${{ github.workspace }}/.sca-out/audit-base.json") || true
+            cp "${{ runner.temp }}/sca-base/package-lock.json" .sca-out/base/package-lock.json
+          fi
+      - name: Trivy filesystem scan (head)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
           severity: HIGH,CRITICAL
-          exit-code: '1'
+          exit-code: '0'
           ignore-unfixed: true
-          format: table
+          format: json
           scanners: vuln
-      - name: OSV Scanner (lockfile)
-        id: osv
+          skip-dirs: .sca-out
+          output: .sca-out/trivy-head.json
+      - name: Trivy filesystem scan (base)
+        if: github.event_name == 'pull_request'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ runner.temp }}/sca-base
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+          ignore-unfixed: true
+          format: json
+          scanners: vuln
+          output: .sca-out/trivy-base.json
+      - name: OSV Scanner (head)
         continue-on-error: true
         uses: google/osv-scanner-action/osv-scanner-action@f4cfcc01edc9c8b756a9b873b7a623ca674da51e # v2.3.8
         with:
           scan-args: |-
-            --lockfile=package-lock.json
+            --lockfile=.sca-out/head/package-lock.json
+            --format=json
+            --output=.sca-out/osv-head.json
             --verbosity=error
-      - name: Fail if any SCA scanner found issues
-        if: always() && (steps.audit.outcome == 'failure' || steps.trivy.outcome == 'failure' || steps.osv.outcome == 'failure')
+      - name: OSV Scanner (base)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: google/osv-scanner-action/osv-scanner-action@f4cfcc01edc9c8b756a9b873b7a623ca674da51e # v2.3.8
+        with:
+          scan-args: |-
+            --lockfile=.sca-out/base/package-lock.json
+            --format=json
+            --output=.sca-out/osv-base.json
+            --verbosity=error
+      - name: SCA gate
+        env:
+          COMPARE_BASE: ${{ github.event_name == 'pull_request' && '1' || '' }}
         run: |
-          echo "SCA failed (audit=${{ steps.audit.outcome }} trivy=${{ steps.trivy.outcome }} osv=${{ steps.osv.outcome }})"
-          exit 1
+          node scripts/ci/sca-ids.js selfcheck
+          for f in .sca-out/audit-head.json .sca-out/trivy-head.json .sca-out/osv-head.json; do
+            test -f "$f" || { echo "missing $f"; exit 2; }
+          done
+          args=(
+            gate
+            --audit-head .sca-out/audit-head.json
+            --trivy-head .sca-out/trivy-head.json
+            --osv-head .sca-out/osv-head.json
+          )
+          if [[ -n "${COMPARE_BASE}" ]]; then
+            for f in .sca-out/audit-base.json .sca-out/trivy-base.json .sca-out/osv-base.json; do
+              test -f "$f" || { echo "missing $f"; exit 2; }
+            done
+            args+=(--audit-base .sca-out/audit-base.json --trivy-base .sca-out/trivy-base.json --osv-base .sca-out/osv-base.json)
+          fi
+          node scripts/ci/sca-ids.js "${args[@]}"
 
   secrets:
     name: secrets
