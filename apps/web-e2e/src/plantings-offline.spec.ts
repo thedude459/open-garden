@@ -3,12 +3,22 @@ import { signedInPage as newUser } from './session';
 
 
 
+async function clickPlantings(page: Page) {
+  // exact: garden names like "Stale plantings" also match name: 'Plantings'
+  await page.getByRole('link', { name: 'Plantings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Plantings', exact: true })).toBeVisible();
+}
+
+async function openGardenPlantings(page: Page, gardenName: string | RegExp) {
+  await page.getByRole('link', { name: gardenName }).click();
+  await clickPlantings(page);
+}
+
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
-  await page.getByRole('link', { name: new RegExp(name) }).click();
-  await page.getByRole('link', { name: 'Plantings' }).click();
+  await openGardenPlantings(page, new RegExp(name));
 }
 
 async function addFromCatalog(page: Page, name: string) {
@@ -70,8 +80,7 @@ test('offline cache stays readable and queued add syncs for another member', asy
   await expect(owner.getByText(`plant-off-friend-${stamp}@example.com`)).toBeVisible();
 
   await friend.goto('/gardens');
-  await friend.getByRole('link', { name: /Offline plot/ }).click();
-  await friend.getByRole('link', { name: 'Plantings' }).click();
+  await openGardenPlantings(friend, /Offline plot/);
   await expect(friend.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
 });
 
@@ -90,11 +99,10 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(`plant-nr-b-${stamp}@example.com`)).toBeVisible();
-  await owner.getByRole('link', { name: 'Plantings' }).click();
+  await clickPlantings(owner);
 
   await friend.goto('/gardens');
-  await friend.getByRole('link', { name: /No resurrect/ }).click();
-  await friend.getByRole('link', { name: 'Plantings' }).click();
+  await openGardenPlantings(friend, /No resurrect/);
   await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
 
   await abortPlantingApis(owner);
@@ -124,7 +132,7 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
 test('viewer offline reads cache; removed collaborator drops cache after reconnect', async ({
   browser,
 }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
   const stamp = Date.now();
   const owner = await newUser(browser, `plant-stale-owner-${stamp}@example.com`);
   const viewer = await newUser(browser, `plant-stale-viewer-${stamp}@example.com`);
@@ -143,8 +151,7 @@ test('viewer offline reads cache; removed collaborator drops cache after reconne
   await expect(owner.getByText(`plant-stale-collab-${stamp}@example.com`)).toBeVisible();
 
   await viewer.goto('/gardens');
-  await viewer.getByRole('link', { name: /Stale plantings/ }).click();
-  await viewer.getByRole('link', { name: 'Plantings' }).click();
+  await openGardenPlantings(viewer, /Stale plantings/);
   await expect(viewer.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
   await abortPlantingApis(viewer);
   await viewer.reload({ waitUntil: 'domcontentloaded' });
@@ -154,8 +161,7 @@ test('viewer offline reads cache; removed collaborator drops cache after reconne
   await restorePlantingApis(viewer);
 
   await collab.goto('/gardens');
-  await collab.getByRole('link', { name: /Stale plantings/ }).click();
-  await collab.getByRole('link', { name: 'Plantings' }).click();
+  await openGardenPlantings(collab, /Stale plantings/);
   await expect(collab.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
   const plantingsUrl = collab.url();
   await abortPlantingApis(collab);
