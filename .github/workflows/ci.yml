@@ -56,8 +56,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
       - name: npm audit (high+)
+        id: audit
+        continue-on-error: true
         run: npm audit --audit-level=high
       - name: Trivy filesystem scan (HIGH/CRITICAL)
+        id: trivy
+        continue-on-error: true
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -68,11 +72,18 @@ jobs:
           format: table
           scanners: vuln
       - name: OSV Scanner (lockfile)
+        id: osv
+        continue-on-error: true
         uses: google/osv-scanner-action/osv-scanner-action@f4cfcc01edc9c8b756a9b873b7a623ca674da51e # v2.3.8
         with:
           scan-args: |-
             --lockfile=package-lock.json
             --verbosity=error
+      - name: Fail if any SCA scanner found issues
+        if: always() && (steps.audit.outcome == 'failure' || steps.trivy.outcome == 'failure' || steps.osv.outcome == 'failure')
+        run: |
+          echo "SCA failed (audit=${{ steps.audit.outcome }} trivy=${{ steps.trivy.outcome }} osv=${{ steps.osv.outcome }})"
+          exit 1
 
   secrets:
     name: secrets

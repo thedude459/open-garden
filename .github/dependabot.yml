@@ -13,8 +13,22 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
-    # One PR per group. Ungrouped majors stay individual.
+    # One PR per group. Keep Nest/Vitest majors together so peer sets
+    # are not split across PRs. Other ungrouped majors stay individual.
     groups:
+      nestjs-major:
+        applies-to: version-updates
+        patterns:
+          - '@nestjs/*'
+        update-types:
+          - major
+      vitest-major:
+        applies-to: version-updates
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+        update-types:
+          - major
       production-minor-patch:
         applies-to: version-updates
         dependency-type: production
