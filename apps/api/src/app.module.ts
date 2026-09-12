@@ -5,8 +5,10 @@ import { PlantsModule } from './plants/plants.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { GardensModule } from './gardens/gardens.module';
 import { AdminModule } from './admin/admin.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [DatabaseModule, AuthModule, PlantsModule, FavoritesModule, GardensModule, AdminModule],
+  controllers: [HealthController],
 })
 export class AppModule {}

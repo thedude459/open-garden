@@ -35,6 +35,9 @@ test-output/
 playwright-report/
 test-results/
 
+# CI SCA scratch (created on the runner / local gate runs)
+.sca-out/
+
 # Misc
 /.sass-cache
 /connect.lock

@@ -3,6 +3,9 @@ import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { assertBootEnv } from './boot-env';
+
+assertBootEnv();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
