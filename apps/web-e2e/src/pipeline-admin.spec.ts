@@ -24,12 +24,20 @@ test('admin can start a run and round-trip cadence settings', async ({ page }) =
   });
   await page.locator('select[name="cadence"]').selectOption('daily');
   await page.locator('select[name="runAtHourUtc"]').selectOption('8');
+  const saved = page.waitForResponse(
+    (res) => res.url().includes('/admin/pipeline/settings') && res.request().method() === 'PATCH',
+  );
   await page.getByRole('button', { name: 'Save settings' }).click();
+  expect((await saved).ok()).toBeTruthy();
   await page.reload();
   await expect(page.locator('select[name="cadence"]')).toHaveValue('daily');
   await expect(page.locator('select[name="runAtHourUtc"]')).toHaveValue('8');
   await page.locator('select[name="runAtHourUtc"]').selectOption('6');
+  const restored = page.waitForResponse(
+    (res) => res.url().includes('/admin/pipeline/settings') && res.request().method() === 'PATCH',
+  );
   await page.getByRole('button', { name: 'Save settings' }).click();
+  expect((await restored).ok()).toBeTruthy();
 });
 
 test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ browser }) => {

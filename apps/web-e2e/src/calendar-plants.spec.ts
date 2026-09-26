@@ -41,9 +41,11 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await owner.getByRole('button', { name: 'Apply' }).click();
   await owner.getByRole('link', { name: /Sweet Basil/ }).click();
   await owner.getByRole('button', { name: 'Save favorite' }).click();
+  await expect(owner.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
 
   await createFrostGarden(owner, 'Picker bed');
   await owner.getByRole('button', { name: 'Show favorites' }).click();
+  await expect(owner.getByRole('heading', { name: 'Your favorites' })).toBeVisible();
   await owner.getByRole('button', { name: 'Add favorite Sweet Basil' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
 

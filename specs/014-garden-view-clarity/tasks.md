@@ -211,3 +211,12 @@ T013 planner-bed-labels.spec.ts
 - Overview `[showPlantingMarks]="false"`; Bed View `[showPlantingMarks]="true"` with on-mark text
 - Deselect = click empty plan; another mark switches the status line
 - Avoid: new NgModules, API/DTO churn, Compose CI switch, ADRs
+
+## Phase 7: Convergence
+
+- [X] T025 CRITICAL Revert calendar planting `method` (migration `libs/plant-catalog-data/migrations/0009_calendar_method.sql`, schema/DTO/API, Indoor start vs Outdoor sow add UI in `apps/web/src/app/gardens/garden-calendar.page.ts`) so this feature adds no tables, columns, or DTOs per Constitution IV and `plan: No new API, tables, or DTOs` (contradicts)
+- [X] T026 Restore Transplants as a first-class garden destination: Transplants link in `apps/web/src/app/gardens/garden-nav.ts`, restore `apps/web/src/app/gardens/garden-transplants.page.ts`, serve `/gardens/:id/transplants` in `apps/web/src/app/app.routes.ts` (do not redirect to plantings), keep indoor-tray off `garden-plantings.page.ts`, and cover one-click Overview from Transplants in `apps/web-e2e/src/garden-nav-overview.spec.ts` per FR-007 / US3/AC4 / T001 (contradicts)
+- [X] T027 Remove unrequested overdue / this-week attention chrome from `apps/web/src/app/gardens/garden-list.page.ts` (`enrich` extra GETs) and `apps/web/src/app/gardens/garden-layout.page.ts` per spec Assumptions (presentation/navigation only) (unrequested)
+- [X] T028 Remove unrequested Overdue / This week / Upcoming grouping from `apps/web/src/app/gardens/garden-reminders.page.ts` per spec Assumptions (do not redesign reminders) (unrequested)
+- [X] T029 Remove unrequested Bed View plant-spacing grid (`gridSpacingInches`, `Grid N in · plant`) from `apps/web/src/app/gardens/garden-plan-canvas.ts` and `apps/web/src/app/gardens/garden-bed-view.page.ts` per plan: Bed View labels/status only (unrequested)
+- [X] T030 Remove full `GardenNav` from `apps/web/src/app/gardens/garden-bed-view.page.ts` so Bed View keeps **Back to overview** only per T019 / `plan: research decision 2` (unrequested)

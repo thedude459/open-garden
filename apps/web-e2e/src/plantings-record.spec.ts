@@ -44,6 +44,7 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await owner.getByRole('button', { name: 'Apply' }).click();
   await owner.getByRole('link', { name: /Sweet Basil/ }).click();
   await owner.getByRole('button', { name: 'Save favorite' }).click();
+  await expect(owner.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
 
   await openPlantings(owner, 'Record bed');
   await addFromCatalog(owner, 'Cherry Tomato');

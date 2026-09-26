@@ -37,9 +37,9 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   const bed = owner.locator('[data-bed-name="North"]');
   const box = await bed.boundingBox();
   if (box) {
-    await owner.mouse.move(box.x + 8, box.y + 8);
+    await owner.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await owner.mouse.down();
-    await owner.mouse.move(box.x + 40, box.y + 8);
+    await owner.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, { steps: 8 });
     await owner.mouse.up();
   }
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();

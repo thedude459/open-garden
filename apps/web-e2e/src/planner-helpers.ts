@@ -67,10 +67,14 @@ export async function openOverview(page: Page) {
 
 export async function openConfiguration(page: Page) {
   await page.waitForURL(/\/gardens\/[^/?#]+/);
-  await page
-    .locator('nav[aria-label="Garden"]')
-    .getByRole('link', { name: 'Configuration', exact: true })
-    .click();
+  const config = page.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Configuration', exact: true });
+  if (await config.isVisible()) {
+    await config.click();
+  } else {
+    const id = page.url().match(/\/gardens\/([^/?#]+)/)?.[1];
+    expect(id).toBeTruthy();
+    await page.goto(`/gardens/${id}/configure`);
+  }
   await expect(page.getByRole('heading', { name: 'Configuration' })).toBeVisible();
 }
 

@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
 import { originFromCenter, drawableBeds, feetToInches, formatPlanSize, inchesToFeetInput } from '@open-garden/garden-layout';
 import { rotateBed90 } from '@open-garden/garden-layout/rotate';
 import type {
@@ -13,9 +12,7 @@ import type {
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
-import { CalendarApiService } from './calendar-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
-import { RemindersApiService } from './reminders-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
@@ -39,19 +36,6 @@ import { GardenNav } from './garden-nav';
       <p class="banner" role="status">
         Set zone and frost dates so the calendar can show sow windows.
         <a [routerLink]="['/gardens', gardenId, 'configure']">Set your site</a>
-      </p>
-    }
-    @if (overdue() || thisWeek()) {
-      <p role="status">
-        @if (overdue()) {
-          <a [routerLink]="['/gardens', gardenId, 'reminders']">{{ overdue() }} overdue</a>
-        }
-        @if (overdue() && thisWeek()) {
-          <span> · </span>
-        }
-        @if (thisWeek()) {
-          <a [routerLink]="['/gardens', gardenId, 'calendar']">{{ thisWeek() }} this week</a>
-        }
       </p>
     }
     @if (loading()) {
@@ -326,8 +310,6 @@ import { GardenNav } from './garden-nav';
 export class GardenLayoutPage implements OnInit {
   private readonly api = inject(LayoutApiService);
   private readonly gardensApi = inject(GardensApiService);
-  private readonly reminders = inject(RemindersApiService);
-  private readonly calendar = inject(CalendarApiService);
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
   private readonly route = inject(ActivatedRoute);
@@ -341,8 +323,6 @@ export class GardenLayoutPage implements OnInit {
   error = signal('');
   status = signal('');
   needsSite = signal(false);
-  overdue = signal(0);
-  thisWeek = signal(0);
   selectedId = signal<string | null>(null);
   confirmDeleteId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
@@ -447,8 +427,6 @@ export class GardenLayoutPage implements OnInit {
 
   async load() {
     this.needsSite.set(false);
-    this.overdue.set(0);
-    this.thisWeek.set(0);
     const [, detail] = await Promise.all([
       this.planner.load(this.gardenId, { reuseDirty: true }),
       this.gardensApi.detail(this.gardenId),
@@ -457,30 +435,6 @@ export class GardenLayoutPage implements OnInit {
       this.gardenName.set(detail.name);
       this.needsSite.set(!detail.lastFrost || !detail.firstFrost);
     }
-    void this.enrichDue();
-  }
-
-  // ponytail: extra GETs per Overview load. Quiet gardens skip. Upgrade: counts on GET /gardens/:id.
-  private async enrichDue() {
-    const d = this.draft();
-    if (!d || (!d.beds.length && !d.plantings.length)) return;
-    const [reminders, calendar] = await Promise.all([
-      this.reminders.list(this.gardenId).catch(() => null),
-      this.calendar.get(this.gardenId).catch(() => null),
-    ]);
-    this.overdue.set(
-      reminders?.items.filter((i) => i.urgency === 'overdue' || i.urgency === 'dueToday').length ??
-        0,
-    );
-    const today = new Date();
-    this.thisWeek.set(
-      calendar?.entries.filter((e) =>
-        overlapsThisWeek(
-          [e.windows.indoorStart, e.windows.outdoorSow, e.windows.transplant],
-          today,
-        ),
-      ).length ?? 0,
-    );
   }
 
   async createBed() {

@@ -60,7 +60,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   expect(markBox).toBeTruthy();
   await owner.mouse.move(markBox!.x + markBox!.width / 2, markBox!.y + markBox!.height / 2);
   await owner.mouse.down();
-  await owner.mouse.move(box!.x + box!.width - 8, box!.y + 8);
+  await owner.mouse.move(box!.x + box!.width - 8, box!.y + 8, { steps: 8 });
   await owner.mouse.up();
   await expect(owner.getByText('Drop missed a bed')).toBeVisible();
 

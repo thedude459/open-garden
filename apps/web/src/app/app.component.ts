@@ -13,7 +13,10 @@ import { NoticeService } from './ui/notice.service';
   template: `
     <div class="shell">
       <nav class="nav">
-        <h1><a [routerLink]="signedIn() ? '/gardens' : '/login'">Open Garden</a></h1>
+        <a class="nav-brand" [routerLink]="signedIn() ? '/gardens' : '/login'">
+          <img src="assets/icon-512.png" alt="" width="32" height="32" />
+          <h1>Open Garden</h1>
+        </a>
         @if (signedIn()) {
           <a routerLink="/gardens" routerLinkActive="active">Gardens</a>
           <a routerLink="/plants" routerLinkActive="active">Catalog</a>

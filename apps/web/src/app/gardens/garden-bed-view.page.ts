@@ -15,13 +15,11 @@ import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
-import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlantingTray, PlaceMarker, EmptyState, GardenNav],
+  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlantingTray, PlaceMarker, EmptyState],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <p><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" [current]="bed()?.name ?? 'Bed'" />
     <div class="planner">

@@ -1,12 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
 import type { GardenSummaryDto } from '@open-garden/shared-types';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
-import { CalendarApiService } from './calendar-api.service';
-import { RemindersApiService } from './reminders-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { EmptyState } from '../ui/empty-state';
 
@@ -50,14 +47,6 @@ import { EmptyState } from '../ui/empty-state';
               } @else {
                 zone not set
               }
-              @if (note(g.id); as a) {
-                @if (a.overdue) {
-                  <span class="needs-attention"> · {{ a.overdue }} overdue</span>
-                }
-                @if (a.thisWeek) {
-                  <span class="this-week"> · {{ a.thisWeek }} this week</span>
-                }
-              }
             </span>
           </a>
         }
@@ -67,20 +56,13 @@ import { EmptyState } from '../ui/empty-state';
 })
 export class GardenListPage implements OnInit {
   private readonly api = inject(GardensApiService);
-  private readonly reminders = inject(RemindersApiService);
-  private readonly calendar = inject(CalendarApiService);
   readonly notices = inject(NoticeService);
   name = '';
   notes = '';
   items = signal<GardenSummaryDto[]>([]);
-  attention = signal<Record<string, { overdue: number; thisWeek: number }>>({});
   loading = signal(false);
   error = signal('');
   private loadGen = 0;
-
-  note(id: string) {
-    return this.attention()[id];
-  }
 
   ngOnInit() {
     void this.load();
@@ -100,38 +82,6 @@ export class GardenListPage implements OnInit {
     if (gen !== this.loadGen) return;
     this.items.set(page.items.map(withCounts));
     this.loading.set(false);
-    void this.enrich(this.items());
-  }
-
-  // ponytail: O(gardens with beds/placements) extra GETs. Quiet gardens skip. Upgrade: counts on GET /gardens.
-  private async enrich(gardens: GardenSummaryDto[]) {
-    const need = gardens.filter((g) => (g.bedCount ?? 0) > 0 || (g.placementCount ?? 0) > 0);
-    if (!need.length) return;
-    const pairs = await Promise.all(
-      need.map(async (g) => {
-        const [reminders, calendar] = await Promise.all([
-          this.reminders.list(g.id).catch(() => null),
-          this.calendar.get(g.id).catch(() => null),
-        ]);
-        const overdue =
-          reminders?.items.filter((i) => i.urgency === 'overdue' || i.urgency === 'dueToday')
-            .length ?? 0;
-        const today = new Date();
-        const thisWeek =
-          calendar?.entries.filter((e) =>
-            overlapsThisWeek(
-              [e.windows.indoorStart, e.windows.outdoorSow, e.windows.transplant],
-              today,
-            ),
-          ).length ?? 0;
-        return [g.id, { overdue, thisWeek }] as const;
-      }),
-    );
-    this.attention.update((cur) => {
-      const next = { ...cur };
-      for (const [id, a] of pairs) next[id] = a;
-      return next;
-    });
   }
 
   async create() {

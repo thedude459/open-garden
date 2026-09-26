@@ -120,7 +120,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   expect(box).toBeTruthy();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box!.x + box!.width / 2 + 24, box!.y + box!.height / 2);
+  await page.mouse.move(box!.x + box!.width / 2 + 24, box!.y + box!.height / 2, { steps: 8 });
   await page.mouse.up();
   await page.getByRole('button', { name: 'Save layout' }).click();
   await expect(page.getByText('Layout has spacing or fit problems')).toBeVisible();
@@ -163,6 +163,8 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   await expect(page.getByRole('button', { name: 'Open bed East' })).toHaveCount(1);
 
   await page.context().setOffline(false);
+  const dismiss = page.getByRole('button', { name: 'Dismiss' });
+  if (await dismiss.isVisible()) await dismiss.click();
   await page.getByRole('link', { name: 'Transplants' }).click();
   await expect(page.getByRole('heading', { name: 'Transplant View' })).toBeVisible();
   await page.context().setOffline(true);

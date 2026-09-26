@@ -10,10 +10,13 @@ async function expectPrimaryPaint(btn: Locator) {
 
 test('primary actions keep green fill and white label', async ({ page, browser }) => {
   await page.goto('/login');
+  await expect(page.getByRole('img', { name: 'Open Garden' })).toBeVisible();
+  await expect(page.getByText('Household garden planner')).toBeVisible();
   await expectPrimaryPaint(page.getByRole('button', { name: 'Login' }));
 
   const owner = await newUser(browser, `ui-visual-${Date.now()}@example.com`);
   await owner.goto('/gardens');
+  await expect(owner.locator('.nav-brand img')).toBeVisible();
   await expectPrimaryPaint(owner.getByRole('button', { name: 'Create garden' }));
   await owner.getByPlaceholder('Garden name').fill('Visual');
   await owner.getByRole('button', { name: 'Create garden' }).click();
