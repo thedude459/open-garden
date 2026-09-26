@@ -13,14 +13,14 @@ import type {
 } from '@open-garden/shared-types';
 import { PLANT_TYPES } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
-import { PlantsApiService } from '../plants/plants-api.service';
+import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
 import { OnlineRequiredError } from './gardens-api.service';
 import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, GardenNav],
+  imports: [FormsModule, GardenNav, PlantPicker],
   template: `
     <og-garden-nav [gardenId]="gardenId" />
     <h2>Planting calendar</h2>
@@ -40,15 +40,16 @@ import { GardenNav } from './garden-nav';
           </p>
         }
         @if (canEdit()) {
-          <form class="filters" (ngSubmit)="searchCatalog()">
-            <input
-              [(ngModel)]="searchQ"
-              name="calendarSearch"
-              placeholder="Search catalog to add"
-            />
-            <button type="submit" class="btn btn-primary">Search catalog</button>
+          <og-plant-picker
+            inputName="calendarSearch"
+            searchLabel="Search catalog to add"
+            placeholder="Search catalog to add"
+            submitLabel="Search catalog"
+            (results)="onCatalog($event)"
+            (failed)="onSearchFailed($event)"
+          >
             <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
-          </form>
+          </og-plant-picker>
           @if (catalogHits().length) {
             <ul class="card-list">
               @for (p of catalogHits(); track p.id) {
@@ -117,11 +118,11 @@ import { GardenNav } from './garden-nav';
                   @if (e.zoneMismatch) {
                     <span class="badge">Zone mismatch</span>
                   }
-                  <p class="muted">
-                    Indoor {{ formatWindow(e.windows.indoorStart) }} · Sow
-                    {{ formatWindow(e.windows.outdoorSow) }} · Transplant
-                    {{ formatWindow(e.windows.transplant) }} · Harvest
-                    {{ formatWindow(e.windows.harvest) }}
+                  <p class="windows">
+                    <span>Indoor {{ formatWindow(e.windows.indoorStart) }}</span>
+                    <span>Sow {{ formatWindow(e.windows.outdoorSow) }}</span>
+                    <span>Transplant {{ formatWindow(e.windows.transplant) }}</span>
+                    <span>Harvest {{ formatWindow(e.windows.harvest) }}</span>
                   </p>
                 </div>
                 @if (canEdit()) {
@@ -144,14 +145,12 @@ import { GardenNav } from './garden-nav';
 })
 export class GardenCalendarPage implements OnInit {
   private readonly api = inject(CalendarApiService);
-  private readonly plants = inject(PlantsApiService);
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
   calendar = signal<CalendarDto | null>(null);
   loading = signal(true);
   error = signal('');
-  searchQ = '';
   typeFilter = '';
   types = PLANT_TYPES;
   catalogHits = signal<PlantSummaryDto[]>([]);
@@ -203,10 +202,13 @@ export class GardenCalendarPage implements OnInit {
     this.loading.set(false);
   }
 
-  async searchCatalog() {
+  onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
-    const page = await this.plants.list({ q: this.searchQ, page: 1, pageSize: 20 });
-    this.catalogHits.set(page.items);
+    this.catalogHits.set(items);
+  }
+
+  onSearchFailed(err: unknown) {
+    this.error.set(messageFrom(err));
   }
 
   async loadFavorites() {

@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { originFromCenter, drawableBeds, feetToInches, formatPlanSize, inchesToFeetInput } from '@open-garden/garden-layout';
@@ -20,12 +20,34 @@ import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState, GardenNav],
   template: `
     <og-garden-nav [gardenId]="gardenId" />
-    <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Garden Overview" />
     <div class="planner">
-    <h2>Garden Overview</h2>
+    <header class="page-head">
+      <div>
+        <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Garden Overview" />
+        <h2>Garden Overview</h2>
+      </div>
+      @if (!loading() && draft()) {
+        <div class="planner-toolbar">
+          <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
+          <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
+          @if (canEdit()) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="save()"
+              [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
+              [disabled]="notices.busyMap().has('save-layout')"
+            >
+              Save layout
+            </button>
+          }
+        </div>
+      }
+    </header>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -43,33 +65,20 @@ import { GardenNav } from './garden-nav';
     } @else if (!draft()) {
       <p class="muted">Garden unavailable or not found.</p>
     } @else {
-      @if (dirty()) {
-        <p role="status">Unsaved changes</p>
-      }
-      @for (flag of flags(); track $index) {
-        <p class="needs-attention" role="status">
-          @if (flag.kind === 'spacing') {
-            Too close
-          } @else if (flag.kind === 'fit') {
-            Does not fit
-          } @else {
-            Spacing unavailable
-          }
-        </p>
-      }
-      <div class="planner-toolbar">
-        <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
-        <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
-        @if (canEdit()) {
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="save()"
-            [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
-            [disabled]="notices.busyMap().has('save-layout')"
-          >
-            Save layout
-          </button>
+      <div class="planner-alerts">
+        @if (dirty()) {
+          <p role="status">Unsaved changes</p>
+        }
+        @for (flag of flags(); track $index) {
+          <p class="needs-attention" role="status">
+            @if (flag.kind === 'spacing') {
+              Too close
+            } @else if (flag.kind === 'fit') {
+              Does not fit
+            } @else {
+              Spacing unavailable
+            }
+          </p>
         }
       </div>
       <div class="planner-stage">

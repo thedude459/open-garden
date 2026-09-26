@@ -15,7 +15,7 @@ import { EmptyState } from '../ui/empty-state';
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
-    <form class="filters" (ngSubmit)="create()">
+    <form class="filters card" (ngSubmit)="create()">
       <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
       <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
       <button
@@ -34,19 +34,21 @@ import { EmptyState } from '../ui/empty-state';
     } @else {
       <div class="card-list">
         @for (g of items(); track g.id) {
-          <a class="row" [routerLink]="['/gardens', g.id, 'layout']">
-            <span>
+          <a class="garden-card" [routerLink]="['/gardens', g.id, 'layout']">
+            <span class="garden-card-header">
               <strong>{{ g.name }}</strong>
-              <span class="muted"> · {{ g.myRole }}</span>
+              <span class="role">{{ g.myRole }}</span>
             </span>
-            <span class="muted">
-              {{ g.bedCount }} beds · {{ g.placementCount }} placements
-              ·
-              @if (g.hardinessZone != null) {
-                zone {{ g.hardinessZone }}
-              } @else {
-                zone not set
-              }
+            <span class="garden-facts">
+              <span>{{ g.bedCount }} {{ g.bedCount === 1 ? 'bed' : 'beds' }}</span>
+              <span>{{ g.placementCount }} {{ g.placementCount === 1 ? 'placement' : 'placements' }}</span>
+              <span>
+                @if (g.hardinessZone != null) {
+                  Zone {{ g.hardinessZone }}
+                } @else {
+                  Zone not set
+                }
+              </span>
             </span>
           </a>
         }

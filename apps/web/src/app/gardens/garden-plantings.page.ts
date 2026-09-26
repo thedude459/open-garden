@@ -7,14 +7,14 @@ import { normalizeBedName } from '@open-garden/seasonal-plantings/beds';
 import { groupPlantings, type PlantingGroup } from '@open-garden/seasonal-plantings/group-plantings';
 import type { FavoriteListItemDto, PlantSummaryDto } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
-import { PlantsApiService } from '../plants/plants-api.service';
+import { PlantPicker } from '../plants/plant-picker';
 import { PlantingsApiService } from './plantings-api.service';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
 import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, GardenNav],
+  imports: [FormsModule, GardenNav, PlantPicker],
   template: `
     <og-garden-nav [gardenId]="gardenId" />
     <h2>Plantings</h2>
@@ -32,15 +32,16 @@ import { GardenNav } from './garden-nav';
       <p class="muted">Garden unavailable or not found.</p>
     } @else {
       @if (canEdit()) {
-        <form class="filters" (ngSubmit)="searchCatalog()">
-          <input
-            [(ngModel)]="searchQ"
-            name="plantingSearch"
-            placeholder="Search catalog to add"
-          />
-          <button type="submit" class="btn btn-primary">Search catalog</button>
+        <og-plant-picker
+          inputName="plantingSearch"
+          searchLabel="Search catalog to add"
+          placeholder="Search catalog to add"
+          submitLabel="Search catalog"
+          (results)="onCatalog($event)"
+          (failed)="onSearchFailed($event)"
+        >
           <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
-        </form>
+        </og-plant-picker>
         @if (catalogHits().length) {
           <ul class="card-list">
             @for (p of catalogHits(); track p.id) {
@@ -237,7 +238,6 @@ import { GardenNav } from './garden-nav';
 })
 export class GardenPlantingsPage implements OnInit {
   private readonly api = inject(PlantingsApiService);
-  private readonly plants = inject(PlantsApiService);
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
@@ -246,7 +246,6 @@ export class GardenPlantingsPage implements OnInit {
   error = signal('');
   confirmRemoveId = signal<string | null>(null);
   failures = signal<QueueItem[]>([]);
-  searchQ = '';
   bedFilter = '';
   renameDraft: Record<string, string> = {};
   catalogHits = signal<PlantSummaryDto[]>([]);
@@ -301,10 +300,13 @@ export class GardenPlantingsPage implements OnInit {
     if (!silent) this.loading.set(false);
   }
 
-  async searchCatalog() {
+  onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
-    const page = await this.plants.list({ q: this.searchQ, page: 1, pageSize: 20 });
-    this.catalogHits.set(page.items);
+    this.catalogHits.set(items);
+  }
+
+  onSearchFailed(err: unknown) {
+    this.error.set(messageFrom(err));
   }
 
   async loadFavorites() {

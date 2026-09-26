@@ -14,10 +14,14 @@ import { GardenNav } from './garden-nav';
   imports: [FormsModule, RouterLink, GardenNav],
   template: `
     @if (garden(); as g) {
-      <p><a routerLink="/gardens">All gardens</a></p>
-      <h2>{{ g.name }}</h2>
-      <p class="muted">You are {{ g.myRole }} of this garden.</p>
+      <p class="back-link"><a routerLink="/gardens">All gardens</a></p>
       <og-garden-nav [gardenId]="g.id" />
+      <header class="page-head">
+        <div>
+          <h2>{{ g.name }}</h2>
+          <p class="muted">You are {{ g.myRole }} of this garden.</p>
+        </div>
+      </header>
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }

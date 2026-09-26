@@ -11,29 +11,33 @@ import { NoticeService } from './ui/notice.service';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, NoticeHost],
   template: `
-    <div class="shell">
-      <nav class="nav">
+    <div class="app">
+      <header class="app-bar">
         <a class="nav-brand" [routerLink]="signedIn() ? '/gardens' : '/login'">
           <img src="assets/icon-512.png" alt="" width="32" height="32" />
-          <h1>Open Garden</h1>
+          <h1 class="brand-name">Open Garden</h1>
         </a>
         @if (signedIn()) {
-          <a routerLink="/gardens" routerLinkActive="active">Gardens</a>
-          <a routerLink="/plants" routerLinkActive="active">Catalog</a>
-          <a routerLink="/favorites" routerLinkActive="active">Favorites</a>
-          @if (isAdmin()) {
-            <a routerLink="/admin/pipeline" routerLinkActive="active">Pipeline</a>
-          }
-          <span class="nav-auth">
+          <nav class="app-nav" aria-label="Primary">
+            <a routerLink="/gardens" routerLinkActive="active">Gardens</a>
+            <a routerLink="/plants" routerLinkActive="active">Catalog</a>
+            <a routerLink="/favorites" routerLinkActive="active">Favorites</a>
+            @if (isAdmin()) {
+              <a routerLink="/admin/pipeline" routerLinkActive="active">Pipeline</a>
+            }
+          </nav>
+          <span class="app-bar-end">
             <button type="button" class="nav-text" (click)="logout()">Sign out</button>
           </span>
         } @else {
-          <span class="nav-auth">
+          <span class="app-bar-end">
             <a routerLink="/login" routerLinkActive="active">Login</a>
           </span>
         }
-      </nav>
-      <router-outlet />
+      </header>
+      <main class="shell">
+        <router-outlet />
+      </main>
     </div>
     <og-notice-host />
   `,
