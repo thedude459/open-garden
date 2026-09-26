@@ -19,13 +19,13 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await owner.locator('input[name="newLength"]').fill('');
   await owner.locator('input[name="newWidth"]').fill('');
   await owner.getByRole('button', { name: 'Create bed' }).click();
-  await expect(owner.getByRole('button', { name: 'No size', exact: true })).toHaveCount(0);
+  await expect(owner.getByRole('button', { name: 'Open bed No size' })).toHaveCount(0);
   await expect(owner.getByText('Unsaved changes')).toHaveCount(0);
 
   await createSizedBed(owner, 'East');
   await expect(owner.getByText('Unsaved changes')).toBeVisible();
   await expect(owner.locator('[data-bed-name="East"]')).toBeVisible();
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await openOverview(owner);
   await expect(owner.locator('[data-bed-name="East"]')).toHaveCount(0);
 
@@ -47,7 +47,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await owner.getByRole('button', { name: 'Confirm delete Compost' }).click();
   await expect(owner.locator('[data-area-name="Compost"]')).toHaveCount(0);
 
-  await owner.getByRole('button', { name: 'East', exact: true }).click();
+  await owner.getByRole('button', { name: 'Open bed East' }).click();
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await expect(owner.getByLabel('Bed plan')).toBeVisible();
   await expect(owner.getByRole('button', { name: 'Create bed' })).toHaveCount(0);
@@ -66,7 +66,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await expect(viewer.locator('[data-bed-name="East"]')).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Create bed' })).toHaveCount(0);
   await expect(viewer.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
-  await viewer.getByRole('button', { name: 'East', exact: true }).click();
+  await viewer.getByRole('button', { name: 'Open bed East' }).click();
   await expect(viewer.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Direct seed' })).toHaveCount(0);
 });

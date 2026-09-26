@@ -16,6 +16,14 @@ export type PlantingMarkLabel = {
 const CHAR_W = 3.1;
 const LABEL_H = 7;
 
+/** Prefix of the common name that fits in a mark of radius `radiusInches`. */
+export function shortenPlantingMarkName(commonName: string, radiusInches: number): string {
+  if (!commonName) return '';
+  const maxChars = Math.floor((2 * radiusInches) / CHAR_W);
+  if (maxChars <= 0) return commonName.slice(0, 1);
+  return commonName.slice(0, maxChars);
+}
+
 /** Place names under each mark and nudge later labels down when boxes overlap. */
 export function layoutPlantingLabels(marks: PlantingMark[]): PlantingMarkLabel[] {
   const placed: Array<PlantingMarkLabel & { w: number }> = [];

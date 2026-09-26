@@ -34,7 +34,7 @@ import { EmptyState } from '../ui/empty-state';
     } @else {
       <div class="card-list">
         @for (g of items(); track g.id) {
-          <a class="row" [routerLink]="['/gardens', g.id]">
+          <a class="row" [routerLink]="['/gardens', g.id, 'layout']">
             <span>
               <strong>{{ g.name }}</strong>
               <span class="muted"> · {{ g.myRole }}</span>

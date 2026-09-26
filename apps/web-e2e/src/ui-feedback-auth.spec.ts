@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
 
-test('login shows busy then lands on catalog without leftover notice', async ({ page }) => {
+test('login shows busy then lands on gardens without leftover notice', async ({ page }) => {
   await page.route('**/api/auth/login', async (route) => {
     await new Promise((r) => setTimeout(r, 400));
     await route.continue();
@@ -12,8 +12,15 @@ test('login shows busy then lands on catalog without leftover notice', async ({ 
   const login = page.getByRole('button', { name: 'Login' });
   await login.click();
   await expect(login).toHaveAttribute('aria-busy', 'true');
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
   await expect(page.getByLabel('Notification')).toHaveCount(0);
+});
+
+test('join link opens register with email filled', async ({ page }) => {
+  await page.goto('/login?email=join%40example.com&register=1');
+  await expect(page.getByPlaceholder('Email')).toHaveValue('join@example.com');
+  await expect(page.getByPlaceholder('Display name')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
 });
 
 test('Create garden busy + success notice; double click is one garden', async ({ browser }) => {

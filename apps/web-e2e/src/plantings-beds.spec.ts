@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
+import { createSizedBed, openPlantingsFromGarden, saveLayout } from './planner-helpers';
 
 
 
@@ -8,7 +9,11 @@ async function openPlantings(page: Page, name: string) {
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
-  await page.getByRole('link', { name: 'Plantings' }).click();
+  await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+  await createSizedBed(page, 'Raised bed 1');
+  await createSizedBed(page, 'Patio pots');
+  expect((await saveLayout(page)).status()).toBe(200);
+  await openPlantingsFromGarden(page);
 }
 
 async function addFromCatalog(page: Page, name: string) {
@@ -29,8 +34,6 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   const friend = await newUser(browser, friendEmail);
 
   await openPlantings(owner, 'Bed plot');
-  await owner.getByPlaceholder('Bed name').fill('Raised bed 1');
-  await owner.getByRole('button', { name: 'Create bed' }).click();
   await expect(owner.getByRole('heading', { name: 'Raised bed 1' })).toBeVisible();
   await expect(owner.getByRole('heading', { name: 'Unassigned' })).toHaveCount(0);
 
@@ -49,8 +52,6 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
     owner.locator('section').filter({ has: owner.getByRole('heading', { name: 'Unassigned' }) }).locator('article'),
   ).toHaveCount(1);
 
-  await owner.getByPlaceholder('Bed name').fill('Patio pots');
-  await owner.getByRole('button', { name: 'Create bed' }).click();
   await expect(owner.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
   await expect(
     owner.locator('section').filter({ has: owner.getByRole('heading', { name: 'Patio pots' }) }).getByText('No plantings in this bed.'),
@@ -87,7 +88,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
   await expect(owner.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -95,7 +96,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
 
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Bed plot/ }).click();
-  await friend.getByRole('link', { name: 'Plantings' }).click();
+  await openPlantingsFromGarden(friend);
   await expect(friend.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Create bed' })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: /Rename/ })).toHaveCount(0);

@@ -10,6 +10,8 @@ test('favorites add and remove', async ({ browser }) => {
   ).toBeVisible({ timeout: 15_000 });
   await page.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first().click();
   await page.getByRole('button', { name: /favorite/i }).click();
+  await expect(page.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
   await page.goto('/favorites');
   await expect(page.getByRole('heading', { name: 'Favorites' })).toBeVisible();
+  await expect(page.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first()).toBeVisible();
 });

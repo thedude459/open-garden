@@ -7,7 +7,7 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.getByPlaceholder('Email').fill('admin@example.com');
   await page.getByPlaceholder('Password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
 }
 
 test('admin can start a run and round-trip cadence settings', async ({ page }) => {
@@ -24,12 +24,20 @@ test('admin can start a run and round-trip cadence settings', async ({ page }) =
   });
   await page.locator('select[name="cadence"]').selectOption('daily');
   await page.locator('select[name="runAtHourUtc"]').selectOption('8');
+  const saved = page.waitForResponse(
+    (res) => res.url().includes('/admin/pipeline/settings') && res.request().method() === 'PATCH',
+  );
   await page.getByRole('button', { name: 'Save settings' }).click();
+  expect((await saved).ok()).toBeTruthy();
   await page.reload();
   await expect(page.locator('select[name="cadence"]')).toHaveValue('daily');
   await expect(page.locator('select[name="runAtHourUtc"]')).toHaveValue('8');
   await page.locator('select[name="runAtHourUtc"]').selectOption('6');
+  const restored = page.waitForResponse(
+    (res) => res.url().includes('/admin/pipeline/settings') && res.request().method() === 'PATCH',
+  );
   await page.getByRole('button', { name: 'Save settings' }).click();
+  expect((await restored).ok()).toBeTruthy();
 });
 
 test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ browser }) => {
@@ -40,6 +48,6 @@ test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ bro
     0,
   );
   await page.goto('/admin/pipeline');
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog pipeline' })).toHaveCount(0);
 });

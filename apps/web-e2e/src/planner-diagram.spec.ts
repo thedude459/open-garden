@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { addTransplant, createSizedBed, newUser, openOverview, saveLayout } from './planner-helpers';
 
-test('planner diagram: names, distinct areas, grid in Bed View, planting marks on Overview', async ({
+test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks on Overview', async ({
   browser,
 }) => {
   test.setTimeout(90_000);
@@ -27,15 +27,16 @@ test('planner diagram: names, distinct areas, grid in Bed View, planting marks o
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await owner.getByRole('button', { name: 'Raised bed 1', exact: true }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="Raised bed 1"]'),
   );
   expect((await saveLayout(owner)).status()).toBe(200);
-  await expect(owner.getByLabel('Bed plan')).toContainText('Cherry Tomato');
+  await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.getByLabel('Bed plan').locator('.layout-plant-label')).toBeVisible();
   await expect(owner.locator('.layout-grid')).not.toHaveCount(0);
   await owner.getByRole('link', { name: 'Back to overview' }).click();
   await expect(owner.getByLabel('Garden plan')).toContainText('Cherry Tomato');
-  await expect(owner.locator('.layout-plant')).toHaveCount(1);
+  await expect(owner.locator('.layout-plant')).toHaveCount(0);
 });

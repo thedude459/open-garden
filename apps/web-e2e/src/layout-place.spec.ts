@@ -4,6 +4,7 @@ import {
   createSizedBed,
   inviteViewer,
   newUser,
+  openConfiguration,
   openOverview,
   saveGarden,
   saveLayout,
@@ -21,6 +22,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByPlaceholder('Garden name').fill('Place plot');
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Place plot/ }).click();
+  await openConfiguration(owner);
   await owner.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
   await owner.locator('select[name="lastMonth"]').selectOption('4');
   await owner.locator('input[name="lastDay"]').fill('15');
@@ -34,7 +36,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByRole('button', { name: 'Add Spinach' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Spinach' })).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await openOverview(owner);
   await expect(owner.getByText('Spinach')).toHaveCount(0);
   await createSizedBed(owner, 'Raised bed 1');
@@ -42,8 +44,8 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await owner.getByRole('button', { name: 'Raised bed 1', exact: true }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="Raised bed 1"]'),
   );
@@ -51,7 +53,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
 
   await owner.getByLabel('Search plants').fill('Cherry Tomato');
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await owner.getByRole('button', { name: 'Arm Cherry Tomato' }).dragTo(
+  await owner.getByRole('button', { name: 'Place Cherry Tomato' }).dragTo(
     owner.locator('[data-bed-name="Raised bed 1"]'),
   );
   await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
@@ -60,8 +62,8 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByRole('link', { name: 'Back to overview' }).click();
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Sweet Basil');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await owner.getByRole('button', { name: 'Raised bed 1', exact: true }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' }).dragTo(
     owner.locator('[data-bed-name="Raised bed 1"]'),
   );
@@ -73,7 +75,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Place plot/ }).click();
   await openOverview(friend);
-  await friend.getByRole('button', { name: 'Raised bed 1', exact: true }).click();
+  await friend.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await expect(friend.getByRole('button', { name: 'Direct seed' })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
 });

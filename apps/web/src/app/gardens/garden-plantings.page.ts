@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { assertDatePair } from '@open-garden/seasonal-plantings/dates';
 import { normalizeBedName } from '@open-garden/seasonal-plantings/beds';
 import { groupPlantings, type PlantingGroup } from '@open-garden/seasonal-plantings/group-plantings';
@@ -10,12 +10,13 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
+import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, GardenNav],
   template: `
-    <p><a [routerLink]="['/gardens', gardenId]">Back to garden</a></p>
+    <og-garden-nav [gardenId]="gardenId" />
     <h2>Plantings</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
@@ -45,7 +46,14 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
             @for (p of catalogHits(); track p.id) {
               <li class="row">
                 <span>{{ p.commonName }}</span>
-                <button type="button" (click)="add(p)">Add {{ p.commonName }}</button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [attr.aria-label]="'Add ' + p.commonName"
+                  (click)="add(p)"
+                >
+                  Add
+                </button>
               </li>
             }
           </ul>
@@ -56,17 +64,19 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
             @for (f of favorites(); track f.favoriteId) {
               <li class="row">
                 <span>{{ f.plant.commonName }}</span>
-                <button type="button" (click)="add(f.plant)">
-                    Add favorite {{ f.plant.commonName }}
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [attr.aria-label]="'Add favorite ' + f.plant.commonName"
+                  (click)="add(f.plant)"
+                >
+                  Add
                 </button>
               </li>
             }
           </ul>
         }
-        <form class="filters" (ngSubmit)="createBed()">
-          <input [(ngModel)]="bedName" name="bedName" placeholder="Bed name" />
-          <button type="submit" class="btn btn-primary">Create bed</button>
-        </form>
+        <p class="muted">Create beds on Garden Overview.</p>
       }
       <div class="filters">
         <label>
@@ -84,11 +94,11 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
           </select>
         </label>
         @if (bedFilter) {
-          <button type="button" (click)="clearFilter()">Show all</button>
+          <button type="button" class="btn btn-secondary" (click)="clearFilter()">Show all</button>
         }
       </div>
       @if (visibleGroups().length === 0 && !list()!.plantings.length && !list()!.beds.length) {
-        <p class="muted">No plantings yet. Search the catalog or your favorites to record one.</p>
+        <p class="muted">No plantings yet. Search the catalog or your favorites to record one. Create beds on Garden Overview.</p>
       } @else if (visibleGroups().length === 0) {
         <p class="muted">No plantings match this bed filter.</p>
       } @else {
@@ -111,9 +121,20 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                   [ngModelOptions]="{ standalone: true }"
                   [attr.name]="'rename-' + group.bedId"
                 />
-                <button type="submit">Rename {{ group.title }}</button>
-                <button type="button" (click)="deleteBed(group.bedId!)">
-                  Delete bed {{ group.title }}
+                <button
+                  type="submit"
+                  class="btn btn-secondary"
+                  [attr.aria-label]="'Rename ' + group.title"
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [attr.aria-label]="'Delete bed ' + group.title"
+                  (click)="deleteBed(group.bedId!)"
+                >
+                  Delete bed
                 </button>
               </form>
             }
@@ -174,19 +195,34 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                           }
                         </select>
                       </label>
-                      <button type="button" (click)="save(p, plantedInput.value, harvestInput.value, bedSelect.value)">Save planting</button>
+                      <button
+                        type="button"
+                        class="btn btn-primary"
+                        (click)="save(p, plantedInput.value, harvestInput.value, bedSelect.value)"
+                      >
+                        Save planting
+                      </button>
                     }
                   </div>
                   @if (canEdit()) {
                     @if (confirmRemoveId() !== p.id) {
-                      <button type="button" (click)="confirmRemoveId.set(p.id)">
-                        Remove {{ p.commonName }}
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [attr.aria-label]="'Remove ' + p.commonName"
+                        (click)="confirmRemoveId.set(p.id)"
+                      >
+                        Remove
                       </button>
                     } @else {
                       <span>
                         <p>Permanently remove this planting? This cannot be undone.</p>
-                        <button type="button" (click)="confirmRemove(p)">Confirm remove</button>
-                        <button type="button" (click)="confirmRemoveId.set(null)">Cancel</button>
+                        <button type="button" class="btn btn-destructive" (click)="confirmRemove(p)">
+                          Confirm remove
+                        </button>
+                        <button type="button" class="btn btn-secondary" (click)="confirmRemoveId.set(null)">
+                          Cancel
+                        </button>
                       </span>
                     }
                   }
@@ -211,7 +247,6 @@ export class GardenPlantingsPage implements OnInit {
   confirmRemoveId = signal<string | null>(null);
   failures = signal<QueueItem[]>([]);
   searchQ = '';
-  bedName = '';
   bedFilter = '';
   renameDraft: Record<string, string> = {};
   catalogHits = signal<PlantSummaryDto[]>([]);
@@ -357,22 +392,6 @@ export class GardenPlantingsPage implements OnInit {
     try {
       await this.api.remove(this.gardenId, planting.id);
       this.confirmRemoveId.set(null);
-      await this.load(true);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
-  async createBed() {
-    this.error.set('');
-    try {
-      const { name } = normalizeBedName(this.bedName);
-      await this.api.createBed(this.gardenId, {
-        name,
-        lengthInches: 96,
-        widthInches: 48,
-      });
-      this.bedName = '';
       await this.load(true);
     } catch (err) {
       this.error.set(messageFrom(err));

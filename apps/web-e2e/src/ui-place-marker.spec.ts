@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, newUser, openOverview, saveLayout } from './planner-helpers';
+import { createSizedBed, newUser, openOverview, saveLayout, uniqueEmail } from './planner-helpers';
 
 test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({ browser }) => {
   test.setTimeout(120_000);
-  const owner = await newUser(browser, `ui-place-${Date.now()}@example.com`);
+  const owner = await newUser(browser, uniqueEmail('ui-place'));
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Marker garden');
   await owner.getByRole('button', { name: 'Create garden' }).click();
@@ -27,6 +27,7 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   await owner.keyboard.press('Enter');
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await expect(owner.getByLabel('You are here')).toContainText('North');
+  await expect(owner.getByLabel('Bed plan')).not.toContainText('Bed ·');
   await owner.getByRole('link', { name: 'Back to overview' }).click();
 
   await owner.locator('[data-bed-name="North"]').click({ position: { x: 4, y: 4 } });
@@ -36,9 +37,9 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   const bed = owner.locator('[data-bed-name="North"]');
   const box = await bed.boundingBox();
   if (box) {
-    await owner.mouse.move(box.x + 8, box.y + 8);
+    await owner.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await owner.mouse.down();
-    await owner.mouse.move(box.x + 40, box.y + 8);
+    await owner.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, { steps: 8 });
     await owner.mouse.up();
   }
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();

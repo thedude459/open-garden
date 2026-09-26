@@ -24,6 +24,16 @@ describe('sessionCookieOptions', () => {
     expect(sessionCookieOptions().secure).toBe(false);
   });
 
+  it('sets secure from X-Forwarded-Proto https when COOKIE_SECURE is unset', () => {
+    delete process.env['COOKIE_SECURE'];
+    expect(sessionCookieOptions('https').secure).toBe(true);
+  });
+
+  it('keeps insecure cookies when COOKIE_SECURE=false even on https', () => {
+    process.env['COOKIE_SECURE'] = 'false';
+    expect(sessionCookieOptions('https').secure).toBe(false);
+  });
+
   it('keeps httpOnly, sameSite lax, and path /', () => {
     const opts = sessionCookieOptions();
     expect(opts.httpOnly).toBe(true);

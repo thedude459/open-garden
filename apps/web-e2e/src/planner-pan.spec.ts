@@ -27,7 +27,7 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   expect(box).toBeTruthy();
   await owner.mouse.move(box!.x + box!.width - 12, box!.y + 12);
   await owner.mouse.down();
-  await owner.mouse.move(box!.x + box!.width - 80, box!.y + 40);
+  await owner.mouse.move(box!.x + box!.width - 80, box!.y + 40, { steps: 8 });
   await owner.mouse.up();
   await expect(origin).toHaveValue(startOrigin);
 
@@ -51,7 +51,7 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   expect(vBox).toBeTruthy();
   await viewer.mouse.move(vBox!.x + vBox!.width - 12, vBox!.y + 12);
   await viewer.mouse.down();
-  await viewer.mouse.move(vBox!.x + vBox!.width - 70, vBox!.y + 30);
+  await viewer.mouse.move(vBox!.x + vBox!.width - 70, vBox!.y + 30, { steps: 8 });
   await viewer.mouse.up();
   await expect(viewer.locator('[data-bed-name="East"]')).toBeVisible();
   const bedBox = await viewer.locator('[data-bed-name="East"]').boundingBox();

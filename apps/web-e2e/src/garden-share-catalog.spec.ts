@@ -12,6 +12,7 @@ test('sharing a garden does not share favorites; catalog stays available', async
   });
   await owner.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first().click();
   await owner.getByRole('button', { name: /favorite/i }).click();
+  await expect(owner.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
   await owner.goto('/favorites');
   await expect(owner.getByRole('heading', { name: 'Favorites' })).toBeVisible();
   await expect(owner.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i })).toBeVisible();

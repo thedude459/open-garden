@@ -18,14 +18,14 @@ async function goToReminders(page: Page) {
   if (await onGardenDetail.isVisible()) {
     await onGardenDetail.click();
   } else {
-    await page.getByRole('link', { name: 'Back to garden' }).click();
+    await page.getByRole('link', { name: 'Configuration' }).click();
     await page.getByRole('link', { name: 'Reminders' }).click();
   }
   await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('link', { name: 'Plantings' }).click();
+  await page.getByRole('link', { name: 'Plantings', exact: true }).click();
   await page.getByPlaceholder('Search catalog to add').fill(name);
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
@@ -63,7 +63,7 @@ test('reminders list: harvest, no moderate water, empty CTA, viewer read-only', 
     0,
   );
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-list-viewer-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -88,8 +88,8 @@ test('garden reminders list does not include indoor-only transplant tasks', asyn
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.getByRole('link', { name: 'Reminders' }).click();
   await expect(owner.getByRole('heading', { name: 'Reminders' })).toBeVisible();
   await expect(owner.locator('li').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
