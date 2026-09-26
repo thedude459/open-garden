@@ -21,7 +21,7 @@ npm run web:serve
 
 Web: `http://localhost:4200`. API: `http://localhost:3000` (proxied as `/api`).
 
-Demo users (after sync):
+Demo users (after sync, when `SEED_DEMO_USERS=true` in `.env`):
 
 - `gardener@example.com` / `password123`
 - `admin@example.com` / `password123` (admin pipeline)
@@ -44,11 +44,11 @@ If **8080** or **5432** is already in use, Docker/Compose prints a bind error th
 #### NAS production
 
 1. Start Postgres alone: `docker compose up -d postgres` with `POSTGRES_PASSWORD` (and user/db if not the local defaults) from the **NAS Docker UI** — not a file in git.
-2. Start UI and API: `WEB_HOST=0.0.0.0 docker compose --profile app up -d api web` with `SESSION_SECRET` from the same NAS setup.
-3. Gardeners open `http://<NAS-IP>:8080`. Map host **80** → container **8080** in the NAS UI if you want port 80.
+2. Start UI and API: `WEB_HOST=0.0.0.0 docker compose --profile app up -d api web` with a **unique** `SESSION_SECRET` from the same NAS setup (not the example in `.env.example`). Set `SEED_DEMO_USERS=false` (or omit it) so gardener/admin are not created.
+3. Gardeners open `http://<NAS-IP>:8080`. Map host **80** → container **8080** in the NAS UI if you want port 80. If you terminate TLS in front of the stack, set `COOKIE_SECURE=true` (or omit `COOKIE_SECURE` and pass `X-Forwarded-Proto: https`).
 4. Stop UI/API with `docker compose --profile app stop api web`; leave Postgres running.
 
-Do not commit a production `.env`. Local defaults in `.env.example` (`open_garden`, `dev-only-…`) are for laptop testing only.
+Do not commit a production `.env`. Local defaults in `.env.example` (`open_garden`, `dev-only-…`, `SEED_DEMO_USERS=true`) are for laptop testing only.
 
 ## Tests (same as CI)
 

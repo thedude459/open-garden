@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { AuthApiService } from './auth/auth-api.service';
 import { NoticeHost } from './ui/notice-host';
@@ -12,7 +13,10 @@ import { NoticeService } from './ui/notice.service';
   template: `
     <div class="shell">
       <nav class="nav">
-        <h1><a [routerLink]="signedIn() ? '/gardens' : '/login'">Open Garden</a></h1>
+        <a class="nav-brand" [routerLink]="signedIn() ? '/gardens' : '/login'">
+          <img src="assets/icon-512.png" alt="" width="32" height="32" />
+          <h1>Open Garden</h1>
+        </a>
         @if (signedIn()) {
           <a routerLink="/gardens" routerLinkActive="active">Gardens</a>
           <a routerLink="/plants" routerLinkActive="active">Catalog</a>
@@ -43,6 +47,14 @@ export class AppComponent {
     this.router.events
       .pipe(filter((e): e is NavigationStart => e instanceof NavigationStart))
       .subscribe(() => notices.clear());
+    const updates = inject(SwUpdate);
+    if (updates.isEnabled) {
+      updates.versionUpdates
+        .pipe(filter((e): e is VersionReadyEvent => e.type === 'VERSION_READY'))
+        .subscribe(() => {
+          void updates.activateUpdate().then(() => document.location.reload());
+        });
+    }
   }
 
   isAdmin() {

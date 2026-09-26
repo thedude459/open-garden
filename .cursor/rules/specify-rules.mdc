@@ -5,5 +5,5 @@ alwaysApply: true
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/013-dockerize-app/plan.md (Dockerize Full Application feature).
+at specs/014-garden-view-clarity/plan.md (Garden View Clarity feature).
 <!-- SPECKIT END -->

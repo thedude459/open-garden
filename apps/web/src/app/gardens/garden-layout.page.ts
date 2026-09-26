@@ -16,12 +16,13 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
+import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState],
+  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState, GardenNav],
   template: `
-    <p><a [routerLink]="['/gardens', gardenId]">Back to garden</a></p>
+    <og-garden-nav [gardenId]="gardenId" />
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Garden Overview" />
     <div class="planner">
     <h2>Garden Overview</h2>
@@ -30,6 +31,12 @@ import { EmptyState } from '../ui/empty-state';
     }
     @if (status()) {
       <p role="status">{{ status() }}</p>
+    }
+    @if (canEdit() && needsSite()) {
+      <p class="banner" role="status">
+        Set zone and frost dates so the calendar can show sow windows.
+        <a [routerLink]="['/gardens', gardenId, 'configure']">Set your site</a>
+      </p>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
@@ -64,7 +71,6 @@ import { EmptyState } from '../ui/empty-state';
             Save layout
           </button>
         }
-        <a [routerLink]="['/gardens', gardenId, 'transplants']">Transplants</a>
       </div>
       <div class="planner-stage">
         <og-garden-plan-canvas
@@ -75,7 +81,7 @@ import { EmptyState } from '../ui/empty-state';
           [canEdit]="canEdit()"
           [online]="online()"
           [allowPlantingDrag]="false"
-          [showPlantingMarks]="true"
+          [showPlantingMarks]="false"
           [allowBedGeometry]="true"
           [openBedOnClick]="true"
           [planLabel]="'Garden plan'"
@@ -143,17 +149,37 @@ import { EmptyState } from '../ui/empty-state';
                 placeholder="Width (ft)"
                 aria-label="Area width in feet"
               />
-              <button type="submit" class="btn btn-secondary">Create non-planting area</button>
+              <button type="submit" class="btn btn-secondary" aria-label="Create non-planting area">
+                Create area
+              </button>
             </form>
           }
           <ul class="card-list">
             @for (bed of sizedBeds(); track bed.id) {
               <li class="stack">
-                <button type="button" (click)="selectBed(bed.id)">{{ bed.name }}</button>
-                <button type="button" class="btn btn-secondary" (click)="selectBed(bed.id)">
-                  Open bed {{ bed.name }}
-                </button>
-                <button type="button" (click)="editGeometry(bed.id)">Edit size {{ bed.name }}</button>
+                <div class="row">
+                  <strong>{{ bed.name }}</strong>
+                  <span class="member-actions">
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [attr.aria-label]="'Open bed ' + bed.name"
+                      (click)="selectBed(bed.id)"
+                    >
+                      Open
+                    </button>
+                    @if (canEdit()) {
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [attr.aria-label]="'Edit size ' + bed.name"
+                        (click)="editGeometry(bed.id)"
+                      >
+                        Edit
+                      </button>
+                    }
+                  </span>
+                </div>
                 @if (bed.geometry; as geo) {
                   <span>{{ formatPlanSize(geo.lengthInches, geo.widthInches, geo.orientation) }}</span>
                 }
@@ -202,23 +228,33 @@ import { EmptyState } from '../ui/empty-state';
                       />
                     </label>
                   </form>
-                  <button type="button" (click)="rotateSelected()">Rotate 90°</button>
+                  <button type="button" class="btn btn-secondary" (click)="rotateSelected()">
+                    Rotate 90°
+                  </button>
                   @if (confirmDeleteId() !== bed.id) {
-                    <button type="button" (click)="confirmDeleteId.set(bed.id)">
-                      Delete bed {{ bed.name }}
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [attr.aria-label]="'Delete bed ' + bed.name"
+                      (click)="confirmDeleteId.set(bed.id)"
+                    >
+                      Delete
                     </button>
                   } @else {
                     <p>Permanently delete {{ bed.name }}? Direct-seed plantings in this bed will be deleted. Transplants return to the tray.</p>
                     <button
                       type="button"
                       class="btn btn-destructive"
+                      [attr.aria-label]="'Confirm delete ' + bed.name"
                       (click)="deleteBed(bed)"
                       [attr.aria-busy]="notices.busyMap().has('delete-bed') || null"
                       [disabled]="notices.busyMap().has('delete-bed')"
                     >
-                      Confirm delete {{ bed.name }}
+                      Confirm delete
                     </button>
-                    <button type="button" (click)="confirmDeleteId.set(null)">Cancel</button>
+                    <button type="button" class="btn btn-secondary" (click)="confirmDeleteId.set(null)">
+                      Cancel
+                    </button>
                   }
                 }
               </li>
@@ -232,21 +268,33 @@ import { EmptyState } from '../ui/empty-state';
                   <span>{{ area.name }} · {{ formatPlanSize(area.lengthInches, area.widthInches) }}</span>
                   @if (canEdit()) {
                     @if (confirmDeleteAreaId() !== area.id) {
-                      <button type="button" (click)="confirmDeleteAreaId.set(area.id)">
-                        Delete area {{ area.name }}
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [attr.aria-label]="'Delete area ' + area.name"
+                        (click)="confirmDeleteAreaId.set(area.id)"
+                      >
+                        Delete
                       </button>
                     } @else {
                       <p>Permanently delete {{ area.name }}?</p>
                       <button
                         type="button"
                         class="btn btn-destructive"
+                        [attr.aria-label]="'Confirm delete ' + area.name"
                         (click)="deleteArea(area)"
                         [attr.aria-busy]="notices.busyMap().has('delete-area') || null"
                         [disabled]="notices.busyMap().has('delete-area')"
                       >
-                        Confirm delete {{ area.name }}
+                        Confirm delete
                       </button>
-                      <button type="button" (click)="confirmDeleteAreaId.set(null)">Cancel</button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        (click)="confirmDeleteAreaId.set(null)"
+                      >
+                        Cancel
+                      </button>
                     }
                   }
                 </li>
@@ -274,6 +322,7 @@ export class GardenLayoutPage implements OnInit {
   readonly flags = this.planner.flags;
   error = signal('');
   status = signal('');
+  needsSite = signal(false);
   selectedId = signal<string | null>(null);
   confirmDeleteId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
@@ -377,11 +426,15 @@ export class GardenLayoutPage implements OnInit {
   }
 
   async load() {
+    this.needsSite.set(false);
     const [, detail] = await Promise.all([
       this.planner.load(this.gardenId, { reuseDirty: true }),
       this.gardensApi.detail(this.gardenId),
     ]);
-    if (detail) this.gardenName.set(detail.name);
+    if (detail) {
+      this.gardenName.set(detail.name);
+      this.needsSite.set(!detail.lastFrost || !detail.firstFrost);
+    }
   }
 
   async createBed() {

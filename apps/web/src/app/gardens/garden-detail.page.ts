@@ -7,26 +7,21 @@ import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
+import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, GardenNav],
   template: `
     @if (garden(); as g) {
       <p><a routerLink="/gardens">All gardens</a></p>
       <h2>{{ g.name }}</h2>
       <p class="muted">You are {{ g.myRole }} of this garden.</p>
-      <nav class="garden-nav" aria-label="Garden">
-        <a [routerLink]="['/gardens', g.id, 'layout']">Garden Overview</a>
-        <a [routerLink]="['/gardens', g.id, 'plantings']">Plantings</a>
-        <a [routerLink]="['/gardens', g.id, 'calendar']">Calendar</a>
-        <a [routerLink]="['/gardens', g.id, 'reminders']">Reminders</a>
-        <a [routerLink]="['/gardens', g.id, 'transplants']">Transplants</a>
-      </nav>
+      <og-garden-nav [gardenId]="g.id" />
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }
-      <h3>Garden settings</h3>
+      <h3>Configuration</h3>
       <form class="stack" (ngSubmit)="save()">
         <label>
           Name
@@ -120,9 +115,10 @@ import { PlannerDraftService } from './planner-draft.service';
           <li class="row">
             <span>{{ m.displayName || m.email }} · {{ m.email }} · {{ m.role }}</span>
             @if (g.myRole === 'owner' && m.userId !== g.ownerUserId) {
-              <span>
+              <span class="member-actions">
                 <button
                   type="button"
+                  class="btn btn-secondary"
                   [attr.aria-busy]="memberBusy(m.userId) || null"
                   [disabled]="memberBusy(m.userId)"
                   (click)="setRole(m.userId, 'viewer')"
@@ -131,6 +127,7 @@ import { PlannerDraftService } from './planner-draft.service';
                 </button>
                 <button
                   type="button"
+                  class="btn btn-secondary"
                   [attr.aria-busy]="memberBusy(m.userId) || null"
                   [disabled]="memberBusy(m.userId)"
                   (click)="setRole(m.userId, 'collaborator')"
@@ -139,6 +136,7 @@ import { PlannerDraftService } from './planner-draft.service';
                 </button>
                 <button
                   type="button"
+                  class="btn btn-secondary"
                   [attr.aria-busy]="memberBusy(m.userId) || null"
                   [disabled]="memberBusy(m.userId)"
                   (click)="setRole(m.userId, 'owner')"
@@ -147,6 +145,7 @@ import { PlannerDraftService } from './planner-draft.service';
                 </button>
                 <button
                   type="button"
+                  class="btn btn-secondary"
                   [attr.aria-busy]="memberBusy(m.userId) || null"
                   [disabled]="memberBusy(m.userId)"
                   (click)="removeMember(m.userId)"
@@ -174,10 +173,20 @@ import { PlannerDraftService } from './planner-draft.service';
             Invite
           </button>
         </form>
+        <p class="muted">They need an account. If they don't have one yet, copy a join link for this email.</p>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="!inviteEmail.trim()"
+          (click)="copyJoinLink()"
+        >
+          Copy join link
+        </button>
       }
       @if (g.myRole !== 'owner') {
         <button
           type="button"
+          class="btn btn-secondary"
           [attr.aria-busy]="notices.busyMap().has('leave-garden') || null"
           [disabled]="notices.busyMap().has('leave-garden')"
           (click)="leave()"
@@ -187,7 +196,9 @@ import { PlannerDraftService } from './planner-draft.service';
       }
       @if (g.myRole === 'owner') {
         @if (!confirmDelete()) {
-          <button type="button" (click)="confirmDelete.set(true)">Delete garden</button>
+          <button type="button" class="btn btn-secondary" (click)="confirmDelete.set(true)">
+            Delete garden
+          </button>
         } @else {
           <p>Permanently delete this garden? This cannot be undone.</p>
           <button
@@ -199,7 +210,9 @@ import { PlannerDraftService } from './planner-draft.service';
           >
             Confirm delete
           </button>
-          <button type="button" (click)="confirmDelete.set(false)">Cancel</button>
+          <button type="button" class="btn btn-secondary" (click)="confirmDelete.set(false)">
+            Cancel
+          </button>
         }
       }
     } @else if (loading()) {
@@ -291,6 +304,18 @@ export class GardenDetailPage implements OnInit {
         this.notices.error(messageFrom(err));
       }
     });
+  }
+
+  async copyJoinLink() {
+    const email = this.inviteEmail.trim();
+    if (!email || typeof location === 'undefined') return;
+    const url = `${location.origin}/login?email=${encodeURIComponent(email)}&register=1`;
+    try {
+      await navigator.clipboard.writeText(url);
+      this.notices.success('Join link copied');
+    } catch {
+      this.notices.error(url);
+    }
   }
 
   async setRole(userId: string, role: GardenRole) {

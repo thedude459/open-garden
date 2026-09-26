@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden } from './planner-helpers';
+import { saveGarden, openConfiguration } from './planner-helpers';
 
 
 
@@ -9,6 +9,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.getByPlaceholder('Garden name').fill(name);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
+  await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
   await page.locator('select[name="lastMonth"]').selectOption('4');
   await page.locator('input[name="lastDay"]').fill('15');
@@ -44,7 +45,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await expect(owner.getByText(/Sow Aug 25 – Sep 8/)).toBeVisible();
   await expect(owner.locator('article').filter({ hasText: 'Red Maple' }).getByText(/Indoor unavailable/)).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');
   await owner.locator('input[name="lastDay"]').fill('29');
   await saveGarden(owner);
@@ -52,7 +53,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await expect(owner.getByText(/Indoor Mar 4 – Mar 18/)).toBeVisible();
   await expect(owner.getByText(/Sow Aug 25 – Sep 8/)).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');
   await owner.locator('input[name="lastDay"]').fill('15');
   await owner.locator('select[name="firstMonth"]').selectOption('11');
@@ -62,7 +63,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
   await expect(owner.getByText(/Sow Sep 8 – Sep 22/)).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`cal-view-friend-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();

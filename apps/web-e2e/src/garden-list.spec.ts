@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
-import { saveGarden } from './planner-helpers';
+import { saveGarden, openConfiguration } from './planner-helpers';
 
 test('empty state, create, list, detail, rename, cancel vs confirm delete', async ({
   browser,
@@ -14,6 +14,9 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   await page.getByRole('button', { name: 'Create garden' }).click();
   await expect(page.getByRole('link', { name: /Backyard/ })).toBeVisible();
   await page.getByRole('link', { name: /Backyard/ }).click();
+  await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Configuration' })).toHaveCount(0);
+  await openConfiguration(page);
   await expect(page.getByText(/You are owner/i)).toBeVisible();
   await page.locator('input[name="name"]').fill('Front yard');
   await saveGarden(page);

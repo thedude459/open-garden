@@ -16,7 +16,7 @@ async function goToReminders(page: Page) {
   if (await onGardenDetail.isVisible()) {
     await onGardenDetail.click();
   } else {
-    await page.getByRole('link', { name: 'Back to garden' }).click();
+    await page.getByRole('link', { name: 'Configuration' }).click();
     await page.getByRole('link', { name: 'Reminders' }).click();
   }
   await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
@@ -27,7 +27,7 @@ async function openRemindersWithPlant(page: Page, gardenName: string) {
   await page.getByPlaceholder('Garden name').fill(gardenName);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(gardenName) }).click();
-  await page.getByRole('link', { name: 'Plantings' }).click();
+  await page.getByRole('link', { name: 'Plantings', exact: true }).click();
   await page.getByPlaceholder('Search catalog to add').fill('Cherry Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Cherry Tomato' }).click();
@@ -62,7 +62,7 @@ test('offline cache readable; pending complete syncs for another member', async 
   await expect(owner.getByText('pending')).toHaveCount(0);
   await expect(owner.getByText('Harvest')).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-off-friend-${stamp}@example.com`);
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(`rem-off-friend-${stamp}@example.com`)).toBeVisible();
@@ -81,7 +81,7 @@ test('viewer offline reads cache; membership loss drops cache', async ({ browser
   const collab = await newUser(browser, `rem-off2-collab-${stamp}@example.com`);
 
   await openRemindersWithPlant(owner, 'Membership loss');
-  await owner.getByRole('link', { name: 'Back to garden' }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-off2-collab-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -100,6 +100,7 @@ test('viewer offline reads cache; membership loss drops cache', async ({ browser
 
   await owner.goto('/gardens');
   await owner.getByRole('link', { name: /Membership loss/ }).click();
+  await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.getByRole('button', { name: 'Remove' }).click();
   await expect(owner.getByText(`rem-off2-collab-${stamp}@example.com`)).toHaveCount(0);
   await restoreReminders(collab);

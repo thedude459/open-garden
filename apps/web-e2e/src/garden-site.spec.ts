@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
-import { saveGarden } from './planner-helpers';
+import { saveGarden, openConfiguration } from './planner-helpers';
 
 test('site profile persists, can clear one frost, and rejects reversed pairs', async ({
   browser,
@@ -10,6 +10,7 @@ test('site profile persists, can clear one frost, and rejects reversed pairs', a
   await page.getByPlaceholder('Garden name').fill('Zone seven');
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Zone seven/ }).click();
+  await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
   await page.locator('select[name="lastMonth"]').selectOption('4');
   await page.locator('input[name="lastDay"]').fill('15');
