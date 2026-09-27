@@ -25,6 +25,10 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await createSizedBed(owner, 'East');
   await expect(owner.getByText('Unsaved changes')).toBeVisible();
   await expect(owner.locator('[data-bed-name="East"]')).toBeVisible();
+  owner.once('dialog', (dialog) => {
+    expect(dialog.message()).toBe('Leave without saving this layout?');
+    return dialog.accept();
+  });
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await openOverview(owner);
   await expect(owner.locator('[data-bed-name="East"]')).toHaveCount(0);

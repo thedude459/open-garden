@@ -18,6 +18,8 @@ export {
 } from './lib/display-units';
 export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';
-export { pairRequiredSpacing, fitClearance, placementFits, centerDistance } from './lib/spacing';
+export { pairRequiredSpacing, fitClearance, placementFits, centerDistance, remainingGridCount } from './lib/spacing';
+export { frameAround, expandFrameToFit, formatPlanFrame } from './lib/plan-frame';
+export type { PlanFrame, PlanRect } from './lib/plan-frame';
 export { evaluateLayout } from './lib/evaluate-layout';
 export { LayoutService } from './lib/layout-service';

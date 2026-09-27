@@ -16,14 +16,12 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
-import { GardenNav } from './garden-nav';
 
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState, GardenNav],
+  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <div class="planner">
     <header class="page-head">
       <div>
@@ -92,9 +90,8 @@ import { GardenNav } from './garden-nav';
           [allowPlantingDrag]="false"
           [showPlantingMarks]="false"
           [allowBedGeometry]="true"
-          [openBedOnClick]="true"
           [planLabel]="'Garden plan'"
-          (selectBed)="selectBed($event)"
+          (focusBed)="selectedId.set($event)"
           (bedGeometry)="onBedGeometry($event)"
           (areaGeometry)="onAreaGeometry($event)"
           (gestureEnd)="refreshFlags()"
@@ -108,61 +105,7 @@ import { GardenNav } from './garden-nav';
               }
             </og-empty-state>
           }
-          @if (canEdit()) {
-            <form class="filters" (ngSubmit)="createBed()">
-              <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
-              <input
-                type="number"
-                min="0.5"
-                step="0.5"
-                [(ngModel)]="newLength"
-                name="newLength"
-                placeholder="Length (ft)"
-                aria-label="Length in feet"
-              />
-              <input
-                type="number"
-                min="0.5"
-                step="0.5"
-                [(ngModel)]="newWidth"
-                name="newWidth"
-                placeholder="Width (ft)"
-                aria-label="Width in feet"
-              />
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [attr.aria-busy]="notices.busyMap().has('create-bed') || null"
-                [disabled]="notices.busyMap().has('create-bed')"
-              >
-                Create bed
-              </button>
-            </form>
-            <form class="filters" (ngSubmit)="createArea()">
-              <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
-              <input
-                type="number"
-                min="0.5"
-                step="0.5"
-                [(ngModel)]="newAreaLength"
-                name="newAreaLength"
-                placeholder="Length (ft)"
-                aria-label="Area length in feet"
-              />
-              <input
-                type="number"
-                min="0.5"
-                step="0.5"
-                [(ngModel)]="newAreaWidth"
-                name="newAreaWidth"
-                placeholder="Width (ft)"
-                aria-label="Area width in feet"
-              />
-              <button type="submit" class="btn btn-secondary" aria-label="Create non-planting area">
-                Create area
-              </button>
-            </form>
-          }
+          @if (sizedBeds().length) {
           <ul class="card-list">
             @for (bed of sizedBeds(); track bed.id) {
               <li class="stack">
@@ -173,7 +116,7 @@ import { GardenNav } from './garden-nav';
                       type="button"
                       class="btn btn-secondary"
                       [attr.aria-label]="'Open bed ' + bed.name"
-                      (click)="selectBed(bed.id)"
+                      (click)="openBed(bed.id)"
                     >
                       Open
                     </button>
@@ -269,8 +212,9 @@ import { GardenNav } from './garden-nav';
               </li>
             }
           </ul>
+          }
           @if (draft()!.areas.length) {
-            <h3>Non-planting areas</h3>
+            <h3>Walkways</h3>
             <ul class="card-list">
               @for (area of draft()!.areas; track area.id) {
                 <li class="stack">
@@ -309,6 +253,61 @@ import { GardenNav } from './garden-nav';
                 </li>
               }
             </ul>
+          }
+          @if (canEdit()) {
+            <form class="filters" (ngSubmit)="createBed()">
+              <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
+              <input
+                type="number"
+                min="0.5"
+                step="0.5"
+                [(ngModel)]="newLength"
+                name="newLength"
+                placeholder="Length (ft)"
+                aria-label="Length in feet"
+              />
+              <input
+                type="number"
+                min="0.5"
+                step="0.5"
+                [(ngModel)]="newWidth"
+                name="newWidth"
+                placeholder="Width (ft)"
+                aria-label="Width in feet"
+              />
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [attr.aria-busy]="notices.busyMap().has('create-bed') || null"
+                [disabled]="notices.busyMap().has('create-bed')"
+              >
+                Create bed
+              </button>
+            </form>
+            <form class="filters" (ngSubmit)="createArea()">
+              <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
+              <input
+                type="number"
+                min="0.5"
+                step="0.5"
+                [(ngModel)]="newAreaLength"
+                name="newAreaLength"
+                placeholder="Length (ft)"
+                aria-label="Area length in feet"
+              />
+              <input
+                type="number"
+                min="0.5"
+                step="0.5"
+                [(ngModel)]="newAreaWidth"
+                name="newAreaWidth"
+                placeholder="Width (ft)"
+                aria-label="Area width in feet"
+              />
+              <button type="submit" class="btn btn-secondary" aria-label="Create non-planting area">
+                Add walkway
+              </button>
+            </form>
           }
         </aside>
       </div>
@@ -378,7 +377,7 @@ export class GardenLayoutPage implements OnInit {
     return drawableBeds(this.draft()?.beds ?? []);
   }
 
-  selectBed(id: string) {
+  openBed(id: string) {
     if (!id) return;
     void this.router.navigate(['/gardens', this.gardenId, 'layout', 'beds', id]);
   }

@@ -112,27 +112,78 @@ textarea { min-height: 5.5rem; resize: vertical; }
   line-height: 1;
 }
 
-.app-nav {
+.app-bar-end { margin-left: auto; }
+
+.app-frame {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  align-items: stretch;
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 18rem;
+  width: 18rem;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 1rem 0.75rem 0.75rem;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.sidebar .nav-brand {
+  margin: 0 0.45rem 0.75rem;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
   gap: 0.15rem;
 }
 
-.app-nav a {
+.side-nav a {
   text-decoration: none;
   color: var(--ink);
   font-weight: 600;
-  padding: 0.4rem 0.7rem;
+  padding: 0.45rem 0.7rem;
   border-radius: var(--radius);
 }
 
-.app-nav a.active {
+.side-nav a.active {
   color: var(--leaf);
   background: var(--sand);
 }
 
-.app-bar-end { margin-left: auto; }
+.nav-group-label {
+  margin: 1rem 0.7rem 0.25rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.nav-bed {
+  margin: 0 0.7rem 0.45rem;
+  font-weight: 600;
+}
+
+.sidebar-signout {
+  margin-top: 0.5rem;
+  text-align: left;
+}
+
+.sidebar-toggle,
+.sidebar-backdrop {
+  display: none;
+}
 
 .nav-text {
   background: none;
@@ -153,38 +204,6 @@ textarea { min-height: 5.5rem; resize: vertical; }
   width: min(1440px, 100%);
   max-width: none;
   padding-bottom: 0.75rem;
-}
-
-.garden-nav {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0;
-  margin: 0 0 1rem;
-  overflow-x: auto;
-  border-bottom: 1px solid var(--line);
-}
-
-.garden-nav a {
-  display: inline-flex;
-  align-items: center;
-  flex: 0 0 auto;
-  padding: 0.7rem 0.9rem;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  margin-bottom: -1px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.garden-nav a.active {
-  color: var(--leaf);
-  background: transparent;
-  border-bottom-color: var(--leaf);
 }
 
 .page-head {
@@ -222,7 +241,7 @@ textarea { min-height: 5.5rem; resize: vertical; }
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  min-height: calc(100dvh - var(--bar) - 5.5rem);
+  min-height: calc(100dvh - 5.5rem);
 }
 
 .planner-alerts {
@@ -300,13 +319,13 @@ og-garden-plan-canvas {
   og-garden-plan-canvas,
   .plan-viewport,
   .planner-rail {
-    height: calc(100dvh - 14.5rem);
-    max-height: calc(100dvh - 14.5rem);
+    height: calc(100dvh - 11rem);
+    max-height: calc(100dvh - 11rem);
     min-height: 24rem;
   }
   .planner-rail {
     position: sticky;
-    top: calc(var(--bar) + 0.75rem);
+    top: 0.75rem;
     overflow: auto;
   }
 }
@@ -432,6 +451,10 @@ og-garden-plan-canvas {
   cursor: pointer;
 }
 
+.layout-plan.can-move-beds .layout-bed-frame {
+  cursor: grab;
+}
+
 .layout-bed-frame.selected {
   stroke: #2a1810;
   stroke-width: 2;
@@ -481,6 +504,27 @@ og-garden-plan-canvas {
 .layout-plant-invalid {
   fill: #8a1f1f;
   stroke: #f4efe4;
+}
+
+.layout-margin {
+  fill: rgba(26, 36, 24, 0.45);
+  pointer-events: none;
+}
+
+.layout-blocked {
+  fill: rgba(138, 31, 31, 0.28);
+  pointer-events: none;
+}
+
+.layout-probe {
+  fill: rgba(47, 93, 58, 0.55);
+  stroke: #f4efe4;
+  stroke-width: 1.2;
+  pointer-events: none;
+}
+
+.layout-probe-bad {
+  fill: rgba(138, 31, 31, 0.45);
 }
 
 .layout-plant-label {
@@ -935,9 +979,52 @@ legend {
 }
 
 @media (max-width: 720px) {
-  .app-nav {
-    flex: 1 1 100%;
-    order: 3;
+  .sidebar-toggle {
+    display: inline-flex;
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 30;
+    margin: 0;
+    align-self: flex-start;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .shell > h2,
+  .back-link,
+  .page-head > :first-child {
+    padding-left: 4.75rem;
+  }
+
+  .plan-viewport {
+    height: calc(42vh + 3.25rem);
+  }
+
+  .app-frame { flex-direction: column; }
+
+  .sidebar {
+    position: fixed;
+    z-index: 40;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open { transform: none; }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    border: 0;
+    padding: 0;
+    background: rgba(31, 42, 31, 0.35);
+    cursor: pointer;
   }
 }
 

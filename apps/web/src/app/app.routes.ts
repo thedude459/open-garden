@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
 import { adminGuard } from './admin/admin.guard';
+import { unsavedLayoutGuard } from './gardens/unsaved-layout';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'gardens' },
@@ -49,12 +50,14 @@ export const routes: Routes = [
   {
     path: 'gardens/:id/layout/beds/:bedId',
     canActivate: [authGuard],
+    canDeactivate: [unsavedLayoutGuard],
     loadComponent: () =>
       import('./gardens/garden-bed-view.page').then((m) => m.GardenBedViewPage),
   },
   {
     path: 'gardens/:id/layout',
     canActivate: [authGuard],
+    canDeactivate: [unsavedLayoutGuard],
     loadComponent: () => import('./gardens/garden-layout.page').then((m) => m.GardenLayoutPage),
   },
   {

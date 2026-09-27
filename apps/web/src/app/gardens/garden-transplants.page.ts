@@ -10,13 +10,10 @@ import { RemindersApiService } from './reminders-api.service';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
-import { GardenNav } from './garden-nav';
-
 @Component({
   standalone: true,
-  imports: [FormsModule, PlaceMarker, GardenNav, PlantPicker],
+  imports: [FormsModule, PlaceMarker, PlantPicker],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Transplants" />
     <h2>Transplant View</h2>
     @if (error()) {

@@ -16,13 +16,10 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
 import { OnlineRequiredError } from './gardens-api.service';
-import { GardenNav } from './garden-nav';
-
 @Component({
   standalone: true,
-  imports: [FormsModule, GardenNav, PlantPicker],
+  imports: [FormsModule, PlantPicker],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <h2>Planting calendar</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>

@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catalogDropOutcome, plantingDropOutcome } from '@open-garden/garden-layout';
+import { catalogDropOutcome, plantingDropOutcome, remainingGridCount } from '@open-garden/garden-layout';
 import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/drop';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
@@ -62,7 +62,14 @@ import { EmptyState } from '../ui/empty-state';
     } @else {
       <div class="planner-alerts">
         @if (armedPlant(); as picked) {
-          <p class="place-hint" role="status">Click the bed to place {{ picked.commonName }}.</p>
+          <p class="place-hint" role="status">
+            @if (slotsLeft(picked) === 0) {
+              No room left for {{ picked.commonName }} ({{ picked.spacingInches }} in).
+            } @else {
+              Click the bed to place {{ picked.commonName }}. About {{ slotsLeft(picked) }} more fit at
+              {{ picked.spacingInches }} in.
+            }
+          </p>
         }
         @if (dirty()) {
           <p role="status">Unsaved changes</p>
@@ -89,7 +96,7 @@ import { EmptyState } from '../ui/empty-state';
           [allowPlantingDrag]="true"
           [showPlantingMarks]="true"
           [showBedCaption]="false"
-          [openBedOnClick]="false"
+          [probeSpacing]="armedPlant()?.spacingInches ?? null"
           [planLabel]="'Bed plan'"
           (plantingDrop)="onPlantingDrop($event)"
           (gestureEnd)="refreshFlags()"
@@ -359,6 +366,27 @@ export class GardenBedViewPage implements OnInit {
 
   inBed() {
     return this.draft()?.plantings.filter((p) => p.placement?.bedId === this.bedId) ?? [];
+  }
+
+  slotsLeft(plant: PlantSummaryDto): number {
+    const geo = this.bed()?.geometry;
+    if (!geo) return 0;
+    return remainingGridCount(
+      geo.lengthInches,
+      geo.widthInches,
+      plant.spacingInches,
+      this.inBed().flatMap((planting) =>
+        planting.placement
+          ? [
+              {
+                xInches: planting.placement.xInches,
+                yInches: planting.placement.yInches,
+                spacingInches: planting.spacingInches,
+              },
+            ]
+          : [],
+      ),
+    );
   }
 
   plantingLabel(p: LayoutPlantingDto) {

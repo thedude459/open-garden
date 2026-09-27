@@ -10,6 +10,7 @@ export default defineConfig({
       'apps/api/**/*.spec.ts',
       'apps/api-e2e/**/*.spec.ts',
       'apps/web/src/app/gardens/planner-draft.service.spec.ts',
+      'apps/web/src/app/gardens/unsaved-layout.spec.ts',
     ],
     coverage: {
       provider: 'v8',

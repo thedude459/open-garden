@@ -8,13 +8,10 @@ import {
 } from './reminders-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { type ClientReminderItem, type ClientReminderList } from './reminders-offline.queue';
-import { GardenNav } from './garden-nav';
-
 @Component({
   standalone: true,
-  imports: [RouterLink, GardenNav],
+  imports: [RouterLink],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <h2>Reminders</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>

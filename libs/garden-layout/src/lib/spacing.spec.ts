@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitClearance, pairRequiredSpacing, placementFits } from './spacing';
+import { fitClearance, pairRequiredSpacing, placementFits, remainingGridCount } from './spacing';
 
 describe('spacing helpers', () => {
   it('uses the larger known spacing and skips unknown pairs', () => {
@@ -14,5 +14,11 @@ describe('spacing helpers', () => {
     expect(placementFits(2, 12, 96, 48, 24)).toBe(false);
     expect(placementFits(12, 12, 20, 20, 24)).toBe(false);
     expect(placementFits(1, 1, 10, 10, null)).toBe(true);
+  });
+
+  it('counts grid spots this spacing can still use', () => {
+    expect(remainingGridCount(48, 48, 24, [])).toBe(4);
+    expect(remainingGridCount(48, 48, 24, [{ xInches: 12, yInches: 12, spacingInches: 24 }])).toBe(3);
+    expect(remainingGridCount(10, 10, 24, [])).toBe(0);
   });
 });

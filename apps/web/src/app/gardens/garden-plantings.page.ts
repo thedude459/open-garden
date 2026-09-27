@@ -10,13 +10,10 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { PlantingsApiService } from './plantings-api.service';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
-import { GardenNav } from './garden-nav';
-
 @Component({
   standalone: true,
-  imports: [FormsModule, GardenNav, PlantPicker],
+  imports: [FormsModule, PlantPicker],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <h2>Plantings</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>

@@ -31,8 +31,8 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   await owner.getByRole('link', { name: 'Back to overview' }).click();
 
   await owner.locator('[data-bed-name="North"]').click({ position: { x: 4, y: 4 } });
-  await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
-  await owner.getByRole('link', { name: 'Back to overview' }).click();
+  await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+  await expect(owner.locator('input[name="originX"]')).toBeVisible();
 
   const bed = owner.locator('[data-bed-name="North"]');
   const box = await bed.boundingBox();
