@@ -15,9 +15,14 @@ import {
   shortenPlantingMarkName,
   catalogDropOutcome,
   formatPlanSize,
-  expandFrameToFit,
+  snapHalfFoot,
   formatPlanFrame,
   frameAround,
+  rectsFit,
+  clampSizeToPlot,
+  clampOriginToPlot,
+  rectAtPlotEdge,
+  type PlanFrame,
   fitClearance,
   pairRequiredSpacing,
   type PlanRect,
@@ -97,6 +102,16 @@ type Gesture =
             <path d="M0 8 L8 0" stroke="#4a4a4a" stroke-width="1.2" fill="none" />
           </pattern>
         </defs>
+        @if (allowBedGeometry()) {
+          <rect
+            class="plot-boundary"
+            [attr.x]="plot().x"
+            [attr.y]="plot().y"
+            [attr.width]="plot().w"
+            [attr.height]="plot().h"
+            aria-hidden="true"
+          />
+        }
         @for (bed of drawnBeds(); track bed.id) {
           @if (geometryOf(bed); as geo) {
             <rect
@@ -356,14 +371,38 @@ export class GardenPlanCanvas {
     return `${beds}|${areas}`;
   });
 
-  private readonly camera = linkedSignal({
+  private readonly camera = linkedSignal<string, PlanFrame>({
     source: () => this.structureKey(),
-    computation: () => untracked(() => frameAround(this.contentRects())),
+    computation: (_source, previous) => {
+      const rects = untracked(() => this.contentRects());
+      const next = frameAround(rects);
+      if (previous && rectsFit(previous.value, rects)) return previous.value;
+      return next;
+    },
   });
 
-  readonly viewBox = computed(() =>
-    formatPlanFrame(expandFrameToFit(this.camera(), this.contentRects())),
-  );
+  readonly plot = computed(() => this.camera());
+
+  readonly viewBox = computed(() => formatPlanFrame(this.plot()));
+
+  readonly atPlotEdge = computed(() => {
+    if (!this.allowBedGeometry()) return false;
+    const frame = this.plot();
+    for (const bed of this.drawnBeds()) {
+      const geo = bed.geometry;
+      if (!geo) continue;
+      const size = bedPlanSize(geo);
+      if (rectAtPlotEdge(frame, geo.originXInches, geo.originYInches, size.width, size.height)) {
+        return true;
+      }
+    }
+    for (const area of this.drawnAreas()) {
+      if (rectAtPlotEdge(frame, area.originXInches, area.originYInches, area.lengthInches, area.widthInches)) {
+        return true;
+      }
+    }
+    return false;
+  });
 
   readonly cssTransform = computed(
     () => `translate(${this.panX()}px, ${this.panY()}px) scale(${this.scale()})`,
@@ -674,20 +713,34 @@ export class GardenPlanCanvas {
       const area = this.areas().find((a) => a.id === g.areaId);
       if (!area) return;
       const next = originFromGrabOffset(g.originX, g.originY, g.startX, g.startY, plan.x, plan.y);
+      const origin = clampOriginToPlot(
+        this.plot(),
+        snapHalfFoot(next.originXInches),
+        snapHalfFoot(next.originYInches),
+        area.lengthInches,
+        area.widthInches,
+      );
       this.previewArea.set({
         ...area,
-        originXInches: next.originXInches,
-        originYInches: next.originYInches,
+        originXInches: origin.originXInches,
+        originYInches: origin.originYInches,
       });
       return;
     }
     if (g.type === 'resize-area') {
       const area = this.areas().find((a) => a.id === g.areaId);
       if (!area) return;
+      const size = clampSizeToPlot(
+        this.plot(),
+        area.originXInches,
+        area.originYInches,
+        g.length + (plan.x - g.startX),
+        g.width + (plan.y - g.startY),
+      );
       this.previewArea.set({
         ...area,
-        lengthInches: Math.max(1, Math.round(g.length + (plan.x - g.startX))),
-        widthInches: Math.max(1, Math.round(g.width + (plan.y - g.startY))),
+        lengthInches: size.width,
+        widthInches: size.height,
       });
       return;
     }
@@ -696,24 +749,39 @@ export class GardenPlanCanvas {
     if (g.type === 'move-bed') {
       if (!this.allowBedGeometry() || !this.canEdit()) return;
       const next = originFromGrabOffset(g.originX, g.originY, g.startX, g.startY, plan.x, plan.y);
-      const geometry = {
-        ...bed.geometry,
-        originXInches: next.originXInches,
-        originYInches: next.originYInches,
-      };
-      this.previewBed.set({ id: bed.id, geometry });
+      const size = bedPlanSize(bed.geometry);
+      const origin = clampOriginToPlot(
+        this.plot(),
+        snapHalfFoot(next.originXInches),
+        snapHalfFoot(next.originYInches),
+        size.width,
+        size.height,
+      );
+      this.previewBed.set({
+        id: bed.id,
+        geometry: {
+          ...bed.geometry,
+          originXInches: origin.originXInches,
+          originYInches: origin.originYInches,
+        },
+      });
       return;
     }
     if (g.type !== 'resize-bed') return;
-    const nextW = Math.max(1, Math.round(g.planWidth + (plan.x - g.startX)));
-    const nextH = Math.max(1, Math.round(g.planHeight + (plan.y - g.startY)));
     const rotated = bed.geometry.orientation === 90 || bed.geometry.orientation === 270;
+    const size = clampSizeToPlot(
+      this.plot(),
+      bed.geometry.originXInches,
+      bed.geometry.originYInches,
+      g.planWidth + (plan.x - g.startX),
+      g.planHeight + (plan.y - g.startY),
+    );
     this.previewBed.set({
       id: bed.id,
       geometry: {
         ...bed.geometry,
-        lengthInches: rotated ? nextH : nextW,
-        widthInches: rotated ? nextW : nextH,
+        lengthInches: rotated ? size.height : size.width,
+        widthInches: rotated ? size.width : size.height,
       },
     });
   }

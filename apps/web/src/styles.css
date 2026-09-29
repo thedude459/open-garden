@@ -308,6 +308,14 @@ og-garden-plan-canvas {
   background: transparent;
 }
 
+.plot-boundary {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+  pointer-events: none;
+}
+
 @media (min-width: 960px) {
   .planner {
     min-height: 0;
@@ -317,16 +325,10 @@ og-garden-plan-canvas {
     align-items: start;
   }
   og-garden-plan-canvas,
-  .plan-viewport,
-  .planner-rail {
+  .plan-viewport {
     height: calc(100dvh - 11rem);
     max-height: calc(100dvh - 11rem);
     min-height: 24rem;
-  }
-  .planner-rail {
-    position: sticky;
-    top: 0.75rem;
-    overflow: auto;
   }
 }
 

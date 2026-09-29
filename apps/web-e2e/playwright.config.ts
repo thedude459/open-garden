@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   retries: 0,
   timeout: 90_000,
-  workers: process.env['CI'] ? 2 : undefined,
+  workers: process.env['CI'] ? 2 : 4,
   use: {
     baseURL: 'http://localhost:4200',
     trace: 'retain-on-failure',

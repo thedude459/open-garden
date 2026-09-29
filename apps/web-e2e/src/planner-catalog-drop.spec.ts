@@ -85,6 +85,7 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
     position: { x: Math.round(bedBox!.width * 0.25), y: Math.round(bedBox!.height * 0.5) },
   });
   await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toBeVisible();
+  expect((await saveLayout(owner)).status()).toBe(200);
 
   await inviteViewer(owner, `planner-cat-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

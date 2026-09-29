@@ -20,7 +20,7 @@ async function createFrostGarden(page: Page, name: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByPlaceholder('Search catalog to add').fill(name);
+  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name })).toBeVisible();

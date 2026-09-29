@@ -19,7 +19,16 @@ export {
 export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';
 export { pairRequiredSpacing, fitClearance, placementFits, centerDistance, remainingGridCount } from './lib/spacing';
-export { frameAround, expandFrameToFit, formatPlanFrame } from './lib/plan-frame';
+export {
+  HALF_FOOT_INCHES,
+  snapHalfFoot,
+  frameAround,
+  rectsFit,
+  clampSizeToPlot,
+  clampOriginToPlot,
+  rectAtPlotEdge,
+  formatPlanFrame,
+} from './lib/plan-frame';
 export type { PlanFrame, PlanRect } from './lib/plan-frame';
 export { evaluateLayout } from './lib/evaluate-layout';
 export { LayoutService } from './lib/layout-service';

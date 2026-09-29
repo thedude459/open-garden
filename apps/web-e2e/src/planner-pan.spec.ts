@@ -21,6 +21,14 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   const origin = owner.locator('input[name="originX"]');
   await expect(origin).toBeVisible();
   const startOrigin = await origin.inputValue();
+  const length = owner.locator('input[name="length"]');
+  await length.fill('8.67');
+  await length.press('Tab');
+  await expect(length).toHaveValue('8.5');
+  await expect(owner.locator('.planner-rail').getByText('8.5 × 4 ft · 0°')).toBeVisible();
+  const rail = owner.locator('.planner-rail');
+  expect(await rail.evaluate((el) => getComputedStyle(el).overflowY)).toBe('visible');
+  expect(await rail.evaluate((el) => getComputedStyle(el).maxHeight)).toBe('none');
 
   const plan = owner.getByLabel('Garden plan');
   const box = await plan.boundingBox();
@@ -34,12 +42,24 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   await owner.locator('[data-bed-name="East"]').dragTo(plan, { targetPosition: { x: 100, y: 60 } });
   await expect(origin).not.toHaveValue(startOrigin);
   const moved = await origin.inputValue();
+  expect(moved).toMatch(/^-?\d+(\.5)?$/);
   expect((await saveLayout(owner)).status()).toBe(200);
   await expect(origin).toHaveValue(moved);
+
+  const planSvg = owner.locator('.layout-plan');
+  const frame = await planSvg.getAttribute('viewBox');
+  const bed = owner.locator('[data-bed-name="East"]');
+  await bed.dragTo(plan, {
+    targetPosition: { x: Math.round(box!.width - 8), y: Math.round(box!.height / 2) },
+  });
+  await expect(owner.getByText('At the garden edge', { exact: true })).toBeVisible();
+  await expect(planSvg).toHaveAttribute('viewBox', frame!);
+  await expect(origin).toHaveValue(/^-?\d+(\.5)?$/);
 
   await owner.getByRole('button', { name: 'Zoom in' }).click();
   await owner.getByRole('button', { name: 'Zoom out' }).click();
   await expect(plan).toBeVisible();
+  expect((await saveLayout(owner)).status()).toBe(200);
 
   await inviteViewer(owner, `planner-pan-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

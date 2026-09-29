@@ -58,7 +58,7 @@
           "currentVersion": 5
         },
         "1e8254a1-7aca-4870-bdf3-7e6e604fbecd": {
-          "title": "Open Garden — Gardens Home (Map-first yards)",
+          "title": "Open Garden \u2014 Gardens Home (Map-first yards)",
           "visualDirection": "map-first yards: plan thumbnails, compact garden nav on cards",
           "parentDraftId": "eecc066e-eca6-4ec8-9b02-8bc5a763e870",
           "currentVersion": 1
@@ -86,21 +86,19 @@
       "contextFiles": [
         ".superdesign/design-system.md",
         "apps/web/src/styles.css:1:50",
-        "apps/web/src/styles.css:190:530",
+        "apps/web/src/styles.css:235:350",
         "apps/web/src/app/app.component.ts",
-        "apps/web/src/app/gardens/garden-nav.ts",
         "apps/web/src/app/ui/place-marker.ts",
         "apps/web/src/app/ui/empty-state.ts",
         "apps/web/src/app/gardens/garden-layout.page.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
-        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
-        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/styles.css": "75195c45aeca827d694508b96b02b51f0d3a3219d2ac07463790c1ef07d7d5ab",
+        "apps/web/src/app/app.component.ts": "82a9940445b229adb152eb5ad676af0379f8ba687d7c8e83061e20b8e4d95b66",
         "apps/web/src/app/ui/place-marker.ts": "bbdb34beb60f045ec45caa6d8d653bee009caf78e621fa1ae990f711bb4b9dcb",
         "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
-        "apps/web/src/app/gardens/garden-layout.page.ts": "f7ef5c9a719bd9f819bf47fb3d48e6d484ba86b0f0b0a97f20d13b54dd36ed89"
+        "apps/web/src/app/gardens/garden-layout.page.ts": "13ea9c181b88d6825a379faf985acd1a78b1829a1ff32f25d0ecb0f9e3edf6bd"
       },
       "components": [
         {
@@ -108,22 +106,17 @@
           "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
           "sourcePath": "apps/web/src/app/app.component.ts",
           "logoAssetKey": "apps-web-src-assets-icon-512.png"
-        },
-        {
-          "name": "GardenNav",
-          "id": "5c84d295-8243-4067-8b43-973e649a028a",
-          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
         }
       ],
       "drafts": {
         "26ad4908-f55d-4e36-a0c0-a4390d2a1972": {
-          "title": "Garden Overview - Sidebar Navigation",
-          "visualDirection": "Tidy left sidebar; Overview active; Transplants in Backyard",
+          "title": "Garden Overview - Map Boundary and Fit",
+          "visualDirection": "Tidy sidebar; plot edge stops beds; half-foot sizes; rail fits without an inner scrollbar",
           "parentDraftId": "ae9edd8f-3caa-4c4e-b318-acc4d3e70a9a",
-          "currentVersion": 6
+          "currentVersion": 8
         }
       },
-      "updatedAt": "2026-09-27T13:21:35.000Z"
+      "updatedAt": "2026-09-29T22:17:04.000Z"
     },
     "/login": {
       "targetKind": "new-ui",
@@ -164,7 +157,7 @@
       ],
       "drafts": {
         "0bc25db2-a4a7-49ce-995c-f72e45771a3f": {
-          "title": "Open Garden — Sign in",
+          "title": "Open Garden \u2014 Sign in",
           "visualDirection": "branded hero mark + wordmark, compact PWA login card",
           "parentDraftId": "ae9edd8f-3caa-4c4e-b318-acc4d3e70a9a",
           "currentVersion": 2
@@ -192,25 +185,21 @@
       "contextFiles": [
         ".superdesign/design-system.md",
         "apps/web/src/styles.css:1:50",
-        "apps/web/src/styles.css:190:530",
+        "apps/web/src/styles.css:311:342",
         "apps/web/src/app/app.component.ts",
-        "apps/web/src/app/gardens/garden-nav.ts",
         "apps/web/src/app/ui/place-marker.ts",
         "apps/web/src/app/ui/empty-state.ts",
         "apps/web/src/app/gardens/garden-bed-view.page.ts",
-        "apps/web/src/app/gardens/planting-tray.ts",
-        "apps/web/src/app/gardens/garden-plan-canvas.ts"
+        "apps/web/src/app/gardens/planting-tray.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
-        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
-        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/styles.css": "75195c45aeca827d694508b96b02b51f0d3a3219d2ac07463790c1ef07d7d5ab",
+        "apps/web/src/app/app.component.ts": "82a9940445b229adb152eb5ad676af0379f8ba687d7c8e83061e20b8e4d95b66",
         "apps/web/src/app/ui/place-marker.ts": "bbdb34beb60f045ec45caa6d8d653bee009caf78e621fa1ae990f711bb4b9dcb",
         "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
         "apps/web/src/app/gardens/garden-bed-view.page.ts": "24401afcd35385b44e156861d0ecd4a88ae53107d796bde066e05d0f6a3bee26",
-        "apps/web/src/app/gardens/planting-tray.ts": "9b02c657efc9d9d820e814f6043b3808236da74a0a24cb13ea56dddd35b43893",
-        "apps/web/src/app/gardens/garden-plan-canvas.ts": "b95cb0b5faf3af2f11cec278dab3406c84620ff310470325d8185d78c629255e"
+        "apps/web/src/app/gardens/planting-tray.ts": "9b02c657efc9d9d820e814f6043b3808236da74a0a24cb13ea56dddd35b43893"
       },
       "components": [
         {
@@ -218,22 +207,17 @@
           "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
           "sourcePath": "apps/web/src/app/app.component.ts",
           "logoAssetKey": "apps-web-src-assets-icon-512.png"
-        },
-        {
-          "name": "GardenNav",
-          "id": "5c84d295-8243-4067-8b43-973e649a028a",
-          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
         }
       ],
       "drafts": {
         "f0bb2f5a-3a5b-4bc5-829e-ea6f6d54e683": {
-          "title": "Bed View — Tidy Sidebar Navigation",
-          "visualDirection": "same Tidy sidebar; no garden item active; Transplants in Backyard",
+          "title": "Bed View \u2014 Side Panel Sizes to Content",
+          "visualDirection": "Tidy sidebar; Overview active; North named; plant panel sizes to content",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
-          "currentVersion": 6
+          "currentVersion": 8
         }
       },
-      "updatedAt": "2026-09-27T13:21:35.000Z"
+      "updatedAt": "2026-09-29T22:17:04.000Z"
     },
     "/gardens/:id/calendar": {
       "targetKind": "new-ui",
@@ -282,7 +266,7 @@
       ],
       "drafts": {
         "b5872544-ae4f-4683-9ac2-f0965a40b143": {
-          "title": "Planting Calendar — Sidebar Navigation",
+          "title": "Planting Calendar \u2014 Sidebar Navigation",
           "visualDirection": "Tidy left sidebar; Calendar active; Transplants in Backyard",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
           "currentVersion": 6
@@ -337,7 +321,7 @@
       ],
       "drafts": {
         "78e11282-271b-4171-b0ad-1275f872d785": {
-          "title": "Configuration — Sidebar Navigation",
+          "title": "Configuration \u2014 Sidebar Navigation",
           "visualDirection": "Tidy left sidebar; Configuration active; Transplants in Backyard",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
           "currentVersion": 3
@@ -392,7 +376,7 @@
       ],
       "drafts": {
         "169fd864-2229-4042-ac6b-278854238d36": {
-          "title": "Reminders — Open Garden",
+          "title": "Reminders \u2014 Open Garden",
           "visualDirection": "Tidy left sidebar; Reminders active; Transplants in Backyard",
           "parentDraftId": "b5872544-ae4f-4683-9ac2-f0965a40b143",
           "currentVersion": 3
@@ -449,7 +433,7 @@
       ],
       "drafts": {
         "f61b73d2-7cea-41f8-ba65-e27e6129c3b9": {
-          "title": "Plantings — sidebar navigation",
+          "title": "Plantings \u2014 sidebar navigation",
           "visualDirection": "Tidy left sidebar; Plantings active; Transplants in Backyard",
           "parentDraftId": "b5872544-ae4f-4683-9ac2-f0965a40b143",
           "currentVersion": 3
@@ -579,7 +563,7 @@
       ],
       "drafts": {
         "6c057bbb-9674-4096-a29b-5f9c5daba711": {
-          "title": "Plant Detail — Tomato",
+          "title": "Plant Detail \u2014 Tomato",
           "visualDirection": "Tidy sidebar; Catalog active; Tomato facts and Save favorite",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
           "currentVersion": 1
@@ -644,7 +628,7 @@
       ],
       "drafts": {
         "efdb3fb8-f063-46c5-8068-721db6c8208d": {
-          "title": "Open Garden — Favorites",
+          "title": "Open Garden \u2014 Favorites",
           "visualDirection": "Tidy sidebar; Favorites active; saved plants with Remove",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
           "currentVersion": 1

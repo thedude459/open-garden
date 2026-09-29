@@ -9,15 +9,16 @@ describe('display units', () => {
     expect(inchesToFeetInput(48)).toBe(4);
   });
 
-  it('rounds fractional feet to integer inches', () => {
+  it('rounds fractional feet to integer inches and shows half feet', () => {
     expect(feetToInches(3.5)).toBe(42);
-    expect(inchesToFeetInput(40)).toBe(3.33);
+    expect(inchesToFeetInput(54)).toBe(4.5);
+    expect(inchesToFeetInput(40)).toBe(3.5);
     expect(feetToInches('3.33')).toBe(40);
   });
 
   it('formats bed size in feet', () => {
     expect(formatPlanSize(96, 48, 0)).toBe('8 × 4 ft · 0°');
     expect(formatPlanSize(48, 24)).toBe('4 × 2 ft');
-    expect(formatPlanSize(40, 20, 90)).toBe('3.33 × 1.67 ft · 90°');
+    expect(formatPlanSize(54, 72, 90)).toBe('4.5 × 6 ft · 90°');
   });
 });

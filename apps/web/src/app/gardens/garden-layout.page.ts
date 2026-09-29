@@ -2,7 +2,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { originFromCenter, drawableBeds, feetToInches, formatPlanSize, inchesToFeetInput } from '@open-garden/garden-layout';
+import {
+  originFromCenter,
+  drawableBeds,
+  feetToInches,
+  formatPlanSize,
+  inchesToFeetInput,
+  snapHalfFoot,
+  clampSizeToPlot,
+  clampOriginToPlot,
+  HALF_FOOT_INCHES,
+  bedPlanSize,
+} from '@open-garden/garden-layout';
 import { rotateBed90 } from '@open-garden/garden-layout/rotate';
 import type {
   BedGeometryDto,
@@ -66,6 +77,9 @@ import { EmptyState } from '../ui/empty-state';
       <div class="planner-alerts">
         @if (dirty()) {
           <p role="status">Unsaved changes</p>
+        }
+        @if (atGardenEdge()) {
+          <p role="status">At the garden edge</p>
         }
         @for (flag of flags(); track $index) {
           <p class="needs-attention" role="status">
@@ -143,8 +157,8 @@ import { EmptyState } from '../ui/empty-state';
                         type="number"
                         step="0.5"
                         name="originX"
-                        [ngModel]="inchesToFeetInput(bed.geometry.originXInches)"
-                        (ngModelChange)="patchSelected({ originXInches: feetToInches($event) })"
+                        [value]="inchesToFeetInput(bed.geometry.originXInches)"
+                        (input)="patchSelected({ originXInches: originInchesFromFeet(fieldFeet($event)) })"
                       />
                     </label>
                     <label>
@@ -153,8 +167,8 @@ import { EmptyState } from '../ui/empty-state';
                         type="number"
                         step="0.5"
                         name="originY"
-                        [ngModel]="inchesToFeetInput(bed.geometry.originYInches)"
-                        (ngModelChange)="patchSelected({ originYInches: feetToInches($event) })"
+                        [value]="inchesToFeetInput(bed.geometry.originYInches)"
+                        (input)="patchSelected({ originYInches: originInchesFromFeet(fieldFeet($event)) })"
                       />
                     </label>
                     <label>
@@ -164,8 +178,8 @@ import { EmptyState } from '../ui/empty-state';
                         min="0.5"
                         step="0.5"
                         name="length"
-                        [ngModel]="inchesToFeetInput(bed.geometry.lengthInches)"
-                        (ngModelChange)="patchSelected({ lengthInches: sizeInchesFromFeet($event) })"
+                        [value]="inchesToFeetInput(bed.geometry.lengthInches)"
+                        (input)="patchSelected({ lengthInches: sizeInchesFromFeet(fieldFeet($event)) })"
                       />
                     </label>
                     <label>
@@ -175,8 +189,8 @@ import { EmptyState } from '../ui/empty-state';
                         min="0.5"
                         step="0.5"
                         name="width"
-                        [ngModel]="inchesToFeetInput(bed.geometry.widthInches)"
-                        (ngModelChange)="patchSelected({ widthInches: sizeInchesFromFeet($event) })"
+                        [value]="inchesToFeetInput(bed.geometry.widthInches)"
+                        (input)="patchSelected({ widthInches: sizeInchesFromFeet(fieldFeet($event)) })"
                       />
                     </label>
                   </form>
@@ -345,8 +359,20 @@ export class GardenLayoutPage implements OnInit {
   readonly inchesToFeetInput = inchesToFeetInput;
   readonly feetToInches = feetToInches;
 
+  originInchesFromFeet(feet: string | number): number {
+    return snapHalfFoot(feetToInches(feet));
+  }
+
+  fieldFeet(event: Event): string {
+    return (event.target as HTMLInputElement).value;
+  }
+
   sizeInchesFromFeet(feet: string | number): number {
-    return Math.max(1, feetToInches(feet));
+    return Math.max(HALF_FOOT_INCHES, snapHalfFoot(feetToInches(feet)));
+  }
+
+  atGardenEdge() {
+    return this.canvas()?.atPlotEdge() ?? false;
   }
 
   ngOnInit() {
@@ -403,10 +429,13 @@ export class GardenLayoutPage implements OnInit {
     const id = this.selectedId();
     const d = this.draft();
     if (!id || !d) return;
+    const snapSize = patch.lengthInches !== undefined || patch.widthInches !== undefined;
     this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) =>
-        b.id === id && b.geometry ? { ...b, geometry: { ...b.geometry, ...patch } } : b,
+        b.id === id && b.geometry
+          ? { ...b, geometry: this.placeBed({ ...b.geometry, ...patch }, snapSize) }
+          : b,
       ),
     });
     this.refreshFlags();
@@ -420,7 +449,7 @@ export class GardenLayoutPage implements OnInit {
     this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) =>
-        b.id === id && b.geometry ? { ...b, geometry: rotateBed90(b.geometry) } : b,
+        b.id === id && b.geometry ? { ...b, geometry: this.placeBed(rotateBed90(b.geometry), true) } : b,
       ),
     });
     this.refreshFlags();
@@ -458,13 +487,16 @@ export class GardenLayoutPage implements OnInit {
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
     const origin = originFromCenter(center.x, center.y, length, width);
-    const geometry: BedGeometryDto = {
-      originXInches: origin.originXInches,
-      originYInches: origin.originYInches,
-      lengthInches: length,
-      widthInches: width,
-      orientation: 0,
-    };
+    const geometry = this.placeBed(
+      {
+        originXInches: origin.originXInches,
+        originYInches: origin.originYInches,
+        lengthInches: length,
+        widthInches: width,
+        orientation: 0,
+      },
+      true,
+    );
     this.planner.newBedIds.add(id);
     this.planner.setDraft({
       ...d,
@@ -485,15 +517,15 @@ export class GardenLayoutPage implements OnInit {
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
     const origin = originFromCenter(center.x, center.y, length, width);
-    const area: LayoutAreaDto = {
+    const placed = this.placeArea({
       id,
       name,
       originXInches: origin.originXInches,
       originYInches: origin.originYInches,
       lengthInches: length,
       widthInches: width,
-    };
-    this.planner.setDraft({ ...d, areas: [...(d.areas ?? []), area] });
+    });
+    this.planner.setDraft({ ...d, areas: [...(d.areas ?? []), placed] });
     this.newAreaName = '';
   }
 
@@ -554,9 +586,16 @@ export class GardenLayoutPage implements OnInit {
     if (!this.guardMutate()) return;
     const d = this.draft();
     if (!d) return;
+    const current = d.beds.find((b) => b.id === ev.bedId)?.geometry;
+    const snapSize =
+      !current ||
+      current.lengthInches !== ev.geometry.lengthInches ||
+      current.widthInches !== ev.geometry.widthInches;
     this.planner.setDraft({
       ...d,
-      beds: d.beds.map((b) => (b.id === ev.bedId ? { ...b, geometry: ev.geometry } : b)),
+      beds: d.beds.map((b) =>
+        b.id === ev.bedId ? { ...b, geometry: this.placeBed(ev.geometry, snapSize) } : b,
+      ),
     });
   }
 
@@ -566,7 +605,7 @@ export class GardenLayoutPage implements OnInit {
     if (!d) return;
     this.planner.setDraft({
       ...d,
-      areas: (d.areas ?? []).map((a) => (a.id === ev.area.id ? ev.area : a)),
+      areas: (d.areas ?? []).map((a) => (a.id === ev.area.id ? this.placeArea(ev.area) : a)),
     });
   }
 
@@ -591,6 +630,45 @@ export class GardenLayoutPage implements OnInit {
         this.fail(err);
       }
     });
+  }
+
+  private placeBed(geo: BedGeometryDto, snapSize: boolean): BedGeometryDto {
+    const frame = this.canvas()?.plot();
+    if (!frame) return geo;
+    const plan = bedPlanSize(geo);
+    const size = snapSize
+      ? clampSizeToPlot(frame, geo.originXInches, geo.originYInches, plan.width, plan.height)
+      : { width: plan.width, height: plan.height };
+    const origin = clampOriginToPlot(frame, geo.originXInches, geo.originYInches, size.width, size.height);
+    const rotated = geo.orientation === 90 || geo.orientation === 270;
+    return {
+      ...geo,
+      originXInches: origin.originXInches,
+      originYInches: origin.originYInches,
+      lengthInches: rotated ? size.height : size.width,
+      widthInches: rotated ? size.width : size.height,
+    };
+  }
+
+  private placeArea(area: LayoutAreaDto): LayoutAreaDto {
+    const frame = this.canvas()?.plot();
+    if (!frame) return area;
+    const current = this.draft()?.areas.find((item) => item.id === area.id);
+    const snapSize =
+      !current ||
+      current.lengthInches !== area.lengthInches ||
+      current.widthInches !== area.widthInches;
+    const size = snapSize
+      ? clampSizeToPlot(frame, area.originXInches, area.originYInches, area.lengthInches, area.widthInches)
+      : { width: area.lengthInches, height: area.widthInches };
+    const origin = clampOriginToPlot(frame, area.originXInches, area.originYInches, size.width, size.height);
+    return {
+      ...area,
+      originXInches: origin.originXInches,
+      originYInches: origin.originYInches,
+      lengthInches: size.width,
+      widthInches: size.height,
+    };
   }
 
   private fail(err: unknown) {

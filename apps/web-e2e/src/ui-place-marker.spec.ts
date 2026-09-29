@@ -26,6 +26,7 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   await owner.getByRole('button', { name: 'Open bed North' }).focus();
   await owner.keyboard.press('Enter');
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
+  await expect(owner.locator('nav[aria-label="Garden"] .nav-bed')).toHaveText('North');
   await expect(owner.getByLabel('You are here')).toContainText('North');
   await expect(owner.getByLabel('Bed plan')).not.toContainText('Bed ·');
   await owner.getByRole('link', { name: 'Back to overview' }).click();
