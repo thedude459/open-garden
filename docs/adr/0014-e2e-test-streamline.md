@@ -18,10 +18,10 @@ Spec 012 requires a faster, non-flaky gated e2e job that still covers gardener-f
 
 ## Consequences
 
-+ First-try red means a real failure; artifacts still exist without retries.
++ First-try red means a real failure. CI uploads the HTML report and traces when the e2e job fails.
 + HTTP proofs do not pay browser startup; UI files are not serialized behind pipeline.
 + Unique users avoid cross-check leaks (lists, favorites, sharing).
-- Live HTTP is skipped in the unit `test` job (must run `e2e` to execute it).
+- Live HTTP is skipped in the coverage run inside `verify` (must run `e2e` to execute it).
 - Global catalog remains one table; isolation is naming + restore, not a second database.
 - `apps/web-e2e/src/pipeline-helpers.ts` stays for pipeline **UI** idle waits; HTTP pipeline proofs live in `api-e2e`.
-- CI worker count stays 2 until a post-baseline measurement says otherwise.
+- CI and local Playwright both use 4 workers, matching the 4-vCPU GitHub-hosted runner.

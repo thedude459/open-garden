@@ -16,6 +16,16 @@ describe('GardenService', () => {
     });
   });
 
+  it('stores size on half-foot steps, defaulting to 20 by 10 ft', async () => {
+    const { service, ownerId } = createGardenMemory();
+    const named = await service.create(ownerId, { name: 'Plot', lengthInches: 100, widthInches: 50 });
+    expect(named.lengthInches).toBe(102);
+    expect(named.widthInches).toBe(48);
+    const plain = await service.create(ownerId, { name: 'Plain' });
+    expect(plain.lengthInches).toBe(240);
+    expect(plain.widthInches).toBe(120);
+  });
+
   it('creates an owned garden and lists it', async () => {
     const { service, ownerId } = createGardenMemory();
     const created = await service.create(ownerId, { name: 'Backyard', notes: 'South fence' });

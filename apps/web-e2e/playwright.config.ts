@@ -6,7 +6,11 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   retries: 0,
   timeout: 90_000,
-  workers: process.env['CI'] ? 2 : 4,
+  workers: 4,
+  outputDir: 'test-results',
+  reporter: process.env['CI']
+    ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
+    : [['list']],
   use: {
     baseURL: 'http://localhost:4200',
     trace: 'retain-on-failure',

@@ -52,18 +52,20 @@ Do not commit a production `.env`. Local defaults in `.env.example` (`open_garde
 
 ## Tests (same as CI)
 
-Unit tests and the coverage gate (≥80%) are the GitHub `test` job. Playwright is
+Unit tests and the coverage gate (≥80%) run in the GitHub `verify` job. Playwright is
 the `e2e` job (Postgres, fixture seed, API `:3000`, web `:4200`).
 
 ```bash
-npm test              # Nx unit tests + Vitest coverage (CI test job)
+npm test              # Local: every Nx test target, then the Vitest coverage gate
 npm run e2e           # Compose Postgres if needed, seed, serve, Playwright
 npm run test:all      # npm test && npm run e2e
 npm run e2e:only      # Playwright only (API + web already running)
 ```
 
-Local `npm test` runs every project. In GitHub Actions the same script uses
-`nx affected` (with `nx-set-shas`). `npm run e2e` installs Playwright Chromium,
+Local `npm test` runs every project, then the coverage gate. In GitHub Actions the
+same script runs only the coverage gate (one Vitest process). Affected lint and
+build still use `nx-set-shas`. `npx nx affected -t test` is the faster local pass.
+`npm run e2e` installs Playwright Chromium,
 starts the same stack as CI, then stops the API and web processes when it
 finishes. If Docker is not running, the e2e script starts it (Docker Desktop
 on macOS) and waits until the daemon is ready before Compose Postgres.
@@ -98,21 +100,18 @@ See `specs/007-data-pipeline/quickstart.md` for populate / merge / monitor check
 
 ## CI
 
-GitHub Actions runs on every PR and push to `main` / `*-plant-database` /
-`*-household-gardens` / `*-planting-calendar`. Local equivalents: `npm test` and `npm run e2e`
+GitHub Actions runs on every PR and push to `main`. Local equivalents: `npm test` and `npm run e2e`
 (`scripts/ci/test.sh`, `scripts/ci/e2e.sh`).
 
 | Job / workflow | Purpose |
 |----------------|---------|
-| `test` | Nx affected tests + Vitest coverage gate (≥80% on domain libs) |
-| `lint` | Nx affected ESLint (quality gate) |
-| `build` | Nx affected builds (`web` production, `api` typecheck) |
-| `sca` | `npm audit` (high+) + Trivy fs (HIGH/CRITICAL) + OSV lockfile scan |
+| `verify` | Affected ESLint, Vitest coverage gate (≥80% on domain libs), affected builds (`web` production, `api` typecheck) |
+| `sca` | `npm audit` (high+) + Trivy fs (HIGH/CRITICAL), diffed against the PR base or the previous commit on `main` |
 | `secrets` | Gitleaks |
-| `e2e` | Playwright against seeded API + web |
+| `e2e` | Playwright (4 workers) against seeded API + web. Failure uploads the report and traces |
 | `CodeQL` (`analyze`) | SAST for JavaScript/TypeScript |
 
-CI uses Node **24.15**. Actions are SHA-pinned. Shared setup: `.github/actions/setup-node`.
+CI uses Node **24.15** (`.nvmrc`). Actions are SHA-pinned. Shared setup: `.github/actions/setup-node`.
 Dependabot opens weekly npm + Actions PRs. `main` requires the status checks above.
 
 ## Layout
@@ -136,26 +135,3 @@ Dependabot opens weekly npm + Actions PRs. `main` requires the status checks abo
 | `libs/auth` | `auth` | layer:domain |
 | `libs/care-reminders` | `care-reminders` | layer:domain |
 | `libs/web-ui` | `web-ui` | notices and busy helpers |
-
-See `specs/001-plant-database/quickstart.md`,
-`specs/002-household-gardens/quickstart.md`,
-`specs/003-planting-calendar/quickstart.md`,
-`specs/004-seasonal-plantings/quickstart.md`,
-`specs/005-garden-layout/quickstart.md`,
-`specs/006-care-reminders/quickstart.md`,
-`specs/007-data-pipeline/quickstart.md`,
-`specs/008-garden-planner-ux/quickstart.md`,
-`specs/009-ui-feedback-polish/quickstart.md`, and
-`specs/010-fix-planner-placement/quickstart.md` for architecture details,
-household-garden verify steps (create/list/detail, site profile, sharing,
-offline read), planting-calendar verify steps (per-garden ranges, frost
-shift, type filter, this-week emphasis, offline cache), seasonal-plantings
-verify steps (record/dates/confirm-delete, named beds/groups/filter, offline
-queue and no-resurrect), garden-layout verify steps (beds to scale,
-spacing/fit save gate, offline read cache), and garden planner UX verify
-steps (Garden Overview map of beds and areas, Transplant View indoor starts,
-Bed View tray of unplaced transplants, shared in-memory draft until Save,
-pan/zoom, offline mutations leave the draft unchanged). Waiting actions show
-busy on the control and a shared **Notification** (success auto-clears;
-errors and **Drop missed a bed** stay until **Dismiss**). Overview uses a
-**You are here** marker, **Open bed {name}**, and **Bed** / **Area** labels.

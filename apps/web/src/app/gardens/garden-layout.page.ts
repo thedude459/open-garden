@@ -105,6 +105,8 @@ import { EmptyState } from '../ui/empty-state';
           [showPlantingMarks]="false"
           [allowBedGeometry]="true"
           [planLabel]="'Garden plan'"
+          [plotLengthInches]="plotLength()"
+          [plotWidthInches]="plotWidth()"
           (focusBed)="selectedId.set($event)"
           (bedGeometry)="onBedGeometry($event)"
           (areaGeometry)="onAreaGeometry($event)"
@@ -339,6 +341,8 @@ export class GardenLayoutPage implements OnInit {
   private readonly canvas = viewChild(GardenPlanCanvas);
   gardenId = '';
   gardenName = signal('Garden');
+  plotLength = signal<number | null>(null);
+  plotWidth = signal<number | null>(null);
   readonly draft = this.planner.draft;
   readonly loading = this.planner.loading;
   readonly flags = this.planner.flags;
@@ -470,6 +474,8 @@ export class GardenLayoutPage implements OnInit {
     ]);
     if (detail) {
       this.gardenName.set(detail.name);
+      this.plotLength.set(detail.lengthInches ?? null);
+      this.plotWidth.set(detail.widthInches ?? null);
       this.needsSite.set(!detail.lastFrost || !detail.firstFrost);
     }
   }
