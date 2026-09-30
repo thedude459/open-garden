@@ -53,7 +53,8 @@ export function draftIsDirty(
 
 /**
  * evaluate → POST beds → POST direct seeds → PUT layout → DELETE pending direct seeds.
- * On PUT failure, compensating DELETE of new beds and new direct-seed plantings.
+ * Creates in a phase run together. Beds finish before plantings, and both finish before PUT.
+ * On PUT failure, compensating DELETE of new direct-seed plantings, then new beds.
  */
 export async function savePlannerDraft(
   draft: GardenLayoutDto,
@@ -69,53 +70,59 @@ export async function savePlannerDraft(
   const postedBeds: string[] = [];
   const postedPlantings: string[] = [];
   try {
-    for (const id of tracking.newBedIds) {
-      const bed = draft.beds.find((b) => b.id === id);
-      if (!bed) continue;
-      await deps.createBed({
-        id: bed.id,
-        name: bed.name,
-        lengthInches: bed.geometry?.lengthInches ?? 96,
-        widthInches: bed.geometry?.widthInches ?? 48,
-        originXInches: bed.geometry?.originXInches ?? 0,
-        originYInches: bed.geometry?.originYInches ?? 0,
-      });
-      postedBeds.push(id);
-    }
-    for (const id of tracking.newDirectSeedIds) {
-      const planting = draft.plantings.find((p) => p.id === id);
-      if (!planting) continue;
-      await deps.createPlanting({
-        id: planting.id,
-        plantId: planting.plantId,
-        startMethod: 'direct_seed',
-        bedId: planting.bedId,
-      });
-      postedPlantings.push(id);
-    }
+    await Promise.all(
+      [...tracking.newBedIds].map(async (id) => {
+        const bed = draft.beds.find((b) => b.id === id);
+        if (!bed) return;
+        await deps.createBed({
+          id: bed.id,
+          name: bed.name,
+          lengthInches: bed.geometry?.lengthInches ?? 96,
+          widthInches: bed.geometry?.widthInches ?? 48,
+          originXInches: bed.geometry?.originXInches ?? 0,
+          originYInches: bed.geometry?.originYInches ?? 0,
+        });
+        postedBeds.push(id);
+      }),
+    );
+    await Promise.all(
+      [...tracking.newDirectSeedIds].map(async (id) => {
+        const planting = draft.plantings.find((p) => p.id === id);
+        if (!planting) return;
+        await deps.createPlanting({
+          id: planting.id,
+          plantId: planting.plantId,
+          startMethod: 'direct_seed',
+          bedId: planting.bedId,
+        });
+        postedPlantings.push(id);
+      }),
+    );
     const saved = await deps.putLayout(putBodyFromDraft(draft));
-    for (const id of tracking.pendingDirectSeedDeletes) {
-      await deps.deletePlanting(id);
-    }
+    await Promise.all([...tracking.pendingDirectSeedDeletes].map((id) => deps.deletePlanting(id)));
     tracking.newBedIds.clear();
     tracking.newDirectSeedIds.clear();
     tracking.pendingDirectSeedDeletes.clear();
     return { ...saved, areas: saved.areas ?? [] };
   } catch (err) {
-    for (const id of postedPlantings) {
-      try {
-        await deps.deletePlanting(id);
-      } catch {
-        /* keep attempting remaining compensating deletes */
-      }
-    }
-    for (const id of postedBeds) {
-      try {
-        await deps.deleteBed(id);
-      } catch {
-        /* keep attempting remaining compensating deletes */
-      }
-    }
+    await Promise.all(
+      postedPlantings.map(async (id) => {
+        try {
+          await deps.deletePlanting(id);
+        } catch {
+          /* keep attempting remaining compensating deletes */
+        }
+      }),
+    );
+    await Promise.all(
+      postedBeds.map(async (id) => {
+        try {
+          await deps.deleteBed(id);
+        } catch {
+          /* keep attempting remaining compensating deletes */
+        }
+      }),
+    );
     throw err;
   }
 }

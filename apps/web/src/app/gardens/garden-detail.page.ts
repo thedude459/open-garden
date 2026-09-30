@@ -1,23 +1,23 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import type { GardenDetailDto, GardenRole } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
-import { GardenNav } from './garden-nav';
-
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, GardenNav],
+  imports: [FormsModule],
   template: `
     @if (garden(); as g) {
-      <p><a routerLink="/gardens">All gardens</a></p>
-      <h2>{{ g.name }}</h2>
-      <p class="muted">You are {{ g.myRole }} of this garden.</p>
-      <og-garden-nav [gardenId]="g.id" />
+      <header class="page-head">
+        <div>
+          <h2>{{ g.name }}</h2>
+          <p class="muted">You are {{ g.myRole }} of this garden.</p>
+        </div>
+      </header>
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }

@@ -10,6 +10,9 @@ import type { LayoutPlantingDto } from '@open-garden/shared-types';
       @if (!plantings().length) {
         <p class="muted">No transplants waiting.</p>
       } @else {
+        @if (canEdit()) {
+          <p class="muted">Drag a plant onto the bed.</p>
+        }
         <ul class="card-list">
           @for (p of plantings(); track p.id) {
             <li>

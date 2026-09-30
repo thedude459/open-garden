@@ -9,7 +9,7 @@ import { NoticeService } from '../ui/notice.service';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <p><a routerLink="/plants">Back to catalog</a></p>
+    <p class="back-link"><a routerLink="/plants">Back to catalog</a></p>
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (plant(); as p) {
@@ -20,7 +20,7 @@ import { NoticeService } from '../ui/notice.service';
           · Variety {{ p.cultivar }}
         }
       </p>
-      <dl>
+      <dl class="plant-facts">
         <dt>Type</dt><dd>{{ p.plantType }}</dd>
         <dt>Zones</dt><dd>{{ p.zoneMin }}–{{ p.zoneMax }}</dd>
         <dt>Sun</dt><dd>{{ p.sunRequirements ?? 'Unavailable' }}</dd>

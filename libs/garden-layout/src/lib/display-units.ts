@@ -4,9 +4,9 @@ export function inchesToFeet(inches: number): number {
   return inches / INCHES_PER_FOOT;
 }
 
-/** Feet shown in number inputs, rounded to the nearest hundredth. */
+/** Feet shown in number inputs, on half-foot steps (8, 4.5), never hundredths. */
 export function inchesToFeetInput(inches: number): number {
-  return Math.round(inchesToFeet(inches) * 100) / 100;
+  return Math.round(inchesToFeet(inches) * 2) / 2;
 }
 
 export function feetToInches(feet: string | number): number {

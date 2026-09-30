@@ -31,7 +31,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await saveGarden(owner);
 
   await owner.getByRole('link', { name: 'Calendar' }).click();
-  await owner.getByPlaceholder('Search catalog to add').fill('Spinach');
+  await owner.getByRole('textbox', { name: 'Search catalog to add' }).fill('Spinach');
   await owner.getByRole('button', { name: 'Search catalog' }).click();
   await owner.getByRole('button', { name: 'Add Spinach' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Spinach' })).toBeVisible();
