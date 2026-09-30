@@ -19,16 +19,17 @@
       },
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
         "apps/web/src/app/app.component.ts",
         "apps/web/src/app/gardens/garden-list.page.ts",
         "apps/web/src/app/ui/empty-state.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
-        "apps/web/src/app/gardens/garden-list.page.ts": "e6c3735e645fad0c5e877c7a1b249981560f1bd0195371af353968ecbb2cb6ab",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
+        "apps/web/src/app/gardens/garden-list.page.ts": "c3841577f7e51d2e8a4af610b12419ceb27a82551865abac75aaaec26ad46a6a",
         "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454"
       },
       "components": [
@@ -51,10 +52,10 @@
           "currentVersion": 1
         },
         "ae9edd8f-3caa-4c4e-b318-acc4d3e70a9a": {
-          "title": "Open Garden - Gardens Home Redesign",
-          "visualDirection": "today-first hub: overdue/this week hero, rich garden cards",
+          "title": "Open Garden - Gardens Home (Sidebar Nav)",
+          "visualDirection": "Tidy left sidebar; Gardens active; Transplants in Backyard",
           "parentDraftId": "eecc066e-eca6-4ec8-9b02-8bc5a763e870",
-          "currentVersion": 1
+          "currentVersion": 5
         },
         "1e8254a1-7aca-4870-bdf3-7e6e604fbecd": {
           "title": "Open Garden \u2014 Gardens Home (Map-first yards)",
@@ -63,7 +64,7 @@
           "currentVersion": 1
         }
       },
-      "updatedAt": "2026-09-13T12:46:41.000Z"
+      "updatedAt": "2026-09-27T13:21:35.000Z"
     },
     "/gardens/:id/layout": {
       "targetKind": "new-ui",
@@ -84,21 +85,20 @@
       "sourceDraftId": "ae9edd8f-3caa-4c4e-b318-acc4d3e70a9a",
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:50",
+        "apps/web/src/styles.css:235:350",
         "apps/web/src/app/app.component.ts",
-        "apps/web/src/app/gardens/garden-nav.ts",
         "apps/web/src/app/ui/place-marker.ts",
         "apps/web/src/app/ui/empty-state.ts",
-        "apps/web/src/app/gardens/garden-layout.page.ts:27:324"
+        "apps/web/src/app/gardens/garden-layout.page.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
-        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/styles.css": "75195c45aeca827d694508b96b02b51f0d3a3219d2ac07463790c1ef07d7d5ab",
+        "apps/web/src/app/app.component.ts": "82a9940445b229adb152eb5ad676af0379f8ba687d7c8e83061e20b8e4d95b66",
         "apps/web/src/app/ui/place-marker.ts": "bbdb34beb60f045ec45caa6d8d653bee009caf78e621fa1ae990f711bb4b9dcb",
         "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
-        "apps/web/src/app/gardens/garden-layout.page.ts": "66ecefb7142984fb10a9e7fe0bc15bcb1ab46f9af20c11697009d5fe7f0aef49"
+        "apps/web/src/app/gardens/garden-layout.page.ts": "13ea9c181b88d6825a379faf985acd1a78b1829a1ff32f25d0ecb0f9e3edf6bd"
       },
       "components": [
         {
@@ -106,22 +106,17 @@
           "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
           "sourcePath": "apps/web/src/app/app.component.ts",
           "logoAssetKey": "apps-web-src-assets-icon-512.png"
-        },
-        {
-          "name": "GardenNav",
-          "id": "5c84d295-8243-4067-8b43-973e649a028a",
-          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
         }
       ],
       "drafts": {
         "26ad4908-f55d-4e36-a0c0-a4390d2a1972": {
-          "title": "Garden Overview \u2014 map-first",
-          "visualDirection": "map-first Overview inheriting today-first brand shell",
+          "title": "Garden Overview - Map Boundary and Fit",
+          "visualDirection": "Tidy sidebar; plot edge stops beds; half-foot sizes; rail fits without an inner scrollbar",
           "parentDraftId": "ae9edd8f-3caa-4c4e-b318-acc4d3e70a9a",
-          "currentVersion": 1
+          "currentVersion": 8
         }
       },
-      "updatedAt": "2026-09-13T12:46:41.000Z"
+      "updatedAt": "2026-09-29T22:17:04.000Z"
     },
     "/login": {
       "targetKind": "new-ui",
@@ -189,26 +184,22 @@
       "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:50",
+        "apps/web/src/styles.css:311:342",
         "apps/web/src/app/app.component.ts",
-        "apps/web/src/app/gardens/garden-nav.ts",
         "apps/web/src/app/ui/place-marker.ts",
         "apps/web/src/app/ui/empty-state.ts",
-        "apps/web/src/app/gardens/garden-bed-view.page.ts:23:216",
-        "apps/web/src/app/gardens/planting-tray.ts",
-        "apps/web/src/app/gardens/garden-plan-canvas.ts:108:118",
-        "apps/web/src/app/gardens/garden-plan-canvas.ts:373:394"
+        "apps/web/src/app/gardens/garden-bed-view.page.ts",
+        "apps/web/src/app/gardens/planting-tray.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
-        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/styles.css": "75195c45aeca827d694508b96b02b51f0d3a3219d2ac07463790c1ef07d7d5ab",
+        "apps/web/src/app/app.component.ts": "82a9940445b229adb152eb5ad676af0379f8ba687d7c8e83061e20b8e4d95b66",
         "apps/web/src/app/ui/place-marker.ts": "bbdb34beb60f045ec45caa6d8d653bee009caf78e621fa1ae990f711bb4b9dcb",
         "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
-        "apps/web/src/app/gardens/garden-bed-view.page.ts": "41e6f3cabd20c96c9f405f827b4dd2693e46b6786e3816a9f385bec114cdfd91",
-        "apps/web/src/app/gardens/planting-tray.ts": "b962b54c29cd4e587dc844b9f0d0431157490e9955619da07ae6f97cb3bcb43e",
-        "apps/web/src/app/gardens/garden-plan-canvas.ts": "0e36cf30c177d3a5b08fce9fc4884d6c0110a1e104f1adc952898b3a658ef34e"
+        "apps/web/src/app/gardens/garden-bed-view.page.ts": "24401afcd35385b44e156861d0ecd4a88ae53107d796bde066e05d0f6a3bee26",
+        "apps/web/src/app/gardens/planting-tray.ts": "9b02c657efc9d9d820e814f6043b3808236da74a0a24cb13ea56dddd35b43893"
       },
       "components": [
         {
@@ -216,22 +207,17 @@
           "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
           "sourcePath": "apps/web/src/app/app.component.ts",
           "logoAssetKey": "apps-web-src-assets-icon-512.png"
-        },
-        {
-          "name": "GardenNav",
-          "id": "5c84d295-8243-4067-8b43-973e649a028a",
-          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
         }
       ],
       "drafts": {
         "f0bb2f5a-3a5b-4bc5-829e-ea6f6d54e683": {
-          "title": "Bed View \u2014 Quiet Grid + Planting Rail",
-          "visualDirection": "bed-first grid from selected plant; right rail catalog + tray",
+          "title": "Bed View \u2014 Side Panel Sizes to Content",
+          "visualDirection": "Tidy sidebar; Overview active; North named; plant panel sizes to content",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
-          "currentVersion": 3
+          "currentVersion": 8
         }
       },
-      "updatedAt": "2026-09-13T13:23:25.000Z"
+      "updatedAt": "2026-09-29T22:17:04.000Z"
     },
     "/gardens/:id/calendar": {
       "targetKind": "new-ui",
@@ -252,17 +238,18 @@
       "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
         "apps/web/src/app/app.component.ts",
         "apps/web/src/app/gardens/garden-nav.ts",
-        "apps/web/src/app/gardens/garden-calendar.page.ts:24:143"
+        "apps/web/src/app/gardens/garden-calendar.page.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
         "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
-        "apps/web/src/app/gardens/garden-calendar.page.ts": "c269daadb7fb1800f19fab5d063d6e9faa2df22b800613318f121be7440892b4"
+        "apps/web/src/app/gardens/garden-calendar.page.ts": "9a8b87fdf9bbc06d64824b9726c7f899b3d4c38a5edbb86bf39898cb9372fe07"
       },
       "components": [
         {
@@ -279,13 +266,13 @@
       ],
       "drafts": {
         "b5872544-ae4f-4683-9ac2-f0965a40b143": {
-          "title": "Planting Calendar \u2014 Week-first with Indoor/Outdoor Choice",
-          "visualDirection": "add indoor vs outdoor; this week / next week / future",
+          "title": "Planting Calendar \u2014 Sidebar Navigation",
+          "visualDirection": "Tidy left sidebar; Calendar active; Transplants in Backyard",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
-          "currentVersion": 2
+          "currentVersion": 6
         }
       },
-      "updatedAt": "2026-09-13T13:41:23.000Z"
+      "updatedAt": "2026-09-27T13:21:35.000Z"
     },
     "/gardens/:id/configure": {
       "targetKind": "new-ui",
@@ -306,17 +293,18 @@
       "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
         "apps/web/src/app/app.component.ts",
         "apps/web/src/app/gardens/garden-nav.ts",
-        "apps/web/src/app/gardens/garden-detail.page.ts:15:223"
+        "apps/web/src/app/gardens/garden-detail.page.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
         "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
-        "apps/web/src/app/gardens/garden-detail.page.ts": "10a94eba8cd63cea5a028ab5792bd16ea9995b30c57424eeb940683ec6340c80"
+        "apps/web/src/app/gardens/garden-detail.page.ts": "4c84b7fe573fcecfe87a5592b98cb147645c7d41e36fd4823ff5c82726d258fc"
       },
       "components": [
         {
@@ -333,13 +321,13 @@
       ],
       "drafts": {
         "78e11282-271b-4171-b0ad-1275f872d785": {
-          "title": "Configuration",
-          "visualDirection": "settings-first site + members, not landing",
+          "title": "Configuration \u2014 Sidebar Navigation",
+          "visualDirection": "Tidy left sidebar; Configuration active; Transplants in Backyard",
           "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
-          "currentVersion": 1
+          "currentVersion": 3
         }
       },
-      "updatedAt": "2026-09-13T12:57:19.000Z"
+      "updatedAt": "2026-09-27T13:21:35.000Z"
     },
     "/gardens/:id/reminders": {
       "targetKind": "new-ui",
@@ -360,15 +348,16 @@
       "sourceDraftId": "b5872544-ae4f-4683-9ac2-f0965a40b143",
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
         "apps/web/src/app/app.component.ts",
         "apps/web/src/app/gardens/garden-nav.ts",
         "apps/web/src/app/gardens/garden-reminders.page.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
         "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
         "apps/web/src/app/gardens/garden-reminders.page.ts": "7b0d9ab0b24d0ac779f5de3b83b7039c2d00fd5e8f586be0aff2c916f73fe610"
       },
@@ -387,13 +376,13 @@
       ],
       "drafts": {
         "169fd864-2229-4042-ac6b-278854238d36": {
-          "title": "Reminders",
-          "visualDirection": "overdue then this week then upcoming; Complete/Dismiss",
+          "title": "Reminders \u2014 Open Garden",
+          "visualDirection": "Tidy left sidebar; Reminders active; Transplants in Backyard",
           "parentDraftId": "b5872544-ae4f-4683-9ac2-f0965a40b143",
-          "currentVersion": 1
+          "currentVersion": 3
         }
       },
-      "updatedAt": "2026-09-13T13:46:40.000Z"
+      "updatedAt": "2026-09-27T13:21:35.000Z"
     },
     "/gardens/:id/plantings": {
       "targetKind": "new-ui",
@@ -414,19 +403,20 @@
       "sourceDraftId": "b5872544-ae4f-4683-9ac2-f0965a40b143",
       "contextFiles": [
         ".superdesign/design-system.md",
-        "apps/web/src/styles.css",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
         "apps/web/src/app/app.component.ts",
         "apps/web/src/app/gardens/garden-nav.ts",
-        "apps/web/src/app/gardens/garden-plantings.page.ts:19:236",
-        "apps/web/src/app/gardens/garden-transplants.page.ts:19:118"
+        "apps/web/src/app/gardens/garden-plantings.page.ts",
+        "apps/web/src/app/gardens/garden-transplants.page.ts"
       ],
       "fingerprints": {
         ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
-        "apps/web/src/styles.css": "d659ab2876da58e76463c62ce937171fdaf64b73ba8c832f2eef448dc0bd53dd",
-        "apps/web/src/app/app.component.ts": "67c62c5e8d53f7c10cbc2858c0659de9e373d71a37fa322fbf3a89b8d2b95aa6",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
         "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
-        "apps/web/src/app/gardens/garden-plantings.page.ts": "960b270e166366f755a2e1e06ee1cb644a8068fec2507d81219b6db0f012cea9",
-        "apps/web/src/app/gardens/garden-transplants.page.ts": "fe1541be4290869dce4eda83f92f52215c462aa08d62075316e60f5488cde0c8"
+        "apps/web/src/app/gardens/garden-plantings.page.ts": "a7e3d58fdad8d1addf4c48c9973bc8c3a16ab0b0d7511cda39f327a1b8e0fe82",
+        "apps/web/src/app/gardens/garden-transplants.page.ts": "d8550b961e4d8a1b233098a06dc971c76de22783c551754af3f7f4e4356ea16e"
       },
       "components": [
         {
@@ -443,13 +433,338 @@
       ],
       "drafts": {
         "f61b73d2-7cea-41f8-ba65-e27e6129c3b9": {
-          "title": "Plantings \u2014 merged with tray",
-          "visualDirection": "one nav item: indoor tray + in-garden beds; no Transplants dest",
+          "title": "Plantings \u2014 sidebar navigation",
+          "visualDirection": "Tidy left sidebar; Plantings active; Transplants in Backyard",
           "parentDraftId": "b5872544-ae4f-4683-9ac2-f0965a40b143",
+          "currentVersion": 3
+        }
+      },
+      "updatedAt": "2026-09-27T13:21:35.000Z"
+    },
+    "/plants": {
+      "targetKind": "new-ui",
+      "projectId": "5d952e5b-06d4-4f71-a7fb-ffe48e96bbba",
+      "activeDraftId": "1fe1502f-818a-403e-8126-5115d34834ec",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "apps-web-src-assets-icon-512.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "apps-web-src-assets-icon-512.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/5d952e5b-06d4-4f71-a7fb-ffe48e96bbba/brand-assets/apps-web-src-assets-icon-512.png/icon-512.png",
+          "sourcePath": "apps/web/src/assets/icon-512.png"
+        }
+      },
+      "sourceTarget": "/gardens/:id/layout",
+      "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
+        "apps/web/src/app/app.component.ts",
+        "apps/web/src/app/gardens/garden-nav.ts",
+        "apps/web/src/app/ui/empty-state.ts",
+        "apps/web/src/app/plants/plant-list.page.ts",
+        "apps/web/src/app/plants/plant-detail.page.ts",
+        "apps/web/src/app/favorites/favorites-list.page.ts",
+        "apps/web/src/app/admin/pipeline.page.ts",
+        "apps/web/src/app/gardens/garden-transplants.page.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
+        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
+        "apps/web/src/app/plants/plant-list.page.ts": "0ea7baf6b10212485f6b7677d2eeccdfbe0d2e432e897bff02b53515add9b2d9",
+        "apps/web/src/app/plants/plant-detail.page.ts": "d55c085efcad6ec4de34214807c4f32c8ee3677c5f43b6cf4b41311a66fb7861",
+        "apps/web/src/app/favorites/favorites-list.page.ts": "4b24b2e982cd86415f4dd4718ee864d2a0a45034013a5c17847678f6531098a2",
+        "apps/web/src/app/admin/pipeline.page.ts": "7019c016307d1b311c8580ceb15e928bdecee688dee5a9354a1e677f420772dd",
+        "apps/web/src/app/gardens/garden-transplants.page.ts": "d8550b961e4d8a1b233098a06dc971c76de22783c551754af3f7f4e4356ea16e"
+      },
+      "components": [
+        {
+          "name": "AppNav",
+          "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
+          "sourcePath": "apps/web/src/app/app.component.ts",
+          "logoAssetKey": "apps-web-src-assets-icon-512.png"
+        },
+        {
+          "name": "GardenNav",
+          "id": "5c84d295-8243-4067-8b43-973e649a028a",
+          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
+        }
+      ],
+      "drafts": {
+        "1fe1502f-818a-403e-8126-5115d34834ec": {
+          "title": "Plant Catalog",
+          "visualDirection": "Tidy sidebar; Catalog active; search, filters, and plant rows",
+          "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
           "currentVersion": 1
         }
       },
-      "updatedAt": "2026-09-13T13:53:02.000Z"
+      "updatedAt": "2026-09-27T13:21:35.000Z"
+    },
+    "/plants/:id": {
+      "targetKind": "new-ui",
+      "projectId": "5d952e5b-06d4-4f71-a7fb-ffe48e96bbba",
+      "activeDraftId": "6c057bbb-9674-4096-a29b-5f9c5daba711",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "apps-web-src-assets-icon-512.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "apps-web-src-assets-icon-512.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/5d952e5b-06d4-4f71-a7fb-ffe48e96bbba/brand-assets/apps-web-src-assets-icon-512.png/icon-512.png",
+          "sourcePath": "apps/web/src/assets/icon-512.png"
+        }
+      },
+      "sourceTarget": "/gardens/:id/layout",
+      "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
+        "apps/web/src/app/app.component.ts",
+        "apps/web/src/app/gardens/garden-nav.ts",
+        "apps/web/src/app/ui/empty-state.ts",
+        "apps/web/src/app/plants/plant-list.page.ts",
+        "apps/web/src/app/plants/plant-detail.page.ts",
+        "apps/web/src/app/favorites/favorites-list.page.ts",
+        "apps/web/src/app/admin/pipeline.page.ts",
+        "apps/web/src/app/gardens/garden-transplants.page.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
+        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
+        "apps/web/src/app/plants/plant-list.page.ts": "0ea7baf6b10212485f6b7677d2eeccdfbe0d2e432e897bff02b53515add9b2d9",
+        "apps/web/src/app/plants/plant-detail.page.ts": "d55c085efcad6ec4de34214807c4f32c8ee3677c5f43b6cf4b41311a66fb7861",
+        "apps/web/src/app/favorites/favorites-list.page.ts": "4b24b2e982cd86415f4dd4718ee864d2a0a45034013a5c17847678f6531098a2",
+        "apps/web/src/app/admin/pipeline.page.ts": "7019c016307d1b311c8580ceb15e928bdecee688dee5a9354a1e677f420772dd",
+        "apps/web/src/app/gardens/garden-transplants.page.ts": "d8550b961e4d8a1b233098a06dc971c76de22783c551754af3f7f4e4356ea16e"
+      },
+      "components": [
+        {
+          "name": "AppNav",
+          "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
+          "sourcePath": "apps/web/src/app/app.component.ts",
+          "logoAssetKey": "apps-web-src-assets-icon-512.png"
+        },
+        {
+          "name": "GardenNav",
+          "id": "5c84d295-8243-4067-8b43-973e649a028a",
+          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
+        }
+      ],
+      "drafts": {
+        "6c057bbb-9674-4096-a29b-5f9c5daba711": {
+          "title": "Plant Detail \u2014 Tomato",
+          "visualDirection": "Tidy sidebar; Catalog active; Tomato facts and Save favorite",
+          "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-09-27T13:21:35.000Z"
+    },
+    "/favorites": {
+      "targetKind": "new-ui",
+      "projectId": "5d952e5b-06d4-4f71-a7fb-ffe48e96bbba",
+      "activeDraftId": "efdb3fb8-f063-46c5-8068-721db6c8208d",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "apps-web-src-assets-icon-512.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "apps-web-src-assets-icon-512.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/5d952e5b-06d4-4f71-a7fb-ffe48e96bbba/brand-assets/apps-web-src-assets-icon-512.png/icon-512.png",
+          "sourcePath": "apps/web/src/assets/icon-512.png"
+        }
+      },
+      "sourceTarget": "/gardens/:id/layout",
+      "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
+        "apps/web/src/app/app.component.ts",
+        "apps/web/src/app/gardens/garden-nav.ts",
+        "apps/web/src/app/ui/empty-state.ts",
+        "apps/web/src/app/plants/plant-list.page.ts",
+        "apps/web/src/app/plants/plant-detail.page.ts",
+        "apps/web/src/app/favorites/favorites-list.page.ts",
+        "apps/web/src/app/admin/pipeline.page.ts",
+        "apps/web/src/app/gardens/garden-transplants.page.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
+        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
+        "apps/web/src/app/plants/plant-list.page.ts": "0ea7baf6b10212485f6b7677d2eeccdfbe0d2e432e897bff02b53515add9b2d9",
+        "apps/web/src/app/plants/plant-detail.page.ts": "d55c085efcad6ec4de34214807c4f32c8ee3677c5f43b6cf4b41311a66fb7861",
+        "apps/web/src/app/favorites/favorites-list.page.ts": "4b24b2e982cd86415f4dd4718ee864d2a0a45034013a5c17847678f6531098a2",
+        "apps/web/src/app/admin/pipeline.page.ts": "7019c016307d1b311c8580ceb15e928bdecee688dee5a9354a1e677f420772dd",
+        "apps/web/src/app/gardens/garden-transplants.page.ts": "d8550b961e4d8a1b233098a06dc971c76de22783c551754af3f7f4e4356ea16e"
+      },
+      "components": [
+        {
+          "name": "AppNav",
+          "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
+          "sourcePath": "apps/web/src/app/app.component.ts",
+          "logoAssetKey": "apps-web-src-assets-icon-512.png"
+        },
+        {
+          "name": "GardenNav",
+          "id": "5c84d295-8243-4067-8b43-973e649a028a",
+          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
+        }
+      ],
+      "drafts": {
+        "efdb3fb8-f063-46c5-8068-721db6c8208d": {
+          "title": "Open Garden \u2014 Favorites",
+          "visualDirection": "Tidy sidebar; Favorites active; saved plants with Remove",
+          "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-09-27T13:21:35.000Z"
+    },
+    "/admin/pipeline": {
+      "targetKind": "new-ui",
+      "projectId": "5d952e5b-06d4-4f71-a7fb-ffe48e96bbba",
+      "activeDraftId": "7414cbcb-fb84-4da8-9079-e924c6e3cf54",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "apps-web-src-assets-icon-512.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "apps-web-src-assets-icon-512.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/5d952e5b-06d4-4f71-a7fb-ffe48e96bbba/brand-assets/apps-web-src-assets-icon-512.png/icon-512.png",
+          "sourcePath": "apps/web/src/assets/icon-512.png"
+        }
+      },
+      "sourceTarget": "/gardens/:id/layout",
+      "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
+        "apps/web/src/app/app.component.ts",
+        "apps/web/src/app/gardens/garden-nav.ts",
+        "apps/web/src/app/ui/empty-state.ts",
+        "apps/web/src/app/plants/plant-list.page.ts",
+        "apps/web/src/app/plants/plant-detail.page.ts",
+        "apps/web/src/app/favorites/favorites-list.page.ts",
+        "apps/web/src/app/admin/pipeline.page.ts",
+        "apps/web/src/app/gardens/garden-transplants.page.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
+        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
+        "apps/web/src/app/plants/plant-list.page.ts": "0ea7baf6b10212485f6b7677d2eeccdfbe0d2e432e897bff02b53515add9b2d9",
+        "apps/web/src/app/plants/plant-detail.page.ts": "d55c085efcad6ec4de34214807c4f32c8ee3677c5f43b6cf4b41311a66fb7861",
+        "apps/web/src/app/favorites/favorites-list.page.ts": "4b24b2e982cd86415f4dd4718ee864d2a0a45034013a5c17847678f6531098a2",
+        "apps/web/src/app/admin/pipeline.page.ts": "7019c016307d1b311c8580ceb15e928bdecee688dee5a9354a1e677f420772dd",
+        "apps/web/src/app/gardens/garden-transplants.page.ts": "d8550b961e4d8a1b233098a06dc971c76de22783c551754af3f7f4e4356ea16e"
+      },
+      "components": [
+        {
+          "name": "AppNav",
+          "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
+          "sourcePath": "apps/web/src/app/app.component.ts",
+          "logoAssetKey": "apps-web-src-assets-icon-512.png"
+        },
+        {
+          "name": "GardenNav",
+          "id": "5c84d295-8243-4067-8b43-973e649a028a",
+          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
+        }
+      ],
+      "drafts": {
+        "7414cbcb-fb84-4da8-9079-e924c6e3cf54": {
+          "title": "Catalog Pipeline (Admin)",
+          "visualDirection": "Tidy member sidebar; no item active; cadence, run, recent runs",
+          "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-09-27T13:21:35.000Z"
+    },
+    "/gardens/:id/transplants": {
+      "targetKind": "new-ui",
+      "projectId": "5d952e5b-06d4-4f71-a7fb-ffe48e96bbba",
+      "activeDraftId": "c504a999-2563-4fe4-a300-479bee49cdec",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "apps-web-src-assets-icon-512.png"
+      ],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "apps-web-src-assets-icon-512.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/5d952e5b-06d4-4f71-a7fb-ffe48e96bbba/brand-assets/apps-web-src-assets-icon-512.png/icon-512.png",
+          "sourcePath": "apps/web/src/assets/icon-512.png"
+        }
+      },
+      "sourceTarget": "/gardens/:id/layout",
+      "sourceDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "apps/web/src/styles.css:1:210",
+        "apps/web/src/styles.css:620:710",
+        "apps/web/src/app/app.component.ts",
+        "apps/web/src/app/gardens/garden-nav.ts",
+        "apps/web/src/app/ui/empty-state.ts",
+        "apps/web/src/app/plants/plant-list.page.ts",
+        "apps/web/src/app/plants/plant-detail.page.ts",
+        "apps/web/src/app/favorites/favorites-list.page.ts",
+        "apps/web/src/app/admin/pipeline.page.ts",
+        "apps/web/src/app/gardens/garden-transplants.page.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "ac58f5a2cd79f5499327b1a1666629542a0dc63fda05b2945b366410f8d83e76",
+        "apps/web/src/styles.css": "e66c60a30ec103c95e45b42191300820c16003207c517c23e6d7c29565ab755a",
+        "apps/web/src/app/app.component.ts": "f0f9558c7fb8be22f4fb57e3e668724bd8aa545c45dcc3ef348a90096f325eee",
+        "apps/web/src/app/gardens/garden-nav.ts": "8cb650a8443806bca882af9a8416b607b2c9ad9acf9e1b6baab3e118809d657d",
+        "apps/web/src/app/ui/empty-state.ts": "b949cf9048da0a5aac690d7dfcb4d1940792076afecd0a36868086b2d3783454",
+        "apps/web/src/app/plants/plant-list.page.ts": "0ea7baf6b10212485f6b7677d2eeccdfbe0d2e432e897bff02b53515add9b2d9",
+        "apps/web/src/app/plants/plant-detail.page.ts": "d55c085efcad6ec4de34214807c4f32c8ee3677c5f43b6cf4b41311a66fb7861",
+        "apps/web/src/app/favorites/favorites-list.page.ts": "4b24b2e982cd86415f4dd4718ee864d2a0a45034013a5c17847678f6531098a2",
+        "apps/web/src/app/admin/pipeline.page.ts": "7019c016307d1b311c8580ceb15e928bdecee688dee5a9354a1e677f420772dd",
+        "apps/web/src/app/gardens/garden-transplants.page.ts": "d8550b961e4d8a1b233098a06dc971c76de22783c551754af3f7f4e4356ea16e"
+      },
+      "components": [
+        {
+          "name": "AppNav",
+          "id": "b584f5b7-1524-47d0-98b7-9f609e645967",
+          "sourcePath": "apps/web/src/app/app.component.ts",
+          "logoAssetKey": "apps-web-src-assets-icon-512.png"
+        },
+        {
+          "name": "GardenNav",
+          "id": "5c84d295-8243-4067-8b43-973e649a028a",
+          "sourcePath": "apps/web/src/app/gardens/garden-nav.ts"
+        }
+      ],
+      "drafts": {
+        "c504a999-2563-4fe4-a300-479bee49cdec": {
+          "title": "Transplant View",
+          "visualDirection": "Tidy sidebar; Transplants active; catalog search and unplaced starts",
+          "parentDraftId": "26ad4908-f55d-4e36-a0c0-a4390d2a1972",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-09-27T13:21:35.000Z"
     }
   }
 }

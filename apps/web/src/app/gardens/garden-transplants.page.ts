@@ -5,18 +5,15 @@ import { ActivatedRoute } from '@angular/router';
 import type { PlantSummaryDto, ReminderItemDto, TransplantListDto } from '@open-garden/shared-types';
 import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
-import { PlantsApiService } from '../plants/plants-api.service';
+import { PlantPicker } from '../plants/plant-picker';
 import { RemindersApiService } from './reminders-api.service';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
-import { GardenNav } from './garden-nav';
-
 @Component({
   standalone: true,
-  imports: [FormsModule, PlaceMarker, GardenNav],
+  imports: [FormsModule, PlaceMarker, PlantPicker],
   template: `
-    <og-garden-nav [gardenId]="gardenId" />
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Transplants" />
     <h2>Transplant View</h2>
     @if (error()) {
@@ -28,17 +25,16 @@ import { GardenNav } from './garden-nav';
       <p class="muted">Garden unavailable or not found.</p>
     } @else {
       @if (canEdit()) {
-        <form class="filters" (ngSubmit)="searchCatalog()">
-          <input [(ngModel)]="searchQ" name="transplantSearch" placeholder="Search catalog" />
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [attr.aria-busy]="notices.busyMap().has('search-catalog') || null"
-            [disabled]="notices.busyMap().has('search-catalog')"
-          >
-            Search catalog
-          </button>
-        </form>
+        <og-plant-picker
+          inputName="transplantSearch"
+          searchLabel="Search catalog"
+          placeholder="Search catalog"
+          submitLabel="Search catalog"
+          [requireQuery]="true"
+          [beforeSearch]="allowCatalogSearch"
+          (results)="onCatalog($event)"
+          (failed)="onCatalogFail($event)"
+        />
         <ul class="card-list">
           @for (p of catalogHits(); track p.id) {
             <li class="stack">
@@ -121,7 +117,6 @@ import { GardenNav } from './garden-nav';
 export class GardenTransplantsPage implements OnInit {
   private readonly layoutApi = inject(LayoutApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
-  private readonly plantsApi = inject(PlantsApiService);
   private readonly remindersApi = inject(RemindersApiService);
   private readonly gardensApi = inject(GardensApiService);
   readonly notices = inject(NoticeService);
@@ -132,7 +127,6 @@ export class GardenTransplantsPage implements OnInit {
   list = signal<TransplantListDto | null>(null);
   loading = signal(true);
   error = signal('');
-  searchQ = '';
   catalogHits = signal<PlantSummaryDto[]>([]);
   indoorDate: Record<string, string> = {};
   confirmDeleteId = signal<string | null>(null);
@@ -179,24 +173,20 @@ export class GardenTransplantsPage implements OnInit {
     }
   }
 
-  async searchCatalog() {
-    const q = this.searchQ.trim();
-    if (!q) return;
-    await this.notices.run('search-catalog', async () => {
-      if (!this.online()) {
-        this.fail(new OnlineRequiredError());
-        return;
-      }
-      try {
-        const page = await this.plantsApi.list({ q, page: 1, pageSize: 20 });
-        this.catalogHits.set(page.items);
-        if (!page.items.length) this.error.set('No plants match that search.');
-        else this.error.set('');
-      } catch (err) {
-        this.catalogHits.set([]);
-        this.fail(err);
-      }
-    });
+  allowCatalogSearch = () => {
+    if (this.online()) return true;
+    this.fail(new OnlineRequiredError());
+    return false;
+  };
+
+  onCatalog(items: PlantSummaryDto[]) {
+    this.catalogHits.set(items);
+    this.error.set(items.length ? '' : 'No plants match that search.');
+  }
+
+  onCatalogFail(err: unknown) {
+    this.catalogHits.set([]);
+    this.fail(err);
   }
 
   async addTransplant(plant: PlantSummaryDto) {

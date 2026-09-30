@@ -45,9 +45,11 @@ export class LayoutService {
     if (!membership) throw LAYOUT_ERRORS.gardenNotFound();
     if (membership.role === 'viewer') throw LAYOUT_ERRORS.viewerLayout();
 
-    const bedRows = await this.beds.listByGarden(gardenId);
-    const plantingRows = await this.plantings.listAllForLayout(gardenId);
-    const areaRows = await this.areas.listByGarden(gardenId);
+    const [bedRows, plantingRows, areaRows] = await Promise.all([
+      this.beds.listByGarden(gardenId),
+      this.plantings.listAllForLayout(gardenId),
+      this.areas.listByGarden(gardenId),
+    ]);
     const bedIds = new Set(bedRows.map((b) => b.id));
     const plantingIds = new Set(plantingRows.map((p) => p.id));
 
@@ -63,14 +65,15 @@ export class LayoutService {
       }
     }
 
+    const areaIdByName = new Map(areaRows.map((area) => [area.nameNormalized, area.id]));
     const seenNames = new Map<string, string>();
     for (const area of dto.areas ?? []) {
       const names = normalizeAreaName(area.name);
       const takenId = seenNames.get(names.nameNormalized);
       if (takenId && takenId !== area.id) throw LAYOUT_ERRORS.areaNameTaken();
       seenNames.set(names.nameNormalized, area.id);
-      const existing = await this.areas.findByNormalizedName(gardenId, names.nameNormalized);
-      if (existing && existing.id !== area.id) throw LAYOUT_ERRORS.areaNameTaken();
+      const existingId = areaIdByName.get(names.nameNormalized);
+      if (existingId && existingId !== area.id) throw LAYOUT_ERRORS.areaNameTaken();
       if (area.lengthInches < 1 || area.widthInches < 1) throw LAYOUT_ERRORS.sizeMin();
     }
 
@@ -103,47 +106,47 @@ export class LayoutService {
     const flags = evaluateLayout(proposedBeds, proposedPlantings);
     if (flags.some((f) => f.blocking)) throw LAYOUT_ERRORS.spacingProblems();
 
-    for (const row of bedRows) {
-      const put = dto.beds.find((b) => b.id === row.id);
-      if (put) {
-        await this.beds.setGeometry(gardenId, row.id, put);
-      }
-    }
-    for (const row of plantingRows) {
-      const put = dto.placements.find((p) => p.plantingId === row.id);
-      if (put) {
-        await this.plantings.setPlacement(gardenId, row.id, {
-          bedId: put.bedId,
-          xInches: put.xInches,
-          yInches: put.yInches,
-        });
-      } else if (row.layoutXInches !== null) {
+    await Promise.all(
+      bedRows.flatMap((row) => {
+        const put = dto.beds.find((b) => b.id === row.id);
+        return put ? [this.beds.setGeometry(gardenId, row.id, put)] : [];
+      }),
+    );
+    await Promise.all(
+      plantingRows.map(async (row) => {
+        const put = dto.placements.find((p) => p.plantingId === row.id);
+        if (put) {
+          await this.plantings.setPlacement(gardenId, row.id, {
+            bedId: put.bedId,
+            xInches: put.xInches,
+            yInches: put.yInches,
+          });
+          return;
+        }
+        if (row.layoutXInches === null) return;
         const startMethod = (row as { startMethod?: string }).startMethod ?? 'direct_seed';
         if (startMethod === 'transplant') {
           await this.plantings.clearPlacement(gardenId, row.id);
         } else {
           await this.plantings.clearLayoutCoords(gardenId, row.id);
         }
-      }
-    }
+      }),
+    );
 
-    const existingAreaIds = new Set(areaRows.map((a) => a.id));
-    for (const area of dto.areas ?? []) {
-      const names = normalizeAreaName(area.name);
-      if (!existingAreaIds.has(area.id)) {
-        const clash = await this.areas.getInGarden(gardenId, area.id);
-        if (clash) throw LAYOUT_ERRORS.areaNotFound();
-      }
-      await this.areas.upsert(gardenId, {
-        id: area.id,
-        name: names.name,
-        nameNormalized: names.nameNormalized,
-        originXInches: area.originXInches,
-        originYInches: area.originYInches,
-        lengthInches: area.lengthInches,
-        widthInches: area.widthInches,
-      });
-    }
+    await Promise.all(
+      (dto.areas ?? []).map((area) => {
+        const names = normalizeAreaName(area.name);
+        return this.areas.upsert(gardenId, {
+          id: area.id,
+          name: names.name,
+          nameNormalized: names.nameNormalized,
+          originXInches: area.originXInches,
+          originYInches: area.originYInches,
+          lengthInches: area.lengthInches,
+          widthInches: area.widthInches,
+        });
+      }),
+    );
 
     return this.snapshot(gardenId, membership.role as GardenRole);
   }

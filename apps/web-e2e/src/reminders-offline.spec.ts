@@ -28,7 +28,7 @@ async function openRemindersWithPlant(page: Page, gardenName: string) {
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(gardenName) }).click();
   await page.getByRole('link', { name: 'Plantings', exact: true }).click();
-  await page.getByPlaceholder('Search catalog to add').fill('Cherry Tomato');
+  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Cherry Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Cherry Tomato' }).click();
   const tomato = page.locator('article').filter({ hasText: 'Cherry Tomato' }).first();

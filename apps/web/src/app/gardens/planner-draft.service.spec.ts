@@ -94,6 +94,37 @@ describe('savePlannerDraft', () => {
     expect(t.pendingDirectSeedDeletes.size).toBe(0);
   });
 
+  it('creates every new bed before any direct seed', async () => {
+    let bedsStarted = 0;
+    let releaseBed: () => void = () => undefined;
+    const bedGate = new Promise<void>((resolve) => {
+      releaseBed = resolve;
+    });
+    const d = deps({
+      createBed: vi.fn(async () => {
+        bedsStarted += 1;
+        await bedGate;
+      }),
+    });
+    const draft = layout({
+      beds: [layout().beds[0]!, { ...layout().beds[0]!, id: 'bed-2', name: 'West' }],
+    });
+    const pending = savePlannerDraft(
+      draft,
+      tracking({ newBedIds: new Set(['bed-new', 'bed-2']) }),
+      d,
+    );
+    await vi.waitFor(() => {
+      expect(bedsStarted).toBe(2);
+    });
+    expect(d.createPlanting).not.toHaveBeenCalled();
+    expect(d.putLayout).not.toHaveBeenCalled();
+    releaseBed();
+    await pending;
+    expect(d.createBed).toHaveBeenCalledTimes(2);
+    expect(d.putLayout).toHaveBeenCalledTimes(1);
+  });
+
   it('compensating-deletes posted beds and direct seeds when PUT fails', async () => {
     const d = deps({
       putLayout: vi.fn(async () => {

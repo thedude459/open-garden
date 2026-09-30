@@ -20,13 +20,13 @@ function ogSessionFromHeaders(res: { headersArray: () => { name: string; value: 
   throw new Error('register succeeded without og_session cookie');
 }
 
-async function registerOnPage(page: Page, email: string): Promise<AuthUser> {
-  const res = await page.request.post('/api/auth/register', {
+async function registerContext(context: BrowserContext, email: string): Promise<AuthUser> {
+  const res = await context.request.post('/api/auth/register', {
     data: { email, password: TEST_PASSWORD, displayName: 'E2E' },
   });
   const text = await res.text();
   expect(res.ok(), text).toBeTruthy();
-  await page.context().addCookies([
+  await context.addCookies([
     {
       name: 'og_session',
       value: ogSessionFromHeaders(res),
@@ -37,8 +37,7 @@ async function registerOnPage(page: Page, email: string): Promise<AuthUser> {
     },
   ]);
   const body = JSON.parse(text) as { user: AuthUser };
-  await page.goto('/gardens');
-  await page.evaluate((user) => {
+  await context.addInitScript((user) => {
     sessionStorage.setItem('og_user_id', user.id);
     sessionStorage.setItem('og_role', user.role);
     sessionStorage.setItem('og_authed', '1');
@@ -56,8 +55,9 @@ export async function signedInContext(
 
 export async function signedInPage(browser: Browser, email = uniqueEmail()): Promise<Page> {
   const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block' });
+  await registerContext(context, email);
   const page = await context.newPage();
-  await page.goto('/');
-  await registerOnPage(page, email);
+  await page.goto('/gardens');
+  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
   return page;
 }
