@@ -75,8 +75,10 @@ jobs:
             local dest="$1"
             local dir="$2"
             local attempt code
+            mkdir -p "$(dirname "$dest")"
             for attempt in 1 2 3; do
               set +e
+              # Absolute dest: the redirect must not follow `cd` into the base tree.
               (cd "$dir" && npm audit --json --package-lock-only > "$dest")
               code=$?
               set -e
@@ -92,9 +94,9 @@ jobs:
             echo "npm audit failed in ${dir}"
             return 1
           }
-          audit_to .sca-out/audit-head.json .
+          audit_to "${GITHUB_WORKSPACE}/.sca-out/audit-head.json" "${GITHUB_WORKSPACE}"
           if [[ -d "${RUNNER_TEMP}/sca-base" ]]; then
-            audit_to .sca-out/audit-base.json "${RUNNER_TEMP}/sca-base"
+            audit_to "${GITHUB_WORKSPACE}/.sca-out/audit-base.json" "${RUNNER_TEMP}/sca-base"
           fi
       - name: Trivy filesystem scan (head)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
