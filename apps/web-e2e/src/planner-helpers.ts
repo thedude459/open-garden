@@ -57,6 +57,13 @@ export async function openPlantingsFromGarden(page: Page) {
   await expect(page.getByRole('heading', { name: 'Plantings' })).toBeVisible();
 }
 
+/** Garden-card navigation lands on Overview. Wait for that before leaving it. */
+export async function openCalendar(page: Page) {
+  await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
+  await page.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Calendar' }).click();
+  await expect(page.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
+}
+
 export async function openOverview(page: Page) {
   await page
     .locator('nav[aria-label="Garden"]')

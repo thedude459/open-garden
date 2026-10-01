@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { feetToInches, inchesToFeetInput, snapHalfFoot } from '@open-garden/garden-layout';
 import type { GardenDetailDto, GardenRole } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
@@ -30,6 +31,30 @@ import { PlannerDraftService } from './planner-draft.service';
         <label>
           Notes
           <textarea [(ngModel)]="notes" name="notes" rows="3" [disabled]="!canEdit()"></textarea>
+        </label>
+        <label>
+          Length (ft)
+          <input
+            type="number"
+            min="0.5"
+            step="0.5"
+            name="gardenLength"
+            [(ngModel)]="lengthFeet"
+            [disabled]="!canEdit()"
+            required
+          />
+        </label>
+        <label>
+          Width (ft)
+          <input
+            type="number"
+            min="0.5"
+            step="0.5"
+            name="gardenWidth"
+            [(ngModel)]="widthFeet"
+            [disabled]="!canEdit()"
+            required
+          />
         </label>
         <label>
           Hardiness zone
@@ -235,6 +260,8 @@ export class GardenDetailPage implements OnInit {
   confirmDelete = signal(false);
   name = '';
   notes = '';
+  lengthFeet = 20;
+  widthFeet = 10;
   zone: number | null = null;
   lastMonth: number | null = null;
   lastDay: number | null = null;
@@ -280,6 +307,8 @@ export class GardenDetailPage implements OnInit {
           hardinessZone: this.zone,
           lastFrost: toFrost(this.lastMonth, this.lastDay),
           firstFrost: toFrost(this.firstMonth, this.firstDay),
+          lengthInches: Math.max(6, snapHalfFoot(feetToInches(this.lengthFeet))),
+          widthInches: Math.max(6, snapHalfFoot(feetToInches(this.widthFeet))),
         });
         this.garden.set(updated);
         this.applyForm(updated);
@@ -386,6 +415,8 @@ export class GardenDetailPage implements OnInit {
   private applyForm(g: GardenDetailDto) {
     this.name = g.name;
     this.notes = g.notes ?? '';
+    this.lengthFeet = inchesToFeetInput(g.lengthInches ?? 240);
+    this.widthFeet = inchesToFeetInput(g.widthInches ?? 120);
     this.zone = g.hardinessZone;
     this.lastMonth = g.lastFrost?.month ?? null;
     this.lastDay = g.lastFrost?.day ?? null;

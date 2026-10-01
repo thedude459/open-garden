@@ -291,6 +291,9 @@ export class GardenPlanCanvas {
   /** Spacing of the plant being placed. Draws the room that spacing still has. */
   readonly probeSpacing = input<number | null>(null);
   readonly planLabel = input('Garden plan');
+  /** Garden length and width. When both are set, the plot is that rectangle. */
+  readonly plotLengthInches = input<number | null>(null);
+  readonly plotWidthInches = input<number | null>(null);
 
   readonly focusBed = output<string>();
   readonly plantingDrop = output<{
@@ -381,7 +384,12 @@ export class GardenPlanCanvas {
     },
   });
 
-  readonly plot = computed(() => this.camera());
+  readonly plot = computed(() => {
+    const length = this.plotLengthInches();
+    const width = this.plotWidthInches();
+    if (length != null && width != null) return { x: 0, y: 0, w: length, h: width };
+    return this.camera();
+  });
 
   readonly viewBox = computed(() => formatPlanFrame(this.plot()));
 

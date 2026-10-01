@@ -41,6 +41,8 @@ export class GardenService {
       nameNormalized,
       notes: normalizeNotes(dto.notes ?? null),
       hardinessZone: dto.hardinessZone ?? null,
+      lengthInches: gardenInches(dto.lengthInches ?? DEFAULT_LENGTH_INCHES),
+      widthInches: gardenInches(dto.widthInches ?? DEFAULT_WIDTH_INCHES),
       ...frost,
     });
     return this.toDetail(garden, actorId);
@@ -124,6 +126,10 @@ export class GardenService {
       nameNormalized,
       notes: nextNotes,
       hardinessZone: nextZone,
+      lengthInches:
+        dto.lengthInches !== undefined ? gardenInches(dto.lengthInches) : garden.lengthInches,
+      widthInches:
+        dto.widthInches !== undefined ? gardenInches(dto.widthInches) : garden.widthInches,
       ...frost,
     });
     if (!updated) throw domainError('NOT_FOUND', 'Garden not found');
@@ -150,6 +156,8 @@ export class GardenService {
       lastFrostDay: number | null;
       firstFrostMonth: number | null;
       firstFrostDay: number | null;
+      lengthInches: number;
+      widthInches: number;
       updatedAt: Date | string;
     },
     actorId: string,
@@ -166,6 +174,8 @@ export class GardenService {
       hardinessZone: garden.hardinessZone,
       lastFrost: toMonthDay(garden.lastFrostMonth, garden.lastFrostDay),
       firstFrost: toMonthDay(garden.firstFrostMonth, garden.firstFrostDay),
+      lengthInches: garden.lengthInches,
+      widthInches: garden.widthInches,
       myRole: mine.role as GardenRole,
       ownerUserId: garden.ownerId,
       members: members.map(toMember),
@@ -174,6 +184,16 @@ export class GardenService {
       placementCount: c.placementCount,
     };
   }
+}
+
+const HALF_FOOT_INCHES = 6;
+const DEFAULT_LENGTH_INCHES = 240;
+const DEFAULT_WIDTH_INCHES = 120;
+const MAX_GARDEN_INCHES = 2400;
+
+function gardenInches(inches: number): number {
+  const snapped = Math.round(inches / HALF_FOOT_INCHES) * HALF_FOOT_INCHES;
+  return Math.min(MAX_GARDEN_INCHES, Math.max(HALF_FOOT_INCHES, snapped));
 }
 
 function requireName(name: string): string {

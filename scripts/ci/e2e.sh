@@ -152,14 +152,12 @@ PORT=4200 npx nx serve web --configuration=production --host=0.0.0.0 --port=4200
 WEB_PID=$!
 
 wait_for_services
+# One Postgres and one pipeline lock. Live HTTP and Playwright share both,
+# so they run one after the other.
 LIVE_STATUS=0
 PW_STATUS=0
-E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache &
-LIVE_PID=$!
-npx nx e2e web-e2e &
-PW_PID=$!
-wait "${LIVE_PID}" || LIVE_STATUS=$?
-wait "${PW_PID}" || PW_STATUS=$?
+E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache || LIVE_STATUS=$?
+npx nx e2e web-e2e || PW_STATUS=$?
 if [[ "${LIVE_STATUS}" -ne 0 || "${PW_STATUS}" -ne 0 ]]; then
   echo "e2e failed (live HTTP=${LIVE_STATUS} playwright=${PW_STATUS})"
   exit 1

@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { feetToInches, snapHalfFoot } from '@open-garden/garden-layout';
 import type { GardenSummaryDto } from '@open-garden/shared-types';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
@@ -17,6 +18,28 @@ import { EmptyState } from '../ui/empty-state';
     }
     <form class="filters card" (ngSubmit)="create()">
       <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
+      <label>
+        Length (ft)
+        <input
+          type="number"
+          min="0.5"
+          step="0.5"
+          name="gardenLength"
+          [(ngModel)]="lengthFeet"
+          required
+        />
+      </label>
+      <label>
+        Width (ft)
+        <input
+          type="number"
+          min="0.5"
+          step="0.5"
+          name="gardenWidth"
+          [(ngModel)]="widthFeet"
+          required
+        />
+      </label>
       <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
       <button
         type="submit"
@@ -61,6 +84,8 @@ export class GardenListPage implements OnInit {
   readonly notices = inject(NoticeService);
   name = '';
   notes = '';
+  lengthFeet = 20;
+  widthFeet = 10;
   items = signal<GardenSummaryDto[]>([]);
   loading = signal(false);
   error = signal('');
@@ -93,9 +118,13 @@ export class GardenListPage implements OnInit {
         const created = await this.api.create({
           name: this.name,
           notes: this.notes.trim() ? this.notes : null,
+          lengthInches: gardenFeet(this.lengthFeet),
+          widthInches: gardenFeet(this.widthFeet),
         });
         this.name = '';
         this.notes = '';
+        this.lengthFeet = 20;
+        this.widthFeet = 10;
         this.loadGen++;
         this.items.update((list) => [
           withCounts(created),
@@ -108,6 +137,10 @@ export class GardenListPage implements OnInit {
       }
     });
   }
+}
+
+function gardenFeet(feet: number): number {
+  return Math.max(6, snapHalfFoot(feetToInches(feet)));
 }
 
 function userMessage(err: unknown): string {

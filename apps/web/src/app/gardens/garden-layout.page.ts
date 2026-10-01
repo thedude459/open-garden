@@ -105,6 +105,8 @@ import { EmptyState } from '../ui/empty-state';
           [showPlantingMarks]="false"
           [allowBedGeometry]="true"
           [planLabel]="'Garden plan'"
+          [plotLengthInches]="plotLength()"
+          [plotWidthInches]="plotWidth()"
           (focusBed)="selectedId.set($event)"
           (bedGeometry)="onBedGeometry($event)"
           (areaGeometry)="onAreaGeometry($event)"
@@ -339,6 +341,8 @@ export class GardenLayoutPage implements OnInit {
   private readonly canvas = viewChild(GardenPlanCanvas);
   gardenId = '';
   gardenName = signal('Garden');
+  plotLength = signal<number | null>(null);
+  plotWidth = signal<number | null>(null);
   readonly draft = this.planner.draft;
   readonly loading = this.planner.loading;
   readonly flags = this.planner.flags;
@@ -449,7 +453,10 @@ export class GardenLayoutPage implements OnInit {
     this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) =>
-        b.id === id && b.geometry ? { ...b, geometry: this.placeBed(rotateBed90(b.geometry), true) } : b,
+        // false: keep length and width. Only the origin shifts to stay inside the plot.
+        b.id === id && b.geometry
+          ? { ...b, geometry: this.placeBed(rotateBed90(b.geometry), false) }
+          : b,
       ),
     });
     this.refreshFlags();
@@ -470,6 +477,8 @@ export class GardenLayoutPage implements OnInit {
     ]);
     if (detail) {
       this.gardenName.set(detail.name);
+      this.plotLength.set(detail.lengthInches ?? null);
+      this.plotWidth.set(detail.widthInches ?? null);
       this.needsSite.set(!detail.lastFrost || !detail.firstFrost);
     }
   }
@@ -632,8 +641,16 @@ export class GardenLayoutPage implements OnInit {
     });
   }
 
+  /** Garden length and width, when the gardener set them. The camera is not a boundary. */
+  private configuredPlot() {
+    const length = this.plotLength();
+    const width = this.plotWidth();
+    if (length == null || width == null) return null;
+    return { x: 0, y: 0, w: length, h: width };
+  }
+
   private placeBed(geo: BedGeometryDto, snapSize: boolean): BedGeometryDto {
-    const frame = this.canvas()?.plot();
+    const frame = this.configuredPlot();
     if (!frame) return geo;
     const plan = bedPlanSize(geo);
     const size = snapSize
@@ -651,7 +668,7 @@ export class GardenLayoutPage implements OnInit {
   }
 
   private placeArea(area: LayoutAreaDto): LayoutAreaDto {
-    const frame = this.canvas()?.plot();
+    const frame = this.configuredPlot();
     if (!frame) return area;
     const current = this.draft()?.areas.find((item) => item.id === area.id);
     const snapSize =
