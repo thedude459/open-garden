@@ -12,13 +12,13 @@ runs:
       if: inputs.install == 'true'
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
-        node-version-file: ${{ github.workspace }}/.nvmrc
+        node-version-file: .nvmrc
         cache: npm
     - name: Setup Node.js
       if: inputs.install != 'true'
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
-        node-version-file: ${{ github.workspace }}/.nvmrc
+        node-version-file: .nvmrc
     - name: Install dependencies
       if: inputs.install == 'true'
       shell: bash

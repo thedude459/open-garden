@@ -71,9 +71,30 @@ jobs:
       - name: Collect SCA inputs
         run: |
           mkdir -p .sca-out
-          npm audit --json --package-lock-only > .sca-out/audit-head.json || true
+          audit_to() {
+            local dest="$1"
+            local dir="$2"
+            local attempt code
+            for attempt in 1 2 3; do
+              set +e
+              (cd "$dir" && npm audit --json --package-lock-only > "$dest")
+              code=$?
+              set -e
+              if [[ "$code" -le 1 ]] && node -e '
+                const data = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+                if (data.error && !data.vulnerabilities) process.exit(1);
+              ' "$dest"; then
+                return 0
+              fi
+              echo "npm audit attempt ${attempt} failed in ${dir} (exit ${code})"
+              sleep 5
+            done
+            echo "npm audit failed in ${dir}"
+            return 1
+          }
+          audit_to .sca-out/audit-head.json .
           if [[ -d "${RUNNER_TEMP}/sca-base" ]]; then
-            (cd "${RUNNER_TEMP}/sca-base" && npm audit --json --package-lock-only > "${GITHUB_WORKSPACE}/.sca-out/audit-base.json") || true
+            audit_to .sca-out/audit-base.json "${RUNNER_TEMP}/sca-base"
           fi
       - name: Trivy filesystem scan (head)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0

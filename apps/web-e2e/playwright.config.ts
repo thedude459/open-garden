@@ -6,7 +6,10 @@ export default defineConfig({
   forbidOnly: !!process.env['CI'],
   retries: 0,
   timeout: 90_000,
-  workers: 4,
+  expect: { timeout: 15_000 },
+  // ponytail: CI stays at 2 workers. One API and one Postgres; 4 workers pile up
+  // on that single database. Local keeps 4.
+  workers: process.env['CI'] ? 2 : 4,
   outputDir: 'test-results',
   reporter: process.env['CI']
     ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
