@@ -453,7 +453,10 @@ export class GardenLayoutPage implements OnInit {
     this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) =>
-        b.id === id && b.geometry ? { ...b, geometry: this.placeBed(rotateBed90(b.geometry), true) } : b,
+        // false: keep length and width. Only the origin shifts to stay inside the plot.
+        b.id === id && b.geometry
+          ? { ...b, geometry: this.placeBed(rotateBed90(b.geometry), false) }
+          : b,
       ),
     });
     this.refreshFlags();
