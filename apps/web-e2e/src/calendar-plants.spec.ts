@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration } from './planner-helpers';
+import { saveGarden, openConfiguration, openCalendar } from './planner-helpers';
 
 
 
@@ -88,7 +88,7 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await friend.goto('/gardens');
   await expect(friend.getByRole('link', { name: /Picker bed/ })).toBeVisible();
   await friend.getByRole('link', { name: /Picker bed/ }).click();
-  await friend.getByRole('link', { name: 'Calendar' }).click();
+  await openCalendar(friend);
   await expect(friend.getByText('Sweet Basil')).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Show favorites' })).toHaveCount(0);
   await expect(friend.getByText('Your favorites')).toHaveCount(0);
