@@ -102,6 +102,8 @@ export const gardens = pgTable(
     lastFrostDay: integer('last_frost_day'),
     firstFrostMonth: integer('first_frost_month'),
     firstFrostDay: integer('first_frost_day'),
+    lengthInches: integer('length_inches').notNull().default(240),
+    widthInches: integer('width_inches').notNull().default(120),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

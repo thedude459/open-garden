@@ -9,6 +9,7 @@
     { "idx": 4, "version": "7", "when": 1720000000005, "tag": "0005_garden_layout", "breakpoints": true },
     { "idx": 5, "version": "7", "when": 1720000000006, "tag": "0006_care_reminders", "breakpoints": true },
     { "idx": 6, "version": "7", "when": 1720000000007, "tag": "0007_catalog_pipeline", "breakpoints": true },
-    { "idx": 7, "version": "7", "when": 1720000000008, "tag": "0008_planner_visualization", "breakpoints": true }
+    { "idx": 7, "version": "7", "when": 1720000000008, "tag": "0008_planner_visualization", "breakpoints": true },
+    { "idx": 8, "version": "7", "when": 1720000000009, "tag": "0009_garden_size", "breakpoints": true }
   ]
 }

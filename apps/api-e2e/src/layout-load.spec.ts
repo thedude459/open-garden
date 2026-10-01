@@ -31,6 +31,7 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
     await pool.end();
   });
 
+  // Setup is 200 writes. The 1000ms budget below is assembly only.
   it('assembles a 100-placement layout in under 1000ms', async () => {
     const [user] = await db
       .insert(users)
@@ -91,5 +92,5 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
     const ms = Date.now() - started;
     expect(layout.plantings.filter((p) => p.placement).length).toBe(100);
     expect(ms, `garden.layout.assembly_ms=${ms}`).toBeLessThan(1000);
-  });
+  }, 60_000);
 });

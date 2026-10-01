@@ -3,6 +3,9 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
+  "engines": {
+    "node": "^24.15.0"
+  },
   "scripts": {
     "api:serve": "nx serve api",
     "api:sync-plants": "nx run api:sync-plants",

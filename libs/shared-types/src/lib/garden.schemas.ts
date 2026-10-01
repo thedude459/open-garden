@@ -19,6 +19,8 @@ export const gardenCreateSchema = z.object({
   hardinessZone: z.number().int().min(1).max(13).nullable().optional(),
   lastFrost: monthDaySchema.nullable().optional(),
   firstFrost: monthDaySchema.nullable().optional(),
+  lengthInches: z.number().int().min(6).max(2400).optional(),
+  widthInches: z.number().int().min(6).max(2400).optional(),
 });
 
 export const gardenPatchSchema = z.object({
@@ -27,6 +29,8 @@ export const gardenPatchSchema = z.object({
   hardinessZone: z.number().int().min(1).max(13).nullable().optional(),
   lastFrost: monthDaySchema.nullable().optional(),
   firstFrost: monthDaySchema.nullable().optional(),
+  lengthInches: z.number().int().min(6).max(2400).optional(),
+  widthInches: z.number().int().min(6).max(2400).optional(),
 });
 
 export const gardenInviteSchema = z.object({

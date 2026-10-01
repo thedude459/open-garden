@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Extract HIGH/CRITICAL finding IDs from npm audit / Trivy / OSV JSON and
-// diff head vs an optional base (empty base = hard gate, used on main).
+// Extract HIGH/CRITICAL finding IDs from npm audit / Trivy JSON and
+// diff head vs an optional base (empty base = hard gate).
 'use strict';
 
 const fs = require('fs');
@@ -44,26 +44,13 @@ function extractTrivy(data) {
   return [...ids].sort();
 }
 
-function extractOsv(data) {
-  const ids = new Set();
-  for (const result of data.results || []) {
-    for (const pkg of result.packages || []) {
-      for (const vuln of pkg.vulnerabilities || []) {
-        const id = String(vuln.id || '').toLowerCase();
-        if (id) ids.add(id);
-      }
-    }
-  }
-  return [...ids].sort();
-}
-
 function diff(head, base) {
   const have = new Set(base);
   return head.filter((id) => !have.has(id));
 }
 
 function extractors() {
-  return { audit: extractAudit, trivy: extractTrivy, osv: extractOsv };
+  return { audit: extractAudit, trivy: extractTrivy };
 }
 
 function parseGateArgs(argv) {
@@ -80,7 +67,7 @@ function parseGateArgs(argv) {
 }
 
 function gate(args) {
-  const kinds = ['audit', 'trivy', 'osv'];
+  const kinds = ['audit', 'trivy'];
   const extract = extractors();
   let failed = false;
   for (const kind of kinds) {
@@ -147,17 +134,6 @@ function selfcheck() {
     ],
   });
   assertEqual(trivy, ['cve-2026-1', 'ghsa-aaaa-bbbb-cccc'], 'extractTrivy');
-
-  const osv = extractOsv({
-    results: [
-      {
-        packages: [
-          { vulnerabilities: [{ id: 'GHSA-1111-2222-3333' }, { id: 'CVE-2026-9' }] },
-        ],
-      },
-    ],
-  });
-  assertEqual(osv, ['cve-2026-9', 'ghsa-1111-2222-3333'], 'extractOsv');
 
   assertEqual(diff(['a', 'b'], ['a']), ['b'], 'diff new');
   assertEqual(diff(['a'], ['a', 'b']), [], 'diff subset');

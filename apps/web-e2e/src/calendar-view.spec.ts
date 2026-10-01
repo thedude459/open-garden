@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration } from './planner-helpers';
+import { saveGarden, openConfiguration, openCalendar } from './planner-helpers';
 
 
 
@@ -71,7 +71,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
 
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Season bed/ }).click();
-  await friend.getByRole('link', { name: 'Calendar' }).click();
+  await openCalendar(friend);
   await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Search catalog' })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: /Remove / })).toHaveCount(0);

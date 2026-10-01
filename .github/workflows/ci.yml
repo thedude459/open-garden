@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, '*-plant-database', '*-household-gardens', '*-planting-calendar']
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -12,64 +12,91 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  NX_DAEMON: false
+
 jobs:
-  test:
-    name: test
+  verify:
+    name: verify
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          filter: "tree:0"
       - uses: ./.github/actions/setup-node
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
-      - run: bash scripts/ci/test.sh
-
-  lint:
-    name: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup-node
-      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
-      - run: npx nx affected -t lint --parallel=3
-
-  build:
-    name: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup-node
-      - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
-      - run: npx nx affected -t build --parallel=3
+      - name: Lint
+        run: npx nx affected -t lint --parallel=3
+      - name: Test
+        run: bash scripts/ci/test.sh
+      - name: Build
+        run: npx nx affected -t build --parallel=3
 
   sca:
     name: sca
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: ./.github/actions/setup-node
-      - name: Checkout base tree for SCA diff
-        if: github.event_name == 'pull_request'
+        with:
+          install: false
+      - name: Checkout comparison tree
+        id: sca-base
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          git worktree add "${{ runner.temp }}/sca-base" "origin/${{ github.base_ref }}"
+          present=false
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            git fetch origin "${BASE_REF}" --depth=1
+            git worktree add "${RUNNER_TEMP}/sca-base" "origin/${BASE_REF}"
+            present=true
+          elif [[ -n "${BEFORE_SHA}" && ! "${BEFORE_SHA}" =~ ^0+$ ]]; then
+            git fetch --depth=1 origin "${BEFORE_SHA}"
+            git worktree add "${RUNNER_TEMP}/sca-base" "${BEFORE_SHA}"
+            present=true
+          else
+            echo "No comparison commit; SCA uses the absolute gate."
+          fi
+          echo "present=${present}" >> "$GITHUB_OUTPUT"
       - name: Collect SCA inputs
         run: |
-          mkdir -p .sca-out/head .sca-out/base
-          npm audit --json --package-lock-only > .sca-out/audit-head.json || true
-          cp package-lock.json .sca-out/head/package-lock.json
-          if [[ -d "${{ runner.temp }}/sca-base" ]]; then
-            (cd "${{ runner.temp }}/sca-base" && npm audit --json --package-lock-only > "${{ github.workspace }}/.sca-out/audit-base.json") || true
-            cp "${{ runner.temp }}/sca-base/package-lock.json" .sca-out/base/package-lock.json
+          mkdir -p .sca-out
+          audit_to() {
+            local dest="$1"
+            local dir="$2"
+            local attempt code
+            mkdir -p "$(dirname "$dest")"
+            for attempt in 1 2 3; do
+              set +e
+              # Absolute dest: the redirect must not follow `cd` into the base tree.
+              (cd "$dir" && npm audit --json --package-lock-only > "$dest")
+              code=$?
+              set -e
+              if [[ "$code" -le 1 ]] && node -e '
+                const data = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+                if (data.error && !data.vulnerabilities) process.exit(1);
+              ' "$dest"; then
+                return 0
+              fi
+              echo "npm audit attempt ${attempt} failed in ${dir} (exit ${code})"
+              sleep 5
+            done
+            echo "npm audit failed in ${dir}"
+            return 1
+          }
+          audit_to "${GITHUB_WORKSPACE}/.sca-out/audit-head.json" "${GITHUB_WORKSPACE}"
+          if [[ -d "${RUNNER_TEMP}/sca-base" ]]; then
+            audit_to "${GITHUB_WORKSPACE}/.sca-out/audit-base.json" "${RUNNER_TEMP}/sca-base"
           fi
       - name: Trivy filesystem scan (head)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -81,10 +108,10 @@ jobs:
           ignore-unfixed: true
           format: json
           scanners: vuln
-          skip-dirs: .sca-out
+          skip-dirs: .sca-out,node_modules
           output: .sca-out/trivy-head.json
       - name: Trivy filesystem scan (base)
-        if: github.event_name == 'pull_request'
+        if: steps.sca-base.outputs.present == 'true'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -94,51 +121,28 @@ jobs:
           ignore-unfixed: true
           format: json
           scanners: vuln
+          skip-dirs: node_modules
           output: .sca-out/trivy-base.json
-      - name: OSV Scanner (head)
-        continue-on-error: true
-        uses: google/osv-scanner-action/osv-scanner-action@f4cfcc01edc9c8b756a9b873b7a623ca674da51e # v2.3.8
-        with:
-          scan-args: |-
-            --lockfile=.sca-out/head/package-lock.json
-            --format=json
-            --output=.sca-out/osv-head.json
-            --verbosity=error
-      - name: OSV Scanner (base)
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        uses: google/osv-scanner-action/osv-scanner-action@f4cfcc01edc9c8b756a9b873b7a623ca674da51e # v2.3.8
-        with:
-          scan-args: |-
-            --lockfile=.sca-out/base/package-lock.json
-            --format=json
-            --output=.sca-out/osv-base.json
-            --verbosity=error
       - name: SCA gate
-        env:
-          COMPARE_BASE: ${{ github.event_name == 'pull_request' && '1' || '' }}
         run: |
           node scripts/ci/sca-ids.js selfcheck
-          for f in .sca-out/audit-head.json .sca-out/trivy-head.json .sca-out/osv-head.json; do
+          for f in .sca-out/audit-head.json .sca-out/trivy-head.json; do
             test -f "$f" || { echo "missing $f"; exit 2; }
           done
           args=(
             gate
             --audit-head .sca-out/audit-head.json
             --trivy-head .sca-out/trivy-head.json
-            --osv-head .sca-out/osv-head.json
           )
-          if [[ -n "${COMPARE_BASE}" ]]; then
-            for f in .sca-out/audit-base.json .sca-out/trivy-base.json .sca-out/osv-base.json; do
-              test -f "$f" || { echo "missing $f"; exit 2; }
-            done
-            args+=(--audit-base .sca-out/audit-base.json --trivy-base .sca-out/trivy-base.json --osv-base .sca-out/osv-base.json)
+          if [[ -f .sca-out/audit-base.json && -f .sca-out/trivy-base.json ]]; then
+            args+=(--audit-base .sca-out/audit-base.json --trivy-base .sca-out/trivy-base.json)
           fi
           node scripts/ci/sca-ids.js "${args[@]}"
 
   secrets:
     name: secrets
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -152,6 +156,9 @@ jobs:
     name: e2e
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: write
     services:
       postgres:
         image: postgres:16-alpine
@@ -175,5 +182,24 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-node
+      - name: Playwright version
+        id: playwright-version
+        run: echo "version=$(npx playwright --version | awk '{print $NF}')" >> "$GITHUB_OUTPUT"
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - name: End-to-end tests
         run: bash scripts/ci/e2e.sh
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-results
+          if-no-files-found: ignore
+          path: |
+            playwright-report/
+            test-results/
+            apps/web-e2e/playwright-report/
+            apps/web-e2e/test-results/

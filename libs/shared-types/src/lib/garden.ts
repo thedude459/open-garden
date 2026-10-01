@@ -25,6 +25,8 @@ export interface GardenDetailDto extends GardenSummaryDto {
   notes: string | null;
   lastFrost: MonthDayDto | null;
   firstFrost: MonthDayDto | null;
+  lengthInches: number;
+  widthInches: number;
   ownerUserId: string;
   members: MemberDto[];
   updatedAt: string;
@@ -36,6 +38,8 @@ export interface GardenCreateDto {
   hardinessZone?: number | null;
   lastFrost?: MonthDayDto | null;
   firstFrost?: MonthDayDto | null;
+  lengthInches?: number;
+  widthInches?: number;
 }
 
 export interface GardenPatchDto {
@@ -44,6 +48,8 @@ export interface GardenPatchDto {
   hardinessZone?: number | null;
   lastFrost?: MonthDayDto | null;
   firstFrost?: MonthDayDto | null;
+  lengthInches?: number;
+  widthInches?: number;
 }
 
 export interface GardenInviteDto {

@@ -247,6 +247,8 @@ export class GardenPlantingsPage implements OnInit {
   renameDraft: Record<string, string> = {};
   catalogHits = signal<PlantSummaryDto[]>([]);
   favorites = signal<FavoriteListItemDto[]>([]);
+  /** Drops a list response that lost the race with a newer load or edit. */
+  private listEpoch = 0;
 
   constructor() {
     const onOnline = () => void this.load();
@@ -282,19 +284,21 @@ export class GardenPlantingsPage implements OnInit {
   }
 
   async load(silent = false) {
+    const epoch = ++this.listEpoch;
     if (!silent) {
       this.loading.set(true);
       this.error.set('');
     }
     try {
       const list = await this.api.list(this.gardenId);
+      if (epoch !== this.listEpoch) return;
       this.list.set(list);
       this.failures.set(await this.api.syncFailures(this.gardenId));
       this.syncDateInputs();
     } catch (err) {
-      this.error.set(messageFrom(err));
+      if (epoch === this.listEpoch) this.error.set(messageFrom(err));
     }
-    if (!silent) this.loading.set(false);
+    if (!silent && epoch === this.listEpoch) this.loading.set(false);
   }
 
   onCatalog(items: PlantSummaryDto[]) {
@@ -318,9 +322,9 @@ export class GardenPlantingsPage implements OnInit {
     },
   ) {
     this.error.set('');
+    const epoch = ++this.listEpoch;
     try {
-      this.list.set(
-        await this.api.create(
+      const created = await this.api.create(
           this.gardenId,
           { plantId: plant.id },
           {
@@ -330,8 +334,9 @@ export class GardenPlantingsPage implements OnInit {
             plantType: plant.plantType,
             status: plant.status === 'deprecated' ? 'deprecated' : 'active',
           },
-        ),
-      );
+        );
+      if (epoch !== this.listEpoch) return;
+      this.list.set(created);
       this.failures.set(await this.api.syncFailures(this.gardenId));
       this.syncDateInputs();
     } catch (err) {
@@ -344,6 +349,7 @@ export class GardenPlantingsPage implements OnInit {
     const planted = plantedOn || null;
     const harvested = harvestedOn || null;
     const bed = bedId || null;
+    const epoch = ++this.listEpoch;
     try {
       assertDatePair(planted, harvested);
       const saved = await this.api.update(this.gardenId, planting.id, {
@@ -351,6 +357,7 @@ export class GardenPlantingsPage implements OnInit {
         harvestedOn: harvested,
         bedId: bed,
       });
+      if (epoch !== this.listEpoch) return;
       const list = this.list();
       if (list) {
         this.list.set({
@@ -376,10 +383,11 @@ export class GardenPlantingsPage implements OnInit {
         const harvested = document.querySelector(
           `input[name="harvested-${planting.id}"]`,
         ) as HTMLInputElement | null;
-        if (planted && document.activeElement !== planted) {
+        // A late reload must not wipe a date typed before the model has it.
+        if (planted && shouldSyncDate(planted, planting.plantedOn)) {
           planted.value = planting.plantedOn ?? '';
         }
-        if (harvested && document.activeElement !== harvested) {
+        if (harvested && shouldSyncDate(harvested, planting.harvestedOn)) {
           harvested.value = planting.harvestedOn ?? '';
         }
       }
@@ -419,6 +427,12 @@ export class GardenPlantingsPage implements OnInit {
       this.error.set(messageFrom(err));
     }
   }
+}
+
+function shouldSyncDate(input: HTMLInputElement, modelValue: string | null): boolean {
+  if (document.activeElement === input) return false;
+  const next = modelValue ?? '';
+  return Boolean(next) || !input.value;
 }
 
 function messageFrom(err: unknown): string {

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration } from './planner-helpers';
+import { saveGarden, openConfiguration, openCalendar } from './planner-helpers';
 
 
 
@@ -80,7 +80,7 @@ test('removed member drops stale calendar cache after reconnect', async ({ brows
 
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Stale calendar/ }).click();
-  await friend.getByRole('link', { name: 'Calendar' }).click();
+  await openCalendar(friend);
   await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
   const calendarUrl = friend.url();
 
