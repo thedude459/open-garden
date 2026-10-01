@@ -638,8 +638,16 @@ export class GardenLayoutPage implements OnInit {
     });
   }
 
+  /** Garden length and width, when the gardener set them. The camera is not a boundary. */
+  private configuredPlot() {
+    const length = this.plotLength();
+    const width = this.plotWidth();
+    if (length == null || width == null) return null;
+    return { x: 0, y: 0, w: length, h: width };
+  }
+
   private placeBed(geo: BedGeometryDto, snapSize: boolean): BedGeometryDto {
-    const frame = this.canvas()?.plot();
+    const frame = this.configuredPlot();
     if (!frame) return geo;
     const plan = bedPlanSize(geo);
     const size = snapSize
@@ -657,7 +665,7 @@ export class GardenLayoutPage implements OnInit {
   }
 
   private placeArea(area: LayoutAreaDto): LayoutAreaDto {
-    const frame = this.canvas()?.plot();
+    const frame = this.configuredPlot();
     if (!frame) return area;
     const current = this.draft()?.areas.find((item) => item.id === area.id);
     const snapSize =
