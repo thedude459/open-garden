@@ -48,16 +48,16 @@ describe('climate rules', () => {
 
   it('reads phzmapi and FarmSense without failing the place when frost is reversed', async () => {
     const fetchFn = (async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes('phzmapi.org')) {
+      const parsed = input instanceof URL ? input : new URL(String(input));
+      if (parsed.hostname === 'phzmapi.org') {
         return json({ zone: '8a' });
       }
-      if (url.includes('/stations/')) {
+      if (parsed.pathname.includes('/stations/')) {
         return json([{ id: 's1', distance: 2 }]);
       }
-      if (url.includes('season=1')) return json([{ temperature: '32', prob_50: '1015' }]);
-      if (url.includes('season=2')) return json([{ temperature: 32, prob_50: '0401' }]);
-      throw new Error(url);
+      if (parsed.searchParams.get('season') === '1') return json([{ temperature: '32', prob_50: '1015' }]);
+      if (parsed.searchParams.get('season') === '2') return json([{ temperature: 32, prob_50: '0401' }]);
+      throw new Error(parsed.toString());
     }) as typeof fetch;
     const facts = await new LiveClimateLookup(fetchFn).lookup(WASHINGTON_PLACE);
     expect(facts).toEqual({ hardinessZone: 8, lastFrost: null, firstFrost: null });
