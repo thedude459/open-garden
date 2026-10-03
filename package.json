@@ -65,7 +65,7 @@
     "@typescript-eslint/eslint-plugin": "^8.71.0",
     "@typescript-eslint/parser": "^8.71.0",
     "@vitest/coverage-v8": "^4.1.11",
-    "dotenv": "^17.4.2",
+    "dotenv": "^18.0.4",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.11.0",
     "nx": "^23.1.1",
