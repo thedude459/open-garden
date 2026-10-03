@@ -13,9 +13,14 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
-    # One PR per group. Keep Nest/Vitest majors together so peer sets
-    # are not split across PRs. Other ungrouped majors stay individual.
+    # One PR per group. First match wins. Angular spans production and
+    # development so the compiler and the build plugin move together.
+    # Nest/Vitest majors stay together. Other ungrouped majors stay individual.
     groups:
+      angular:
+        applies-to: version-updates
+        patterns:
+          - '@angular/*'
       nestjs-major:
         applies-to: version-updates
         patterns:
