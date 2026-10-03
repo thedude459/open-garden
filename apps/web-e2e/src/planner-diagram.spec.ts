@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant, createSizedBed, newUser, openOverview, saveLayout } from './planner-helpers';
+import { addTransplant, createSizedBed, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks on Overview', async ({
   browser,
@@ -8,6 +8,7 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   const owner = await newUser(browser, `planner-diagram-${Date.now()}@example.com`);
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Planner diagram');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Planner diagram/ }).click();
   await openOverview(owner);

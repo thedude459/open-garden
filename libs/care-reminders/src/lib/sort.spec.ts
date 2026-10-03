@@ -14,6 +14,8 @@ function item(
     cultivar: null,
     plantType: 'vegetable',
     status: 'active',
+    required: true,
+    rainNote: null,
     ...overrides,
   };
 }

@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test';
-import { newUser, openOverview, openPlantingsFromGarden } from './planner-helpers';
+import { newUser, openOverview, openPlantingsFromGarden, confirmFixtureAddress } from './planner-helpers';
 
 /** Leaf fill + white label. Catches .filters painting primary buttons white. */
 async function expectPrimaryPaint(btn: Locator) {
@@ -19,6 +19,7 @@ test('primary actions keep green fill and white label', async ({ page, browser }
   await expect(owner.locator('.nav-brand img')).toBeVisible();
   await expectPrimaryPaint(owner.getByRole('button', { name: 'Create garden' }));
   await owner.getByPlaceholder('Garden name').fill('Visual');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Visual/ }).click();
   await openOverview(owner);

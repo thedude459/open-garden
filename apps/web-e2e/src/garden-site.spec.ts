@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
-import { saveGarden, openConfiguration } from './planner-helpers';
+import { saveGarden, openConfiguration, confirmFixtureAddress } from './planner-helpers';
 
 test('site profile persists, can clear one frost, and rejects reversed pairs', async ({
   browser,
@@ -8,6 +8,7 @@ test('site profile persists, can clear one frost, and rejects reversed pairs', a
   const page = await signedInPage(browser, `site-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Zone seven');
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Zone seven/ }).click();
   await openConfiguration(page);
@@ -18,8 +19,10 @@ test('site profile persists, can clear one frost, and rejects reversed pairs', a
   await page.locator('input[name="firstDay"]').fill('20');
   await saveGarden(page);
   await expect(page.locator('select[name="zone"] option:checked')).toHaveText('Zone 7');
+  await expect(page.getByText(/1600 Pennsylvania Avenue NW/)).toBeVisible();
   await page.reload();
   await expect(page.locator('select[name="zone"] option:checked')).toHaveText('Zone 7');
+  await expect(page.getByText(/1600 Pennsylvania Avenue NW/)).toBeVisible();
   await page.locator('select[name="firstMonth"]').selectOption({ label: 'Month' });
   await page.locator('input[name="firstDay"]').fill('');
   await saveGarden(page);

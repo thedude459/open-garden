@@ -370,6 +370,8 @@ export class GardenPlantingsPage implements OnInit {
       this.failures.set(await this.api.syncFailures(this.gardenId));
     } catch (err) {
       this.error.set(messageFrom(err));
+      // A focused date keeps the rejected value; blur so the reload restores the last save.
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       await this.load(true);
     }
   }

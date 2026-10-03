@@ -15,6 +15,10 @@ export interface GardenInsert {
   firstFrostDay: number | null;
   lengthInches: number;
   widthInches: number;
+  formattedAddress: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
 }
 
 export interface GardenUpdate {
@@ -29,6 +33,10 @@ export interface GardenUpdate {
   lengthInches?: number;
   widthInches?: number;
   ownerId?: string;
+  formattedAddress?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
 }
 
 export class GardenRepository {

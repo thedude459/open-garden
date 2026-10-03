@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GardensController } from './gardens.controller';
+import { PlacesController } from './places.controller';
 import { GardenMembersController } from './garden-members.controller';
 import { GardenCalendarController } from './garden-calendar.controller';
 import { GardenPlantingsController } from './garden-plantings.controller';
@@ -12,6 +13,7 @@ import { GardenMembershipGuard } from './garden-membership.guard';
 @Module({
   controllers: [
     GardensController,
+    PlacesController,
     GardenMembersController,
     GardenCalendarController,
     GardenPlantingsController,

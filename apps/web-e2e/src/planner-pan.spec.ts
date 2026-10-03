@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout } from './planner-helpers';
+import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans only', async ({
   browser,
@@ -11,6 +11,7 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Planner pan');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Planner pan/ }).click();
   await openOverview(owner);

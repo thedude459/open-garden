@@ -103,22 +103,6 @@
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
-### Access Control *(mandatory when data is user-owned or shared)*
-
-<!--
-  Multi-user roles and sharing are a v1 constitutional requirement.
-  Specify who can create, read, update, delete, and share affected resources.
--->
-
-- **Roles / permissions**: [e.g., owner, collaborator, viewer]
-- **Sharing rules**: [e.g., garden may be shared with specific users]
-- **Isolation**: [what must remain private per user/household]
-
-### Offline / PWA Considerations *(include if feature has client behavior)*
-
-- [What MUST work offline vs requires connectivity]
-- [How conflicts or sync are expected to behave from the user's perspective]
-
 ## Success Criteria *(mandatory)*
 
 <!--

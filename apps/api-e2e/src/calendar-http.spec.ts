@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { describe, expect, test } from 'vitest';
 import { liveEnabled, LiveClient } from './live-http';
 
@@ -38,7 +39,7 @@ async function register(request: LiveClient, email: string) {
 async function createGarden(request: LiveClient, name: string, frost?: {
   lastDay: number;
 }) {
-  const created = await request.post('/api/gardens', { data: { name } });
+  const created = await request.post('/api/gardens', { data: { name, place: fixturePlace } });
   expect(created.status()).toBe(201);
   const garden = (await created.json()) as GardenDetail;
   const saved = await request.patch(`/api/gardens/${garden.id}`, {
@@ -88,8 +89,12 @@ test('non-member GET is 404 and incomplete frost sets windowsAvailable false', a
   try {
     await register(owner, `cal-api-owner-${stamp}@example.com`);
     await register(stranger, `cal-api-stranger-${stamp}@example.com`);
-    const created = await owner.post('/api/gardens', { data: { name: 'Bare frost' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Bare frost' } });
     const garden = (await created.json()) as GardenDetail;
+    const cleared = await owner.patch(`/api/gardens/${garden.id}`, {
+      data: { hardinessZone: null, lastFrost: null, firstFrost: null },
+    });
+    expect(cleared.ok(), await cleared.text()).toBeTruthy();
     const tomato = await findPlant(owner, 'Cherry Tomato');
     const added = await owner.post(`/api/gardens/${garden.id}/calendar`, {
       data: { plantId: tomato.id },

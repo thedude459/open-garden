@@ -21,6 +21,20 @@ export interface GardenSummaryDto {
   placementCount: number;
 }
 
+export interface PlaceCandidateDto {
+  formattedAddress: string;
+  latitude: number;
+  longitude: number;
+  placeId: string;
+  postalCode: string | null;
+  countryCode: string | null;
+}
+
+export interface PlaceLookupDto {
+  candidates: PlaceCandidateDto[];
+  truncated: boolean;
+}
+
 export interface GardenDetailDto extends GardenSummaryDto {
   notes: string | null;
   lastFrost: MonthDayDto | null;
@@ -30,6 +44,11 @@ export interface GardenDetailDto extends GardenSummaryDto {
   ownerUserId: string;
   members: MemberDto[];
   updatedAt: string;
+  place: PlaceCandidateDto | null;
+}
+
+export interface GardenWriteDto extends GardenDetailDto {
+  seasonNotice: string | null;
 }
 
 export interface GardenCreateDto {
@@ -40,6 +59,7 @@ export interface GardenCreateDto {
   firstFrost?: MonthDayDto | null;
   lengthInches?: number;
   widthInches?: number;
+  place?: PlaceCandidateDto;
 }
 
 export interface GardenPatchDto {
@@ -50,6 +70,7 @@ export interface GardenPatchDto {
   firstFrost?: MonthDayDto | null;
   lengthInches?: number;
   widthInches?: number;
+  place?: PlaceCandidateDto;
 }
 
 export interface GardenInviteDto {

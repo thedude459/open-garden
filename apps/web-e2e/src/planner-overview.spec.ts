@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
-import {
-  addTransplant,
+import { addTransplant,
   createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout,
-} from './planner-helpers';
+  saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('planner overview: beds, areas, labels, no planting drag', async ({ browser }) => {
   test.setTimeout(120_000);
@@ -16,6 +14,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Planner overview');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Planner overview/ }).click();
   await openOverview(owner);
@@ -65,6 +64,7 @@ test('planner overview: transplants with no beds stay off the map until a bed ex
   const owner = await newUser(browser, `planner-ov-empty-${Date.now()}@example.com`);
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Empty overview');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Empty overview/ }).click();
   await openOverview(owner);

@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { describe, expect, test } from 'vitest';
 import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
 
@@ -77,11 +78,11 @@ test('plantings HTTP: isolation, idempotent id, duplicates, 404 delete, last-wri
     const friendUser = await register(friend, `plant-api-friend-${stamp}@example.com`);
     await register(stranger, `plant-api-stranger-${stamp}@example.com`);
 
-    const created = await owner.post('/api/gardens', { data: { name: 'Planting plot' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Planting plot' } });
     expect(created.status()).toBe(201);
     const garden = (await created.json()) as GardenDetail;
     const otherGarden = (await (
-      await owner.post('/api/gardens', { data: { name: 'Other plot' } })
+      await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Other plot' } })
     ).json()) as GardenDetail;
     const tomato = await findPlant(owner, 'Cherry Tomato');
 
