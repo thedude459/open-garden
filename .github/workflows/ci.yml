@@ -181,16 +181,55 @@ jobs:
       CI: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+      - name: Decide browser suite
+        id: e2e-gate
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          node scripts/ci/e2e-needed.js selfcheck
+          base=""
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            git fetch origin "${BASE_REF}" --depth=1
+            base="origin/${BASE_REF}"
+          elif [[ -n "${BEFORE_SHA}" && ! "${BEFORE_SHA}" =~ ^0+$ ]]; then
+            git fetch --depth=1 origin "${BEFORE_SHA}"
+            base="${BEFORE_SHA}"
+          fi
+          if [[ -z "${base}" ]]; then
+            echo "run=run" >> "$GITHUB_OUTPUT"
+            echo "No comparison commit; running the browser suite."
+            exit 0
+          fi
+          git diff --name-only "${base}" HEAD > "${RUNNER_TEMP}/e2e-files.txt"
+          git show "${base}:package.json" > "${RUNNER_TEMP}/e2e-base-package.json"
+          decision=$(node scripts/ci/e2e-needed.js decide \
+            "${RUNNER_TEMP}/e2e-files.txt" \
+            "${RUNNER_TEMP}/e2e-base-package.json" \
+            package.json)
+          echo "run=${decision}" >> "$GITHUB_OUTPUT"
+          if [[ "${decision}" == "run" ]]; then
+            echo "Application or production dependency changes; running browsers."
+          else
+            echo "Diff cannot change the running app; e2e passes without browsers."
+          fi
       - uses: ./.github/actions/setup-node
+        if: steps.e2e-gate.outputs.run == 'run'
       - name: Playwright version
         id: playwright-version
+        if: steps.e2e-gate.outputs.run == 'run'
         run: echo "version=$(npx playwright --version | awk '{print $NF}')" >> "$GITHUB_OUTPUT"
       - name: Cache Playwright browsers
+        if: steps.e2e-gate.outputs.run == 'run'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
       - name: End-to-end tests
+        if: steps.e2e-gate.outputs.run == 'run'
         run: bash scripts/ci/e2e.sh
       - name: Upload Playwright results
         if: failure()

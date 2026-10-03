@@ -1,5 +1,4 @@
-import 'dotenv/config';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Client } from 'pg';
 import { CatalogPipelineService } from '@open-garden/catalog-pipeline';
@@ -12,6 +11,8 @@ import {
 } from '@open-garden/plant-catalog-data';
 import { AuthService } from '@open-garden/auth';
 import { createPipelineSources } from '../admin/pipeline-sources';
+
+if (existsSync('.env')) process.loadEnvFile();
 
 async function main() {
   const url = process.env['DATABASE_URL'];

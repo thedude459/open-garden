@@ -108,7 +108,7 @@ GitHub Actions runs on every PR and push to `main`. Local equivalents: `npm test
 | `verify` | Affected ESLint, Vitest coverage gate (≥80% on domain libs), affected builds (`web` production, `api` typecheck) |
 | `sca` | `npm audit` (high+) + Trivy fs (HIGH/CRITICAL), diffed against the PR base or the previous commit on `main` |
 | `secrets` | Gitleaks |
-| `e2e` | Live HTTP, then Playwright (2 workers) against seeded API + web. Failure uploads the report and traces |
+| `e2e` | Live HTTP, then Playwright (2 workers, no retries) against seeded API + web. Failure uploads the report and traces. A pull request that only changes the lockfile, development dependencies, or workflow pins passes this check without browsers. A production `dependencies` change still runs the suite |
 | `CodeQL` (`analyze`) | SAST for JavaScript/TypeScript |
 
 CI uses Node **24.15** (`.nvmrc`). Actions are SHA-pinned. Shared setup: `.github/actions/setup-node`.
