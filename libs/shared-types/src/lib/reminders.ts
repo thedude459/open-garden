@@ -14,6 +14,8 @@ export interface ReminderItemDto {
   cultivar: string | null;
   plantType: import('./plant').PlantType;
   status: import('./plant').PlantStatus;
+  required: boolean;
+  rainNote: string | null;
 }
 
 export interface ReminderListDto {
@@ -21,6 +23,7 @@ export interface ReminderListDto {
   asOf: string;
   myRole: import('./garden').GardenRole;
   items: ReminderItemDto[];
+  outlookOn: string | null;
 }
 
 export interface ReminderMutationDto {

@@ -28,6 +28,7 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       PORT: "3000"
       PLANT_PROVIDER: ${PLANT_PROVIDER:-fixture}
+      PLACE_PROVIDER: ${PLACE_PROVIDER:-fixture}
       SESSION_SECRET: ${SESSION_SECRET:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-open_garden}:${POSTGRES_PASSWORD:-open_garden}@postgres:5432/${POSTGRES_DB:-open_garden}
     depends_on:

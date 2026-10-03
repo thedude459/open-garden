@@ -12,6 +12,7 @@ export SESSION_SECRET="${SESSION_SECRET:-ci-session-secret}"
 export SEED_DEMO_USERS="${SEED_DEMO_USERS:-true}"
 export CORS_ORIGIN="${CORS_ORIGIN:-http://localhost:4200}"
 export PLANT_PROVIDER="${PLANT_PROVIDER:-fixture}"
+export PLACE_PROVIDER="${PLACE_PROVIDER:-fixture}"
 export CI="${CI:-true}"
 
 API_PID=""

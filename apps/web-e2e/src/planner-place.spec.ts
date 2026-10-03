@@ -1,11 +1,9 @@
 import { expect, test } from '@playwright/test';
-import {
-  createSizedBed,
+import { createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout,
-} from './planner-helpers';
+  saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('Overview create uses visible viewport center; grab-offset move; viewer cannot create', async ({
   browser,
@@ -17,6 +15,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Place map');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Place map/ }).click();
   await openOverview(owner);

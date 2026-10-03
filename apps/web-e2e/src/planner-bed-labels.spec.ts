@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
-import {
-  applyPlantSearch,
+import { applyPlantSearch,
   createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout,
-} from './planner-helpers';
+  saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('Bed View on-mark prefixes, no bed size caption, select shows full name', async ({
   browser,
@@ -18,6 +16,7 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Quiet bed');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Quiet bed/ }).click();
   await openOverview(owner);

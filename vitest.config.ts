@@ -34,6 +34,7 @@ export default defineConfig({
         'libs/care-reminders/src/lib/**/*.ts',
         'libs/web-ui/src/lib/**/*.ts',
         'libs/catalog-pipeline/src/lib/**/*.ts',
+        'libs/garden-place/src/lib/**/*.ts',
       ],
       exclude: [
         '**/*.spec.ts',
@@ -135,6 +136,7 @@ export default defineConfig({
         __dirname,
         'libs/catalog-pipeline/src/index.ts',
       ),
+      '@open-garden/garden-place': path.resolve(__dirname, 'libs/garden-place/src/index.ts'),
     },
   },
 });

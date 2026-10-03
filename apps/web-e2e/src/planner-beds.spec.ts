@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout } from './planner-helpers';
+import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('planner beds: create bed and area, select opens Bed View, viewer cannot mutate', async ({
   browser,
@@ -11,6 +11,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Planner beds');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Planner beds/ }).click();
   await openOverview(owner);

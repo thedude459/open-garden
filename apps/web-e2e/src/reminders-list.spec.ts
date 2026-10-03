@@ -1,12 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { addTransplant } from './planner-helpers';
+import { addTransplant, confirmFixtureAddress } from './planner-helpers';
 
 
 
 async function openReminders(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill(name);
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await page.getByRole('link', { name: 'Reminders' }).click();
@@ -83,6 +84,7 @@ test('garden reminders list does not include indoor-only transplant tasks', asyn
   const owner = await newUser(browser, `rem-indoor-${Date.now()}@example.com`);
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Indoor split');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Indoor split/ }).click();
   await owner.getByRole('link', { name: 'Garden Overview' }).click();

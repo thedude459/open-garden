@@ -1,12 +1,10 @@
 import { test, expect } from '@playwright/test';
-import {
-  addTransplant,
+import { addTransplant,
   createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout,
-} from './planner-helpers';
+  saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', async ({
   browser,
@@ -18,6 +16,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Planner drag');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Planner drag/ }).click();
   await openOverview(owner);

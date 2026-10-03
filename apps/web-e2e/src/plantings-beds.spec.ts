@@ -1,12 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { createSizedBed, openPlantingsFromGarden, saveLayout } from './planner-helpers';
+import { createSizedBed, openPlantingsFromGarden, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 
 
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill(name);
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();

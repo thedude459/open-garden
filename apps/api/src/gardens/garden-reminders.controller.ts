@@ -10,10 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
-import { CareReminderService, domainError } from '@open-garden/care-reminders';
+import { CareReminderService, applyRainCover, domainError } from '@open-garden/care-reminders';
+import { FixtureRainOutlook, OpenMeteoRainOutlook, type RainOutlook } from '@open-garden/garden-place';
 import {
   CareEventRepository,
   GardenMembershipRepository,
+  GardenRepository,
   PlantingRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
@@ -29,11 +31,16 @@ import { GardenMembershipGuard } from './garden-membership.guard';
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenRemindersController {
   private readonly reminders: CareReminderService;
+  private readonly gardens: GardenRepository;
+  private readonly rain: RainOutlook;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     const memberships = new GardenMembershipRepository(bundle.db);
     const plantings = new PlantingRepository(bundle.db);
     const events = new CareEventRepository(bundle.db);
+    this.gardens = new GardenRepository(bundle.db);
+    this.rain =
+      process.env['PLACE_PROVIDER'] === 'live' ? new OpenMeteoRainOutlook() : new FixtureRainOutlook();
     this.reminders = new CareReminderService(
       {
         getMembership: async (gardenId, userId) => {
@@ -51,12 +58,29 @@ export class GardenRemindersController {
   }
 
   @Get()
-  list(@CurrentUser() user: AuthUser, @Param('id') id: string, @Query('asOf') asOf: string) {
+  async list(@CurrentUser() user: AuthUser, @Param('id') id: string, @Query('asOf') asOf: string) {
     const parsed = asOfQuerySchema.safeParse({ asOf });
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Date must be YYYY-MM-DD');
     }
-    return this.reminders.list(id, user.id, parsed.data.asOf);
+    const listed = await this.reminders.list(id, user.id, parsed.data.asOf);
+    const garden = await this.gardens.getById(id);
+    if (garden?.latitude == null || garden.longitude == null) {
+      return { ...listed, outlookOn: null, items: applyRainCover(listed.items, null) };
+    }
+    try {
+      const daily = await this.rain.daily(garden.latitude, garden.longitude, parsed.data.asOf);
+      if (!daily) {
+        return { ...listed, outlookOn: null, items: applyRainCover(listed.items, null) };
+      }
+      return {
+        ...listed,
+        outlookOn: parsed.data.asOf,
+        items: applyRainCover(listed.items, daily),
+      };
+    } catch {
+      return { ...listed, outlookOn: null, items: applyRainCover(listed.items, null) };
+    }
   }
 
   @Post('complete')

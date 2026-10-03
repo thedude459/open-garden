@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { describe, expect, test } from 'vitest';
 import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
 
@@ -35,7 +36,7 @@ test('unauthenticated garden routes return 401', async () => {
   const request = new LiveClient();
   const list = await request.get('/api/gardens');
   expect(list.status()).toBe(401);
-  const create = await request.post('/api/gardens', { data: { name: 'Nope' } });
+  const create = await request.post('/api/gardens', { data: { place: fixturePlace, name: 'Nope' } });
   expect(create.status()).toBe(401);
 });
 
@@ -48,13 +49,13 @@ test('CRUD isolation, duplicate name, last-write-wins, and delete', async () => 
     await register(stranger, `api-stranger-${stamp}@example.com`);
 
     const created = await owner.post('/api/gardens', {
-      data: { name: 'Backyard', notes: 'First notes' },
+      data: { place: fixturePlace, name: 'Backyard', notes: 'First notes' },
     });
     expect(created.status()).toBe(201);
     const garden = (await created.json()) as GardenDetail;
     expect(garden.myRole).toBe('owner');
 
-    const dup = await owner.post('/api/gardens', { data: { name: ' backyard ' } });
+    const dup = await owner.post('/api/gardens', { data: { place: fixturePlace, name: ' backyard ' } });
     expect(dup.status()).toBe(409);
     expect(errorCode(dup, await dup.json())).toBe('CONFLICT');
 
@@ -91,7 +92,7 @@ test('site profile PATCH persists, clears one frost, and rejects invalid pairs',
   const owner = new LiveClient();
   try {
     await register(owner, `api-site-${Date.now()}@example.com`);
-    const created = await owner.post('/api/gardens', { data: { name: 'Site bed' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Site bed' } });
     const garden = (await created.json()) as GardenDetail;
 
     const saved = await owner.patch(`/api/gardens/${garden.id}`, {
@@ -142,7 +143,7 @@ test('membership invite, list visibility, transfer, and leave over HTTP', async 
     const friendUser = await register(friend, `api-mem-friend-${stamp}@example.com`);
     await register(stranger, `api-mem-stranger-${stamp}@example.com`);
 
-    const created = await owner.post('/api/gardens', { data: { name: 'Shared HTTP' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Shared HTTP' } });
     const garden = (await created.json()) as GardenDetail;
 
     const unknown = await owner.post(`/api/gardens/${garden.id}/members`, {

@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import type { GardenRole } from '@open-garden/shared-types';
+import type { ClimateLookup } from '@open-garden/garden-place';
+import { WASHINGTON_PLACE } from '@open-garden/garden-place';
+import type { GardenCreateDto, GardenRole } from '@open-garden/shared-types';
 import type { GardenInsert, GardenUpdate } from '@open-garden/plant-catalog-data';
 import { GardenService } from './garden-service';
 import { MembershipService } from './membership-service';
@@ -22,7 +24,7 @@ interface Account {
   displayName: string | null;
 }
 
-export function createGardenMemory() {
+export function createGardenMemory(opts?: { climate?: ClimateLookup | null }) {
   const ownerId = 'owner-1';
   const friendId = 'friend-1';
   const strangerId = 'stranger-1';
@@ -151,7 +153,19 @@ export function createGardenMemory() {
     },
   };
 
-  const service = new GardenService(gardenRepo as never, membershipRepo as never);
+  const service = new GardenService(
+    gardenRepo as never,
+    membershipRepo as never,
+    opts?.climate ?? null,
+  );
+  const rawCreate = service.create.bind(service);
+  service.create = (async (actorId: string, dto: GardenCreateDto) => {
+    const name = dto.name?.trim() ?? '';
+    if (!Object.prototype.hasOwnProperty.call(dto, 'place') && name.length > 0 && name.length <= 120) {
+      return rawCreate(actorId, { ...dto, place: WASHINGTON_PLACE });
+    }
+    return rawCreate(actorId, dto);
+  }) as typeof service.create;
   const membershipService = new MembershipService(gardenRepo as never, membershipRepo as never);
   return {
     service,

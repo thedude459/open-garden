@@ -55,6 +55,13 @@ export async function signedInContext(
 
 export async function signedInPage(browser: Browser, email = uniqueEmail()): Promise<Page> {
   const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block' });
+  await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<!doctype html><title>map</title>',
+    }),
+  );
   await registerContext(context, email);
   const page = await context.newPage();
   await page.goto('/gardens');
