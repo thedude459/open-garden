@@ -39,9 +39,9 @@ export class FixtureClimateLookup implements ClimateLookup {
 }
 
 /**
- * ponytail: FarmSense's frost dataset and host are old. A failed station or
- * probability response leaves frost unset. Upgrade path: vendor NOAA 1991–2020
- * median 32°F normals and look up the nearest station locally.
+ * ponytail: FarmSense's host no longer resolves, so frost comes from NOAA
+ * 1991–2020 50% 32°F dates for the US ZIP. A failed response leaves frost unset.
+ * Upgrade path: vendor those normals and look up the nearest station locally.
  */
 export class LiveClimateLookup implements ClimateLookup {
   constructor(private readonly fetchFn: typeof fetch = fetch) {}
@@ -68,34 +68,31 @@ export class LiveClimateLookup implements ClimateLookup {
   }
 
   private async frost(place: PlaceCandidateDto): Promise<{ last: MonthDay | null; first: MonthDay | null }> {
+    if (place.countryCode !== 'US' || !/^\d{5}$/.test(place.postalCode ?? '')) {
+      return { last: null, first: null };
+    }
     try {
-      const stationsUrl = new URL('https://api.farmsense.net/v1/frostdates/stations/');
-      stationsUrl.searchParams.set('lat', String(place.latitude));
-      stationsUrl.searchParams.set('lon', String(place.longitude));
-      const stationsRes = await this.fetchFn(stationsUrl, { signal: AbortSignal.timeout(3000) });
-      if (!stationsRes.ok) return { last: null, first: null };
-      const stations = (await stationsRes.json()) as Array<{ id?: string | number; distance?: number }>;
-      const nearest = [...stations].sort(
-        (a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY),
-      )[0];
-      if (nearest?.id == null) return { last: null, first: null };
-      const last = await this.probability(nearest.id, 1);
-      const first = await this.probability(nearest.id, 2);
-      return { last, first };
+      const response = await this.fetchFn(`https://apis.joelgrant.dev/api/v1/frost/${place.postalCode}`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!response.ok) return { last: null, first: null };
+      const body = (await response.json()) as {
+        data?: {
+          frost_free?: boolean;
+          frost_dates?: {
+            last_frost_32f?: { '50%'?: string } | null;
+            first_frost_32f?: { '50%'?: string } | null;
+          } | null;
+        };
+      };
+      if (body.data?.frost_free) return { last: null, first: null };
+      return {
+        last: mmdd(body.data?.frost_dates?.last_frost_32f?.['50%']?.replace('/', '')),
+        first: mmdd(body.data?.frost_dates?.first_frost_32f?.['50%']?.replace('/', '')),
+      };
     } catch {
       return { last: null, first: null };
     }
-  }
-
-  private async probability(stationId: string | number, season: 1 | 2): Promise<MonthDay | null> {
-    const url = new URL('https://api.farmsense.net/v1/frostdates/probabilities/');
-    url.searchParams.set('station', String(stationId));
-    url.searchParams.set('season', String(season));
-    const response = await this.fetchFn(url, { signal: AbortSignal.timeout(3000) });
-    if (!response.ok) return null;
-    const rows = (await response.json()) as Array<{ temperature?: string | number; prob_50?: string }>;
-    const row = rows.find((item) => Number(item.temperature) === 32);
-    return mmdd(row?.prob_50);
   }
 }
 

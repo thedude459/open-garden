@@ -8,7 +8,7 @@ import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
 import type { GardenDetailDto, GardenRole, PlaceCandidateDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
-import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
+import { formatAddressQuery, GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 @Component({
   standalone: true,
@@ -62,7 +62,24 @@ import { PlannerDraftService } from './planner-draft.service';
           <h4>Address</h4>
           <p>{{ g.place?.formattedAddress || 'No address is set' }}</p>
           @if (canEdit()) {
-            <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
+            <div class="filters">
+              <label>
+                Street
+                <input [(ngModel)]="street" name="street" placeholder="Street" autocomplete="address-line1" />
+              </label>
+              <label>
+                City
+                <input [(ngModel)]="city" name="city" placeholder="City" autocomplete="address-level2" />
+              </label>
+              <label>
+                State
+                <input [(ngModel)]="state" name="state" placeholder="State" autocomplete="address-level1" />
+              </label>
+              <label>
+                ZIP code
+                <input [(ngModel)]="zip" name="zip" placeholder="ZIP code" autocomplete="postal-code" />
+              </label>
+            </div>
             <button type="button" class="btn btn-secondary" (click)="lookup()" [disabled]="lookingUp()">
               Look up address
             </button>
@@ -308,7 +325,10 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   lastDay: number | null = null;
   firstMonth: number | null = null;
   firstDay: number | null = null;
-  addressQuery = '';
+  street = '';
+  city = '';
+  state = '';
+  zip = '';
   readonly candidates = signal<PlaceCandidateDto[]>([]);
   readonly truncated = signal(false);
   readonly pending = signal<PlaceCandidateDto | null>(null);
@@ -359,7 +379,9 @@ export class GardenDetailPage implements OnInit, OnDestroy {
     }
     this.lookingUp.set(true);
     try {
-      const result = await this.api.lookupPlace(this.addressQuery);
+      const result = await this.api.lookupPlace(
+        formatAddressQuery(this.street, this.city, this.state, this.zip),
+      );
       this.candidates.set(result.candidates);
       this.truncated.set(result.truncated);
       if (result.candidates.length === 1 && !result.truncated) this.choose(result.candidates[0]!);
@@ -466,7 +488,10 @@ export class GardenDetailPage implements OnInit, OnDestroy {
         this.applyForm(updated);
         this.pending.set(null);
         this.candidates.set([]);
-        this.addressQuery = '';
+        this.street = '';
+        this.city = '';
+        this.state = '';
+        this.zip = '';
         this.seasonNotice.set(updated.seasonNotice);
         this.refreshMap();
         this.notices.success(updated.seasonNotice ?? 'Garden saved');

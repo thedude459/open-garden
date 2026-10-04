@@ -46,21 +46,59 @@ describe('climate rules', () => {
     });
   });
 
-  it('reads phzmapi and FarmSense without failing the place when frost is reversed', async () => {
+  it('reads the 50% frost dates and still returns the zone when that pair is reversed', async () => {
     const fetchFn = (async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes('phzmapi.org')) {
-        return json({ zone: '8a' });
+      if (url.includes('phzmapi.org')) return json({ zone: '6a' });
+      if (url.includes('/frost/')) {
+        return json({
+          data: {
+            frost_free: false,
+            frost_dates: {
+              last_frost_32f: { '50%': '05/10' },
+              first_frost_32f: { '50%': '10/06' },
+            },
+          },
+        });
       }
-      if (url.includes('/stations/')) {
-        return json([{ id: 's1', distance: 2 }]);
-      }
-      if (url.includes('season=1')) return json([{ temperature: '32', prob_50: '1015' }]);
-      if (url.includes('season=2')) return json([{ temperature: 32, prob_50: '0401' }]);
       throw new Error(url);
     }) as typeof fetch;
-    const facts = await new LiveClimateLookup(fetchFn).lookup(WASHINGTON_PLACE);
-    expect(facts).toEqual({ hardinessZone: 8, lastFrost: null, firstFrost: null });
+    await expect(new LiveClimateLookup(fetchFn).lookup(WASHINGTON_PLACE)).resolves.toEqual({
+      hardinessZone: 6,
+      lastFrost: { month: 5, day: 10 },
+      firstFrost: { month: 10, day: 6 },
+    });
+
+    const reversed = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('phzmapi.org')) return json({ zone: '8a' });
+      return json({
+        data: {
+          frost_dates: {
+            last_frost_32f: { '50%': '10/15' },
+            first_frost_32f: { '50%': '04/01' },
+          },
+        },
+      });
+    }) as typeof fetch;
+    await expect(new LiveClimateLookup(reversed).lookup(WASHINGTON_PLACE)).resolves.toEqual({
+      hardinessZone: 8,
+      lastFrost: null,
+      firstFrost: null,
+    });
+  });
+
+  it('keeps the zone when the frost lookup fails', async () => {
+    const fetchFn = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('phzmapi.org')) return json({ zone: '6a' });
+      throw new Error('frost down');
+    }) as typeof fetch;
+    await expect(new LiveClimateLookup(fetchFn).lookup(WASHINGTON_PLACE)).resolves.toEqual({
+      hardinessZone: 6,
+      lastFrost: null,
+      firstFrost: null,
+    });
   });
 });
 

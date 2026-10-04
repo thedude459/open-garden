@@ -15,7 +15,7 @@ function today(): string {
 }
 
 async function lookup(page: Page, query: string) {
-  await page.getByPlaceholder('Garden address').fill(query);
+  await page.getByPlaceholder('Street').fill(query);
   await page.getByRole('button', { name: 'Look up address' }).click();
 }
 

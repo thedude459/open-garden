@@ -197,3 +197,8 @@ export class GardensApiService {
 function isNotFound(err: unknown): boolean {
   return err instanceof HttpErrorResponse && err.status === 404;
 }
+
+export function formatAddressQuery(street: string, city: string, state: string, zip: string): string {
+  const region = [state.trim(), zip.trim()].filter(Boolean).join(' ');
+  return [street.trim(), city.trim(), region].filter(Boolean).join(', ');
+}

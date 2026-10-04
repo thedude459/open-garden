@@ -6,7 +6,7 @@ import { feetToInches, snapHalfFoot } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
 import type { GardenSummaryDto, PlaceCandidateDto } from '@open-garden/shared-types';
 import { HttpErrorResponse } from '@angular/common/http';
-import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
+import { formatAddressQuery, GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { EmptyState } from '../ui/empty-state';
 
@@ -43,7 +43,24 @@ import { EmptyState } from '../ui/empty-state';
         />
       </label>
       <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
-      <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
+      <div class="filters">
+        <label>
+          Street
+          <input [(ngModel)]="street" name="street" placeholder="Street" autocomplete="address-line1" />
+        </label>
+        <label>
+          City
+          <input [(ngModel)]="city" name="city" placeholder="City" autocomplete="address-level2" />
+        </label>
+        <label>
+          State
+          <input [(ngModel)]="state" name="state" placeholder="State" autocomplete="address-level1" />
+        </label>
+        <label>
+          ZIP code
+          <input [(ngModel)]="zip" name="zip" placeholder="ZIP code" autocomplete="postal-code" />
+        </label>
+      </div>
       <button type="button" class="btn btn-secondary" (click)="lookup()" [disabled]="lookingUp()">
         Look up address
       </button>
@@ -114,7 +131,10 @@ export class GardenListPage implements OnInit, OnDestroy {
   readonly notices = inject(NoticeService);
   name = '';
   notes = '';
-  addressQuery = '';
+  street = '';
+  city = '';
+  state = '';
+  zip = '';
   lengthFeet = 20;
   widthFeet = 10;
   readonly candidates = signal<PlaceCandidateDto[]>([]);
@@ -160,7 +180,7 @@ export class GardenListPage implements OnInit, OnDestroy {
     }
     this.lookingUp.set(true);
     try {
-      const result = await this.api.lookupPlace(this.addressQuery);
+      const result = await this.api.lookupPlace(formatAddressQuery(this.street, this.city, this.state, this.zip));
       this.candidates.set(result.candidates);
       this.truncated.set(result.truncated);
       if (result.candidates.length === 1 && !result.truncated) this.choose(result.candidates[0]!);
@@ -250,7 +270,10 @@ export class GardenListPage implements OnInit, OnDestroy {
         });
         this.name = '';
         this.notes = '';
-        this.addressQuery = '';
+        this.street = '';
+        this.city = '';
+        this.state = '';
+        this.zip = '';
         this.candidates.set([]);
         this.selected.set(null);
         this.truncated.set(false);

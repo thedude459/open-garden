@@ -7,7 +7,7 @@ const WASHINGTON_ADDRESS = '1600 Pennsylvania Avenue NW, Washington, DC';
 
 /** Look up the fixture street so Create garden can enable. */
 export async function confirmFixtureAddress(page: Page) {
-  const address = page.getByPlaceholder('Garden address');
+  const address = page.getByPlaceholder('Street');
   if ((await address.inputValue()) === '') {
     await address.fill(WASHINGTON_ADDRESS);
   }
