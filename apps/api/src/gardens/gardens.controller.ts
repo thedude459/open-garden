@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
+import { FixtureClimateLookup, LiveClimateLookup } from '@open-garden/garden-place';
 import { GardenService, domainError } from '@open-garden/gardens';
 import {
   GardenMembershipRepository,
@@ -35,9 +36,12 @@ export class GardensController {
   private readonly gardens: GardenService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
+    const climate =
+      process.env['PLACE_PROVIDER'] === 'live' ? new LiveClimateLookup() : new FixtureClimateLookup();
     this.gardens = new GardenService(
       new GardenRepository(bundle.db),
       new GardenMembershipRepository(bundle.db),
+      climate,
     );
   }
 
@@ -62,7 +66,7 @@ export class GardensController {
   async create(@CurrentUser() user: AuthUser, @Body() body: unknown) {
     const parsed = gardenCreateSchema.safeParse(body);
     if (!parsed.success) {
-      throw domainError('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Invalid garden');
+      throw domainError('VALIDATION_ERROR', gardenIssueMessage(body, parsed.error.issues[0]));
     }
     return this.gardens.create(user.id, parsed.data);
   }
@@ -89,4 +93,14 @@ export class GardensController {
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string) {
     return this.gardens.remove(user.id, id);
   }
+}
+
+function gardenIssueMessage(
+  body: unknown,
+  issue: { path: PropertyKey[]; message: string } | undefined,
+): string {
+  const place =
+    body && typeof body === 'object' && 'place' in body ? (body as { place?: unknown }).place : undefined;
+  if (issue?.path[0] === 'place' && place == null) return 'A garden address is required';
+  return issue?.message ?? 'Invalid garden';
 }

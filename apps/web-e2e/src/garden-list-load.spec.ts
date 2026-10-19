@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { expect, test } from '@playwright/test';
 import { signedInPage } from './session';
 
@@ -5,7 +6,7 @@ test('20-garden list shows counts within 2s without per-row data GETs', async ({
   const page = await signedInPage(browser, `list-load-${Date.now()}@example.com`);
   for (let i = 0; i < 20; i++) {
     const res = await page.request.post('/api/gardens', {
-      data: { name: `Load garden ${String(i).padStart(2, '0')}` },
+      data: { place: fixturePlace, name: `Load garden ${String(i).padStart(2, '0')}` },
     });
     expect(res.status(), await res.text()).toBe(201);
   }

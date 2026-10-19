@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
-import {
-  addTransplant,
+import { addTransplant,
   createSizedBed,
   newUser,
   openOverview,
-  saveLayout,
-} from './planner-helpers';
+  saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('Save layout busy + success notice; offline Save persists until Dismiss', async ({
   browser,
@@ -14,6 +12,7 @@ test('Save layout busy + success notice; offline Save persists until Dismiss', a
   const page = await newUser(browser, `ui-save-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Notice garden');
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Notice garden/ }).click();
   await openOverview(page);
@@ -53,6 +52,7 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   const owner = await newUser(browser, `ui-drop-${Date.now()}@example.com`);
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Drop garden');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Drop garden/ }).click();
   await openOverview(owner);

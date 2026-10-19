@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout } from './planner-helpers';
+import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('empty gardens, overview, and bed view next steps; viewer has no Create bed', async ({
   browser,
@@ -13,12 +13,13 @@ test('empty gardens, overview, and bed view next steps; viewer has no Create bed
   await expect(owner.getByText(/No gardens yet/i)).toBeVisible();
   await expect(owner.getByRole('button', { name: 'Create garden' })).toBeVisible();
   await owner.getByPlaceholder('Garden name').fill('Empty steps');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Empty steps/ }).click();
   await openOverview(owner);
   await expect(owner.getByText(/Add a named bed/i)).toBeVisible();
   await expect(owner.getByRole('button', { name: 'Create bed' })).toBeVisible();
-  await expect(owner.getByRole('link', { name: 'Set your site' })).toBeVisible();
+  await expect(owner.getByRole('link', { name: 'Set your site' })).toHaveCount(0);
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);
   await owner.getByRole('button', { name: 'Open bed North' }).click();

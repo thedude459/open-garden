@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant, inviteViewer, newUser, openOverview } from './planner-helpers';
+import { addTransplant, inviteViewer, newUser, openOverview, confirmFixtureAddress } from './planner-helpers';
 
 test('planner transplants: add/delete, viewer cannot mutate, indoor items stay off garden reminders', async ({
   browser,
@@ -11,6 +11,7 @@ test('planner transplants: add/delete, viewer cannot mutate, indoor items stay o
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Planner transplants');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Planner transplants/ }).click();
   await openOverview(owner);

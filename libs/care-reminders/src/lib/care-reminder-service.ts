@@ -85,6 +85,7 @@ export class CareReminderService {
       asOf,
       myRole: membership.role as ReminderListDto['myRole'],
       items,
+      outlookOn: null,
     };
   }
 

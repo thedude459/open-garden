@@ -9,11 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: REQUIRED per constitution. Every feature MUST include Vitest unit
-tests (≥80% coverage CI gate). TDD ordering is flexible (tests need not
-precede implementation), but no story is complete without unit coverage.
-Once UI and backend are functional, integration tests and Playwright E2E
-tests are also REQUIRED before the feature is considered complete.
+**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -25,9 +21,10 @@ tests are also REQUIRED before the feature is considered complete.
 
 ## Path Conventions
 
-- **Nx monorepo** (Open Garden): `apps/api/`, `apps/web/`, `libs/[feature]/`,
-  `libs/shared-types/`
-- Adjust concrete paths based on plan.md structure
+- **Single project**: `src/`, `tests/` at repository root
+- **Web app**: `backend/src/`, `frontend/src/`
+- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
+- Paths shown below assume single project - adjust based on plan.md structure
 
 <!--
   ============================================================================
@@ -52,9 +49,9 @@ tests are also REQUIRED before the feature is considered complete.
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create Nx workspace structure per implementation plan (apps/ + libs/)
-- [ ] T002 Initialize TypeScript strict mode and shared-types library
-- [ ] T003 [P] Configure Vitest, linting, and formatting
+- [ ] T001 Create project structure per implementation plan
+- [ ] T002 Initialize [language] project with [framework] dependencies
+- [ ] T003 [P] Configure linting and formatting tools
 
 ---
 
@@ -66,13 +63,12 @@ tests are also REQUIRED before the feature is considered complete.
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup PostgreSQL schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization (roles + sharing primitives)
-- [ ] T006 [P] Setup REST API routing and middleware structure
-- [ ] T007 Create base entities / shared contracts all stories depend on
-- [ ] T008 Configure secure error handling (no secret leakage)
-- [ ] T009 Setup environment configuration and in-repo deploy stubs (e.g. Compose)
-- [ ] T010 [P] Plant-data provider abstraction interface (if feature uses external plant data)
+- [ ] T004 Setup database schema and migrations framework
+- [ ] T005 [P] Implement authentication/authorization framework
+- [ ] T006 [P] Setup API routing and middleware structure
+- [ ] T007 Create base models/entities that all stories depend on
+- [ ] T008 Configure error handling and logging infrastructure
+- [ ] T009 Setup environment configuration management
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -84,28 +80,23 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (REQUIRED) ✅
+### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
 
-> **NOTE**: TDD ordering is flexible — tests may follow implementation — but
-> coverage MUST exist before the story is marked complete. Prefer Vitest unit
-> tests alongside the library under `libs/` or app under `apps/`.
+> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T011 [P] [US1] Vitest unit tests for [lib/service] in libs/[feature]/src/
-- [ ] T012 [P] [US1] Integration test for [user journey] in apps/api-e2e/ or equivalent
-- [ ] T013 [P] [US1] Playwright E2E for [critical path] once UI + API are functional
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Add/extend shared contracts in libs/shared-types/
-- [ ] T015 [P] [US1] Implement library module with public interface in libs/[feature]/
-- [ ] T016 [US1] Implement REST endpoint(s) in apps/api/ (depends on T014, T015)
-- [ ] T017 [US1] Implement Angular standalone UI in apps/web/
-- [ ] T018 [US1] Enforce authorization (roles/sharing) on affected resources
-- [ ] T019 [US1] Add input validation and safe error handling
-- [ ] T020 [US1] Add PostgreSQL migration if schema changes are required
+- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
+- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
+- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
+- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T016 [US1] Add validation and error handling
+- [ ] T017 [US1] Add logging for user story 1 operations
 
-**Checkpoint**: User Story 1 is functional, authorized, and covered by unit +
-integration/E2E as applicable; coverage ≥80% for touched libs/apps
+**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
 ---
 
@@ -115,21 +106,19 @@ integration/E2E as applicable; coverage ≥80% for touched libs/apps
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (REQUIRED) ✅
+### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T021 [P] [US2] Vitest unit tests for [lib/service] in libs/[feature]/src/
-- [ ] T022 [P] [US2] Integration test for [user journey]
-- [ ] T023 [P] [US2] Playwright E2E for [critical path] once UI + API are functional
+- [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 2
 
-- [ ] T024 [P] [US2] Add/extend shared contracts in libs/shared-types/
-- [ ] T025 [US2] Implement library module in libs/[feature]/
-- [ ] T026 [US2] Implement REST endpoint(s) in apps/api/
-- [ ] T027 [US2] Implement Angular standalone UI in apps/web/
-- [ ] T028 [US2] Enforce authorization; integrate with US1 only where needed
+- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
+- [ ] T021 [US2] Implement [Service] in src/services/[service].py
+- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
 
-**Checkpoint**: User Stories 1 AND 2 both work independently with required tests
+**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
 ---
 
@@ -139,20 +128,18 @@ integration/E2E as applicable; coverage ≥80% for touched libs/apps
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (REQUIRED) ✅
+### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
 
-- [ ] T029 [P] [US3] Vitest unit tests for [lib/service] in libs/[feature]/src/
-- [ ] T030 [P] [US3] Integration test for [user journey]
-- [ ] T031 [P] [US3] Playwright E2E for [critical path] once UI + API are functional
+- [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
+- [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
 
 ### Implementation for User Story 3
 
-- [ ] T032 [P] [US3] Add/extend shared contracts in libs/shared-types/
-- [ ] T033 [US3] Implement library module in libs/[feature]/
-- [ ] T034 [US3] Implement REST endpoint(s) in apps/api/
-- [ ] T035 [US3] Implement Angular standalone UI in apps/web/
+- [ ] T026 [P] [US3] Create [Entity] model in src/models/[entity].py
+- [ ] T027 [US3] Implement [Service] in src/services/[service].py
+- [ ] T028 [US3] Implement [endpoint/feature] in src/[location]/[file].py
 
-**Checkpoint**: All user stories independently functional with required tests
+**Checkpoint**: All user stories should now be independently functional
 
 ---
 
@@ -165,10 +152,10 @@ integration/E2E as applicable; coverage ≥80% for touched libs/apps
 **Purpose**: Improvements that affect multiple user stories
 
 - [ ] TXXX [P] Documentation updates in docs/
-- [ ] TXXX [P] ADR(s) for significant architectural decisions
-- [ ] TXXX Code cleanup and refactoring (YAGNI — remove speculative abstractions)
-- [ ] TXXX Confirm Vitest coverage ≥80% for touched projects
-- [ ] TXXX Security hardening (validation, least privilege, no secrets in code)
+- [ ] TXXX Code cleanup and refactoring
+- [ ] TXXX Performance optimization across all stories
+- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
+- [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
 
 ---
@@ -192,11 +179,10 @@ integration/E2E as applicable; coverage ≥80% for touched libs/apps
 
 ### Within Each User Story
 
-- Tests are REQUIRED; ordering vs implementation is flexible (constitution)
-- Shared contracts / library public interface before app wiring
-- Library/service before REST endpoints before Angular UI
-- Authorization and migrations with the story that needs them
-- Unit coverage complete; integration + Playwright when UI + API are ready
+- Tests (if included) MUST be written and FAIL before implementation
+- Models before services
+- Services before endpoints
+- Core implementation before integration
 - Story complete before moving to next priority
 
 ### Parallel Opportunities
@@ -213,13 +199,13 @@ integration/E2E as applicable; coverage ≥80% for touched libs/apps
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch unit/integration tests for User Story 1 together:
-Task: "Vitest unit tests for [lib/service] in libs/[feature]/src/"
-Task: "Integration test for [user journey]"
+# Launch all tests for User Story 1 together (if tests requested):
+Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
+Task: "Integration test for [user journey] in tests/integration/test_[name].py"
 
-# Launch contract + library work together:
-Task: "Add/extend shared contracts in libs/shared-types/"
-Task: "Implement library module with public interface in libs/[feature]/"
+# Launch all models for User Story 1 together:
+Task: "Create [Entity1] model in src/models/[entity1].py"
+Task: "Create [Entity2] model in src/models/[entity2].py"
 ```
 
 ---
@@ -260,8 +246,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Confirm required Vitest/integration/Playwright coverage before marking complete
+- Verify tests fail before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
-- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence,
-  direct external plant-provider calls, new NgModules, protocol drift from REST
+- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

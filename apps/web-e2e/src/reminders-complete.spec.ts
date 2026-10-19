@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
+import { confirmFixtureAddress } from './planner-helpers';
 
 
 
@@ -17,6 +18,7 @@ async function goToReminders(page: Page) {
 async function setupGardenWithTomato(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill(name);
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await page.getByRole('link', { name: 'Plantings', exact: true }).click();

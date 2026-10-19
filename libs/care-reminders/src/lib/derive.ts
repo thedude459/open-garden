@@ -75,6 +75,8 @@ function plantingItem(
     cultivar: planting.cultivar,
     plantType: planting.plantType,
     status: planting.status,
+    required: true,
+    rainNote: null,
   };
 }
 

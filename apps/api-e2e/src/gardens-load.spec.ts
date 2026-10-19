@@ -5,6 +5,7 @@ import {
   GardenRepository,
   users,
 } from '@open-garden/plant-catalog-data';
+import { WASHINGTON_PLACE } from '@open-garden/garden-place';
 import { GardenService } from '@open-garden/gardens';
 
 const databaseUrl = process.env['DATABASE_URL'];
@@ -28,13 +29,13 @@ describe.skipIf(!databaseUrl)('garden list assembly budget', () => {
       .returning();
     if (!user) throw new Error('failed to insert user');
 
-    const first = await gardens.create(user.id, { name: 'Solo garden' });
+    const first = await gardens.create(user.id, { name: 'Solo garden', place: WASHINGTON_PLACE });
     const oneStart = Date.now();
     await gardens.list(user.id, 1, 1);
     const oneMs = Date.now() - oneStart;
 
     for (let i = 1; i < 20; i++) {
-      await gardens.create(user.id, { name: `Garden ${String(i).padStart(2, '0')}` });
+      await gardens.create(user.id, { name: `Garden ${String(i).padStart(2, '0')}`, place: WASHINGTON_PLACE });
     }
     const twentyStart = Date.now();
     const page = await gardens.list(user.id, 1, 20);

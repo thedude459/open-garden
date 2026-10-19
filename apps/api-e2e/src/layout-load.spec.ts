@@ -9,6 +9,7 @@ import {
   PlantRepository,
   users,
 } from '@open-garden/plant-catalog-data';
+import { WASHINGTON_PLACE } from '@open-garden/garden-place';
 import { GardenService } from '@open-garden/gardens';
 import { LayoutService } from '@open-garden/garden-layout';
 
@@ -43,7 +44,7 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
       .returning();
     if (!user) throw new Error('failed to insert user');
 
-    const garden = await gardens.create(user.id, { name: 'Load layout' });
+    const garden = await gardens.create(user.id, { name: 'Load layout', place: WASHINGTON_PLACE });
     const plant = await plants.upsertByVarietyKey({
       varietyKey: `load-layout-${Date.now()}`,
       commonName: 'Load Tomato',

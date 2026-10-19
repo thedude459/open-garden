@@ -1,12 +1,15 @@
+import type { ClimateLookup } from '@open-garden/garden-place';
 import type {
   GardenCreateDto,
   GardenDetailDto,
   GardenPatchDto,
   GardenRole,
   GardenSummaryDto,
+  GardenWriteDto,
   MemberDto,
   MonthDayDto,
   PageDto,
+  PlaceCandidateDto,
 } from '@open-garden/shared-types';
 import type {
   GardenMembershipRepository,
@@ -15,37 +18,39 @@ import type {
 import { domainError } from './domain-error';
 import { validateSiteProfile } from './site-profile';
 
+const SEASON_UPDATED = 'Growing zone and frost dates were updated from this address.';
+const SEASON_PARTIAL =
+  'This place was saved. Enter the growing zone and frost dates that could not be determined.';
+
 export class GardenService {
   constructor(
     private readonly gardens: GardenRepository,
     private readonly memberships: GardenMembershipRepository,
+    private readonly climate: ClimateLookup | null = null,
   ) {}
 
-  async create(actorId: string, dto: GardenCreateDto): Promise<GardenDetailDto> {
+  async create(actorId: string, dto: GardenCreateDto): Promise<GardenWriteDto> {
     const name = requireName(dto.name);
     const nameNormalized = normalizeName(name);
     validateNotes(dto.notes);
-    validateSiteProfile({
-      hardinessZone: dto.hardinessZone,
-      lastFrost: dto.lastFrost,
-      firstFrost: dto.firstFrost,
-    });
+    const place = requirePlace(dto.place, 'A garden address is required');
+    const season = await this.seasonFrom(place, dto);
     const taken = await this.gardens.findOwnedByNormalizedName(actorId, nameNormalized);
     if (taken) {
       throw domainError('CONFLICT', 'You already own a garden with that name');
     }
-    const frost = frostColumns(dto.lastFrost ?? null, dto.firstFrost ?? null);
     const garden = await this.gardens.createOwned({
       ownerId: actorId,
       name,
       nameNormalized,
       notes: normalizeNotes(dto.notes ?? null),
-      hardinessZone: dto.hardinessZone ?? null,
+      hardinessZone: season.hardinessZone,
       lengthInches: gardenInches(dto.lengthInches ?? DEFAULT_LENGTH_INCHES),
       widthInches: gardenInches(dto.widthInches ?? DEFAULT_WIDTH_INCHES),
-      ...frost,
+      ...frostColumns(season.lastFrost, season.firstFrost),
+      ...placeColumns(place),
     });
-    return this.toDetail(garden, actorId);
+    return { ...(await this.toDetail(garden, actorId)), seasonNotice: season.seasonNotice };
   }
 
   async list(actorId: string, page = 1, pageSize = 20): Promise<PageDto<GardenSummaryDto>> {
@@ -79,7 +84,7 @@ export class GardenService {
     return this.toDetail(garden, actorId);
   }
 
-  async patch(actorId: string, gardenId: string, dto: GardenPatchDto): Promise<GardenDetailDto> {
+  async patch(actorId: string, gardenId: string, dto: GardenPatchDto): Promise<GardenWriteDto> {
     const membership = await this.memberships.get(gardenId, actorId);
     if (!membership) throw domainError('NOT_FOUND', 'Garden not found');
     if (membership.role === 'viewer') {
@@ -91,14 +96,21 @@ export class GardenService {
     const nextName = dto.name !== undefined ? requireName(dto.name) : garden.name;
     const nextNotes = dto.notes !== undefined ? normalizeNotes(dto.notes) : garden.notes;
     if (dto.notes !== undefined) validateNotes(dto.notes);
-    const nextZone =
-      dto.hardinessZone !== undefined ? dto.hardinessZone : garden.hardinessZone;
-    const nextLast =
-      dto.lastFrost !== undefined
+    const nextPlace = dto.place !== undefined ? requirePlace(dto.place, 'A confirmed garden address is required') : null;
+    const season = nextPlace ? await this.seasonFrom(nextPlace, dto) : null;
+    const nextZone = season
+      ? season.hardinessZone
+      : dto.hardinessZone !== undefined
+        ? dto.hardinessZone
+        : garden.hardinessZone;
+    const nextLast = season
+      ? season.lastFrost
+      : dto.lastFrost !== undefined
         ? dto.lastFrost
         : toMonthDay(garden.lastFrostMonth, garden.lastFrostDay);
-    const nextFirst =
-      dto.firstFrost !== undefined
+    const nextFirst = season
+      ? season.firstFrost
+      : dto.firstFrost !== undefined
         ? dto.firstFrost
         : toMonthDay(garden.firstFrostMonth, garden.firstFrostDay);
 
@@ -131,9 +143,13 @@ export class GardenService {
       widthInches:
         dto.widthInches !== undefined ? gardenInches(dto.widthInches) : garden.widthInches,
       ...frost,
+      ...(nextPlace ? placeColumns(nextPlace) : {}),
     });
     if (!updated) throw domainError('NOT_FOUND', 'Garden not found');
-    return this.toDetail(updated, actorId);
+    return {
+      ...(await this.toDetail(updated, actorId)),
+      seasonNotice: season?.seasonNotice ?? null,
+    };
   }
 
   async remove(actorId: string, gardenId: string): Promise<void> {
@@ -158,6 +174,10 @@ export class GardenService {
       firstFrostDay: number | null;
       lengthInches: number;
       widthInches: number;
+      formattedAddress?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
+      placeId?: string | null;
       updatedAt: Date | string;
     },
     actorId: string,
@@ -182,7 +202,42 @@ export class GardenService {
       updatedAt: toIso(garden.updatedAt),
       bedCount: c.bedCount,
       placementCount: c.placementCount,
+      place: storedPlace(garden),
     };
+  }
+
+  private async seasonFrom(
+    place: PlaceCandidateDto,
+    dto: { hardinessZone?: number | null; lastFrost?: MonthDayDto | null; firstFrost?: MonthDayDto | null },
+  ): Promise<{
+    hardinessZone: number | null;
+    lastFrost: MonthDayDto | null;
+    firstFrost: MonthDayDto | null;
+    seasonNotice: string | null;
+  }> {
+    if (!this.climate) {
+      const lastFrost = dto.lastFrost ?? null;
+      const firstFrost = dto.firstFrost ?? null;
+      validateSiteProfile({
+        hardinessZone: dto.hardinessZone,
+        lastFrost,
+        firstFrost,
+      });
+      return {
+        hardinessZone: dto.hardinessZone ?? null,
+        lastFrost,
+        firstFrost,
+        seasonNotice: null,
+      };
+    }
+    let facts = { hardinessZone: null as number | null, lastFrost: null as MonthDayDto | null, firstFrost: null as MonthDayDto | null };
+    try {
+      facts = await this.climate.lookup(place);
+    } catch {
+      facts = { hardinessZone: null, lastFrost: null, firstFrost: null };
+    }
+    const filled = facts.hardinessZone != null && facts.lastFrost != null && facts.firstFrost != null;
+    return { ...facts, seasonNotice: filled ? SEASON_UPDATED : SEASON_PARTIAL };
   }
 }
 
@@ -223,6 +278,62 @@ function validateNotes(notes: string | null | undefined): void {
 
 function toIso(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+function requirePlace(place: PlaceCandidateDto | undefined, missing: string): PlaceCandidateDto {
+  if (place == null) throw domainError('VALIDATION_ERROR', missing);
+  const formattedAddress = place.formattedAddress?.trim() ?? '';
+  const placeId = place.placeId?.trim() ?? '';
+  const latitude = place.latitude;
+  const longitude = place.longitude;
+  if (
+    !formattedAddress ||
+    formattedAddress.length > 300 ||
+    !placeId ||
+    placeId.length > 300 ||
+    typeof latitude !== 'number' ||
+    latitude < -90 ||
+    latitude > 90 ||
+    typeof longitude !== 'number' ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    throw domainError('VALIDATION_ERROR', 'A confirmed garden address is required');
+  }
+  return { ...place, formattedAddress, placeId };
+}
+
+function placeColumns(place: PlaceCandidateDto) {
+  return {
+    formattedAddress: place.formattedAddress,
+    latitude: place.latitude,
+    longitude: place.longitude,
+    placeId: place.placeId,
+  };
+}
+
+function storedPlace(garden: {
+  formattedAddress?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+}): PlaceCandidateDto | null {
+  if (
+    garden.formattedAddress == null ||
+    garden.latitude == null ||
+    garden.longitude == null ||
+    garden.placeId == null
+  ) {
+    return null;
+  }
+  return {
+    formattedAddress: garden.formattedAddress,
+    latitude: garden.latitude,
+    longitude: garden.longitude,
+    placeId: garden.placeId,
+    postalCode: null,
+    countryCode: null,
+  };
 }
 
 function toMonthDay(month: number | null, day: number | null): MonthDayDto | null {

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
+import { confirmFixtureAddress } from './planner-helpers';
 
 test('login shows busy then lands on gardens without leftover notice', async ({ page }) => {
   await page.route('**/api/auth/login', async (route) => {
@@ -27,6 +28,7 @@ test('Create garden busy + success notice; double click is one garden', async ({
   const page = await signedInPage(browser, `ui-create-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Only One');
+  await confirmFixtureAddress(page);
   const create = page.getByRole('button', { name: 'Create garden' });
   await Promise.all([create.click(), create.click()]);
   await expect(page.getByRole('link', { name: /Only One/ })).toHaveCount(1);

@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { expect, test } from '@playwright/test';
 import { signedInPage } from './session';
 
@@ -24,7 +25,7 @@ test('plant search shows stand-ins within 2s without per-result plant GETs', asy
   await expect(page.locator('.plant-stand-in, .card-list img')).toHaveCount(await rows.count());
   expect(extra, extra.join('\n')).toEqual([]);
 
-  const created = await page.request.post('/api/gardens', { data: { name: 'Search panel' } });
+  const created = await page.request.post('/api/gardens', { data: { place: fixturePlace, name: 'Search panel' } });
   expect(created.status()).toBe(201);
   const garden = (await created.json()) as { id: string };
   const bedRes = await page.request.post(`/api/gardens/${garden.id}/beds`, {

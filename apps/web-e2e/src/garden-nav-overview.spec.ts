@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { newUser, openOverview } from './planner-helpers';
+import { newUser, openOverview, confirmFixtureAddress } from './planner-helpers';
 
 test('Garden Overview is one click from plantings, calendar, reminders, transplants', async ({
   browser,
@@ -10,6 +10,7 @@ test('Garden Overview is one click from plantings, calendar, reminders, transpla
   await page.getByPlaceholder('Garden name').fill('Nav garden');
   await page.getByRole('spinbutton', { name: 'Length (ft)' }).fill('30');
   await page.getByRole('spinbutton', { name: 'Width (ft)' }).fill('15');
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Nav garden/ }).click();
   await openOverview(page);

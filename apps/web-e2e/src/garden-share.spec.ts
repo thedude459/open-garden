@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration, openOverview } from './planner-helpers';
+import { saveGarden, openConfiguration, openOverview, confirmFixtureAddress } from './planner-helpers';
 
 test('invite collaborator, demote to viewer, member list visible', async ({ browser }) => {
   const stamp = Date.now();
@@ -11,6 +11,7 @@ test('invite collaborator, demote to viewer, member list visible', async ({ brow
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Shared yard');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Shared yard/ }).click();
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
@@ -71,6 +72,7 @@ test('stranger cannot see a shared garden they were not invited to', async ({ br
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Household only');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Household only/ }).click();
   await openConfiguration(owner);
@@ -99,6 +101,7 @@ test('owner can transfer, collaborator can leave, owner can remove', async ({ br
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Transfer plot');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Transfer plot/ }).click();
   await openConfiguration(owner);

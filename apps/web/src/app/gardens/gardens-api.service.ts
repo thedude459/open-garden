@@ -8,8 +8,10 @@ import type {
   GardenMemberPatchDto,
   GardenPatchDto,
   GardenSummaryDto,
+  GardenWriteDto,
   MemberDto,
   PageDto,
+  PlaceLookupDto,
 } from '@open-garden/shared-types';
 import { GardenCacheService } from './garden-cache.service';
 
@@ -77,11 +79,22 @@ export class GardensApiService {
     }
   }
 
-  async create(body: GardenCreateDto): Promise<GardenDetailDto> {
+  async lookupPlace(query: string): Promise<PlaceLookupDto> {
+    this.assertOnline();
+    try {
+      return await firstValueFrom(
+        this.http.post<PlaceLookupDto>(`${API}/places/lookup`, { query }, { withCredentials: true }),
+      );
+    } catch (err) {
+      this.rethrowConnectivity(err);
+    }
+  }
+
+  async create(body: GardenCreateDto): Promise<GardenWriteDto> {
     this.assertOnline();
     try {
       const created = await firstValueFrom(
-        this.http.post<GardenDetailDto>(`${API}/gardens`, body, { withCredentials: true }),
+        this.http.post<GardenWriteDto>(`${API}/gardens`, body, { withCredentials: true }),
       );
       await this.cache.saveDetail(created);
       return created;
@@ -90,11 +103,11 @@ export class GardensApiService {
     }
   }
 
-  async patch(id: string, body: GardenPatchDto): Promise<GardenDetailDto> {
+  async patch(id: string, body: GardenPatchDto): Promise<GardenWriteDto> {
     this.assertOnline();
     try {
       const updated = await firstValueFrom(
-        this.http.patch<GardenDetailDto>(`${API}/gardens/${id}`, body, {
+        this.http.patch<GardenWriteDto>(`${API}/gardens/${id}`, body, {
           withCredentials: true,
         }),
       );

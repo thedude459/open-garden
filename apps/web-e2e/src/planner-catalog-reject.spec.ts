@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { applyPlantSearch, createSizedBed, newUser, openOverview, saveLayout } from './planner-helpers';
+import { applyPlantSearch, createSizedBed, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('invalid catalog drops reject with a specific notice and no planting', async ({
   browser,
@@ -8,6 +8,7 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   const owner = await newUser(browser, `planner-rej-${Date.now()}@example.com`);
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Reject bed');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Reject bed/ }).click();
   await openOverview(owner);
@@ -35,6 +36,7 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Dismiss' }).click();
+  await owner.getByLabel('Zone').selectOption({ label: 'Any zone' });
   await applyPlantSearch(owner, 'Honeycrisp Apple');
   await owner.getByRole('button', { name: 'Place Honeycrisp Apple' }).dragTo(
     owner.locator('[data-bed-name="North"]'),

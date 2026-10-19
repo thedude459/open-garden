@@ -14,6 +14,7 @@ const DOMAIN_STATUS: Record<string, HttpStatus> = {
   UNAUTHORIZED: HttpStatus.UNAUTHORIZED,
   FORBIDDEN: HttpStatus.FORBIDDEN,
   CONFLICT: HttpStatus.CONFLICT,
+  SERVICE_UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
 };
 
 @Catch()

@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { feetToInches, inchesToFeetInput, snapHalfFoot } from '@open-garden/garden-layout';
-import type { GardenDetailDto, GardenRole } from '@open-garden/shared-types';
+import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
+import type { GardenDetailDto, GardenRole, PlaceCandidateDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
@@ -56,6 +58,44 @@ import { PlannerDraftService } from './planner-draft.service';
             required
           />
         </label>
+        <section>
+          <h4>Address</h4>
+          <p>{{ g.place?.formattedAddress || 'No address is set' }}</p>
+          @if (canEdit()) {
+            <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
+            <button type="button" class="btn btn-secondary" (click)="lookup()" [disabled]="lookingUp()">
+              Look up address
+            </button>
+          }
+          @if (lookupError()) {
+            <p class="error">{{ lookupError() }}</p>
+          }
+          @if (truncated()) {
+            <p>Type a more specific address.</p>
+          }
+          @for (candidate of candidates(); track candidate.placeId) {
+            @if (canEdit()) {
+              <button type="button" class="btn btn-secondary" (click)="choose(candidate)">
+                {{ candidate.formattedAddress }}
+              </button>
+            }
+          }
+          @if (mapSrc(); as src) {
+            <iframe
+              class="garden-map"
+              style="width: 100%; height: 220px; border: 0"
+              [src]="src"
+              title="Garden map"
+              (error)="onMapError()"
+            ></iframe>
+          }
+          @if (mapUnavailable()) {
+            <p>The map is unavailable.</p>
+          }
+          @if (seasonNotice()) {
+            <p>{{ seasonNotice() }}</p>
+          }
+        </section>
         <label>
           Hardiness zone
           <select
@@ -127,7 +167,7 @@ import { PlannerDraftService } from './planner-draft.service';
             type="submit"
             class="btn btn-primary"
             [attr.aria-busy]="notices.busyMap().has('save-garden') || null"
-            [disabled]="notices.busyMap().has('save-garden')"
+            [disabled]="notices.busyMap().has('save-garden') || !canSave()"
           >
             Save garden
           </button>
@@ -247,8 +287,9 @@ import { PlannerDraftService } from './planner-draft.service';
     }
   `,
 })
-export class GardenDetailPage implements OnInit {
+export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly api = inject(GardensApiService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly auth = inject(AuthApiService);
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
@@ -267,15 +308,120 @@ export class GardenDetailPage implements OnInit {
   lastDay: number | null = null;
   firstMonth: number | null = null;
   firstDay: number | null = null;
+  addressQuery = '';
+  readonly candidates = signal<PlaceCandidateDto[]>([]);
+  readonly truncated = signal(false);
+  readonly pending = signal<PlaceCandidateDto | null>(null);
+  readonly mapSrc = signal<SafeResourceUrl | null>(null);
+  readonly mapReady = signal(false);
+  readonly mapFailed = signal(false);
+  readonly lookingUp = signal(false);
+  readonly lookupError = signal('');
+  readonly seasonNotice = signal<string | null>(null);
   inviteEmail = '';
   inviteRole: 'collaborator' | 'viewer' = 'collaborator';
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
   months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  private mapGen = 0;
+  private mapWatch: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit() {
     this.planner.discard();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) void this.load(id);
+  }
+
+  ngOnDestroy() {
+    this.clearMapWatch();
+  }
+
+  canSave(): boolean {
+    if (!this.pending()) return true;
+    return this.mapReady() && !this.mapFailed() && !this.truncated();
+  }
+
+  mapUnavailable(): boolean {
+    const hasPlace = this.pending() != null || this.garden()?.place != null;
+    if (!hasPlace) return false;
+    return this.mapFailed();
+  }
+
+  async lookup() {
+    this.lookupError.set('');
+    this.seasonNotice.set(null);
+    this.candidates.set([]);
+    this.pending.set(null);
+    this.truncated.set(false);
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      this.lookupError.set(new OnlineRequiredError().message);
+      this.refreshMap();
+      return;
+    }
+    this.lookingUp.set(true);
+    try {
+      const result = await this.api.lookupPlace(this.addressQuery);
+      this.candidates.set(result.candidates);
+      this.truncated.set(result.truncated);
+      if (result.candidates.length === 1 && !result.truncated) this.choose(result.candidates[0]!);
+      else this.refreshMap();
+    } catch (err) {
+      this.lookupError.set(messageFrom(err));
+      this.refreshMap();
+    } finally {
+      this.lookingUp.set(false);
+    }
+  }
+
+  choose(candidate: PlaceCandidateDto) {
+    this.pending.set(candidate);
+    this.refreshMap();
+  }
+
+  onMapError() {
+    this.clearMapWatch();
+    this.mapFailed.set(true);
+    this.mapReady.set(false);
+  }
+
+  private refreshMap() {
+    this.clearMapWatch();
+    const pending = this.pending();
+    const point = pending ?? this.garden()?.place ?? null;
+    this.mapReady.set(false);
+    this.mapFailed.set(false);
+    if (!point || (pending != null && this.truncated())) {
+      this.mapSrc.set(null);
+      return;
+    }
+    const url = embedMapUrl(point.latitude, point.longitude);
+    this.mapSrc.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+    this.watchMap(url);
+  }
+
+  /** ponytail: iframe load also fires when the embed is aborted, and the parent cannot read that document. A no-cors fetch is the failure signal. Upgrade path is a load event that only fires for a finished document. */
+  private watchMap(url: string) {
+    this.clearMapWatch();
+    const gen = this.mapGen;
+    this.mapWatch = setTimeout(() => {
+      if (gen === this.mapGen) this.onMapError();
+    }, 3000);
+    void embedMapReachable(url).then((ok) => {
+      if (gen !== this.mapGen) return;
+      if (!ok) {
+        this.onMapError();
+        return;
+      }
+      this.clearMapWatch();
+      this.mapFailed.set(false);
+      this.mapReady.set(true);
+    });
+  }
+
+  private clearMapWatch() {
+    this.mapGen++;
+    if (this.mapWatch == null) return;
+    clearTimeout(this.mapWatch);
+    this.mapWatch = null;
   }
 
   canEdit() {
@@ -292,27 +438,38 @@ export class GardenDetailPage implements OnInit {
     const detail = await this.api.detail(id);
     this.garden.set(detail);
     if (detail) this.applyForm(detail);
+    this.pending.set(null);
+    this.candidates.set([]);
+    this.truncated.set(false);
+    this.refreshMap();
     this.loading.set(false);
   }
 
   async save() {
     const g = this.garden();
-    if (!g) return;
+    const pending = this.pending();
+    if (!g || (pending && !this.canSave())) return;
     this.error.set('');
     await this.notices.run('save-garden', async () => {
       try {
         const updated = await this.api.patch(g.id, {
           name: this.name,
           notes: this.notes.trim() ? this.notes : null,
-          hardinessZone: this.zone,
-          lastFrost: toFrost(this.lastMonth, this.lastDay),
-          firstFrost: toFrost(this.firstMonth, this.firstDay),
+          hardinessZone: pending ? undefined : this.zone,
+          lastFrost: pending ? undefined : toFrost(this.lastMonth, this.lastDay),
+          firstFrost: pending ? undefined : toFrost(this.firstMonth, this.firstDay),
           lengthInches: Math.max(6, snapHalfFoot(feetToInches(this.lengthFeet))),
           widthInches: Math.max(6, snapHalfFoot(feetToInches(this.widthFeet))),
+          ...(pending ? { place: pending } : {}),
         });
         this.garden.set(updated);
         this.applyForm(updated);
-        this.notices.success('Garden saved');
+        this.pending.set(null);
+        this.candidates.set([]);
+        this.addressQuery = '';
+        this.seasonNotice.set(updated.seasonNotice);
+        this.refreshMap();
+        this.notices.success(updated.seasonNotice ?? 'Garden saved');
       } catch (err) {
         this.notices.error(messageFrom(err));
       }
@@ -439,3 +596,4 @@ function messageFrom(err: unknown): string {
   }
   return 'Could not update garden';
 }
+

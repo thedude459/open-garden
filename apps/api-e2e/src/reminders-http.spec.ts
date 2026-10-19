@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { describe, expect, test } from 'vitest';
 import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
 
@@ -95,7 +96,7 @@ test('care reminders HTTP: authz, asOf, harvest, intervals, complete/dismiss', a
     const viewerUser = await register(viewer, `rem-api-viewer-${stamp}@example.com`);
     await register(stranger, `rem-api-stranger-${stamp}@example.com`);
 
-    const created = await owner.post('/api/gardens', { data: { name: 'Reminder plot' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Reminder plot' } });
     expect(created.status()).toBe(201);
     const garden = (await created.json()) as GardenDetail;
     const asOf = todayIso();

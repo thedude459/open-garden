@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { createSizedBed, saveLayout } from './planner-helpers';
+import { createSizedBed, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 async function clickPlantings(page: Page) {
   // exact: garden names like "Stale plantings" also match name: 'Plantings'
@@ -16,6 +16,7 @@ async function openGardenPlantings(page: Page, gardenName: string | RegExp) {
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill(name);
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();

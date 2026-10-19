@@ -1,13 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import type { ReminderItemDto } from '@open-garden/shared-types';
 import {
   RemindersApiService,
   RemindersColdOfflineError,
 } from './reminders-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { type ClientReminderItem, type ClientReminderList } from './reminders-offline.queue';
+import { rainForDeviceDay } from './garden-reminders-cache.service';
 @Component({
   standalone: true,
   imports: [RouterLink],
@@ -41,8 +41,11 @@ import { type ClientReminderItem, type ClientReminderList } from './reminders-of
                 }
                 <p>
                   <span class="badge">{{ kindLabel(item.kind) }}</span>
-                  <span class="badge">{{ urgencyLabel(item.urgency) }}</span>
+                  <span class="badge" [class.reminder-overdue]="item.required !== false && item.urgency === 'overdue'">{{ urgencyLabel(item) }}</span>
                   due {{ item.dueOn }}
+                  @if (item.rainNote) {
+                    <span>{{ item.rainNote }}</span>
+                  }
                   @if (item.sync === 'pending') {
                     <span class="badge">pending</span>
                   }
@@ -90,15 +93,16 @@ export class GardenRemindersPage implements OnInit {
     return `${item.plantingId}:${item.kind}:${item.dueOn}:${item.sync ?? ''}`;
   }
 
-  kindLabel(kind: ReminderItemDto['kind']) {
+  kindLabel(kind: ClientReminderItem['kind']) {
     if (kind === 'harvest') return 'Harvest';
     if (kind === 'water') return 'Water';
     return 'Fertilize';
   }
 
-  urgencyLabel(urgency: ReminderItemDto['urgency']) {
-    if (urgency === 'overdue') return 'Overdue';
-    if (urgency === 'dueToday') return 'Due today';
+  urgencyLabel(item: ClientReminderItem) {
+    if (item.required === false) return 'Not needed';
+    if (item.urgency === 'overdue') return 'Overdue';
+    if (item.urgency === 'dueToday') return 'Due today';
     return 'Upcoming';
   }
 
@@ -118,7 +122,7 @@ export class GardenRemindersPage implements OnInit {
         action === 'complete'
           ? await this.api.complete(this.gardenId, body, item.intervalDays)
           : await this.api.dismiss(this.gardenId, body, item.intervalDays);
-      this.list.set(next);
+      this.list.set(next ? rainForDeviceDay(next) : next);
     } catch (err) {
       this.error.set(readError(err));
     }
@@ -133,7 +137,7 @@ export class GardenRemindersPage implements OnInit {
         this.api.list(this.gardenId),
         this.plantingsApi.list(this.gardenId),
       ]);
-      this.list.set(data);
+      this.list.set(data ? rainForDeviceDay(data) : data);
       this.emptyGarden.set((plantings?.plantings.length ?? 0) === 0);
     } catch (err) {
       if (err instanceof RemindersColdOfflineError) {

@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant, createSizedBed, newUser, openOverview, saveLayout } from './planner-helpers';
+import { addTransplant, createSizedBed, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
 
 test('cached layout stays readable when layout API is aborted', async ({ browser }) => {
   test.setTimeout(90_000);
   const page = await newUser(browser, `layout-off-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Cached layout');
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Cached layout/ }).click();
   await openOverview(page);
@@ -38,6 +39,7 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
 
   await owner.goto('/gardens');
   await owner.getByPlaceholder('Garden name').fill('Stale layout');
+  await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create garden' }).click();
   await owner.getByRole('link', { name: /Stale layout/ }).click();
   await openOverview(owner);
@@ -77,6 +79,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   const page = await newUser(browser, `layout-422-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Gate cache');
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Gate cache/ }).click();
   await openOverview(page);
@@ -142,6 +145,7 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   const page = await newUser(browser, `layout-off-mutate-${Date.now()}@example.com`);
   await page.goto('/gardens');
   await page.getByPlaceholder('Garden name').fill('Offline mutate');
+  await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();
   await page.getByRole('link', { name: /Offline mutate/ }).click();
   await openOverview(page);

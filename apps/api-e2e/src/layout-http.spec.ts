@@ -1,3 +1,4 @@
+import { fixturePlace } from './fixture-place';
 import { describe, expect, test } from 'vitest';
 import { Client } from 'pg';
 import { liveEnabled, LiveClient, type LiveResponse } from './live-http';
@@ -175,11 +176,11 @@ test('layout HTTP: isolation, beds, 422 spacing/fit, placements, last-write-wins
     const friendUser = await register(friend, `layout-api-friend-${stamp}@example.com`);
     await register(stranger, `layout-api-stranger-${stamp}@example.com`);
 
-    const created = await owner.post('/api/gardens', { data: { name: 'Layout API plot' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Layout API plot' } });
     expect(created.status()).toBe(201);
     const garden = (await created.json()) as GardenDetail;
     const otherGarden = (await (
-      await owner.post('/api/gardens', { data: { name: 'Other layout' } })
+      await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Other layout' } })
     ).json()) as GardenDetail;
 
     const strangerGet = await stranger.get(`/api/gardens/${garden.id}/layout`);
@@ -338,7 +339,7 @@ test('area DELETE 401/403/404 and PUT empty/duplicate area names', async () => {
   try {
     await register(owner, `layout-area-owner-${stamp}@example.com`);
     const friendUser = await register(friend, `layout-area-friend-${stamp}@example.com`);
-    const created = await owner.post('/api/gardens', { data: { name: 'Area API plot' } });
+    const created = await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Area API plot' } });
     expect(created.status()).toBe(201);
     const garden = (await created.json()) as GardenDetail;
     const areaId = crypto.randomUUID();
