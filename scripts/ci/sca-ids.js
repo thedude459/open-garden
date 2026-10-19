@@ -19,29 +19,58 @@ function ghsaFromUrl(url) {
   return m ? m[0].toLowerCase() : '';
 }
 
+function fixLabel(fixAvailable) {
+  if (fixAvailable === true) return 'available';
+  if (!fixAvailable || typeof fixAvailable !== 'object' || !fixAvailable.version) return '';
+  return fixAvailable.name
+    ? `${fixAvailable.name}@${fixAvailable.version}`
+    : String(fixAvailable.version);
+}
+
 function extractAudit(data) {
-  const ids = new Set();
-  for (const v of Object.values(data.vulnerabilities || {})) {
+  const byId = new Map();
+  for (const [pkg, v] of Object.entries(data.vulnerabilities || {})) {
+    const fix = fixLabel(v.fixAvailable);
     for (const via of v.via || []) {
       if (!via || typeof via !== 'object') continue;
       if (!isHigh(via.severity || v.severity)) continue;
       const id = ghsaFromUrl(via.url);
-      if (id) ids.add(id);
+      if (!id || byId.has(id)) continue;
+      byId.set(id, {
+        id,
+        name: via.name || pkg,
+        version: via.range || '',
+        fix,
+      });
     }
   }
-  return [...ids].sort();
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
 function extractTrivy(data) {
-  const ids = new Set();
+  const byId = new Map();
   for (const result of data.Results || []) {
     for (const vuln of result.Vulnerabilities || []) {
       if (!isHigh(vuln.Severity)) continue;
       const id = String(vuln.VulnerabilityID || '').toLowerCase();
-      if (id) ids.add(id);
+      if (!id || byId.has(id)) continue;
+      byId.set(id, {
+        id,
+        name: vuln.PkgName || '',
+        version: vuln.InstalledVersion || '',
+        fix: vuln.FixedVersion || '',
+      });
     }
   }
-  return [...ids].sort();
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function formatFinding(finding) {
+  const parts = [finding.id];
+  if (finding.name) parts.push(finding.name);
+  if (finding.version) parts.push(finding.version);
+  if (finding.fix) parts.push(`fix ${finding.fix}`);
+  return parts.join(' ');
 }
 
 function diff(head, base) {
@@ -76,12 +105,26 @@ function gate(args) {
     const head = extract[kind](loadJson(headPath));
     const basePath = args[`${kind}-base`];
     const base = basePath ? extract[kind](loadJson(basePath)) : [];
-    const added = diff(head, base);
+    const headIds = head.map((finding) => finding.id);
+    const baseIds = base.map((finding) => finding.id);
+    const added = diff(headIds, baseIds);
+    const removed = diff(baseIds, headIds);
+    const headById = new Map(head.map((finding) => [finding.id, finding]));
+    const baseById = new Map(base.map((finding) => [finding.id, finding]));
     const mode = basePath ? 'vs base' : 'absolute';
-    console.log(`sca ${kind} (${mode}): head=${head.length} base=${base.length} new=${added.length}`);
+    console.log(
+      `sca ${kind} (${mode}): head=${head.length} base=${base.length} new=${added.length} removed=${removed.length}`,
+    );
     if (added.length) {
       failed = true;
-      console.error(`new ${kind} findings:\n${added.join('\n')}`);
+      console.error(
+        `new ${kind} findings:\n${added.map((id) => formatFinding(headById.get(id))).join('\n')}`,
+      );
+    }
+    if (removed.length) {
+      console.log(
+        `removed ${kind} findings:\n${removed.map((id) => formatFinding(baseById.get(id))).join('\n')}`,
+      );
     }
   }
   if (failed) process.exit(1);
@@ -101,9 +144,12 @@ function selfcheck() {
     vulnerabilities: {
       multer: {
         severity: 'high',
+        fixAvailable: { name: 'multer', version: '2.4.0', isSemVerMajor: false },
         via: [
           {
             severity: 'high',
+            name: 'multer',
+            range: '<2.4.0',
             url: 'https://github.com/advisories/GHSA-wc9g-mqfw-jrwm',
           },
           'nestjs',
@@ -120,24 +166,46 @@ function selfcheck() {
       },
     },
   });
-  assertEqual(audit, ['ghsa-wc9g-mqfw-jrwm'], 'extractAudit');
+  assertEqual(
+    audit,
+    [{ id: 'ghsa-wc9g-mqfw-jrwm', name: 'multer', version: '<2.4.0', fix: 'multer@2.4.0' }],
+    'extractAudit',
+  );
 
   const trivy = extractTrivy({
     Results: [
       {
         Vulnerabilities: [
-          { VulnerabilityID: 'CVE-2026-1', Severity: 'HIGH' },
+          {
+            VulnerabilityID: 'CVE-2026-1',
+            Severity: 'HIGH',
+            PkgName: 'proxy-addr',
+            InstalledVersion: '2.0.7',
+            FixedVersion: '2.0.8',
+          },
           { VulnerabilityID: 'CVE-2026-2', Severity: 'MEDIUM' },
           { VulnerabilityID: 'GHSA-aaaa-bbbb-cccc', Severity: 'CRITICAL' },
         ],
       },
     ],
   });
-  assertEqual(trivy, ['cve-2026-1', 'ghsa-aaaa-bbbb-cccc'], 'extractTrivy');
+  assertEqual(
+    trivy,
+    [
+      { id: 'cve-2026-1', name: 'proxy-addr', version: '2.0.7', fix: '2.0.8' },
+      { id: 'ghsa-aaaa-bbbb-cccc', name: '', version: '', fix: '' },
+    ],
+    'extractTrivy',
+  );
 
   assertEqual(diff(['a', 'b'], ['a']), ['b'], 'diff new');
   assertEqual(diff(['a'], ['a', 'b']), [], 'diff subset');
   assertEqual(diff(['a'], []), ['a'], 'diff no base');
+  assertEqual(
+    formatFinding(audit[0]),
+    'ghsa-wc9g-mqfw-jrwm multer <2.4.0 fix multer@2.4.0',
+    'formatFinding',
+  );
   console.log('sca-ids selfcheck ok');
 }
 

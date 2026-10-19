@@ -16,6 +16,8 @@ updates:
     # One PR per group. First match wins. Angular spans production and
     # development so the compiler and the build plugin move together.
     # Nest/Vitest majors stay together. Other ungrouped majors stay individual.
+    # Security updates stay ungrouped so one new advisory cannot hold an
+    # unrelated patch in the same pull request.
     groups:
       angular:
         applies-to: version-updates
@@ -46,10 +48,6 @@ updates:
         update-types:
           - minor
           - patch
-      npm-security:
-        applies-to: security-updates
-        patterns:
-          - '*'
 
   - package-ecosystem: github-actions
     directory: /

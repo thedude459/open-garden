@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
+import {
+  confirmFixtureAddress,
+  createSizedBed,
+  inviteViewer,
+  newUser,
+  openConfiguration,
+  openOverview,
+  saveLayout,
+} from './planner-helpers';
 
 test('planner beds: create bed and area, select opens Bed View, viewer cannot mutate', async ({
   browser,
@@ -34,7 +42,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
     expect(dialog.message()).toBe('Leave without saving this layout?');
     return dialog.accept();
   });
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await openConfiguration(owner);
   await openOverview(owner);
   await expect(owner.locator('[data-bed-name="East"]')).toHaveCount(0);
 
