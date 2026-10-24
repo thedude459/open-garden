@@ -6,9 +6,9 @@ import { openPlantingsFromGarden, confirmFixtureAddress } from './planner-helper
 
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill(name);
+  await page.getByPlaceholder('Property name').fill(name);
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await openPlantingsFromGarden(page);
@@ -95,7 +95,7 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await expect(owner.getByRole('link', { name: /Cherry Tomato/ })).toBeVisible();
   await owner.goto('/favorites');
   await expect(owner.getByText('Sweet Basil')).toBeVisible();
-  await owner.getByRole('link', { name: 'Gardens' }).click();
+  await owner.getByRole('link', { name: 'Properties' }).click();
   await owner.getByRole('link', { name: /Record bed/ }).click();
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);

@@ -17,9 +17,9 @@ async function goToReminders(page: Page) {
 
 async function setupGardenWithTomato(page: Page, name: string) {
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill(name);
+  await page.getByPlaceholder('Property name').fill(name);
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await page.getByRole('link', { name: 'Plantings', exact: true }).click();
   await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Cherry Tomato');

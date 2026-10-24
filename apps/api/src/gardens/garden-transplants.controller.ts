@@ -1,33 +1,21 @@
 import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { deriveIndoorReminders, domainError } from '@open-garden/care-reminders';
-import { PlantingService } from '@open-garden/seasonal-plantings';
-import {
-  BedRepository,
-  CareEventRepository,
-  GardenMembershipRepository,
-  PlantingRepository,
-  PlantRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { CareEventRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { asOfQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { openPlantingService } from './planting-service.factory';
 
 @Controller('gardens/:id/transplants')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenTransplantsController {
-  private readonly plantings: PlantingService;
+  private readonly plantings: ReturnType<typeof openPlantingService>;
   private readonly events: CareEventRepository;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.plantings = new PlantingService(
-      new GardenMembershipRepository(bundle.db),
-      new PlantRepository(bundle.db),
-      new PlantingRepository(bundle.db),
-      new BedRepository(bundle.db),
-    );
+    this.plantings = openPlantingService(bundle.db);
     this.events = new CareEventRepository(bundle.db);
   }
 

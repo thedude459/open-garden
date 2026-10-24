@@ -4,6 +4,7 @@ export * from './lib/garden';
 export * from './lib/garden.schemas';
 export * from './lib/calendar';
 export * from './lib/calendar.schemas';
+export * from './lib/placement';
 export * from './lib/planting';
 export * from './lib/planting.schemas';
 export * from './lib/layout';

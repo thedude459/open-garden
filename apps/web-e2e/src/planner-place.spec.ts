@@ -14,9 +14,9 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   const viewer = await newUser(browser, `planner-place-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Place map');
+  await owner.getByPlaceholder('Property name').fill('Place map');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Place map/ }).click();
   await openOverview(owner);
   await expect(owner.getByLabel('Search plants')).toHaveCount(0);

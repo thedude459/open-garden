@@ -6,6 +6,7 @@ import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/d
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
 import type { FavoriteListItemDto, LayoutPlantingDto, PlantSummaryDto } from '@open-garden/shared-types';
+import { allowsPlant } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
 import { PlannerDraftService } from './planner-draft.service';
@@ -129,7 +130,7 @@ import { EmptyState } from '../ui/empty-state';
               @if (favorites().length) {
                 <h3>Favorites</h3>
                 <ul class="card-list">
-                  @for (f of favorites(); track f.favoriteId) {
+                  @for (f of shownFavorites(); track f.favoriteId) {
                     @if (!f.unavailable) {
                       @if (catalogPlant(f.plant); as p) {
                         <li class="row">
@@ -156,7 +157,7 @@ import { EmptyState } from '../ui/empty-state';
                 [filters]="true"
                 [live]="true"
                 [zone]="gardenZone()"
-                (results)="catalogHits.set($event)"
+                (results)="onCatalog($event)"
                 (searched)="searched.set(true)"
                 (zoneChange)="activeZone.set($event)"
                 (failed)="onSearchFailed($event)"
@@ -442,6 +443,17 @@ export class GardenBedViewPage implements OnInit {
 
   focusPlantPanel() {
     this.picker()?.focus();
+  }
+
+  onCatalog(items: PlantSummaryDto[]) {
+    this.catalogHits.set(items.filter((plant) => allowsPlant(this.bed()?.station, plant.plantType)));
+  }
+
+  shownFavorites() {
+    return this.favorites().filter((favorite) => {
+      const plant = this.catalogPlant(favorite.plant);
+      return plant ? allowsPlant(this.bed()?.station, plant.plantType) : false;
+    });
   }
 
   onSearchFailed(err: unknown) {

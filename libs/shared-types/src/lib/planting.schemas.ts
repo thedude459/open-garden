@@ -30,6 +30,7 @@ export const plantingCreateSchema = z
     plantedOn: optionalIsoDate,
     harvestedOn: optionalIsoDate,
     bedId: z.uuid().nullable().optional(),
+    trayId: z.uuid().nullable().optional(),
     clientMutationId: z.string().min(1).max(128).optional(),
     life: z.enum(['annual', 'perennial', 'tree']).optional(),
     note: z.string().trim().max(2000).nullable().optional(),
@@ -70,6 +71,7 @@ export const plantingPatchSchema = z.object({
   plantedOn: optionalIsoDate,
   harvestedOn: optionalIsoDate,
   bedId: z.uuid().nullable().optional(),
+  trayId: z.uuid().nullable().optional(),
   clientMutationId: z.string().min(1).max(128).optional(),
   life: z.enum(['annual', 'perennial', 'tree']).optional(),
   note: z.string().trim().max(2000).nullable().optional(),
@@ -88,12 +90,26 @@ export const bedCreateSchema = z.object({
   originXInches: inch.optional(),
   originYInches: inch.optional(),
   kind: z.enum(['bed', 'orchard']).optional(),
+  site: z.enum(['raised', 'in_ground']).optional(),
+  station: z.enum(['tree', 'berry']).optional(),
+  mulch: z.enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic']).optional(),
+  areaId: z.uuid().optional(),
 });
 
 export const bedPatchSchema = z.object({
   name: z.string(),
   sun: z.enum(['full', 'part', 'shade']).nullable().optional(),
   kind: z.enum(['bed', 'orchard']).optional(),
+  site: z.enum(['raised', 'in_ground']).optional(),
+  mulch: z.enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic']).optional(),
+});
+
+export const areaCreateSchema = z.object({
+  kind: z.enum(['vegetable', 'orchard', 'greenhouse']),
+});
+
+export const trayCreateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
 });
 
 export const companionPairSchema = z.object({

@@ -25,9 +25,9 @@ async function goToReminders(page: Page) {
 
 async function openRemindersWithPlant(page: Page, gardenName: string) {
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill(gardenName);
+  await page.getByPlaceholder('Property name').fill(gardenName);
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(gardenName) }).click();
   await page.getByRole('link', { name: 'Plantings', exact: true }).click();
   await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Cherry Tomato');

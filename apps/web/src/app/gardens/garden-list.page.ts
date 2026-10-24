@@ -14,7 +14,7 @@ import { EmptyState } from '../ui/empty-state';
   standalone: true,
   imports: [FormsModule, RouterLink, EmptyState],
   template: `
-    <h2>Gardens</h2>
+    <h2>Properties</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -47,12 +47,12 @@ import { EmptyState } from '../ui/empty-state';
     }
     @if (items().length > 0 && !creating()) {
       <p>
-        <button type="button" class="btn btn-secondary" (click)="creating.set(true)">New garden</button>
+        <button type="button" class="btn btn-secondary" (click)="creating.set(true)">New property</button>
       </p>
     }
     @if ((!loading() && items().length === 0) || creating()) {
     <form class="filters card" (ngSubmit)="create()">
-      <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
+      <input [(ngModel)]="name" name="gardenName" placeholder="Property name" required />
       <label>
         Length (ft)
         <input
@@ -109,14 +109,14 @@ import { EmptyState } from '../ui/empty-state';
         [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
         [disabled]="notices.busyMap().has('create-garden') || !canCreate()"
       >
-        Create garden
+        Create property
       </button>
     </form>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
-      <og-empty-state title="No gardens yet" [body]="emptyBody()" />
+      <og-empty-state title="No properties yet" [body]="emptyBody()" />
     } @else {
       <div class="card-list">
         @for (g of items(); track g.id) {

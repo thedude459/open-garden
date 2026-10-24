@@ -10,9 +10,9 @@ test('planner transplants: add/delete, viewer cannot mutate, indoor items stay o
   const viewer = await newUser(browser, `planner-tr-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Planner transplants');
+  await owner.getByPlaceholder('Property name').fill('Planner transplants');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Planner transplants/ }).click();
   await openOverview(owner);
   await owner.getByRole('link', { name: 'Transplants' }).click();

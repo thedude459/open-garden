@@ -1,5 +1,6 @@
 import type { GardenRole } from './garden';
 import type { PlantStatus, PlantType } from './plant';
+import type { BedSite, BedStation, Mulch } from './placement';
 import type { IsoDate, StartMethod } from './planting';
 import type { ReminderItemDto } from './reminders';
 
@@ -22,6 +23,9 @@ export interface LayoutBedDto {
   geometry: BedGeometryDto | null;
   sun?: 'full' | 'part' | 'shade' | null;
   kind?: 'bed' | 'orchard';
+  site?: BedSite;
+  station?: BedStation | null;
+  mulch?: Mulch;
 }
 
 export interface LayoutPlacementDto {

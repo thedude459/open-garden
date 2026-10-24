@@ -6,9 +6,9 @@ import { saveGarden, openConfiguration, openCalendar, confirmFixtureAddress } fr
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill(name);
+  await page.getByPlaceholder('Property name').fill(name);
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
@@ -78,7 +78,7 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await owner.getByRole('button', { name: 'Apply' }).click();
   await expect(owner.getByRole('link', { name: /French Marigold/ })).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Gardens' }).click();
+  await owner.getByRole('link', { name: 'Properties' }).click();
   await owner.getByRole('link', { name: /Picker bed/ }).click();
   await openConfiguration(owner);
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);

@@ -35,7 +35,7 @@ import { NoticeService } from './ui/notice.service';
             </a>
             <div class="sidebar-body">
               <nav class="side-nav" aria-label="Primary">
-                <a routerLink="/gardens" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Gardens</a>
+                <a routerLink="/gardens" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Properties</a>
                 <a routerLink="/plants" routerLinkActive="active">Catalog</a>
                 <a routerLink="/favorites" routerLinkActive="active">Favorites</a>
                 @if (isAdmin()) {

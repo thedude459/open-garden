@@ -5,9 +5,9 @@ test('cached layout stays readable when layout API is aborted', async ({ browser
   test.setTimeout(90_000);
   const page = await newUser(browser, `layout-off-${Date.now()}@example.com`);
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill('Cached layout');
+  await page.getByPlaceholder('Property name').fill('Cached layout');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Cached layout/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'Raised bed 1');
@@ -38,9 +38,9 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   const friend = await newUser(browser, `layout-stale-friend-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Stale layout');
+  await owner.getByPlaceholder('Property name').fill('Stale layout');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Stale layout/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'East', '4', '2');
@@ -78,9 +78,9 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   test.setTimeout(90_000);
   const page = await newUser(browser, `layout-422-${Date.now()}@example.com`);
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill('Gate cache');
+  await page.getByPlaceholder('Property name').fill('Gate cache');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Gate cache/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'East');
@@ -144,9 +144,9 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   test.setTimeout(90_000);
   const page = await newUser(browser, `layout-off-mutate-${Date.now()}@example.com`);
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill('Offline mutate');
+  await page.getByPlaceholder('Property name').fill('Offline mutate');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Offline mutate/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'East');
