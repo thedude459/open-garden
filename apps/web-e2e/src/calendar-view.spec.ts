@@ -1,6 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration, openCalendar, confirmFixtureAddress } from './planner-helpers';
+import {
+  saveGarden,
+  saveLayout,
+  openConfiguration,
+  openCalendar,
+  openOverview,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 
 
@@ -31,7 +38,7 @@ async function addFromCatalog(page: Page, name: string) {
 test('calendar ranges follow last vs first frost and keep unavailable plants', async ({
   browser,
 }) => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   const stamp = Date.now();
   const owner = await newUser(browser, `cal-view-owner-${stamp}@example.com`);
   const friend = await newUser(browser, `cal-view-friend-${stamp}@example.com`);
@@ -39,6 +46,11 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await createFrostGarden(owner, 'Season bed');
   await addFromCatalog(owner, 'Cherry Tomato');
   await addFromCatalog(owner, 'Spinach');
+  await openOverview(owner);
+  await owner.getByRole('button', { name: 'Add tree' }).click();
+  expect((await saveLayout(owner)).ok()).toBeTruthy();
+  await owner.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Calendar' }).click();
+  await expect(owner.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
   await addFromCatalog(owner, 'Red Maple');
   await addFromCatalog(owner, 'French Marigold');
 

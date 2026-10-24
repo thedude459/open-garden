@@ -90,7 +90,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
             Type
             <select [(ngModel)]="typeFilter" name="plantTypeFilter">
               <option value="">All types</option>
-              @for (t of typeChoices(); track t) {
+              @for (t of types; track t) {
                 <option [value]="t">{{ t }}</option>
               }
             </select>
@@ -230,10 +230,6 @@ export class GardenCalendarPage implements OnInit {
 
   clearFilter() {
     this.typeFilter = '';
-  }
-
-  typeChoices() {
-    return this.hasOrchard() ? this.types : this.types.filter((type) => allowsPlant(null, type));
   }
 
   async load() {
