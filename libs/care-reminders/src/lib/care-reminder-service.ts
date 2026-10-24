@@ -23,6 +23,8 @@ export interface ReminderPlantingReader {
       daysToMaturity: number | null;
       waterIntervalDays: number | null;
       fertilizeIntervalDays: number | null;
+      bedId?: string | null;
+      bedName?: string | null;
     }>
   >;
   getInGarden(gardenId: string, plantingId: string): Promise<{ id: string } | null>;
@@ -42,6 +44,7 @@ export interface CareEventWriter {
     occurrenceOn: string,
     action: CareAction,
   ): Promise<void>;
+  remove?(plantingId: string, kind: CareKind, occurrenceOn: string): Promise<void>;
 }
 
 export class CareReminderService {
@@ -76,6 +79,8 @@ export class CareReminderService {
       daysToMaturity: row.daysToMaturity,
       waterIntervalDays: row.waterIntervalDays,
       fertilizeIntervalDays: row.fertilizeIntervalDays,
+      bedId: row.bedId ?? null,
+      bedName: row.bedName ?? null,
     }));
 
     const items = sortReminders(deriveReminders(plantings, eventRows, asOf));
@@ -97,6 +102,24 @@ export class CareReminderService {
     dueOn: string,
   ): Promise<void> {
     await this.recordAction(gardenId, userId, plantingId, kind, dueOn, 'completed');
+  }
+
+  async undo(
+    gardenId: string,
+    userId: string,
+    plantingId: string,
+    kind: CareKind,
+    dueOn: string,
+  ): Promise<void> {
+    if (!isIsoDate(dueOn)) throw CARE_ERRORS.dateRequired();
+    const membership = await this.memberships.getMembership(gardenId, userId);
+    if (!membership) throw CARE_ERRORS.gardenNotFound();
+    if (membership.role === 'viewer') throw CARE_ERRORS.viewerReminders();
+    const planting = await this.plantings.getInGarden(gardenId, plantingId);
+    if (!planting) throw CARE_ERRORS.plantingNotFound();
+    if (typeof this.events.remove === 'function') {
+      await this.events.remove(plantingId, kind, dueOn);
+    }
   }
 
   async dismiss(

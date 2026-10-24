@@ -168,10 +168,16 @@ export class PlantingsApiService {
     }
   }
 
-  async renameBed(gardenId: string, bedId: string, name: string): Promise<NamedBedDto> {
+  async renameBed(
+    gardenId: string,
+    bedId: string,
+    name: string,
+    sun?: 'full' | 'part' | 'shade' | null,
+  ): Promise<NamedBedDto> {
+    const body = sun === undefined ? { name } : { name, sun };
     try {
       return await firstValueFrom(
-        this.http.patch<NamedBedDto>(`${API}/gardens/${gardenId}/beds/${bedId}`, { name }, {
+        this.http.patch<NamedBedDto>(`${API}/gardens/${gardenId}/beds/${bedId}`, body, {
           withCredentials: true,
         }),
       );
@@ -182,7 +188,7 @@ export class PlantingsApiService {
         kind: 'bed',
         gardenId,
         op: 'update',
-        body: { name },
+        body,
         clientMutationId: crypto.randomUUID(),
         updatedAt: Date.now(),
       });

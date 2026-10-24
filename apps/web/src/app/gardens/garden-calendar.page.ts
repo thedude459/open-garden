@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
 import type {
   CalendarDto,
@@ -9,16 +9,18 @@ import type {
   FavoriteListItemDto,
   PlantSummaryDto,
   PlantType,
+  PlantingDto,
   SeasonalWindowDto,
 } from '@open-garden/shared-types';
 import { PLANT_TYPES } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
+import { PlantingsApiService } from './plantings-api.service';
 import { OnlineRequiredError } from './gardens-api.service';
 @Component({
   standalone: true,
-  imports: [FormsModule, PlantPicker],
+  imports: [FormsModule, PlantPicker, RouterLink],
   template: `
     <h2>Planting calendar</h2>
     @if (error()) {
@@ -122,6 +124,19 @@ import { OnlineRequiredError } from './gardens-api.service';
                     <span>Harvest {{ formatWindow(e.windows.harvest) }}</span>
                   </p>
                 </div>
+                @if (canEdit() && inStartWindow(e)) {
+                  @if (openPlanting(e.plantId); as planted) {
+                    @if (!planted.bedId) {
+                      <a class="btn btn-secondary" [routerLink]="['/gardens', gardenId, 'layout']">
+                        Place in a bed
+                      </a>
+                    }
+                  } @else {
+                    <button type="button" class="btn btn-primary" (click)="record(e)">
+                      Record planting
+                    </button>
+                  }
+                }
                 @if (canEdit()) {
                   <button
                     type="button"
@@ -142,10 +157,12 @@ import { OnlineRequiredError } from './gardens-api.service';
 })
 export class GardenCalendarPage implements OnInit {
   private readonly api = inject(CalendarApiService);
+  private readonly plantingsApi = inject(PlantingsApiService);
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
   calendar = signal<CalendarDto | null>(null);
+  readonly recorded = signal<PlantingDto[]>([]);
   loading = signal(true);
   error = signal('');
   typeFilter = '';
@@ -173,6 +190,28 @@ export class GardenCalendarPage implements OnInit {
     return [...filtered].sort((a, b) => compareEntries(a, b, today));
   }
 
+  inStartWindow(entry: CalendarEntryDto): boolean {
+    return overlapsThisWeek([entry.windows.outdoorSow, entry.windows.transplant], new Date());
+  }
+
+  openPlanting(plantId: string): PlantingDto | null {
+    return this.recorded().find((planting) => planting.plantId === plantId && !planting.harvestedOn) ?? null;
+  }
+
+  async record(entry: CalendarEntryDto) {
+    this.error.set('');
+    try {
+      await this.plantingsApi.create(this.gardenId, {
+        plantId: entry.plantId,
+        plantedOn: localIso(),
+        startMethod: 'direct_seed',
+      });
+      await this.load();
+    } catch (err) {
+      this.error.set(err instanceof HttpErrorResponse ? 'Could not record planting' : 'Could not record planting');
+    }
+  }
+
   isThisWeek(entry: CalendarEntryDto): boolean {
     return overlapsThisWeek(
       [entry.windows.indoorStart, entry.windows.outdoorSow, entry.windows.transplant],
@@ -194,8 +233,12 @@ export class GardenCalendarPage implements OnInit {
   async load() {
     this.loading.set(true);
     this.error.set('');
-    const calendar = await this.api.get(this.gardenId);
+    const [calendar, plantings] = await Promise.all([
+      this.api.get(this.gardenId),
+      this.plantingsApi.list(this.gardenId).catch(() => null),
+    ]);
     this.calendar.set(calendar);
+    this.recorded.set(plantings?.plantings ?? []);
     this.loading.set(false);
   }
 
@@ -233,6 +276,12 @@ export class GardenCalendarPage implements OnInit {
       this.error.set(messageFrom(err));
     }
   }
+}
+
+function localIso(date = new Date()): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function compareEntries(a: CalendarEntryDto, b: CalendarEntryDto, today: Date): number {

@@ -137,6 +137,9 @@ export class PlantingsOfflineQueue {
             plantedOn: patch.plantedOn !== undefined ? patch.plantedOn : current.plantedOn,
             harvestedOn: patch.harvestedOn !== undefined ? patch.harvestedOn : current.harvestedOn,
             bedId: patch.bedId !== undefined ? patch.bedId : current.bedId,
+            note: patch.note !== undefined ? patch.note : current.note,
+            photo: patch.photo !== undefined ? patch.photo : current.photo,
+            life: patch.life ?? current.life,
             sync: item.failedMessage ? 'failed' : 'pending',
             syncMessage: item.failedMessage,
           });

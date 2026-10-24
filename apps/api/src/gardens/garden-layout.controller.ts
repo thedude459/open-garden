@@ -6,6 +6,7 @@ import {
   BedRepository,
   GardenMembershipRepository,
   PlantingRepository,
+  YearRecordRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
 import { layoutPutSchema } from '@open-garden/shared-types';
@@ -25,6 +26,7 @@ export class GardenLayoutController {
       new PlantingRepository(bundle.db),
       new BedRepository(bundle.db),
       new AreaRepository(bundle.db),
+      new YearRecordRepository(bundle.db),
     );
   }
 

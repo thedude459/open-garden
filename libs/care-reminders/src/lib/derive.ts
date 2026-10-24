@@ -20,6 +20,8 @@ export interface DerivePlantingInput {
   daysToMaturity: number | null;
   waterIntervalDays: number | null;
   fertilizeIntervalDays: number | null;
+  bedId?: string | null;
+  bedName?: string | null;
 }
 
 export interface DeriveEventInput {
@@ -77,6 +79,8 @@ function plantingItem(
     status: planting.status,
     required: true,
     rainNote: null,
+    bedId: planting.bedId ?? null,
+    bedName: planting.bedName ?? null,
   };
 }
 

@@ -39,11 +39,15 @@ export class PlantingService {
       this.beds.listByGarden(gardenId),
       this.plantings.listByGarden(gardenId, safePage, safeSize),
     ]);
+    const harvests = await this.harvestsByPlanting(gardenId);
     return {
       gardenId,
       myRole: membership.role as GardenRole,
       beds: bedRows.map(toBedDto),
-      plantings: result.items.map(toPlantingDto),
+      plantings: result.items.map((row) => ({
+        ...toPlantingDto(row),
+        harvests: harvests.get(row.id) ?? [],
+      })),
       page: result.page,
       pageSize: result.pageSize,
       total: result.totalCount,
@@ -72,6 +76,13 @@ export class PlantingService {
     }
     const bedId = dto.bedId ?? null;
     if (bedId) await this.requireBedInGarden(gardenId, bedId);
+    const life = dto.life ?? (plant.plantType === 'tree' ? 'tree' : 'annual');
+    const plantedYear =
+      dto.plantedYear !== undefined
+        ? dto.plantedYear
+        : life === 'tree'
+          ? new Date().getUTCFullYear()
+          : null;
 
     if (dto.id) {
       const existing = await this.plantings.getById(dto.id);
@@ -91,6 +102,13 @@ export class PlantingService {
       startMethod,
       indoorStartedOn,
       clientMutationId: dto.clientMutationId,
+      life,
+      note: dto.note ?? null,
+      photo: dto.photo || null,
+      plantedYear,
+      rootstock: dto.rootstock ?? null,
+      yearsToFruit: dto.yearsToFruit ?? null,
+      spacingFeet: dto.spacingFeet ?? null,
     });
     return { created: true, list: await this.list(userId, gardenId) };
   }
@@ -108,16 +126,27 @@ export class PlantingService {
     if (bedChanging) {
       await this.plantings.clearLayoutCoords(gardenId, plantingId);
     }
+    if (dto.harvestedOn === null && current.harvestedOn && typeof this.plantings.deleteHarvest === 'function') {
+      await this.plantings.deleteHarvest(plantingId, current.harvestedOn);
+    }
     const updated = await this.plantings.update(gardenId, plantingId, {
       plantedOn: dto.plantedOn,
       harvestedOn: dto.harvestedOn,
       bedId: dto.bedId,
       clientMutationId: dto.clientMutationId,
+      life: dto.life,
+      note: dto.note,
+      photo: dto.photo,
+      plantedYear: dto.plantedYear,
+      rootstock: dto.rootstock,
+      yearsToFruit: dto.yearsToFruit,
+      spacingFeet: dto.spacingFeet,
     });
     if (!updated) throw PLANTING_ERRORS.plantingNotFound();
     const row = await this.plantings.getInGarden(gardenId, plantingId);
     if (!row) throw PLANTING_ERRORS.plantingNotFound();
-    return toPlantingDto(row);
+    const harvests = await this.harvestsByPlanting(gardenId);
+    return { ...toPlantingDto(row), harvests: harvests.get(row.id) ?? [] };
   }
 
   async remove(userId: string, gardenId: string, plantingId: string): Promise<void> {
@@ -165,6 +194,7 @@ export class PlantingService {
       originYInches: dto.originYInches ?? 0,
       lengthInches: dto.lengthInches,
       widthInches: dto.widthInches,
+      kind: dto.kind ?? 'bed',
     });
     return { created: true, bed: toBedDto(row) };
   }
@@ -176,8 +206,12 @@ export class PlantingService {
     const names = normalizeBedName(dto.name);
     const taken = await this.beds.findByNormalizedName(gardenId, names.nameNormalized);
     if (taken && taken.id !== bedId) throw PLANTING_ERRORS.bedNameTaken();
-    const row = await this.beds.rename(gardenId, bedId, names.name, names.nameNormalized);
+    let row = await this.beds.rename(gardenId, bedId, names.name, names.nameNormalized);
     if (!row) throw PLANTING_ERRORS.bedNotFound();
+    if ((dto.sun !== undefined || dto.kind !== undefined) && typeof this.beds.setSite === 'function') {
+      const site = await this.beds.setSite(gardenId, bedId, { sun: dto.sun, kind: dto.kind });
+      if (site) row = site;
+    }
     return toBedDto(row);
   }
 
@@ -207,6 +241,17 @@ export class PlantingService {
     const bed = await this.beds.getInGarden(gardenId, bedId);
     if (!bed) throw PLANTING_ERRORS.bedNotFound();
   }
+
+  private async harvestsByPlanting(gardenId: string) {
+    const map = new Map<string, string[]>();
+    if (typeof this.plantings.listHarvests !== 'function') return map;
+    for (const row of await this.plantings.listHarvests(gardenId)) {
+      const list = map.get(row.plantingId) ?? [];
+      list.push(row.harvestedOn);
+      map.set(row.plantingId, list);
+    }
+    return map;
+  }
 }
 
 function toBedDto(row: {
@@ -214,12 +259,16 @@ function toBedDto(row: {
   name: string;
   createdAt: Date;
   updatedAt: Date;
+  sun?: string | null;
+  kind?: string | null;
 }): NamedBedDto {
   return {
     id: row.id,
     name: row.name,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    sun: (row.sun as NamedBedDto['sun']) ?? null,
+    kind: row.kind === 'orchard' ? 'orchard' : 'bed',
   };
 }
 
@@ -236,9 +285,18 @@ function toPlantingDto(row: {
   bedId: string | null;
   startMethod?: string;
   indoorStartedOn?: string | null;
+  life?: string;
+  seasonYear?: number;
+  note?: string | null;
+  photo?: string | null;
+  plantedYear?: number | null;
+  rootstock?: string | null;
+  yearsToFruit?: number | null;
+  spacingFeet?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }): PlantingDto {
+  const life = row.life === 'perennial' || row.life === 'tree' ? row.life : 'annual';
   return {
     id: row.id,
     plantId: row.plantId,
@@ -252,6 +310,14 @@ function toPlantingDto(row: {
     bedId: row.bedId,
     startMethod: (row.startMethod ?? 'direct_seed') as StartMethod,
     indoorStartedOn: row.indoorStartedOn ?? null,
+    life,
+    seasonYear: row.seasonYear,
+    note: row.note ?? null,
+    photo: row.photo ?? null,
+    plantedYear: row.plantedYear ?? null,
+    rootstock: row.rootstock ?? null,
+    yearsToFruit: row.yearsToFruit ?? null,
+    spacingFeet: row.spacingFeet ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

@@ -81,6 +81,7 @@ export async function savePlannerDraft(
           widthInches: bed.geometry?.widthInches ?? 48,
           originXInches: bed.geometry?.originXInches ?? 0,
           originYInches: bed.geometry?.originYInches ?? 0,
+          kind: bed.kind === 'orchard' ? 'orchard' : 'bed',
         });
         postedBeds.push(id);
       }),

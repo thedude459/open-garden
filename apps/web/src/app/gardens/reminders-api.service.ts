@@ -80,6 +80,15 @@ export class RemindersApiService {
     return this.mutate(gardenId, body, 'complete', intervalDays);
   }
 
+  async undo(gardenId: string, body: ReminderMutationDto): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${API}/gardens/${gardenId}/reminders/undo`, body, {
+        withCredentials: true,
+        responseType: 'text',
+      }),
+    );
+  }
+
   async dismiss(
     gardenId: string,
     body: ReminderMutationDto,

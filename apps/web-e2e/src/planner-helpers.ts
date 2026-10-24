@@ -37,7 +37,10 @@ export async function saveLayout(page: Page) {
     (res) => res.url().includes('/layout') && res.request().method() === 'PUT',
   );
   await page.getByRole('button', { name: 'Save layout' }).click();
-  return pending;
+  const response = await pending;
+  // The notice is posted after the draft is marked clean. Leaving earlier races the unsaved guard.
+  await expect(page.getByText('Layout saved')).toBeVisible();
+  return response;
 }
 
 /** Wait for the garden PATCH to finish before navigating away. */

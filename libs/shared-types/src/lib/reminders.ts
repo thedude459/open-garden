@@ -16,6 +16,8 @@ export interface ReminderItemDto {
   status: import('./plant').PlantStatus;
   required: boolean;
   rainNote: string | null;
+  bedId?: string | null;
+  bedName?: string | null;
 }
 
 export interface ReminderListDto {

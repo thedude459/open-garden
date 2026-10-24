@@ -21,6 +21,7 @@ test('cached garden list and detail stay readable when the API is unreachable', 
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Cached bed/ })).toBeVisible();
+  await page.getByRole('button', { name: 'New garden' }).click();
   await page.getByPlaceholder('Garden name').fill('Offline fail');
   await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create garden' }).click();

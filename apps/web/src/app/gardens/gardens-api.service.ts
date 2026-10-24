@@ -9,6 +9,8 @@ import type {
   GardenPatchDto,
   GardenSummaryDto,
   GardenWriteDto,
+  SeasonDto,
+  TodayDto,
   MemberDto,
   PageDto,
   PlaceLookupDto,
@@ -29,6 +31,36 @@ export class OnlineRequiredError extends Error {
 export class GardensApiService {
   private readonly http = inject(HttpClient);
   private readonly cache = inject(GardenCacheService);
+
+  async today(asOf: string): Promise<TodayDto> {
+    const params = new HttpParams().set('asOf', asOf);
+    return firstValueFrom(
+      this.http.get<TodayDto>(`${API}/gardens/today`, { params, withCredentials: true }),
+    );
+  }
+
+  async season(gardenId: string): Promise<SeasonDto> {
+    return firstValueFrom(
+      this.http.get<SeasonDto>(`${API}/gardens/${gardenId}/season`, { withCredentials: true }),
+    );
+  }
+
+  async closeSeason(gardenId: string): Promise<SeasonDto> {
+    return firstValueFrom(
+      this.http.post<SeasonDto>(`${API}/gardens/${gardenId}/season/close`, {}, { withCredentials: true }),
+    );
+  }
+
+  async addCompanion(
+    gardenId: string,
+    body: { plantId: string; otherPlantId: string; kind: string; reason: string },
+  ): Promise<SeasonDto> {
+    return firstValueFrom(
+      this.http.post<SeasonDto>(`${API}/gardens/${gardenId}/season/companions`, body, {
+        withCredentials: true,
+      }),
+    );
+  }
 
   async list(page = 1, pageSize = 20): Promise<PageDto<GardenSummaryDto>> {
     const key = this.cache.listKey({ page, pageSize });

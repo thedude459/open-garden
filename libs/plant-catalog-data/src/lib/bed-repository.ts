@@ -48,6 +48,8 @@ export class BedRepository {
     lengthInches: number;
     widthInches: number;
     orientation?: number;
+    kind?: string;
+    sun?: string | null;
   }) {
     const [row] = await this.db
       .insert(gardenBeds)
@@ -61,6 +63,8 @@ export class BedRepository {
         lengthInches: input.lengthInches,
         widthInches: input.widthInches,
         orientation: input.orientation ?? 0,
+        kind: input.kind ?? 'bed',
+        sun: input.sun ?? null,
       })
       .returning();
     return row!;
@@ -70,6 +74,23 @@ export class BedRepository {
     const [row] = await this.db
       .update(gardenBeds)
       .set({ name, nameNormalized, updatedAt: new Date() })
+      .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  async setSite(
+    gardenId: string,
+    id: string,
+    patch: { sun?: string | null; kind?: string },
+  ) {
+    const [row] = await this.db
+      .update(gardenBeds)
+      .set({
+        updatedAt: new Date(),
+        ...(patch.sun !== undefined ? { sun: patch.sun } : {}),
+        ...(patch.kind !== undefined ? { kind: patch.kind } : {}),
+      })
       .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))
       .returning();
     return row ?? null;

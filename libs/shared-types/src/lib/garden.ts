@@ -19,6 +19,41 @@ export interface GardenSummaryDto {
   myRole: GardenRole;
   bedCount: number;
   placementCount: number;
+  overdueCount?: number;
+  thisWeekCount?: number;
+}
+
+export interface TodayTaskDto {
+  gardenId: string;
+  gardenName: string;
+  kind: 'overdue' | 'dueToday' | 'thisWeek';
+  title: string;
+  bedName: string | null;
+}
+
+export interface TodayDto {
+  tasks: TodayTaskDto[];
+  gardens: { id: string; overdue: number; thisWeek: number }[];
+}
+
+export interface SeasonPlantingDto {
+  id: string;
+  plantId: string;
+  commonName: string;
+  bedId: string | null;
+  bedName: string | null;
+  note: string | null;
+  harvestedOn: string | null;
+  life: 'annual' | 'perennial' | 'tree';
+}
+
+export interface SeasonDto {
+  openYear: number;
+  closedYear: number | null;
+  review: SeasonPlantingDto[];
+  plantAgain: { plantId: string; bedId: string; commonName: string; bedName: string }[];
+  pairs: import('./layout').CompanionPairDto[];
+  householdPlants: { id: string; commonName: string }[];
 }
 
 export interface PlaceCandidateDto {

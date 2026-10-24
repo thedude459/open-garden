@@ -14,10 +14,12 @@ import type {
   BedRepository,
   GardenMembershipRepository,
   PlantingRepository,
+  YearRecordRepository,
 } from '@open-garden/plant-catalog-data';
 import { LAYOUT_ERRORS } from './domain-error';
 import { assertCompleteGeometry } from './geometry';
 import { evaluateLayout } from './evaluate-layout';
+import { spacingInchesFor } from './placement-notes';
 
 function normalizeAreaName(raw: string): { name: string; nameNormalized: string } {
   const name = raw.trim();
@@ -32,6 +34,7 @@ export class LayoutService {
     private readonly plantings: PlantingRepository,
     private readonly beds: BedRepository,
     private readonly areas: AreaRepository,
+    private readonly years?: YearRecordRepository,
   ) {}
 
   async get(userId: string, gardenId: string): Promise<GardenLayoutDto> {
@@ -165,10 +168,19 @@ export class LayoutService {
       this.plantings.listAllForLayout(gardenId),
       this.areas.listByGarden(gardenId),
     ]);
+    const advice = this.years
+      ? await this.years.layoutAdvice(gardenId)
+      : { prior: [], pairs: [] };
     const beds = bedRows.map((row) => ({
       id: row.id,
       name: row.name,
       geometry: toGeometry(row),
+      sun: (row.sun === 'full' || row.sun === 'part' || row.sun === 'shade' ? row.sun : null) as
+        | 'full'
+        | 'part'
+        | 'shade'
+        | null,
+      kind: row.kind === 'orchard' ? ('orchard' as const) : ('bed' as const),
     }));
     const plantings = plantingRows.map((row) => {
       const placed =
@@ -182,7 +194,13 @@ export class LayoutService {
         plantType: row.plantType as PlantType,
         status: row.status as PlantStatus,
         bedId: row.bedId,
-        spacingInches: row.spacingInches,
+        spacingInches: spacingInchesFor(
+          (row as { spacingFeet?: number | null }).spacingFeet,
+          row.spacingInches,
+        ),
+        spacingFeet: (row as { spacingFeet?: number | null }).spacingFeet ?? null,
+        sunRequirements: (row as { sunRequirements?: string | null }).sunRequirements ?? null,
+        life: ((row as { life?: string }).life ?? 'annual') as 'annual' | 'perennial' | 'tree',
         startMethod: ((row as { startMethod?: string }).startMethod ?? 'direct_seed') as StartMethod,
         indoorStartedOn: (row as { indoorStartedOn?: string | null }).indoorStartedOn ?? null,
         placement: placed
@@ -210,6 +228,8 @@ export class LayoutService {
       areas,
       plantings,
       flags: evaluateLayout(beds, plantings),
+      priorCrops: advice.prior,
+      pairs: advice.pairs,
     };
   }
 }

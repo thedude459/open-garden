@@ -76,7 +76,9 @@ import { EmptyState } from '../ui/empty-state';
         }
         @for (flag of flags(); track $index) {
           <p class="needs-attention" role="status">
-            @if (flag.kind === 'spacing') {
+            @if (flag.message) {
+              {{ flag.message }}
+            } @else if (flag.kind === 'spacing') {
               Too close
             } @else if (flag.kind === 'fit') {
               Does not fit
@@ -90,6 +92,7 @@ import { EmptyState } from '../ui/empty-state';
         <og-garden-plan-canvas
           [beds]="[bed()!]"
           [plantings]="draft()!.plantings"
+          [priorCrops]="draft()!.priorCrops ?? []"
           [canEdit]="canEdit()"
           [online]="online()"
           [allowBedGeometry]="false"
