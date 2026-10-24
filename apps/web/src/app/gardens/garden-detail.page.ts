@@ -5,7 +5,8 @@ import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { feetToInches, inchesToFeetInput, snapHalfFoot } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type { GardenDetailDto, GardenRole, PlaceCandidateDto } from '@open-garden/shared-types';
+import type { GardenDetailDto, GardenRole, PlaceCandidateDto, SeasonDto } from '@open-garden/shared-types';
+import { CalendarApiService } from './calendar-api.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
@@ -25,6 +26,60 @@ import { PlannerDraftService } from './planner-draft.service';
         <p class="error">{{ error() }}</p>
       }
       <h3>Configuration</h3>
+      @if (season(); as season) {
+        <section>
+          <h3>Season {{ season.openYear }}</h3>
+          @if (canEdit()) {
+            <button type="button" class="btn btn-secondary" (click)="closeSeason()">Close season</button>
+          }
+          @if (season.closedYear != null) {
+            <h4>{{ season.closedYear }}</h4>
+            @for (row of season.review; track row.id) {
+              <p>
+                {{ row.commonName }}
+                @if (row.bedName) { · {{ row.bedName }} }
+                @if (row.harvestedOn) { · harvested {{ row.harvestedOn }} }
+                @if (row.note) { · {{ row.note }} }
+              </p>
+            }
+            @for (again of season.plantAgain; track again.bedId + again.plantId) {
+              <p>
+                {{ again.bedName }} · {{ again.commonName }}
+                @if (canEdit()) {
+                  <button type="button" class="btn btn-secondary" (click)="plantAgain(again.plantId)">
+                    Plant again
+                  </button>
+                }
+              </p>
+            }
+          }
+          <h4>Companions</h4>
+          @for (pair of season.pairs; track pair.id) {
+            <p>{{ pair.plantName }} {{ pair.kind }} {{ pair.otherName }} — {{ pair.reason }}</p>
+          }
+          @if (canEdit() && season.householdPlants.length > 1) {
+            <form class="filters" (ngSubmit)="addPair()">
+              <select name="pairLeft" [(ngModel)]="pairLeft">
+                @for (plant of season.householdPlants; track plant.id) {
+                  <option [value]="plant.id">{{ plant.commonName }}</option>
+                }
+              </select>
+              <select name="pairKind" [(ngModel)]="pairKind">
+                <option value="helps">helps</option>
+                <option value="hinders">hinders</option>
+                <option value="pollinates">pollinates</option>
+              </select>
+              <select name="pairRight" [(ngModel)]="pairRight">
+                @for (plant of season.householdPlants; track plant.id) {
+                  <option [value]="plant.id">{{ plant.commonName }}</option>
+                }
+              </select>
+              <input name="pairReason" [(ngModel)]="pairReason" placeholder="Reason" />
+              <button type="submit" class="btn btn-secondary">Add pair</button>
+            </form>
+          }
+        </section>
+      }
       <form class="stack" (ngSubmit)="save()">
         <label>
           Name
@@ -289,6 +344,7 @@ import { PlannerDraftService } from './planner-draft.service';
 })
 export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly api = inject(GardensApiService);
+  private readonly calendarApi = inject(CalendarApiService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly auth = inject(AuthApiService);
   private readonly planner = inject(PlannerDraftService);
@@ -296,6 +352,11 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   garden = signal<GardenDetailDto | null>(null);
+  readonly season = signal<SeasonDto | null>(null);
+  pairLeft = '';
+  pairRight = '';
+  pairKind = 'helps';
+  pairReason = '';
   loading = signal(true);
   error = signal('');
   confirmDelete = signal(false);
@@ -437,12 +498,57 @@ export class GardenDetailPage implements OnInit, OnDestroy {
     this.loading.set(true);
     const detail = await this.api.detail(id);
     this.garden.set(detail);
+    try {
+      this.season.set(await this.api.season(id));
+    } catch {
+      this.season.set(null);
+    }
     if (detail) this.applyForm(detail);
     this.pending.set(null);
     this.candidates.set([]);
     this.truncated.set(false);
     this.refreshMap();
     this.loading.set(false);
+  }
+
+  async closeSeason() {
+    const id = this.garden()?.id;
+    if (!id) return;
+    try {
+      this.season.set(await this.api.closeSeason(id));
+      this.notices.success('Season closed');
+    } catch (err) {
+      this.error.set(err instanceof HttpErrorResponse ? 'Could not close the season' : 'Could not close the season');
+    }
+  }
+
+  async plantAgain(plantId: string) {
+    const id = this.garden()?.id;
+    if (!id) return;
+    try {
+      await this.calendarApi.add(id, { plantId });
+      this.notices.success('Added to this year’s calendar');
+    } catch (err) {
+      this.error.set(err instanceof HttpErrorResponse ? 'Could not add that plant' : 'Could not add that plant');
+    }
+  }
+
+  async addPair() {
+    const id = this.garden()?.id;
+    if (!id || !this.pairLeft || !this.pairRight || !this.pairReason.trim()) return;
+    try {
+      this.season.set(
+        await this.api.addCompanion(id, {
+          plantId: this.pairLeft,
+          otherPlantId: this.pairRight,
+          kind: this.pairKind,
+          reason: this.pairReason.trim(),
+        }),
+      );
+      this.pairReason = '';
+    } catch (err) {
+      this.error.set(err instanceof HttpErrorResponse ? 'Could not save that pair' : 'Could not save that pair');
+    }
   }
 
   async save() {

@@ -11,7 +11,7 @@ export type Notice = {
 const SUCCESS_MS = 4000;
 
 export type NoticeQueue = {
-  post(kind: NoticeKind, message: string): boolean;
+  post(kind: NoticeKind, message: string, opts?: { persist?: boolean }): boolean;
   dismiss(): void;
   clear(): void;
   get(): Notice | null;
@@ -46,11 +46,11 @@ export function createNoticeQueue(opts?: {
     cancelExpire = null;
   }
 
-  function post(kind: NoticeKind, message: string): boolean {
+  function post(kind: NoticeKind, message: string, opts?: { persist?: boolean }): boolean {
     const text = message.trim();
     if (!text) return false;
     stopExpire();
-    const success = kind === 'success';
+    const success = kind === 'success' && !opts?.persist;
     const postedAt = now();
     current = {
       id: nextId(),

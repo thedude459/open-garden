@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { CareAction, CareKind } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { gardenCareEvents, gardenPlantings } from './schema';
@@ -52,5 +52,17 @@ export class CareEventRepository {
           updatedAt: new Date(),
         },
       });
+  }
+
+  async deleteEvent(plantingId: string, kind: CareKind, occurrenceOn: string) {
+    await this.db
+      .delete(gardenCareEvents)
+      .where(
+        and(
+          eq(gardenCareEvents.plantingId, plantingId),
+          eq(gardenCareEvents.kind, kind),
+          eq(gardenCareEvents.occurrenceOn, occurrenceOn),
+        ),
+      );
   }
 }

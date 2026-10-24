@@ -12,18 +12,33 @@ export class NoticeService {
   private readonly lock = createBusyLock();
   private readonly keys = signal(new Set<string>());
   readonly current = signal<Notice | null>(null);
+  readonly undo = signal<(() => void) | null>(null);
   readonly busyMap = computed(() => this.keys());
 
   constructor() {
-    this.queue.subscribe((notice) => this.current.set(notice));
+    this.queue.subscribe((notice) => {
+      this.current.set(notice);
+      if (!notice) this.undo.set(null);
+    });
   }
 
   post(kind: NoticeKind, message: string): boolean {
+    this.undo.set(null);
     return this.queue.post(kind, message);
   }
 
-  success(message: string): boolean {
-    return this.post('success', message);
+  success(message: string, onUndo?: () => void): boolean {
+    this.undo.set(onUndo ?? null);
+    const posted = this.queue.post('success', message, onUndo ? { persist: true } : undefined);
+    if (!posted) this.undo.set(null);
+    return posted;
+  }
+
+  runUndo(): void {
+    const action = this.undo();
+    this.undo.set(null);
+    this.dismiss();
+    action?.();
   }
 
   error(message: string): boolean {

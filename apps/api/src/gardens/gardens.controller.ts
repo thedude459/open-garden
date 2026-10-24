@@ -15,11 +15,19 @@ import {
 import type { AuthUser } from '@open-garden/auth';
 import { FixtureClimateLookup, LiveClimateLookup } from '@open-garden/garden-place';
 import { GardenService, domainError } from '@open-garden/gardens';
+import { CareReminderService } from '@open-garden/care-reminders';
+import { CalendarService } from '@open-garden/planting-calendar';
+import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
 import {
+  CalendarEntryRepository,
+  CareEventRepository,
   GardenMembershipRepository,
   GardenRepository,
+  PlantingRepository,
+  PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
+import type { TodayDto } from '@open-garden/shared-types';
 import {
   gardenCreateSchema,
   gardenListQuerySchema,
@@ -34,14 +42,35 @@ import { GardenMembershipGuard } from './garden-membership.guard';
 export class GardensController {
   private readonly logger = new Logger(GardensController.name);
   private readonly gardens: GardenService;
+  private readonly calendar: CalendarService;
+  private readonly reminders: CareReminderService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     const climate =
       process.env['PLACE_PROVIDER'] === 'live' ? new LiveClimateLookup() : new FixtureClimateLookup();
-    this.gardens = new GardenService(
+    const memberships = new GardenMembershipRepository(bundle.db);
+    const plantings = new PlantingRepository(bundle.db);
+    const events = new CareEventRepository(bundle.db);
+    this.gardens = new GardenService(new GardenRepository(bundle.db), memberships, climate);
+    this.calendar = new CalendarService(
       new GardenRepository(bundle.db),
-      new GardenMembershipRepository(bundle.db),
-      climate,
+      memberships,
+      new PlantRepository(bundle.db),
+      new CalendarEntryRepository(bundle.db),
+    );
+    this.reminders = new CareReminderService(
+      {
+        getMembership: async (gardenId, userId) => {
+          const row = await memberships.get(gardenId, userId);
+          return row ? { role: row.role } : null;
+        },
+      },
+      plantings,
+      {
+        listForGarden: (gardenId) => events.listForGarden(gardenId),
+        upsert: (plantingId, kind, occurrenceOn, action) =>
+          events.upsertEvent(plantingId, kind, occurrenceOn, action),
+      },
     );
   }
 
@@ -59,6 +88,64 @@ export class GardensController {
     const result = await this.gardens.list(user.id, parsed.data.page, parsed.data.pageSize);
     this.logger.log(`garden.list.assembly_ms=${Date.now() - started}`);
     return result;
+  }
+
+  @Get('today')
+  async today(@CurrentUser() user: AuthUser, @Query('asOf') asOfRaw?: string): Promise<TodayDto> {
+    const asOf = /^\d{4}-\d{2}-\d{2}$/.test(asOfRaw ?? '')
+      ? asOfRaw!
+      : new Date().toISOString().slice(0, 10);
+    const [year, month, day] = asOf.split('-').map(Number);
+    const today = new Date(year!, (month ?? 1) - 1, day ?? 1);
+    const page = await this.gardens.list(user.id, 1, 100);
+    const tasks: TodayDto['tasks'] = [];
+    const gardens: TodayDto['gardens'] = [];
+    for (const garden of page.items) {
+      let overdue = 0;
+      let thisWeek = 0;
+      try {
+        const reminders = await this.reminders.list(garden.id, user.id, asOf);
+        for (const item of reminders.items) {
+          if (item.required === false) continue;
+          if (item.urgency === 'overdue') overdue += 1;
+          if (item.urgency !== 'overdue' && item.urgency !== 'dueToday') continue;
+          tasks.push({
+            gardenId: garden.id,
+            gardenName: garden.name,
+            kind: item.urgency,
+            title: `${item.commonName} · ${item.kind}`,
+            bedName: item.bedName ?? null,
+          });
+        }
+      } catch {
+        /* a garden the member can no longer open is skipped */
+      }
+      try {
+        const calendar = await this.calendar.list(user.id, garden.id, 1, 200);
+        for (const entry of calendar.entries) {
+          if (
+            !overlapsThisWeek(
+              [entry.windows.outdoorSow, entry.windows.transplant],
+              today,
+            )
+          ) {
+            continue;
+          }
+          thisWeek += 1;
+          tasks.push({
+            gardenId: garden.id,
+            gardenName: garden.name,
+            kind: 'thisWeek',
+            title: `Start ${entry.commonName}`,
+            bedName: null,
+          });
+        }
+      } catch {
+        /* calendar windows are optional for the household list */
+      }
+      gardens.push({ id: garden.id, overdue, thisWeek });
+    }
+    return { tasks, gardens };
   }
 
   @Post()

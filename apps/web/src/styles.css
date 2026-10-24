@@ -496,6 +496,18 @@ og-garden-plan-canvas {
   pointer-events: none;
 }
 
+.layout-label-faded {
+  font-size: 6px;
+  fill: #f4efe4;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.garden-tab-bar,
+.garden-more {
+  display: none;
+}
+
 .layout-plant {
   fill: #2f5d3a;
   stroke: #e8efe4;
@@ -1017,6 +1029,58 @@ legend {
   }
 
   .sidebar.open { transform: none; }
+
+  .garden-side-nav { display: none; }
+
+  .shell { padding-bottom: 4.75rem; }
+
+  .garden-tab-bar {
+    display: flex;
+    position: fixed;
+    z-index: 25;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    gap: 0.25rem;
+    justify-content: space-around;
+    padding: 0.45rem 0.5rem calc(0.45rem + env(safe-area-inset-bottom));
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+  }
+
+  .garden-tab-bar a,
+  .garden-tab-bar button {
+    flex: 1;
+    text-align: center;
+    background: transparent;
+    border: 0;
+    color: var(--ink);
+    font: inherit;
+    text-decoration: none;
+    padding: 0.35rem 0.2rem;
+  }
+
+  .garden-tab-bar a.active { color: var(--leaf); font-weight: 700; }
+
+  .garden-more {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    z-index: 26;
+    right: 0.5rem;
+    bottom: 3.6rem;
+    min-width: 10rem;
+    padding: 0.4rem;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+
+  .garden-more a {
+    padding: 0.45rem 0.6rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
 
   .sidebar-backdrop {
     display: block;

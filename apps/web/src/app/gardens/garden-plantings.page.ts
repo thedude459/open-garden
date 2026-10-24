@@ -119,6 +119,20 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                   [ngModelOptions]="{ standalone: true }"
                   [attr.name]="'rename-' + group.bedId"
                 />
+                <label>
+                  Sun
+                  <select
+                    [attr.name]="'sun-' + group.bedId"
+                    [ngModel]="bedSun(group.bedId)"
+                    (ngModelChange)="saveSun(group, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                  >
+                    <option value="">Not set</option>
+                    <option value="full">Full sun</option>
+                    <option value="part">Part sun</option>
+                    <option value="shade">Shade</option>
+                  </select>
+                </label>
                 <button
                   type="submit"
                   class="btn btn-secondary"
@@ -193,6 +207,63 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                           }
                         </select>
                       </label>
+                      <label>
+                        Note
+                        <textarea
+                          rows="2"
+                          [attr.name]="'note-' + p.id"
+                          [ngModel]="noteDraft[p.id] ?? p.note ?? ''"
+                          (ngModelChange)="noteDraft[p.id] = $event"
+                          [ngModelOptions]="{ standalone: true }"
+                        ></textarea>
+                      </label>
+                      <label>
+                        Photo
+                        <input type="file" accept="image/*" (change)="onPhoto(p.id, $event)" />
+                      </label>
+                      @if (photos[p.id] || p.photo) {
+                        <img [src]="photos[p.id] || p.photo" alt="" width="96" />
+                      }
+                      <label>
+                        Life
+                        <select
+                          [attr.name]="'life-' + p.id"
+                          [ngModel]="lifeDraft[p.id] ?? p.life ?? 'annual'"
+                          (ngModelChange)="lifeDraft[p.id] = $event"
+                          [ngModelOptions]="{ standalone: true }"
+                        >
+                          <option value="annual">Annual</option>
+                          <option value="perennial">Perennial</option>
+                          <option value="tree">Tree</option>
+                        </select>
+                      </label>
+                      @if ((lifeDraft[p.id] ?? p.life) === 'tree') {
+                        <input
+                          [attr.name]="'rootstock-' + p.id"
+                          placeholder="Rootstock"
+                          [ngModel]="rootstockDraft[p.id] ?? p.rootstock ?? ''"
+                          (ngModelChange)="rootstockDraft[p.id] = $event"
+                          [ngModelOptions]="{ standalone: true }"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          [attr.name]="'years-' + p.id"
+                          placeholder="Years to fruit"
+                          [ngModel]="yearsDraft[p.id] ?? p.yearsToFruit"
+                          (ngModelChange)="yearsDraft[p.id] = $event"
+                          [ngModelOptions]="{ standalone: true }"
+                        />
+                        <input
+                          type="number"
+                          min="1"
+                          [attr.name]="'feet-' + p.id"
+                          placeholder="Spacing (ft)"
+                          [ngModel]="feetDraft[p.id] ?? p.spacingFeet"
+                          (ngModelChange)="feetDraft[p.id] = $event"
+                          [ngModelOptions]="{ standalone: true }"
+                        />
+                      }
                       <button
                         type="button"
                         class="btn btn-primary"
@@ -200,6 +271,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       >
                         Save planting
                       </button>
+                      <button type="button" class="btn btn-secondary" (click)="sowAgain(p)">Sow again</button>
                     }
                   </div>
                   @if (canEdit()) {
@@ -246,6 +318,12 @@ export class GardenPlantingsPage implements OnInit {
   bedFilter = '';
   renameDraft: Record<string, string> = {};
   catalogHits = signal<PlantSummaryDto[]>([]);
+  noteDraft: Record<string, string> = {};
+  photos: Record<string, string> = {};
+  lifeDraft: Record<string, 'annual' | 'perennial' | 'tree'> = {};
+  rootstockDraft: Record<string, string> = {};
+  yearsDraft: Record<string, number | null> = {};
+  feetDraft: Record<string, number | null> = {};
   favorites = signal<FavoriteListItemDto[]>([]);
   /** Drops a list response that lost the race with a newer load or edit. */
   private listEpoch = 0;
@@ -344,6 +422,61 @@ export class GardenPlantingsPage implements OnInit {
     }
   }
 
+  bedSun(bedId: string | null): string {
+    if (!bedId) return '';
+    return this.list()?.beds.find((bed) => bed.id === bedId)?.sun ?? '';
+  }
+
+  async saveSun(group: PlantingGroup, sun: string) {
+    if (!group.bedId) return;
+    const name = this.renameDraft[group.bedId] ?? group.title;
+    try {
+      await this.api.renameBed(
+        this.gardenId,
+        group.bedId,
+        name,
+        sun === 'full' || sun === 'part' || sun === 'shade' ? sun : null,
+      );
+      await this.load(true);
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
+  onPhoto(plantingId: string, event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    if (file.size > 280_000) {
+      this.error.set('Photo must be under 280 KB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.photos[plantingId] = String(reader.result ?? '');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async sowAgain(planting: ClientPlanting) {
+    this.error.set('');
+    try {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      await this.api.create(this.gardenId, {
+        plantId: planting.plantId,
+        plantedOn: `${today.getFullYear()}-${month}-${day}`,
+        startMethod: planting.startMethod,
+        indoorStartedOn: planting.startMethod === 'transplant' ? `${today.getFullYear()}-${month}-${day}` : null,
+        bedId: planting.bedId,
+        life: planting.life ?? 'annual',
+      });
+      await this.load(true);
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
   async save(planting: ClientPlanting, plantedOn: string, harvestedOn: string, bedId: string) {
     this.error.set('');
     const planted = plantedOn || null;
@@ -352,10 +485,18 @@ export class GardenPlantingsPage implements OnInit {
     const epoch = ++this.listEpoch;
     try {
       assertDatePair(planted, harvested);
+      const life = this.lifeDraft[planting.id] ?? planting.life;
       const saved = await this.api.update(this.gardenId, planting.id, {
         plantedOn: planted,
         harvestedOn: harvested,
         bedId: bed,
+        note: this.noteDraft[planting.id] ?? planting.note ?? null,
+        photo: this.photos[planting.id] ?? planting.photo ?? null,
+        life,
+        rootstock: this.rootstockDraft[planting.id] ?? planting.rootstock ?? null,
+        yearsToFruit: numberOrNull(this.yearsDraft[planting.id] ?? planting.yearsToFruit),
+        spacingFeet: numberOrNull(this.feetDraft[planting.id] ?? planting.spacingFeet),
+        plantedYear: life === 'tree' ? (planting.plantedYear ?? new Date().getFullYear()) : planting.plantedYear,
       });
       if (epoch !== this.listEpoch) return;
       const list = this.list();
@@ -429,6 +570,12 @@ export class GardenPlantingsPage implements OnInit {
       this.error.set(messageFrom(err));
     }
   }
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 function shouldSyncDate(input: HTMLInputElement, modelValue: string | null): boolean {

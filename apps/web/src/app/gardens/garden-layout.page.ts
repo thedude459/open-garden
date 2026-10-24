@@ -83,7 +83,9 @@ import { EmptyState } from '../ui/empty-state';
         }
         @for (flag of flags(); track $index) {
           <p class="needs-attention" role="status">
-            @if (flag.kind === 'spacing') {
+            @if (flag.message) {
+              {{ flag.message }}
+            } @else if (flag.kind === 'spacing') {
               Too close
             } @else if (flag.kind === 'fit') {
               Does not fit
@@ -98,6 +100,7 @@ import { EmptyState } from '../ui/empty-state';
           [beds]="draft()!.beds"
           [areas]="draft()!.areas"
           [plantings]="draft()!.plantings"
+          [priorCrops]="draft()!.priorCrops ?? []"
           [selectedId]="selectedId()"
           [canEdit]="canEdit()"
           [online]="online()"
@@ -300,6 +303,9 @@ import { EmptyState } from '../ui/empty-state';
                 Create bed
               </button>
             </form>
+            <p>
+              <button type="button" class="btn btn-secondary" (click)="createOrchard()">Add orchard</button>
+            </p>
             <form class="filters" (ngSubmit)="createArea()">
               <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
               <input
@@ -483,7 +489,14 @@ export class GardenLayoutPage implements OnInit {
     }
   }
 
-  async createBed() {
+  createOrchard() {
+    this.newBedName = 'Orchard';
+    this.newLength = 8;
+    this.newWidth = 8;
+    void this.createBed('orchard');
+  }
+
+  async createBed(kind: 'bed' | 'orchard' = 'bed') {
     const d = this.draft();
     if (!d) return;
     this.error.set('');
@@ -509,7 +522,7 @@ export class GardenLayoutPage implements OnInit {
     this.planner.newBedIds.add(id);
     this.planner.setDraft({
       ...d,
-      beds: [...d.beds, { id, name, geometry }],
+      beds: [...d.beds, { id, name, geometry, kind }],
     });
     this.selectedId.set(id);
     this.newBedName = '';

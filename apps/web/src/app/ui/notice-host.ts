@@ -13,6 +13,9 @@ import { NoticeService } from './notice.service';
         [attr.role]="notice.kind === 'success' ? 'status' : 'alert'"
       >
         <p>{{ notice.message }}</p>
+        @if (notices.undo()) {
+          <button type="button" class="btn btn-secondary" (click)="notices.runUndo()">Undo</button>
+        }
         @if (notice.dismissible) {
           <button type="button" class="btn btn-secondary" (click)="notices.dismiss()">
             Dismiss
