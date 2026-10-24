@@ -7,9 +7,9 @@ test('site profile persists, can clear one frost, and rejects reversed pairs', a
 }) => {
   const page = await signedInPage(browser, `site-${Date.now()}@example.com`);
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill('Zone seven');
+  await page.getByPlaceholder('Property name').fill('Zone seven');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Zone seven/ }).click();
   await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });

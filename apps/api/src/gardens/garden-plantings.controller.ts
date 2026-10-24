@@ -14,14 +14,8 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import type { AuthUser } from '@open-garden/auth';
-import { PlantingService, domainError } from '@open-garden/seasonal-plantings';
-import {
-  BedRepository,
-  GardenMembershipRepository,
-  PlantingRepository,
-  PlantRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { domainError } from '@open-garden/seasonal-plantings';
+import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import {
   plantingCreateSchema,
   plantingListQuerySchema,
@@ -30,19 +24,15 @@ import {
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { openPlantingService } from './planting-service.factory';
 
 @Controller('gardens/:id/plantings')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenPlantingsController {
-  private readonly plantings: PlantingService;
+  private readonly plantings: ReturnType<typeof openPlantingService>;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.plantings = new PlantingService(
-      new GardenMembershipRepository(bundle.db),
-      new PlantRepository(bundle.db),
-      new PlantingRepository(bundle.db),
-      new BedRepository(bundle.db),
-    );
+    this.plantings = openPlantingService(bundle.db);
   }
 
   @Get()

@@ -17,9 +17,9 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
   const viewer = await newUser(browser, `planner-cat-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Catalog bed');
+  await owner.getByPlaceholder('Property name').fill('Catalog bed');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Catalog bed/ }).click();
   await openConfiguration(owner);
   await owner.locator('select[name="zone"]').selectOption({ label: 'Zone 6' });

@@ -10,9 +10,9 @@ test('invite collaborator, demote to viewer, member list visible', async ({ brow
   const friend = await newUser(browser, friendEmail);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Shared yard');
+  await owner.getByPlaceholder('Property name').fill('Shared yard');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Shared yard/ }).click();
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await openConfiguration(owner);
@@ -71,9 +71,9 @@ test('stranger cannot see a shared garden they were not invited to', async ({ br
   const stranger = await newUser(browser, `share-iso-stranger-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Household only');
+  await owner.getByPlaceholder('Property name').fill('Household only');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Household only/ }).click();
   await openConfiguration(owner);
   await owner.locator('input[name="inviteEmail"]').fill(`share-iso-friend-${stamp}@example.com`);
@@ -100,9 +100,9 @@ test('owner can transfer, collaborator can leave, owner can remove', async ({ br
   const extra = await newUser(browser, extraEmail);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Transfer plot');
+  await owner.getByPlaceholder('Property name').fill('Transfer plot');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Transfer plot/ }).click();
   await openConfiguration(owner);
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
@@ -117,7 +117,7 @@ test('owner can transfer, collaborator can leave, owner can remove', async ({ br
   await openConfiguration(extra);
   await expect(extra.getByText(/You are collaborator/i)).toBeVisible();
   await extra.getByRole('button', { name: 'Leave garden' }).click();
-  await expect(extra.getByRole('heading', { name: 'Gardens' })).toBeVisible();
+  await expect(extra.getByRole('heading', { name: 'Properties' })).toBeVisible();
   await expect(extra.getByRole('link', { name: /Transfer plot/ })).toHaveCount(0);
 
   await owner.reload();

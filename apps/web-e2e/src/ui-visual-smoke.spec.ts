@@ -17,10 +17,10 @@ test('primary actions keep green fill and white label', async ({ page, browser }
   const owner = await newUser(browser, `ui-visual-${Date.now()}@example.com`);
   await owner.goto('/gardens');
   await expect(owner.locator('.nav-brand img')).toBeVisible();
-  await expectPrimaryPaint(owner.getByRole('button', { name: 'Create garden' }));
-  await owner.getByPlaceholder('Garden name').fill('Visual');
+  await expectPrimaryPaint(owner.getByRole('button', { name: 'Create property' }));
+  await owner.getByPlaceholder('Property name').fill('Visual');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Visual/ }).click();
   await openOverview(owner);
   await expectPrimaryPaint(owner.getByRole('button', { name: 'Create bed' }));

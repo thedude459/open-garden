@@ -1,13 +1,14 @@
-import type {
-  BedGeometryDto,
-  BedOrientation,
-  GardenLayoutDto,
-  GardenRole,
-  LayoutAreaDto,
-  LayoutPutDto,
-  PlantStatus,
-  PlantType,
-  StartMethod,
+import {
+  mulchOrNone,
+  type BedGeometryDto,
+  type BedOrientation,
+  type GardenLayoutDto,
+  type GardenRole,
+  type LayoutAreaDto,
+  type LayoutPutDto,
+  type PlantStatus,
+  type PlantType,
+  type StartMethod,
 } from '@open-garden/shared-types';
 import type {
   AreaRepository,
@@ -181,6 +182,12 @@ export class LayoutService {
         | 'shade'
         | null,
       kind: row.kind === 'orchard' ? ('orchard' as const) : ('bed' as const),
+      site: row.site === 'raised' ? ('raised' as const) : ('in_ground' as const),
+      station: (row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null) as
+        | 'tree'
+        | 'berry'
+        | null,
+      mulch: mulchOrNone(row.mulch),
     }));
     const plantings = plantingRows.map((row) => {
       const placed =

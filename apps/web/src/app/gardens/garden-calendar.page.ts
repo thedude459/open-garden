@@ -12,12 +12,12 @@ import type {
   PlantingDto,
   SeasonalWindowDto,
 } from '@open-garden/shared-types';
-import { PLANT_TYPES } from '@open-garden/shared-types';
+import { allowsPlant, PLANT_TYPES } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
 import { PlantingsApiService } from './plantings-api.service';
-import { OnlineRequiredError } from './gardens-api.service';
+import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 @Component({
   standalone: true,
   imports: [FormsModule, PlantPicker, RouterLink],
@@ -90,7 +90,7 @@ import { OnlineRequiredError } from './gardens-api.service';
             Type
             <select [(ngModel)]="typeFilter" name="plantTypeFilter">
               <option value="">All types</option>
-              @for (t of types; track t) {
+              @for (t of typeChoices(); track t) {
                 <option [value]="t">{{ t }}</option>
               }
             </select>
@@ -158,6 +158,7 @@ import { OnlineRequiredError } from './gardens-api.service';
 export class GardenCalendarPage implements OnInit {
   private readonly api = inject(CalendarApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
+  private readonly gardensApi = inject(GardensApiService);
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
@@ -167,6 +168,7 @@ export class GardenCalendarPage implements OnInit {
   error = signal('');
   typeFilter = '';
   types = PLANT_TYPES;
+  readonly hasOrchard = signal(false);
   catalogHits = signal<PlantSummaryDto[]>([]);
   favorites = signal<FavoriteListItemDto[]>([]);
 
@@ -230,21 +232,27 @@ export class GardenCalendarPage implements OnInit {
     this.typeFilter = '';
   }
 
+  typeChoices() {
+    return this.hasOrchard() ? this.types : this.types.filter((type) => allowsPlant(null, type));
+  }
+
   async load() {
     this.loading.set(true);
     this.error.set('');
-    const [calendar, plantings] = await Promise.all([
+    const [calendar, plantings, areas] = await Promise.all([
       this.api.get(this.gardenId),
       this.plantingsApi.list(this.gardenId).catch(() => null),
+      this.gardensApi.areas(this.gardenId).catch(() => []),
     ]);
     this.calendar.set(calendar);
     this.recorded.set(plantings?.plantings ?? []);
+    this.hasOrchard.set(areas.some((area) => area.kind === 'orchard'));
     this.loading.set(false);
   }
 
   onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
-    this.catalogHits.set(items);
+    this.catalogHits.set(this.hasOrchard() ? items : items.filter((plant) => allowsPlant(null, plant.plantType)));
   }
 
   onSearchFailed(err: unknown) {

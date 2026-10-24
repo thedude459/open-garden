@@ -27,21 +27,21 @@ test('address lookup, map, and who can see the garden', async ({ browser }) => {
   const stranger = await signedInPage(browser, `place-stranger-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Mapped garden');
+  await owner.getByPlaceholder('Property name').fill('Mapped garden');
   await lookup(owner, 'Nowhere');
   await expect(owner.getByText('That address could not be found')).toBeVisible();
-  await expect(owner.getByRole('button', { name: 'Create garden' })).toBeDisabled();
+  await expect(owner.getByRole('button', { name: 'Create property' })).toBeDisabled();
 
   await lookup(owner, 'France');
   await expect(
     owner.getByText('Type a street address. A city, region, or country is not a garden site.'),
   ).toBeVisible();
-  await expect(owner.getByRole('button', { name: 'Create garden' })).toBeDisabled();
+  await expect(owner.getByRole('button', { name: 'Create property' })).toBeDisabled();
 
   await lookup(owner, '100 Main Street');
   await expect(owner.getByRole('button', { name: /Springfield, IL/ })).toBeVisible();
   await expect(owner.getByRole('button', { name: /Springfield, MA/ })).toBeVisible();
-  await expect(owner.getByRole('button', { name: 'Create garden' })).toBeDisabled();
+  await expect(owner.getByRole('button', { name: 'Create property' })).toBeDisabled();
 
   await lookup(owner, WASHINGTON);
   const map = owner.locator('iframe.garden-map');
@@ -50,7 +50,7 @@ test('address lookup, map, and who can see the garden', async ({ browser }) => {
   await expect(map).toHaveAttribute('src', /38\.8977/);
   await expect(map).toHaveAttribute('src', /-77\.0365/);
   await expect(map).not.toHaveAttribute('src', /key=/);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await expect(owner.getByRole('link', { name: /Mapped garden/ })).toBeVisible();
 
   await owner.getByRole('link', { name: /Mapped garden/ }).click();
@@ -98,11 +98,11 @@ test('address lookup, map, and who can see the garden', async ({ browser }) => {
   await owner.context().route(/openstreetmap\.org\/export\/embed/, (route) => route.abort());
   await owner.reload();
   await expect(owner.getByRole('link', { name: /Mapped garden/ })).toBeVisible();
-  await owner.getByRole('button', { name: 'New garden' }).click();
-  await owner.getByPlaceholder('Garden name').fill('No map');
+  await owner.getByRole('button', { name: 'New property' }).click();
+  await owner.getByPlaceholder('Property name').fill('No map');
   await lookup(owner, WASHINGTON);
   await expect(owner.getByText('The map is unavailable.')).toBeVisible();
-  await expect(owner.getByRole('button', { name: 'Create garden' })).toBeDisabled();
+  await expect(owner.getByRole('button', { name: 'Create property' })).toBeDisabled();
 });
 
 test('rain covers Washington watering and leaves other gardens required', async ({ browser }) => {

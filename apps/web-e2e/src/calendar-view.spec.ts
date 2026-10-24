@@ -6,9 +6,9 @@ import { saveGarden, openConfiguration, openCalendar, confirmFixtureAddress } fr
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill(name);
+  await page.getByPlaceholder('Property name').fill(name);
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await openConfiguration(page);
   await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });

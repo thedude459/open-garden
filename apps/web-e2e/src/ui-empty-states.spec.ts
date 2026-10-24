@@ -10,11 +10,11 @@ test('empty gardens, overview, and bed view next steps; viewer has no Create bed
   const viewer = await newUser(browser, `ui-empty-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await expect(owner.getByText(/No gardens yet/i)).toBeVisible();
-  await expect(owner.getByRole('button', { name: 'Create garden' })).toBeVisible();
-  await owner.getByPlaceholder('Garden name').fill('Empty steps');
+  await expect(owner.getByText(/No properties yet/i)).toBeVisible();
+  await expect(owner.getByRole('button', { name: 'Create property' })).toBeVisible();
+  await owner.getByPlaceholder('Property name').fill('Empty steps');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Empty steps/ }).click();
   await openOverview(owner);
   await expect(owner.getByText(/Add a named bed/i)).toBeVisible();

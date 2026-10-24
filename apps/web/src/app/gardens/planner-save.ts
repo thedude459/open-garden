@@ -81,7 +81,10 @@ export async function savePlannerDraft(
           widthInches: bed.geometry?.widthInches ?? 48,
           originXInches: bed.geometry?.originXInches ?? 0,
           originYInches: bed.geometry?.originYInches ?? 0,
-          kind: bed.kind === 'orchard' ? 'orchard' : 'bed',
+          kind: bed.station ? 'bed' : bed.kind === 'orchard' ? 'orchard' : 'bed',
+          ...(bed.site ? { site: bed.site } : {}),
+          ...(bed.station ? { station: bed.station } : {}),
+          ...(bed.mulch ? { mulch: bed.mulch } : {}),
         });
         postedBeds.push(id);
       }),

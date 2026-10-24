@@ -14,6 +14,7 @@ import type {
   CalendarEntryRepository,
   GardenMembershipRepository,
   GardenRepository,
+  PlantingAreaRepository,
   PlantRepository,
 } from '@open-garden/plant-catalog-data';
 import { CALENDAR_ERRORS } from './domain-error';
@@ -25,6 +26,7 @@ export class CalendarService {
     private readonly memberships: GardenMembershipRepository,
     private readonly plants: PlantRepository,
     private readonly entries: CalendarEntryRepository,
+    private readonly areas?: PlantingAreaRepository,
   ) {}
 
   async list(userId: string, gardenId: string, page = 1, pageSize = 100): Promise<CalendarDto> {
@@ -62,6 +64,13 @@ export class CalendarService {
     await this.requireEditor(userId, gardenId);
     const plant = await this.plants.getById(plantId);
     if (!plant) throw CALENDAR_ERRORS.plantNotFound();
+    if (
+      (plant.plantType === 'tree' || plant.plantType === 'shrub') &&
+      this.areas &&
+      !(await this.areas.hasKind(gardenId, 'orchard'))
+    ) {
+      throw CALENDAR_ERRORS.orchardRequired();
+    }
     const { created } = await this.entries.insert(gardenId, plantId);
     const calendar = await this.list(userId, gardenId);
     return { created, calendar };

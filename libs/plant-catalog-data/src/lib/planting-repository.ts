@@ -34,6 +34,7 @@ export class PlantingRepository {
         gardenId: gardenPlantings.gardenId,
         plantId: gardenPlantings.plantId,
         bedId: gardenPlantings.bedId,
+        trayId: gardenPlantings.trayId,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
         startMethod: gardenPlantings.startMethod,
@@ -90,6 +91,7 @@ export class PlantingRepository {
         gardenId: gardenPlantings.gardenId,
         plantId: gardenPlantings.plantId,
         bedId: gardenPlantings.bedId,
+        trayId: gardenPlantings.trayId,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
         layoutXInches: gardenPlantings.layoutXInches,
@@ -125,6 +127,7 @@ export class PlantingRepository {
     gardenId: string;
     plantId: string;
     bedId: string | null;
+    trayId?: string | null;
     plantedOn: string | null;
     harvestedOn: string | null;
     startMethod?: string;
@@ -146,6 +149,7 @@ export class PlantingRepository {
         gardenId: input.gardenId,
         plantId: input.plantId,
         bedId: input.bedId,
+        trayId: input.trayId ?? null,
         plantedOn: input.plantedOn,
         harvestedOn: input.harvestedOn,
         startMethod: input.startMethod ?? 'direct_seed',
@@ -172,6 +176,7 @@ export class PlantingRepository {
       plantedOn?: string | null;
       harvestedOn?: string | null;
       bedId?: string | null;
+      trayId?: string | null;
       clientMutationId?: string;
       life?: string;
       note?: string | null;
@@ -189,6 +194,7 @@ export class PlantingRepository {
         ...(patch.plantedOn !== undefined ? { plantedOn: patch.plantedOn } : {}),
         ...(patch.harvestedOn !== undefined ? { harvestedOn: patch.harvestedOn } : {}),
         ...(patch.bedId !== undefined ? { bedId: patch.bedId } : {}),
+        ...(patch.trayId !== undefined ? { trayId: patch.trayId } : {}),
         ...(patch.clientMutationId !== undefined ? { clientMutationId: patch.clientMutationId } : {}),
         ...(patch.life !== undefined ? { life: patch.life } : {}),
         ...(patch.note !== undefined ? { note: patch.note } : {}),
@@ -341,6 +347,7 @@ export class PlantingRepository {
           visiblePlantings(gardenId),
           eq(gardenPlantings.startMethod, 'transplant'),
           isNull(gardenPlantings.bedId),
+          isNull(gardenPlantings.trayId),
         ),
       )
       .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
@@ -376,6 +383,32 @@ export class PlantingRepository {
       .update(gardenPlantings)
       .set({ layoutXInches: null, layoutYInches: null, updatedAt: new Date() })
       .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.bedId, bedId)));
+  }
+
+  async occupants(bedId: string) {
+    return this.db
+      .select({
+        id: gardenPlantings.id,
+        plantId: gardenPlantings.plantId,
+        plantType: plants.plantType,
+      })
+      .from(gardenPlantings)
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(eq(gardenPlantings.bedId, bedId));
+  }
+
+  async assignLooseTransplants(gardenId: string, trayId: string) {
+    await this.db
+      .update(gardenPlantings)
+      .set({ trayId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(gardenPlantings.gardenId, gardenId),
+          eq(gardenPlantings.startMethod, 'transplant'),
+          isNull(gardenPlantings.bedId),
+          isNull(gardenPlantings.trayId),
+        ),
+      );
   }
 
   async listHarvests(gardenId: string) {

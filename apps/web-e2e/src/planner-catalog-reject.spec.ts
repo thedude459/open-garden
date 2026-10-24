@@ -7,9 +7,9 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   test.setTimeout(120_000);
   const owner = await newUser(browser, `planner-rej-${Date.now()}@example.com`);
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Reject bed');
+  await owner.getByPlaceholder('Property name').fill('Reject bed');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Reject bed/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');
