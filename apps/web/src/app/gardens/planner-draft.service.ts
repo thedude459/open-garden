@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { evaluateLayout } from '@open-garden/garden-layout/evaluate';
+import { placementNotes } from '@open-garden/garden-layout';
 import type { GardenLayoutDto, LayoutFlagDto, LayoutPutDto } from '@open-garden/shared-types';
 import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
@@ -39,7 +40,7 @@ export class PlannerDraftService {
     this.newDirectSeedIds.clear();
     this.pendingDirectSeedDeletes.clear();
     this.savedPutJson = JSON.stringify(putBodyFromDraft(next));
-    this.flags.set(evaluateLayout(next.beds, next.plantings));
+    this.flags.set(layoutFlags(next));
   }
 
   async load(gardenId: string, opts?: { reuseDirty?: boolean }): Promise<GardenLayoutDto | null> {
@@ -76,7 +77,7 @@ export class PlannerDraftService {
 
   refreshFlags() {
     const d = this.draft();
-    this.flags.set(d ? evaluateLayout(d.beds, d.plantings) : []);
+    this.flags.set(d ? layoutFlags(d) : []);
   }
 
   setDraft(next: GardenLayoutDto) {
@@ -106,4 +107,8 @@ export class PlannerDraftService {
     this.hydrate(saved);
     return saved;
   }
+}
+
+function layoutFlags(layout: GardenLayoutDto) {
+  return [...evaluateLayout(layout.beds, layout.plantings), ...placementNotes(layout)];
 }

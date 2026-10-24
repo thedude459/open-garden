@@ -1,13 +1,32 @@
-import { and, count, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { AppDatabase } from './db';
-import { gardenPlantings, plants } from './schema';
+import { gardenBeds, gardenPlantingHarvests, gardenPlantings, plants } from './schema';
+
+function visiblePlantings(gardenId: string) {
+  return and(
+    eq(gardenPlantings.gardenId, gardenId),
+    sql`(
+      ${gardenPlantings.life} <> 'annual'
+      OR NOT EXISTS (
+        SELECT 1 FROM garden_seasons
+        WHERE garden_id = ${gardenPlantings.gardenId} AND status = 'open'
+      )
+      OR ${gardenPlantings.seasonYear} = (
+        SELECT year FROM garden_seasons
+        WHERE garden_id = ${gardenPlantings.gardenId} AND status = 'open'
+        ORDER BY year DESC
+        LIMIT 1
+      )
+    )`,
+  );
+}
 
 export class PlantingRepository {
   constructor(private readonly db: AppDatabase) {}
 
   async listByGarden(gardenId: string, page: number, pageSize: number) {
     const offset = (page - 1) * pageSize;
-    const where = eq(gardenPlantings.gardenId, gardenId);
+    const where = visiblePlantings(gardenId);
 
     const rows = await this.db
       .select({
@@ -15,10 +34,19 @@ export class PlantingRepository {
         gardenId: gardenPlantings.gardenId,
         plantId: gardenPlantings.plantId,
         bedId: gardenPlantings.bedId,
+        trayId: gardenPlantings.trayId,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
         startMethod: gardenPlantings.startMethod,
         indoorStartedOn: gardenPlantings.indoorStartedOn,
+        seasonYear: gardenPlantings.seasonYear,
+        life: gardenPlantings.life,
+        note: gardenPlantings.note,
+        photo: gardenPlantings.photo,
+        plantedYear: gardenPlantings.plantedYear,
+        rootstock: gardenPlantings.rootstock,
+        yearsToFruit: gardenPlantings.yearsToFruit,
+        spacingFeet: gardenPlantings.spacingFeet,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -63,12 +91,21 @@ export class PlantingRepository {
         gardenId: gardenPlantings.gardenId,
         plantId: gardenPlantings.plantId,
         bedId: gardenPlantings.bedId,
+        trayId: gardenPlantings.trayId,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
         layoutXInches: gardenPlantings.layoutXInches,
         layoutYInches: gardenPlantings.layoutYInches,
         startMethod: gardenPlantings.startMethod,
         indoorStartedOn: gardenPlantings.indoorStartedOn,
+        seasonYear: gardenPlantings.seasonYear,
+        life: gardenPlantings.life,
+        note: gardenPlantings.note,
+        photo: gardenPlantings.photo,
+        plantedYear: gardenPlantings.plantedYear,
+        rootstock: gardenPlantings.rootstock,
+        yearsToFruit: gardenPlantings.yearsToFruit,
+        spacingFeet: gardenPlantings.spacingFeet,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -90,11 +127,20 @@ export class PlantingRepository {
     gardenId: string;
     plantId: string;
     bedId: string | null;
+    trayId?: string | null;
     plantedOn: string | null;
     harvestedOn: string | null;
     startMethod?: string;
     indoorStartedOn?: string | null;
     clientMutationId?: string;
+    life?: string;
+    seasonYear?: number;
+    note?: string | null;
+    photo?: string | null;
+    plantedYear?: number | null;
+    rootstock?: string | null;
+    yearsToFruit?: number | null;
+    spacingFeet?: number | null;
   }) {
     const [row] = await this.db
       .insert(gardenPlantings)
@@ -103,13 +149,23 @@ export class PlantingRepository {
         gardenId: input.gardenId,
         plantId: input.plantId,
         bedId: input.bedId,
+        trayId: input.trayId ?? null,
         plantedOn: input.plantedOn,
         harvestedOn: input.harvestedOn,
         startMethod: input.startMethod ?? 'direct_seed',
         indoorStartedOn: input.indoorStartedOn ?? null,
         clientMutationId: input.clientMutationId ?? null,
+        life: input.life ?? 'annual',
+        seasonYear: input.seasonYear ?? new Date().getUTCFullYear(),
+        note: input.note ?? null,
+        photo: input.photo || null,
+        plantedYear: input.plantedYear ?? null,
+        rootstock: input.rootstock ?? null,
+        yearsToFruit: input.yearsToFruit ?? null,
+        spacingFeet: input.spacingFeet ?? null,
       })
       .returning();
+    if (input.harvestedOn) await this.rememberHarvest(row!.id, input.harvestedOn);
     return row!;
   }
 
@@ -120,7 +176,15 @@ export class PlantingRepository {
       plantedOn?: string | null;
       harvestedOn?: string | null;
       bedId?: string | null;
+      trayId?: string | null;
       clientMutationId?: string;
+      life?: string;
+      note?: string | null;
+      photo?: string | null;
+      plantedYear?: number | null;
+      rootstock?: string | null;
+      yearsToFruit?: number | null;
+      spacingFeet?: number | null;
     },
   ) {
     const [row] = await this.db
@@ -130,10 +194,19 @@ export class PlantingRepository {
         ...(patch.plantedOn !== undefined ? { plantedOn: patch.plantedOn } : {}),
         ...(patch.harvestedOn !== undefined ? { harvestedOn: patch.harvestedOn } : {}),
         ...(patch.bedId !== undefined ? { bedId: patch.bedId } : {}),
+        ...(patch.trayId !== undefined ? { trayId: patch.trayId } : {}),
         ...(patch.clientMutationId !== undefined ? { clientMutationId: patch.clientMutationId } : {}),
+        ...(patch.life !== undefined ? { life: patch.life } : {}),
+        ...(patch.note !== undefined ? { note: patch.note } : {}),
+        ...(patch.photo !== undefined ? { photo: patch.photo || null } : {}),
+        ...(patch.plantedYear !== undefined ? { plantedYear: patch.plantedYear } : {}),
+        ...(patch.rootstock !== undefined ? { rootstock: patch.rootstock } : {}),
+        ...(patch.yearsToFruit !== undefined ? { yearsToFruit: patch.yearsToFruit } : {}),
+        ...(patch.spacingFeet !== undefined ? { spacingFeet: patch.spacingFeet } : {}),
       })
       .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.id, id)))
       .returning();
+    if (row && patch.harvestedOn) await this.rememberHarvest(row.id, patch.harvestedOn);
     return row ?? null;
   }
 
@@ -164,10 +237,13 @@ export class PlantingRepository {
         plantType: plants.plantType,
         status: plants.status,
         spacingInches: plants.spacingInches,
+        sunRequirements: plants.sunRequirements,
+        life: gardenPlantings.life,
+        spacingFeet: gardenPlantings.spacingFeet,
       })
       .from(gardenPlantings)
       .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
-      .where(eq(gardenPlantings.gardenId, gardenId))
+      .where(visiblePlantings(gardenId))
       .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
   }
 
@@ -268,9 +344,10 @@ export class PlantingRepository {
       .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
       .where(
         and(
-          eq(gardenPlantings.gardenId, gardenId),
+          visiblePlantings(gardenId),
           eq(gardenPlantings.startMethod, 'transplant'),
           isNull(gardenPlantings.bedId),
+          isNull(gardenPlantings.trayId),
         ),
       )
       .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
@@ -291,10 +368,13 @@ export class PlantingRepository {
         daysToMaturity: plants.daysToMaturity,
         waterIntervalDays: plants.waterIntervalDays,
         fertilizeIntervalDays: plants.fertilizeIntervalDays,
+        bedId: gardenPlantings.bedId,
+        bedName: gardenBeds.name,
       })
       .from(gardenPlantings)
       .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
-      .where(eq(gardenPlantings.gardenId, gardenId))
+      .leftJoin(gardenBeds, eq(gardenPlantings.bedId, gardenBeds.id))
+      .where(visiblePlantings(gardenId))
       .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
   }
 
@@ -303,6 +383,61 @@ export class PlantingRepository {
       .update(gardenPlantings)
       .set({ layoutXInches: null, layoutYInches: null, updatedAt: new Date() })
       .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.bedId, bedId)));
+  }
+
+  async occupants(bedId: string) {
+    return this.db
+      .select({
+        id: gardenPlantings.id,
+        plantId: gardenPlantings.plantId,
+        plantType: plants.plantType,
+      })
+      .from(gardenPlantings)
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(eq(gardenPlantings.bedId, bedId));
+  }
+
+  async assignLooseTransplants(gardenId: string, trayId: string) {
+    await this.db
+      .update(gardenPlantings)
+      .set({ trayId, updatedAt: new Date() })
+      .where(
+        and(
+          eq(gardenPlantings.gardenId, gardenId),
+          eq(gardenPlantings.startMethod, 'transplant'),
+          isNull(gardenPlantings.bedId),
+          isNull(gardenPlantings.trayId),
+        ),
+      );
+  }
+
+  async listHarvests(gardenId: string) {
+    return this.db
+      .select({
+        plantingId: gardenPlantingHarvests.plantingId,
+        harvestedOn: gardenPlantingHarvests.harvestedOn,
+      })
+      .from(gardenPlantingHarvests)
+      .innerJoin(gardenPlantings, eq(gardenPlantingHarvests.plantingId, gardenPlantings.id))
+      .where(eq(gardenPlantings.gardenId, gardenId));
+  }
+
+  async deleteHarvest(plantingId: string, harvestedOn: string) {
+    await this.db
+      .delete(gardenPlantingHarvests)
+      .where(
+        and(
+          eq(gardenPlantingHarvests.plantingId, plantingId),
+          eq(gardenPlantingHarvests.harvestedOn, harvestedOn),
+        ),
+      );
+  }
+
+  private async rememberHarvest(plantingId: string, harvestedOn: string) {
+    await this.db
+      .insert(gardenPlantingHarvests)
+      .values({ plantingId, harvestedOn })
+      .onConflictDoNothing();
   }
 }
 

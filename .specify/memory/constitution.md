@@ -1,21 +1,15 @@
 <!--
 Sync Impact Report:
-- Version change: (none) → 1.0.0
-- Modified principles: N/A (initial ratification from template placeholders)
-- Added sections:
-  - Core Principles (I–VII)
-  - Technology Stack
-  - Quality & Security Gates
-  - Governance
-- Removed sections: N/A (template placeholders replaced)
-- Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ updated
-  - .specify/templates/spec-template.md ✅ updated
-  - .specify/templates/tasks-template.md ✅ updated
-  - .specify/templates/checklist-template.md ✅ updated
-  - .specify/templates/commands/*.md ⚠ none present (N/A)
-  - README.md / docs/quickstart.md ⚠ not present yet
-- Follow-up TODOs: None
+- Version change: 1.1.0 → 1.2.0
+- Modified principles:
+  - VIII. Product Purpose. An orchard is stations on the property, and a
+    greenhouse is trays on that same record. A vegetable area does not take
+    trees or shrubs. Raised and in-ground are bed forms.
+- Added sections: None
+- Removed sections: None
+- Templates requiring updates: None. `.specify/templates/` does not restate
+  the previous orchard sentence.
+- Follow-up TODOs: None.
 -->
 
 # Open Garden Constitution
@@ -60,8 +54,9 @@ Avoid speculative abstraction, extra configuration, or generalized frameworks
 for needs that do not yet exist. Build the simplest thing that satisfies the
 current spec. Complexity MUST be justified against a concrete requirement.
 
-**Rationale**: Premature generality slows delivery and obscures the real
-domain model of home garden planning.
+**Rationale**: Premature generality slows delivery and obscures the domain
+in principle VIII. YAGNI is not a ban on a later spec for seasons, companion
+advice, or orchards.
 
 ### V. Multi-User Access Control as First-Class Concern
 
@@ -93,6 +88,34 @@ Decision Records (ADRs) in the repository, capturing context, decision, and
 consequences.
 
 **Rationale**: Future contributors need the "why," not only the "what."
+
+### VIII. Product Purpose
+
+The product MUST help a household plan a garden, see it, and maintain it
+across years.
+
+- A planting MUST be able to belong to a season. A planting MUST also be able
+  to persist across seasons, so a perennial or a tree is not modeled only as
+  a one-year annual.
+- Companion suggestions (helps, hinders, pollinates) are in scope when a spec
+  asks for them. They are advice. They MUST NOT block save unless that spec
+  says so. Spacing remains the hard gate.
+- A property is the garden record. A vegetable garden, an orchard, and a
+  greenhouse are areas on that same record, not a second product or a second
+  database. Vegetable beds are raised or in-ground. An orchard is one bed per
+  tree and one bed per berry patch, and underplanting may share that bed. A
+  greenhouse is named trays. A vegetable area and a tray do not take trees
+  or shrubs.
+- Principle IV still holds. An orchard canvas, a crop-family taxonomy, or a
+  companion graph MUST NOT be built until the spec that needs it. A provider
+  call for companion pairs MUST NOT be added until a real source exists;
+  until then, pairs are household data. Principle III applies once a provider
+  is used.
+
+**Rationale**: Feature specs for layout and reminders left companions and
+multi-year plants out of those versions. That exclusion is not permanent.
+The planting record has to be able to outlive a single season before an
+orchard spec arrives.
 
 ## Technology Stack
 
@@ -144,4 +167,4 @@ development guidance lives alongside Spec Kit artifacts under `.specify/`;
 feature work proceeds through specify → plan → tasks → implement with a
 passing Constitution Check at plan time.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-08-01
+**Version**: 1.2.0 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-10-24

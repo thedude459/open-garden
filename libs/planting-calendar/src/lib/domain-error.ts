@@ -15,4 +15,5 @@ export const CALENDAR_ERRORS = {
   plantNotFound: () => domainError('NOT_FOUND', 'Plant not found'),
   plantRequired: () => domainError('VALIDATION_ERROR', 'Plant is required'),
   viewerForbidden: () => domainError('FORBIDDEN', 'Viewers cannot update this calendar'),
+  orchardRequired: () => domainError('VALIDATION_ERROR', 'Trees and shrubs belong in an orchard'),
 } as const;

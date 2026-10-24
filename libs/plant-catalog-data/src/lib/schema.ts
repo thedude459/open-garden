@@ -158,6 +158,46 @@ export const gardenCalendarEntries = pgTable(
   ],
 );
 
+export const gardenAreas = pgTable(
+  'garden_areas',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    nameNormalized: text('name_normalized').notNull(),
+    kind: text('kind').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_areas_garden_name_uidx').on(t.gardenId, t.nameNormalized),
+    index('garden_areas_garden_id_idx').on(t.gardenId),
+  ],
+);
+
+export const gardenTrays = pgTable(
+  'garden_trays',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    areaId: uuid('area_id')
+      .notNull()
+      .references(() => gardenAreas.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    nameNormalized: text('name_normalized').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_trays_area_name_uidx').on(t.areaId, t.nameNormalized),
+    index('garden_trays_garden_id_idx').on(t.gardenId),
+  ],
+);
+
 export const gardenBeds = pgTable(
   'garden_beds',
   {
@@ -172,6 +212,12 @@ export const gardenBeds = pgTable(
     lengthInches: integer('length_inches'),
     widthInches: integer('width_inches'),
     orientation: smallint('orientation').notNull().default(0),
+    sun: text('sun'),
+    kind: text('kind').notNull().default('bed'),
+    areaId: uuid('area_id').references(() => gardenAreas.id, { onDelete: 'cascade' }),
+    site: text('site').notNull().default('in_ground'),
+    station: text('station'),
+    mulch: text('mulch').notNull().default('none'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -214,12 +260,23 @@ export const gardenPlantings = pgTable(
       .notNull()
       .references(() => plants.id, { onDelete: 'restrict' }),
     bedId: uuid('bed_id').references(() => gardenBeds.id, { onDelete: 'set null' }),
+    trayId: uuid('tray_id').references(() => gardenTrays.id, { onDelete: 'set null' }),
     plantedOn: date('planted_on', { mode: 'string' }),
     harvestedOn: date('harvested_on', { mode: 'string' }),
     layoutXInches: integer('layout_x_inches'),
     layoutYInches: integer('layout_y_inches'),
     startMethod: text('start_method').notNull().default('direct_seed'),
     indoorStartedOn: date('indoor_started_on', { mode: 'string' }),
+    seasonYear: integer('season_year')
+      .notNull()
+      .default(sql`(EXTRACT(YEAR FROM CURRENT_DATE))::int`),
+    life: text('life').notNull().default('annual'),
+    note: text('note'),
+    photo: text('photo'),
+    plantedYear: integer('planted_year'),
+    rootstock: text('rootstock'),
+    yearsToFruit: integer('years_to_fruit'),
+    spacingFeet: integer('spacing_feet'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     clientMutationId: text('client_mutation_id'),
@@ -227,6 +284,7 @@ export const gardenPlantings = pgTable(
   (t) => [
     index('garden_plantings_garden_created_idx').on(t.gardenId, t.createdAt),
     index('garden_plantings_bed_id_idx').on(t.bedId),
+    index('garden_plantings_tray_id_idx').on(t.trayId),
     index('garden_plantings_plant_id_idx').on(t.plantId),
   ],
 );
@@ -322,6 +380,59 @@ export const catalogPipelineSettings = pgTable('catalog_pipeline_settings', {
     onDelete: 'set null',
   }),
 });
+
+export const gardenSeasons = pgTable(
+  'garden_seasons',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    year: integer('year').notNull(),
+    status: text('status').notNull().default('open'),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+  },
+  (t) => [uniqueIndex('garden_seasons_garden_year_uidx').on(t.gardenId, t.year)],
+);
+
+export const gardenPlantingHarvests = pgTable(
+  'garden_planting_harvests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    plantingId: uuid('planting_id')
+      .notNull()
+      .references(() => gardenPlantings.id, { onDelete: 'cascade' }),
+    harvestedOn: date('harvested_on', { mode: 'string' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('garden_planting_harvests_uidx').on(t.plantingId, t.harvestedOn),
+    index('garden_planting_harvests_planting_id_idx').on(t.plantingId),
+  ],
+);
+
+export const companionPairs = pgTable(
+  'companion_pairs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    plantId: uuid('plant_id')
+      .notNull()
+      .references(() => plants.id, { onDelete: 'cascade' }),
+    otherPlantId: uuid('other_plant_id')
+      .notNull()
+      .references(() => plants.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    reason: text('reason').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('companion_pairs_uidx').on(t.gardenId, t.plantId, t.otherPlantId, t.kind),
+    index('companion_pairs_garden_id_idx').on(t.gardenId),
+  ],
+);
 
 export const gardenCareEvents = pgTable(
   'garden_care_events',

@@ -38,6 +38,7 @@ import type {
   LayoutAreaDto,
   LayoutBedDto,
   LayoutPlantingDto,
+  PriorCropDto,
 } from '@open-garden/shared-types';
 
 const HANDLE_INCHES = 8;
@@ -155,6 +156,16 @@ type Gesture =
             >
               Bed · {{ bed.name }} · {{ formatPlanSize(geo.lengthInches, geo.widthInches) }}
             </text>
+            @for (name of priorNames(bed.id); track name) {
+              <text
+                [attr.x]="geo.originXInches + planSize(geo).width / 2"
+                [attr.y]="geo.originYInches + planSize(geo).height - 8 - $index * 8"
+                text-anchor="middle"
+                class="layout-label-faded"
+              >
+                {{ name }}
+              </text>
+            }
             }
             @if (!allowPlantingDrag()) {
               @for (label of labelsFor(bed.id); track label.name) {
@@ -278,9 +289,16 @@ export class GardenPlanCanvas {
   readonly handleInches = HANDLE_INCHES;
   readonly planSize = bedPlanSize;
   readonly formatPlanSize = formatPlanSize;
+
+  priorNames(bedId: string): string[] {
+    return this.priorCrops()
+      .filter((crop) => crop.bedId === bedId)
+      .map((crop) => crop.commonName);
+  }
   readonly beds = input<LayoutBedDto[]>([]);
   readonly areas = input<LayoutAreaDto[]>([]);
   readonly plantings = input<LayoutPlantingDto[]>([]);
+  readonly priorCrops = input<PriorCropDto[]>([]);
   readonly selectedId = input<string | null>(null);
   readonly canEdit = input(false);
   readonly online = input(true);

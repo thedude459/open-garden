@@ -153,7 +153,7 @@ test('care reminders HTTP: authz, asOf, harvest, intervals, complete/dismiss', a
     const plantings = (await (
       await owner.get(`/api/gardens/${garden.id}/plantings`)
     ).json()) as PlantingList;
-    expect(plantings.plantings.find((p) => p.id === tomatoId)?.harvestedOn).toBeNull();
+    expect(plantings.plantings.find((p) => p.id === tomatoId)?.harvestedOn).toBe(harvestItem.dueOn);
 
     const dismiss = await owner.post(`/api/gardens/${garden.id}/reminders/dismiss`, {
       data: { plantingId: tomatoId, kind: 'harvest', dueOn: harvestItem.dueOn },

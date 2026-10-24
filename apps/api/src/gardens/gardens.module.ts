@@ -8,6 +8,8 @@ import { GardenBedsController } from './garden-beds.controller';
 import { GardenLayoutController } from './garden-layout.controller';
 import { GardenTransplantsController } from './garden-transplants.controller';
 import { GardenRemindersController } from './garden-reminders.controller';
+import { GardenSeasonController } from './garden-season.controller';
+import { GardenAreasController } from './garden-areas.controller';
 import { GardenMembershipGuard } from './garden-membership.guard';
 
 @Module({
@@ -21,6 +23,8 @@ import { GardenMembershipGuard } from './garden-membership.guard';
     GardenLayoutController,
     GardenTransplantsController,
     GardenRemindersController,
+    GardenSeasonController,
+    GardenAreasController,
   ],
   providers: [GardenMembershipGuard],
 })

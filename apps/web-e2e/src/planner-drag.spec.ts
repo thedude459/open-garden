@@ -15,9 +15,9 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   const viewer = await newUser(browser, `planner-drag-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Planner drag');
+  await owner.getByPlaceholder('Property name').fill('Planner drag');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Planner drag/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');

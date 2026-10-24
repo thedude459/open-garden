@@ -4,7 +4,7 @@ import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { feetToInches, snapHalfFoot } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type { GardenSummaryDto, PlaceCandidateDto } from '@open-garden/shared-types';
+import type { GardenSummaryDto, PlaceCandidateDto, TodayTaskDto } from '@open-garden/shared-types';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
@@ -14,12 +14,45 @@ import { EmptyState } from '../ui/empty-state';
   standalone: true,
   imports: [FormsModule, RouterLink, EmptyState],
   template: `
-    <h2>Gardens</h2>
+    <h2>Properties</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
+    @if (tasks().length) {
+      <section>
+        <h3>Today</h3>
+        <ul class="card-list">
+          @for (task of tasks(); track task.gardenId + task.title + task.kind) {
+            <li class="row">
+              <div>
+                <strong>{{ task.title }}</strong>
+                <p class="muted">
+                  {{ task.gardenName }}
+                  @if (task.bedName) {
+                    · {{ task.bedName }}
+                  }
+                  · {{ task.kind === 'thisWeek' ? 'Start this week' : task.kind === 'overdue' ? 'Overdue' : 'Due today' }}
+                </p>
+              </div>
+              <a
+                class="btn btn-secondary"
+                [routerLink]="task.kind === 'thisWeek' ? ['/gardens', task.gardenId, 'calendar'] : ['/gardens', task.gardenId, 'reminders']"
+              >
+                Open
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @if (items().length > 0 && !creating()) {
+      <p>
+        <button type="button" class="btn btn-secondary" (click)="creating.set(true)">New property</button>
+      </p>
+    }
+    @if ((!loading() && items().length === 0) || creating()) {
     <form class="filters card" (ngSubmit)="create()">
-      <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
+      <input [(ngModel)]="name" name="gardenName" placeholder="Property name" required />
       <label>
         Length (ft)
         <input
@@ -76,13 +109,14 @@ import { EmptyState } from '../ui/empty-state';
         [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
         [disabled]="notices.busyMap().has('create-garden') || !canCreate()"
       >
-        Create garden
+        Create property
       </button>
     </form>
+    }
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
-      <og-empty-state title="No gardens yet" [body]="emptyBody()" />
+      <og-empty-state title="No properties yet" [body]="emptyBody()" />
     } @else {
       <div class="card-list">
         @for (g of items(); track g.id) {
@@ -101,6 +135,12 @@ import { EmptyState } from '../ui/empty-state';
                   Zone not set
                 }
               </span>
+              @if (g.overdueCount) {
+                <span>{{ g.overdueCount }} overdue</span>
+              }
+              @if (g.thisWeekCount) {
+                <span>{{ g.thisWeekCount }} this week</span>
+              }
             </span>
           </a>
         }
@@ -126,7 +166,9 @@ export class GardenListPage implements OnInit, OnDestroy {
   readonly lookingUp = signal(false);
   readonly lookupError = signal('');
   items = signal<GardenSummaryDto[]>([]);
-  loading = signal(false);
+  readonly tasks = signal<TodayTaskDto[]>([]);
+  readonly creating = signal(false);
+  loading = signal(true);
   error = signal('');
   private loadGen = 0;
   private mapGen = 0;
@@ -231,7 +273,25 @@ export class GardenListPage implements OnInit, OnDestroy {
     this.loading.set(true);
     const page = await this.api.listAll();
     if (gen !== this.loadGen) return;
-    this.items.set(page.items.map(withCounts));
+    let counts = new Map<string, { overdue: number; thisWeek: number }>();
+    try {
+      const today = await this.api.today(localIso());
+      if (gen !== this.loadGen) return;
+      this.tasks.set(today.tasks);
+      counts = new Map(today.gardens.map((garden) => [garden.id, garden]));
+    } catch {
+      this.tasks.set([]);
+    }
+    this.items.set(
+      page.items.map((garden) => {
+        const count = counts.get(garden.id);
+        return withCounts({
+          ...garden,
+          overdueCount: count?.overdue ?? 0,
+          thisWeekCount: count?.thisWeek ?? 0,
+        });
+      }),
+    );
     this.loading.set(false);
   }
 
@@ -262,6 +322,7 @@ export class GardenListPage implements OnInit, OnDestroy {
           withCounts(created),
           ...list.filter((g) => g.id !== created.id),
         ]);
+        this.creating.set(false);
         this.loading.set(false);
         this.notices.success(
           created.seasonNotice ? `Garden created. ${created.seasonNotice}` : 'Garden created',
@@ -271,6 +332,12 @@ export class GardenListPage implements OnInit, OnDestroy {
       }
     });
   }
+}
+
+function localIso(date = new Date()): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function gardenFeet(feet: number): number {

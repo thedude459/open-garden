@@ -6,9 +6,9 @@ import { createSizedBed, openPlantingsFromGarden, saveLayout, confirmFixtureAddr
 
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill(name);
+  await page.getByPlaceholder('Property name').fill(name);
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await createSizedBed(page, 'Raised bed 1');
@@ -41,7 +41,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await addFromCatalog(owner, 'Cherry Tomato');
   await addFromCatalog(owner, 'Sweet Basil');
   const tomato = owner.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
-  await tomato.locator('select').selectOption({ label: 'Raised bed 1' });
+  await tomato.locator('select[name^="bed-"]').selectOption({ label: 'Raised bed 1' });
   await tomato.getByRole('button', { name: 'Save planting' }).click();
 
   await expect(owner.getByRole('heading', { name: 'Raised bed 1' })).toBeVisible();
@@ -59,7 +59,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   ).toBeVisible();
 
   const basil = owner.locator('article').filter({ hasText: 'Sweet Basil' });
-  await basil.locator('select').selectOption({ label: 'Patio pots' });
+  await basil.locator('select[name^="bed-"]').selectOption({ label: 'Patio pots' });
   await basil.getByRole('button', { name: 'Save planting' }).click();
   await expect(owner.getByRole('heading', { name: 'Unassigned' })).toHaveCount(0);
 

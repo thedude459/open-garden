@@ -35,7 +35,7 @@ import { NoticeService } from './ui/notice.service';
             </a>
             <div class="sidebar-body">
               <nav class="side-nav" aria-label="Primary">
-                <a routerLink="/gardens" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Gardens</a>
+                <a routerLink="/gardens" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Properties</a>
                 <a routerLink="/plants" routerLinkActive="active">Catalog</a>
                 <a routerLink="/favorites" routerLinkActive="active">Favorites</a>
                 @if (isAdmin()) {
@@ -43,7 +43,7 @@ import { NoticeService } from './ui/notice.service';
                 }
               </nav>
               @if (gardenId(); as id) {
-                <nav class="side-nav" aria-label="Garden">
+                <nav class="side-nav garden-side-nav" aria-label="Garden">
                   <p class="nav-group-label">{{ gardenName() }}</p>
                   @if (openBedName(); as bed) {
                     <p class="nav-bed">{{ bed }}</p>
@@ -62,6 +62,23 @@ import { NoticeService } from './ui/notice.service';
           <main class="shell">
             <router-outlet />
           </main>
+          @if (gardenId(); as id) {
+            <nav class="garden-tab-bar" aria-label="Garden">
+              <a [routerLink]="['/gardens', id, 'layout']" routerLinkActive="active">Overview</a>
+              <a [routerLink]="['/gardens', id, 'reminders']" routerLinkActive="active">Today</a>
+              <a [routerLink]="['/gardens', id, 'calendar']" routerLinkActive="active">Calendar</a>
+              <button type="button" [attr.aria-expanded]="moreOpen()" (click)="moreOpen.set(!moreOpen())">
+                More
+              </button>
+            </nav>
+            @if (moreOpen()) {
+              <div class="garden-more">
+                <a [routerLink]="['/gardens', id, 'plantings']" routerLinkActive="active">Plantings</a>
+                <a [routerLink]="['/gardens', id, 'transplants']" routerLinkActive="active">Transplants</a>
+                <a [routerLink]="['/gardens', id, 'configure']" routerLinkActive="active">Configuration</a>
+              </div>
+            }
+          }
         </div>
       } @else {
         <header class="app-bar">
@@ -88,6 +105,7 @@ export class AppComponent {
   private readonly planner = inject(PlannerDraftService);
 
   readonly menuOpen = signal(false);
+  readonly moreOpen = signal(false);
   readonly gardenId = signal<string | null>(null);
   readonly gardenName = signal('Garden');
   readonly bedId = signal<string | null>(null);
@@ -114,6 +132,7 @@ export class AppComponent {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         this.menuOpen.set(false);
+        this.moreOpen.set(false);
         this.syncGarden(e.urlAfterRedirects);
         this.dropDraftIfLeft(e.urlAfterRedirects);
       });

@@ -9,6 +9,10 @@ import type {
   GardenPatchDto,
   GardenSummaryDto,
   GardenWriteDto,
+  PropertyAreaDto,
+  SeasonDto,
+  TodayDto,
+  TrayDto,
   MemberDto,
   PageDto,
   PlaceLookupDto,
@@ -29,6 +33,36 @@ export class OnlineRequiredError extends Error {
 export class GardensApiService {
   private readonly http = inject(HttpClient);
   private readonly cache = inject(GardenCacheService);
+
+  async today(asOf: string): Promise<TodayDto> {
+    const params = new HttpParams().set('asOf', asOf);
+    return firstValueFrom(
+      this.http.get<TodayDto>(`${API}/gardens/today`, { params, withCredentials: true }),
+    );
+  }
+
+  async season(gardenId: string): Promise<SeasonDto> {
+    return firstValueFrom(
+      this.http.get<SeasonDto>(`${API}/gardens/${gardenId}/season`, { withCredentials: true }),
+    );
+  }
+
+  async closeSeason(gardenId: string): Promise<SeasonDto> {
+    return firstValueFrom(
+      this.http.post<SeasonDto>(`${API}/gardens/${gardenId}/season/close`, {}, { withCredentials: true }),
+    );
+  }
+
+  async addCompanion(
+    gardenId: string,
+    body: { plantId: string; otherPlantId: string; kind: string; reason: string },
+  ): Promise<SeasonDto> {
+    return firstValueFrom(
+      this.http.post<SeasonDto>(`${API}/gardens/${gardenId}/season/companions`, body, {
+        withCredentials: true,
+      }),
+    );
+  }
 
   async list(page = 1, pageSize = 20): Promise<PageDto<GardenSummaryDto>> {
     const key = this.cache.listKey({ page, pageSize });
@@ -163,6 +197,30 @@ export class GardensApiService {
     } catch (err) {
       this.rethrowConnectivity(err);
     }
+  }
+
+  async areas(id: string): Promise<PropertyAreaDto[]> {
+    return firstValueFrom(
+      this.http.get<PropertyAreaDto[]>(`${API}/gardens/${id}/areas`, { withCredentials: true }),
+    );
+  }
+
+  async createArea(id: string, kind: PropertyAreaDto['kind']): Promise<PropertyAreaDto> {
+    this.assertOnline();
+    return firstValueFrom(
+      this.http.post<PropertyAreaDto>(`${API}/gardens/${id}/areas`, { kind }, { withCredentials: true }),
+    );
+  }
+
+  async trays(id: string): Promise<TrayDto[]> {
+    return firstValueFrom(this.http.get<TrayDto[]>(`${API}/gardens/${id}/trays`, { withCredentials: true }));
+  }
+
+  async createTray(id: string, name: string): Promise<TrayDto> {
+    this.assertOnline();
+    return firstValueFrom(
+      this.http.post<TrayDto>(`${API}/gardens/${id}/trays`, { name }, { withCredentials: true }),
+    );
   }
 
   async removeMember(id: string, userId: string): Promise<void> {

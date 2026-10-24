@@ -5,9 +5,9 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   test.setTimeout(120_000);
   const owner = await newUser(browser, uniqueEmail('ui-place'));
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Marker garden');
+  await owner.getByPlaceholder('Property name').fill('Marker garden');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Marker garden/ }).click();
   await openOverview(owner);
   await expect(owner.getByLabel('You are here')).toContainText('Garden Overview');

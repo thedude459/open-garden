@@ -13,9 +13,9 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   const viewer = await newUser(browser, `planner-ov-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Planner overview');
+  await owner.getByPlaceholder('Property name').fill('Planner overview');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Planner overview/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');
@@ -63,9 +63,9 @@ test('planner overview: transplants with no beds stay off the map until a bed ex
   test.setTimeout(90_000);
   const owner = await newUser(browser, `planner-ov-empty-${Date.now()}@example.com`);
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Empty overview');
+  await owner.getByPlaceholder('Property name').fill('Empty overview');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Empty overview/ }).click();
   await openOverview(owner);
   await owner.getByRole('link', { name: 'Transplants' }).click();

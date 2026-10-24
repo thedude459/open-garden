@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { CareReminderService, applyRainCover, domainError } from '@open-garden/care-reminders';
+import { PlantingService } from '@open-garden/seasonal-plantings';
 import { FixtureRainOutlook, OpenMeteoRainOutlook, type RainOutlook } from '@open-garden/garden-place';
 import {
   CareEventRepository,
@@ -26,12 +27,14 @@ import {
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { openPlantingService } from './planting-service.factory';
 
 @Controller('gardens/:id/reminders')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenRemindersController {
   private readonly reminders: CareReminderService;
   private readonly gardens: GardenRepository;
+  private readonly plantings: PlantingService;
   private readonly rain: RainOutlook;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
@@ -39,6 +42,7 @@ export class GardenRemindersController {
     const plantings = new PlantingRepository(bundle.db);
     const events = new CareEventRepository(bundle.db);
     this.gardens = new GardenRepository(bundle.db);
+    this.plantings = openPlantingService(bundle.db);
     this.rain =
       process.env['PLACE_PROVIDER'] === 'live' ? new OpenMeteoRainOutlook() : new FixtureRainOutlook();
     this.reminders = new CareReminderService(
@@ -53,6 +57,8 @@ export class GardenRemindersController {
         listForGarden: (gardenId) => events.listForGarden(gardenId),
         upsert: (plantingId, kind, occurrenceOn, action) =>
           events.upsertEvent(plantingId, kind, occurrenceOn, action),
+        remove: (plantingId, kind, occurrenceOn) =>
+          events.deleteEvent(plantingId, kind, occurrenceOn),
       },
     );
   }
@@ -101,6 +107,34 @@ export class GardenRemindersController {
       parsed.data.kind,
       parsed.data.dueOn,
     );
+    if (parsed.data.kind === 'harvest') {
+      try {
+        await this.plantings.update(user.id, id, parsed.data.plantingId, {
+          harvestedOn: parsed.data.dueOn,
+        });
+      } catch {
+        /* the care event still stands when the harvest date cannot be stored */
+      }
+    }
+  }
+
+  @Post('undo')
+  @HttpCode(204)
+  async undo(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
+    const parsed = reminderMutationSchema.safeParse(body);
+    if (!parsed.success) {
+      throw domainError('VALIDATION_ERROR', 'Date must be YYYY-MM-DD');
+    }
+    await this.reminders.undo(
+      id,
+      user.id,
+      parsed.data.plantingId,
+      parsed.data.kind,
+      parsed.data.dueOn,
+    );
+    if (parsed.data.kind === 'harvest') {
+      await this.plantings.update(user.id, id, parsed.data.plantingId, { harvestedOn: null });
+    }
   }
 
   @Post('dismiss')

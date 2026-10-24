@@ -17,9 +17,14 @@ import {
 import { rotateBed90 } from '@open-garden/garden-layout/rotate';
 import type {
   BedGeometryDto,
+  BedSite,
   LayoutAreaDto,
   LayoutBedDto,
+  Mulch,
+  PropertyAreaDto,
+  TrayDto,
 } from '@open-garden/shared-types';
+import { MULCH_LABELS } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
@@ -83,7 +88,9 @@ import { EmptyState } from '../ui/empty-state';
         }
         @for (flag of flags(); track $index) {
           <p class="needs-attention" role="status">
-            @if (flag.kind === 'spacing') {
+            @if (flag.message) {
+              {{ flag.message }}
+            } @else if (flag.kind === 'spacing') {
               Too close
             } @else if (flag.kind === 'fit') {
               Does not fit
@@ -98,6 +105,7 @@ import { EmptyState } from '../ui/empty-state';
           [beds]="draft()!.beds"
           [areas]="draft()!.areas"
           [plantings]="draft()!.plantings"
+          [priorCrops]="draft()!.priorCrops ?? []"
           [selectedId]="selectedId()"
           [canEdit]="canEdit()"
           [online]="online()"
@@ -127,6 +135,9 @@ import { EmptyState } from '../ui/empty-state';
               <li class="stack">
                 <div class="row">
                   <strong>{{ bed.name }}</strong>
+                  @if (showMulch(bed)) {
+                    <span class="muted">{{ mulchLabel(bed.mulch) }}</span>
+                  }
                   <span class="member-actions">
                     <button
                       type="button"
@@ -291,6 +302,21 @@ import { EmptyState } from '../ui/empty-state';
                 placeholder="Width (ft)"
                 aria-label="Width in feet"
               />
+              <label>
+                Ground
+                <select name="bedSite" [(ngModel)]="bedSite">
+                  <option value="in_ground">In-ground</option>
+                  <option value="raised">Raised</option>
+                </select>
+              </label>
+              <label>
+                Mulch
+                <select name="bedMulch" [(ngModel)]="bedMulch">
+                  @for (choice of mulchChoices; track choice.id) {
+                    <option [value]="choice.id">{{ choice.label }}</option>
+                  }
+                </select>
+              </label>
               <button
                 type="submit"
                 class="btn btn-primary"
@@ -299,6 +325,29 @@ import { EmptyState } from '../ui/empty-state';
               >
                 Create bed
               </button>
+            </form>
+            @if (areas().length) {
+              <ul class="card-list">
+                @for (area of areas(); track area.id) {
+                  <li [attr.data-area-kind]="area.kind">{{ area.name }}</li>
+                }
+              </ul>
+            }
+            @if (trays().length) {
+              <ul class="card-list">
+                @for (tray of trays(); track tray.id) {
+                  <li>{{ tray.name }}</li>
+                }
+              </ul>
+            }
+            <p>
+              <button type="button" class="btn btn-secondary" (click)="addVegetable()">Add vegetable garden</button>
+              <button type="button" class="btn btn-secondary" (click)="addStation('tree')">Add tree</button>
+              <button type="button" class="btn btn-secondary" (click)="addStation('berry')">Add berry patch</button>
+            </p>
+            <form class="filters" (ngSubmit)="addTray()">
+              <input [(ngModel)]="trayName" name="trayName" placeholder="Tray name" />
+              <button type="submit" class="btn btn-secondary">Add tray</button>
             </form>
             <form class="filters" (ngSubmit)="createArea()">
               <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
@@ -355,6 +404,21 @@ export class GardenLayoutPage implements OnInit {
   newBedName = '';
   newLength: number | null = 8;
   newWidth: number | null = 4;
+  bedSite: BedSite = 'in_ground';
+  bedMulch: Mulch = 'none';
+  pendingStation: 'tree' | 'berry' | null = null;
+  trayName = '';
+  readonly areas = signal<PropertyAreaDto[]>([]);
+  readonly trays = signal<TrayDto[]>([]);
+  readonly mulchChoices: { id: Mulch; label: string }[] = [
+    { id: 'none', label: 'No mulch' },
+    { id: 'wood_chips', label: 'Wood chips' },
+    { id: 'straw', label: 'Straw' },
+    { id: 'leaves', label: 'Leaves' },
+    { id: 'compost', label: 'Compost' },
+    { id: 'paper', label: 'Paper' },
+    { id: 'plastic', label: 'Plastic' },
+  ];
   newAreaName = '';
   newAreaLength: number | null = 4;
   newAreaWidth: number | null = 4;
@@ -481,9 +545,65 @@ export class GardenLayoutPage implements OnInit {
       this.plotWidth.set(detail.widthInches ?? null);
       this.needsSite.set(!detail.lastFrost || !detail.firstFrost);
     }
+    await this.loadAreas();
+  }
+
+  mulchLabel(mulch: Mulch | null | undefined) {
+    return mulch ? MULCH_LABELS[mulch] : '';
+  }
+
+  showMulch(bed: LayoutBedDto) {
+    return !!bed.mulch && bed.mulch !== 'none';
+  }
+
+  async loadAreas() {
+    try {
+      const [areas, trays] = await Promise.all([
+        this.gardensApi.areas(this.gardenId),
+        this.gardensApi.trays(this.gardenId),
+      ]);
+      this.areas.set(areas);
+      this.trays.set(trays);
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
+  async addVegetable() {
+    this.error.set('');
+    if (!this.guardMutate()) return;
+    try {
+      await this.gardensApi.createArea(this.gardenId, 'vegetable');
+      await this.loadAreas();
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
+  addStation(station: 'tree' | 'berry') {
+    if (!this.newBedName.trim()) this.newBedName = station === 'tree' ? 'Tree' : 'Berry patch';
+    this.newLength = 8;
+    this.newWidth = 8;
+    this.pendingStation = station;
+    void this.createBed();
+  }
+
+  async addTray() {
+    this.error.set('');
+    if (!this.guardMutate()) return;
+    const name = this.trayName.trim() || 'Tray';
+    try {
+      await this.gardensApi.createTray(this.gardenId, name);
+      this.trayName = '';
+      await this.loadAreas();
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
   }
 
   async createBed() {
+    const station = this.pendingStation;
+    this.pendingStation = null;
     const d = this.draft();
     if (!d) return;
     this.error.set('');
@@ -509,7 +629,18 @@ export class GardenLayoutPage implements OnInit {
     this.planner.newBedIds.add(id);
     this.planner.setDraft({
       ...d,
-      beds: [...d.beds, { id, name, geometry }],
+      beds: [
+        ...d.beds,
+        {
+          id,
+          name,
+          geometry,
+          kind: 'bed' as const,
+          site: this.bedSite,
+          mulch: this.bedMulch,
+          ...(station ? { station } : {}),
+        },
+      ],
     });
     this.selectedId.set(id);
     this.newBedName = '';

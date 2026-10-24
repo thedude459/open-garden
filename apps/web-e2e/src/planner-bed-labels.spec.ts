@@ -15,9 +15,9 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
   const viewer = await newUser(browser, `bed-labels-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Quiet bed');
+  await owner.getByPlaceholder('Property name').fill('Quiet bed');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Quiet bed/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');

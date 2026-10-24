@@ -65,6 +65,6 @@ export async function signedInPage(browser: Browser, email = uniqueEmail()): Pro
   await registerContext(context, email);
   const page = await context.newPage();
   await page.goto('/gardens');
-  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
   return page;
 }

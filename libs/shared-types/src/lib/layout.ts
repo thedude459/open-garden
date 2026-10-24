@@ -1,5 +1,6 @@
 import type { GardenRole } from './garden';
 import type { PlantStatus, PlantType } from './plant';
+import type { BedSite, BedStation, Mulch } from './placement';
 import type { IsoDate, StartMethod } from './planting';
 import type { ReminderItemDto } from './reminders';
 
@@ -20,6 +21,11 @@ export interface LayoutBedDto {
   id: string;
   name: string;
   geometry: BedGeometryDto | null;
+  sun?: 'full' | 'part' | 'shade' | null;
+  kind?: 'bed' | 'orchard';
+  site?: BedSite;
+  station?: BedStation | null;
+  mulch?: Mulch;
 }
 
 export interface LayoutPlacementDto {
@@ -42,14 +48,18 @@ export interface LayoutPlantingDto {
   startMethod: StartMethod;
   indoorStartedOn: IsoDate | null;
   placement: LayoutPlacementDto | null;
+  sunRequirements?: string | null;
+  life?: 'annual' | 'perennial' | 'tree';
+  spacingFeet?: number | null;
 }
 
-export type LayoutFlagKind = 'spacing' | 'fit' | 'unavailable';
+export type LayoutFlagKind = 'spacing' | 'fit' | 'unavailable' | 'sun' | 'repeat' | 'companion';
 
 export interface LayoutFlagDto {
   kind: LayoutFlagKind;
   plantingIds: string[];
   blocking: boolean;
+  message?: string;
 }
 
 export interface LayoutAreaDto {
@@ -77,6 +87,26 @@ export interface GardenLayoutDto {
   areas: LayoutAreaDto[];
   plantings: LayoutPlantingDto[];
   flags: LayoutFlagDto[];
+  priorCrops?: PriorCropDto[];
+  pairs?: CompanionPairDto[];
+}
+
+export interface PriorCropDto {
+  bedId: string;
+  plantId: string;
+  commonName: string;
+}
+
+export type CompanionKind = 'helps' | 'hinders' | 'pollinates';
+
+export interface CompanionPairDto {
+  id: string;
+  plantId: string;
+  otherPlantId: string;
+  plantName: string;
+  otherName: string;
+  kind: CompanionKind;
+  reason: string;
 }
 
 export interface LayoutBedPutDto {

@@ -7,9 +7,9 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   test.setTimeout(90_000);
   const owner = await newUser(browser, `planner-diagram-${Date.now()}@example.com`);
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Planner diagram');
+  await owner.getByPlaceholder('Property name').fill('Planner diagram');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Planner diagram/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'Raised bed 1');

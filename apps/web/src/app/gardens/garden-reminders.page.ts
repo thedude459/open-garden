@@ -6,6 +6,7 @@ import {
   RemindersColdOfflineError,
 } from './reminders-api.service';
 import { PlantingsApiService } from './plantings-api.service';
+import { NoticeService } from '../ui/notice.service';
 import { type ClientReminderItem, type ClientReminderList } from './reminders-offline.queue';
 import { rainForDeviceDay } from './garden-reminders-cache.service';
 @Component({
@@ -31,8 +32,10 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
           <p class="muted">Nothing due or not ready yet.</p>
         }
       } @else {
-        <ul class="card-list">
-          @for (item of data.items; track trackItem(item)) {
+        @for (group of groups(data.items); track group.bedName) {
+          <h3>{{ group.bedName }}</h3>
+          <ul class="card-list">
+          @for (item of group.items; track trackItem(item)) {
             <li class="row">
               <div>
                 <strong>{{ item.commonName }}</strong>
@@ -62,7 +65,8 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
               }
             </li>
           }
-        </ul>
+          </ul>
+        }
       }
     }
   `,
@@ -71,6 +75,7 @@ export class GardenRemindersPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(RemindersApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
+  private readonly notices = inject(NoticeService);
 
   gardenId = '';
   readonly list = signal<ClientReminderList | null>(null);
@@ -106,8 +111,34 @@ export class GardenRemindersPage implements OnInit {
     return 'Upcoming';
   }
 
+  groups(items: ClientReminderItem[]) {
+    const order: string[] = [];
+    const byBed = new Map<string, ClientReminderItem[]>();
+    for (const item of items) {
+      const name = item.bedName?.trim() || 'Not in a bed';
+      if (!byBed.has(name)) {
+        byBed.set(name, []);
+        order.push(name);
+      }
+      byBed.get(name)!.push(item);
+    }
+    order.sort((a, b) => {
+      if (a === 'Not in a bed') return 1;
+      if (b === 'Not in a bed') return -1;
+      return a.localeCompare(b);
+    });
+    return order.map((bedName) => ({ bedName, items: byBed.get(bedName) ?? [] }));
+  }
+
   async complete(item: ClientReminderItem) {
-    await this.mutate(item, 'complete');
+    const ok = await this.mutate(item, 'complete');
+    if (!ok || item.kind !== 'harvest' || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+      return;
+    }
+    const body = { plantingId: item.plantingId, kind: item.kind, dueOn: item.dueOn };
+    this.notices.success('Date saved', () => {
+      void this.api.undo(this.gardenId, body).then(() => this.refresh());
+    });
   }
 
   async dismiss(item: ClientReminderItem) {
@@ -123,8 +154,10 @@ export class GardenRemindersPage implements OnInit {
           ? await this.api.complete(this.gardenId, body, item.intervalDays)
           : await this.api.dismiss(this.gardenId, body, item.intervalDays);
       this.list.set(next ? rainForDeviceDay(next) : next);
+      return true;
     } catch (err) {
       this.error.set(readError(err));
+      return false;
     }
   }
 
