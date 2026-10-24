@@ -71,6 +71,17 @@ describe('CalendarService', () => {
     });
   });
 
+  it('refuses a tree until the property has an orchard', async () => {
+    const blocked = createMemory(false);
+    await expect(blocked.service.add(blocked.ownerId, blocked.gardenId, maple.id)).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: 'Trees and shrubs belong in an orchard',
+    });
+    const open = createMemory(true);
+    const added = await open.service.add(open.ownerId, open.gardenId, maple.id);
+    expect(added.created).toBe(true);
+  });
+
   it('returns not found for unknown plant and non-member', async () => {
     const mem = createMemory();
     await expect(mem.service.add(mem.ownerId, mem.gardenId, 'missing')).rejects.toMatchObject({
@@ -126,7 +137,7 @@ function plantRow(partial: Partial<ReturnType<typeof plantRow>> & { id: string; 
   };
 }
 
-function createMemory() {
+function createMemory(hasOrchard?: boolean) {
   const ownerId = 'owner-1';
   const viewerId = 'viewer-1';
   const strangerId = 'stranger-1';
@@ -222,6 +233,7 @@ function createMemory() {
     membershipRepo as never,
     plantRepo as never,
     entryRepo as never,
+    hasOrchard === undefined ? undefined : ({ hasKind: async () => hasOrchard } as never),
   );
   return { service, ownerId, viewerId, strangerId, gardenId };
 }

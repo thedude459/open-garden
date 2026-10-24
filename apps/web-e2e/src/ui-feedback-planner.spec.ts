@@ -11,9 +11,9 @@ test('Save layout busy + success notice; offline Save persists until Dismiss', a
   test.setTimeout(90_000);
   const page = await newUser(browser, `ui-save-${Date.now()}@example.com`);
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill('Notice garden');
+  await page.getByPlaceholder('Property name').fill('Notice garden');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Notice garden/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'North');
@@ -51,9 +51,9 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   test.setTimeout(120_000);
   const owner = await newUser(browser, `ui-drop-${Date.now()}@example.com`);
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Drop garden');
+  await owner.getByPlaceholder('Property name').fill('Drop garden');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Drop garden/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');

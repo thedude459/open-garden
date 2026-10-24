@@ -9,11 +9,11 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   const email = `owner-${Date.now()}@example.com`;
   const page = await signedInPage(browser, email);
   await page.goto('/gardens');
-  await expect(page.getByText(/No gardens yet/i)).toBeVisible();
-  await page.getByPlaceholder('Garden name').fill('Backyard');
+  await expect(page.getByText(/No properties yet/i)).toBeVisible();
+  await page.getByPlaceholder('Property name').fill('Backyard');
   await page.getByPlaceholder('Notes (optional)').fill('South fence');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await expect(page.getByRole('link', { name: /Backyard/ })).toBeVisible();
   await page.getByRole('link', { name: /Backyard/ }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
@@ -28,10 +28,10 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   await expect(page.getByRole('heading', { name: 'Front yard' })).toBeVisible();
   await page.getByRole('button', { name: 'Delete garden' }).click();
   await page.getByRole('button', { name: 'Confirm delete' }).click();
-  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
-  await page.getByPlaceholder('Garden name').fill('Front yard');
+  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
+  await page.getByPlaceholder('Property name').fill('Front yard');
   await confirmFixtureAddress(page);
-  await page.getByRole('button', { name: 'Create garden' }).click();
+  await page.getByRole('button', { name: 'Create property' }).click();
   await expect(page.getByRole('link', { name: /Front yard/ })).toBeVisible();
 });
 
@@ -53,11 +53,11 @@ test('stranger cannot see another user’s garden', async ({ browser }) => {
   const ownerPage = await signedInPage(browser, `iso-owner-${stamp}@example.com`);
   const strangerPage = await signedInPage(browser, `iso-stranger-${stamp}@example.com`);
   await ownerPage.goto('/gardens');
-  await ownerPage.getByPlaceholder('Garden name').fill('Secret plot');
+  await ownerPage.getByPlaceholder('Property name').fill('Secret plot');
   await confirmFixtureAddress(ownerPage);
-  await ownerPage.getByRole('button', { name: 'Create garden' }).click();
+  await ownerPage.getByRole('button', { name: 'Create property' }).click();
   await expect(ownerPage.getByRole('link', { name: /Secret plot/ })).toBeVisible();
   await strangerPage.goto('/gardens');
-  await expect(strangerPage.getByText(/No gardens yet/i)).toBeVisible();
+  await expect(strangerPage.getByText(/No properties yet/i)).toBeVisible();
   await expect(strangerPage.getByRole('link', { name: /Secret plot/ })).toHaveCount(0);
 });

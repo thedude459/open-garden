@@ -13,7 +13,7 @@ export async function confirmFixtureAddress(page: Page) {
   }
   await page.getByRole('button', { name: 'Look up address' }).click();
   await expect(page.locator('iframe.garden-map')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Create garden' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Create property' })).toBeEnabled();
 }
 
 /** API register + cookie. Does not open `/login`. */
@@ -29,7 +29,7 @@ export async function registerViaUi(page: Page, email: string) {
   await page.getByPlaceholder('Email').fill(email);
   await page.getByPlaceholder('Password').fill('password123');
   await page.getByRole('button', { name: 'Register' }).click();
-  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
 }
 
 export async function saveLayout(page: Page) {
@@ -110,6 +110,11 @@ export async function inviteViewer(owner: Page, email: string) {
 }
 
 export async function createSizedBed(page: Page, name: string, length = '8', width = '4') {
+  const vegetable = page.locator('[data-area-kind="vegetable"]');
+  if ((await vegetable.count()) === 0) {
+    await page.getByRole('button', { name: 'Add vegetable garden' }).click();
+    await expect(vegetable).toBeVisible();
+  }
   await page.getByPlaceholder('Bed name').fill(name);
   await page.locator('input[name="newLength"]').fill(length);
   await page.locator('input[name="newWidth"]').fill(width);

@@ -14,12 +14,10 @@ import { CareReminderService, applyRainCover, domainError } from '@open-garden/c
 import { PlantingService } from '@open-garden/seasonal-plantings';
 import { FixtureRainOutlook, OpenMeteoRainOutlook, type RainOutlook } from '@open-garden/garden-place';
 import {
-  BedRepository,
   CareEventRepository,
   GardenMembershipRepository,
   GardenRepository,
   PlantingRepository,
-  PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
 import {
@@ -29,6 +27,7 @@ import {
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { openPlantingService } from './planting-service.factory';
 
 @Controller('gardens/:id/reminders')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -43,12 +42,7 @@ export class GardenRemindersController {
     const plantings = new PlantingRepository(bundle.db);
     const events = new CareEventRepository(bundle.db);
     this.gardens = new GardenRepository(bundle.db);
-    this.plantings = new PlantingService(
-      memberships,
-      new PlantRepository(bundle.db),
-      plantings,
-      new BedRepository(bundle.db),
-    );
+    this.plantings = openPlantingService(bundle.db);
     this.rain =
       process.env['PLACE_PROVIDER'] === 'live' ? new OpenMeteoRainOutlook() : new FixtureRainOutlook();
     this.reminders = new CareReminderService(

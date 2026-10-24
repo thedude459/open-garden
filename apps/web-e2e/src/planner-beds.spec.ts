@@ -18,9 +18,9 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   const viewer = await newUser(browser, `planner-bed-viewer-${stamp}@example.com`);
 
   await owner.goto('/gardens');
-  await owner.getByPlaceholder('Garden name').fill('Planner beds');
+  await owner.getByPlaceholder('Property name').fill('Planner beds');
   await confirmFixtureAddress(owner);
-  await owner.getByRole('button', { name: 'Create garden' }).click();
+  await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Planner beds/ }).click();
   await openOverview(owner);
 

@@ -9,8 +9,10 @@ import type {
   GardenPatchDto,
   GardenSummaryDto,
   GardenWriteDto,
+  PropertyAreaDto,
   SeasonDto,
   TodayDto,
+  TrayDto,
   MemberDto,
   PageDto,
   PlaceLookupDto,
@@ -195,6 +197,30 @@ export class GardensApiService {
     } catch (err) {
       this.rethrowConnectivity(err);
     }
+  }
+
+  async areas(id: string): Promise<PropertyAreaDto[]> {
+    return firstValueFrom(
+      this.http.get<PropertyAreaDto[]>(`${API}/gardens/${id}/areas`, { withCredentials: true }),
+    );
+  }
+
+  async createArea(id: string, kind: PropertyAreaDto['kind']): Promise<PropertyAreaDto> {
+    this.assertOnline();
+    return firstValueFrom(
+      this.http.post<PropertyAreaDto>(`${API}/gardens/${id}/areas`, { kind }, { withCredentials: true }),
+    );
+  }
+
+  async trays(id: string): Promise<TrayDto[]> {
+    return firstValueFrom(this.http.get<TrayDto[]>(`${API}/gardens/${id}/trays`, { withCredentials: true }));
+  }
+
+  async createTray(id: string, name: string): Promise<TrayDto> {
+    this.assertOnline();
+    return firstValueFrom(
+      this.http.post<TrayDto>(`${API}/gardens/${id}/trays`, { name }, { withCredentials: true }),
+    );
   }
 
   async removeMember(id: string, userId: string): Promise<void> {

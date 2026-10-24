@@ -1,16 +1,15 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - Modified principles:
-  - IV. Simplicity (YAGNI) rationale now points at principle VIII
-- Added sections:
-  - VIII. Product Purpose
+  - VIII. Product Purpose. An orchard is stations on the property, and a
+    greenhouse is trays on that same record. A vegetable area does not take
+    trees or shrubs. Raised and in-ground are bed forms.
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates: None. `.specify/templates/` does not restate
-  a permanent ban on seasons, companions, or orchards.
-- Follow-up TODOs: None. Existing feature specs stay the record of what those
-  versions refused. Later specs may include seasons, companion advice, and
-  orchards under principle VIII.
+  the previous orchard sentence.
+- Follow-up TODOs: None.
 -->
 
 # Open Garden Constitution
@@ -101,8 +100,12 @@ across years.
 - Companion suggestions (helps, hinders, pollinates) are in scope when a spec
   asks for them. They are advice. They MUST NOT block save unless that spec
   says so. Spacing remains the hard gate.
-- A home orchard is a later use of the same garden, not a second product or a
-  second database: long-lived trees, larger spacing, and pollination.
+- A property is the garden record. A vegetable garden, an orchard, and a
+  greenhouse are areas on that same record, not a second product or a second
+  database. Vegetable beds are raised or in-ground. An orchard is one bed per
+  tree and one bed per berry patch, and underplanting may share that bed. A
+  greenhouse is named trays. A vegetable area and a tray do not take trees
+  or shrubs.
 - Principle IV still holds. An orchard canvas, a crop-family taxonomy, or a
   companion graph MUST NOT be built until the spec that needs it. A provider
   call for companion pairs MUST NOT be added until a real source exists;
@@ -164,4 +167,4 @@ development guidance lives alongside Spec Kit artifacts under `.specify/`;
 feature work proceeds through specify → plan → tasks → implement with a
 passing Constitution Check at plan time.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-10-23
+**Version**: 1.2.0 | **Ratified**: 2026-08-01 | **Last Amended**: 2026-10-24

@@ -1,4 +1,5 @@
 import type { GardenRole } from './garden';
+import type { AreaKind, BedSite, BedStation, Mulch } from './placement';
 import type { PlantStatus, PlantType } from './plant';
 
 /** Household calendar date `YYYY-MM-DD`, or null when unset. */
@@ -17,6 +18,22 @@ export interface NamedBedDto {
   updatedAt: string;
   sun?: BedSun | null;
   kind?: BedKind;
+  site?: BedSite;
+  station?: BedStation | null;
+  mulch?: Mulch;
+  areaId?: string | null;
+}
+
+export interface PropertyAreaDto {
+  id: string;
+  name: string;
+  kind: AreaKind;
+}
+
+export interface TrayDto {
+  id: string;
+  areaId: string;
+  name: string;
 }
 
 export interface PlantingDto {
@@ -30,6 +47,7 @@ export interface PlantingDto {
   plantedOn: IsoDate | null;
   harvestedOn: IsoDate | null;
   bedId: string | null;
+  trayId?: string | null;
   startMethod: StartMethod;
   indoorStartedOn: IsoDate | null;
   life?: PlantingLife;
@@ -50,6 +68,8 @@ export interface PlantingListDto {
   myRole: GardenRole;
   beds: NamedBedDto[];
   plantings: PlantingDto[];
+  areas?: PropertyAreaDto[];
+  trays?: TrayDto[];
   page: number;
   pageSize: number;
   total: number;
@@ -63,6 +83,7 @@ export interface PlantingCreateDto {
   plantedOn?: IsoDate | null;
   harvestedOn?: IsoDate | null;
   bedId?: string | null;
+  trayId?: string | null;
   clientMutationId?: string;
   life?: PlantingLife;
   note?: string | null;
@@ -77,6 +98,7 @@ export interface PlantingPatchDto {
   plantedOn?: IsoDate | null;
   harvestedOn?: IsoDate | null;
   bedId?: string | null;
+  trayId?: string | null;
   clientMutationId?: string;
   life?: PlantingLife;
   note?: string | null;
@@ -95,10 +117,16 @@ export interface BedCreateDto {
   originXInches?: number;
   originYInches?: number;
   kind?: BedKind;
+  site?: BedSite;
+  station?: BedStation;
+  mulch?: Mulch;
+  areaId?: string;
 }
 
 export interface BedPatchDto {
   name: string;
   sun?: BedSun | null;
   kind?: BedKind;
+  site?: BedSite;
+  mulch?: Mulch;
 }

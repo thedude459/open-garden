@@ -18,6 +18,7 @@ import {
   CalendarEntryRepository,
   GardenMembershipRepository,
   GardenRepository,
+  PlantingAreaRepository,
   PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
@@ -37,6 +38,7 @@ export class GardenCalendarController {
       new GardenMembershipRepository(bundle.db),
       new PlantRepository(bundle.db),
       new CalendarEntryRepository(bundle.db),
+      new PlantingAreaRepository(bundle.db),
     );
   }
 

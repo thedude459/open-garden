@@ -13,7 +13,7 @@ test('login shows busy then lands on gardens without leftover notice', async ({ 
   const login = page.getByRole('button', { name: 'Login' });
   await login.click();
   await expect(login).toHaveAttribute('aria-busy', 'true');
-  await expect(page.getByRole('heading', { name: 'Gardens' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
   await expect(page.getByLabel('Notification')).toHaveCount(0);
 });
 
@@ -27,9 +27,9 @@ test('join link opens register with email filled', async ({ page }) => {
 test('Create garden busy + success notice; double click is one garden', async ({ browser }) => {
   const page = await signedInPage(browser, `ui-create-${Date.now()}@example.com`);
   await page.goto('/gardens');
-  await page.getByPlaceholder('Garden name').fill('Only One');
+  await page.getByPlaceholder('Property name').fill('Only One');
   await confirmFixtureAddress(page);
-  const create = page.getByRole('button', { name: 'Create garden' });
+  const create = page.getByRole('button', { name: 'Create property' });
   await Promise.all([create.click(), create.click()]);
   await expect(page.getByRole('link', { name: /Only One/ })).toHaveCount(1);
   await expect(page.getByLabel('Notification')).toContainText('Garden created');

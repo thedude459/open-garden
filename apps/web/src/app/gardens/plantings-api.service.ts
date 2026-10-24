@@ -173,8 +173,14 @@ export class PlantingsApiService {
     bedId: string,
     name: string,
     sun?: 'full' | 'part' | 'shade' | null,
+    extra?: { site?: 'raised' | 'in_ground'; mulch?: NamedBedDto['mulch'] },
   ): Promise<NamedBedDto> {
-    const body = sun === undefined ? { name } : { name, sun };
+    const body = {
+      name,
+      ...(sun !== undefined ? { sun } : {}),
+      ...(extra?.site !== undefined ? { site: extra.site } : {}),
+      ...(extra?.mulch !== undefined ? { mulch: extra.mulch } : {}),
+    };
     try {
       return await firstValueFrom(
         this.http.patch<NamedBedDto>(`${API}/gardens/${gardenId}/beds/${bedId}`, body, {

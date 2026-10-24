@@ -5,7 +5,8 @@ import { ActivatedRoute } from '@angular/router';
 import { assertDatePair } from '@open-garden/seasonal-plantings/dates';
 import { normalizeBedName } from '@open-garden/seasonal-plantings/beds';
 import { groupPlantings, type PlantingGroup } from '@open-garden/seasonal-plantings/group-plantings';
-import type { FavoriteListItemDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type { FavoriteListItemDto, Mulch, PlantSummaryDto } from '@open-garden/shared-types';
+import { allowsPlant, MULCH_LABELS } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { PlantingsApiService } from './plantings-api.service';
@@ -39,6 +40,16 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
         >
           <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
         </og-plant-picker>
+        @if (manyTrays()) {
+          <label>
+            Tray
+            <select name="startTray" [(ngModel)]="startTrayId">
+              @for (tray of trays(); track tray.id) {
+                <option [value]="tray.id">{{ tray.name }}</option>
+              }
+            </select>
+          </label>
+        }
         @if (catalogHits().length) {
           <ul class="card-list">
             @for (p of catalogHits(); track p.id) {
@@ -52,6 +63,16 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                 >
                   Add
                 </button>
+                @if (hasTrays()) {
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Start ' + p.commonName + ' in a tray'"
+                    (click)="startInTray(p)"
+                  >
+                    Start in tray
+                  </button>
+                }
               </li>
             }
           </ul>
@@ -131,6 +152,31 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                     <option value="full">Full sun</option>
                     <option value="part">Part sun</option>
                     <option value="shade">Shade</option>
+                    </select>
+                  </label>
+                <label>
+                  Ground
+                  <select
+                    [attr.name]="'site-' + group.bedId"
+                    [ngModel]="bedSite(group.bedId)"
+                    (ngModelChange)="saveSite(group, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                  >
+                    <option value="in_ground">In-ground</option>
+                    <option value="raised">Raised</option>
+                  </select>
+                </label>
+                <label>
+                  Mulch
+                  <select
+                    [attr.name]="'mulch-' + group.bedId"
+                    [ngModel]="bedMulch(group.bedId)"
+                    (ngModelChange)="saveMulch(group, $event)"
+                    [ngModelOptions]="{ standalone: true }"
+                  >
+                    @for (choice of mulchChoices; track choice.id) {
+                      <option [value]="choice.id">{{ choice.label }}</option>
+                    }
                   </select>
                 </label>
                 <button
@@ -172,6 +218,17 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                     }
                     @if (p.sync === 'failed') {
                       <span class="needs-attention">needs-attention: {{ p.syncMessage }}</span>
+                    }
+                    @if (showPlantOut(p)) {
+                      <label>
+                        Plant out
+                        <select [attr.name]="'out-' + p.id" (change)="plantOut(p.id, $event)">
+                          <option value="">Choose a bed</option>
+                          @for (bed of list()!.beds; track bed.id) {
+                            <option [value]="bed.id">{{ bed.name }}</option>
+                          }
+                        </select>
+                      </label>
                     }
                     <p>
                       Planted
@@ -318,6 +375,36 @@ export class GardenPlantingsPage implements OnInit {
   bedFilter = '';
   renameDraft: Record<string, string> = {};
   catalogHits = signal<PlantSummaryDto[]>([]);
+  startTrayId = '';
+  readonly mulchChoices: { id: Mulch; label: string }[] = [
+    { id: 'none', label: 'No mulch' },
+    { id: 'wood_chips', label: 'Wood chips' },
+    { id: 'straw', label: 'Straw' },
+    { id: 'leaves', label: 'Leaves' },
+    { id: 'compost', label: 'Compost' },
+    { id: 'paper', label: 'Paper' },
+    { id: 'plastic', label: 'Plastic' },
+  ];
+
+  trays() {
+    return this.list()?.trays ?? [];
+  }
+
+  inTray(planting: { trayId?: string | null; bedId?: string | null }) {
+    return !!planting.trayId && !planting.bedId;
+  }
+
+  showPlantOut(planting: { trayId?: string | null; bedId?: string | null }) {
+    return this.canEdit() && this.inTray(planting);
+  }
+
+  hasTrays() {
+    return this.trays().length > 0;
+  }
+
+  manyTrays() {
+    return this.trays().length > 1;
+  }
   noteDraft: Record<string, string> = {};
   photos: Record<string, string> = {};
   lifeDraft: Record<string, 'annual' | 'perennial' | 'tree'> = {};
@@ -371,6 +458,8 @@ export class GardenPlantingsPage implements OnInit {
       const list = await this.api.list(this.gardenId);
       if (epoch !== this.listEpoch) return;
       this.list.set(list);
+      const tray = list?.trays?.[0];
+      if (!this.startTrayId && tray) this.startTrayId = tray.id;
       this.failures.set(await this.api.syncFailures(this.gardenId));
       if (!silent && epoch === this.listEpoch) this.loading.set(false);
       this.syncDateInputs();
@@ -382,7 +471,7 @@ export class GardenPlantingsPage implements OnInit {
 
   onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
-    this.catalogHits.set(items);
+    this.catalogHits.set(items.filter((plant) => allowsPlant(null, plant.plantType)));
   }
 
   onSearchFailed(err: unknown) {
@@ -423,6 +512,48 @@ export class GardenPlantingsPage implements OnInit {
     }
   }
 
+  async startInTray(
+    plant: Pick<PlantSummaryDto, 'id' | 'commonName' | 'species' | 'cultivar' | 'plantType'> & {
+      status?: string;
+    },
+  ) {
+    const trayId = this.startTrayId || this.list()?.trays?.[0]?.id;
+    if (!trayId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    this.error.set('');
+    const epoch = ++this.listEpoch;
+    try {
+      const created = await this.api.create(
+        this.gardenId,
+        { plantId: plant.id, startMethod: 'transplant', indoorStartedOn: today, trayId },
+        {
+          commonName: plant.commonName,
+          species: plant.species,
+          cultivar: plant.cultivar,
+          plantType: plant.plantType,
+          status: plant.status === 'deprecated' ? 'deprecated' : 'active',
+        },
+      );
+      if (epoch !== this.listEpoch) return;
+      this.list.set(created);
+      this.syncDateInputs();
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
+  async plantOut(plantingId: string, event: Event) {
+    const bedId = (event.target as HTMLSelectElement).value;
+    if (!bedId) return;
+    this.error.set('');
+    try {
+      await this.api.update(this.gardenId, plantingId, { bedId, trayId: null });
+      await this.load(true);
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
   bedSun(bedId: string | null): string {
     if (!bedId) return '';
     return this.list()?.beds.find((bed) => bed.id === bedId)?.sun ?? '';
@@ -438,6 +569,41 @@ export class GardenPlantingsPage implements OnInit {
         name,
         sun === 'full' || sun === 'part' || sun === 'shade' ? sun : null,
       );
+      await this.load(true);
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
+  bedSite(bedId: string | null): string {
+    if (!bedId) return 'in_ground';
+    return this.list()?.beds.find((bed) => bed.id === bedId)?.site ?? 'in_ground';
+  }
+
+  bedMulch(bedId: string | null): string {
+    if (!bedId) return 'none';
+    return this.list()?.beds.find((bed) => bed.id === bedId)?.mulch ?? 'none';
+  }
+
+  async saveSite(group: PlantingGroup, site: string) {
+    if (!group.bedId) return;
+    const name = this.renameDraft[group.bedId] ?? group.title;
+    try {
+      await this.api.renameBed(this.gardenId, group.bedId, name, undefined, {
+        site: site === 'raised' ? 'raised' : 'in_ground',
+      });
+      await this.load(true);
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
+  async saveMulch(group: PlantingGroup, mulch: string) {
+    if (!group.bedId) return;
+    const name = this.renameDraft[group.bedId] ?? group.title;
+    const choice = this.mulchChoices.find((entry) => entry.id === mulch)?.id ?? 'none';
+    try {
+      await this.api.renameBed(this.gardenId, group.bedId, name, undefined, { mulch: choice });
       await this.load(true);
     } catch (err) {
       this.error.set(messageFrom(err));
