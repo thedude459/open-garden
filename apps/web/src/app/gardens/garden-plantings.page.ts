@@ -372,6 +372,7 @@ export class GardenPlantingsPage implements OnInit {
       if (epoch !== this.listEpoch) return;
       this.list.set(list);
       this.failures.set(await this.api.syncFailures(this.gardenId));
+      if (!silent && epoch === this.listEpoch) this.loading.set(false);
       this.syncDateInputs();
     } catch (err) {
       if (epoch === this.listEpoch) this.error.set(messageFrom(err));
@@ -518,7 +519,9 @@ export class GardenPlantingsPage implements OnInit {
   }
 
   private syncDateInputs() {
-    queueMicrotask(() => {
+    // The date inputs are inside the loaded branch, so they are not in the DOM
+    // until the turn after loading flips. A microtask still runs before that.
+    setTimeout(() => {
       for (const planting of this.list()?.plantings ?? []) {
         const planted = document.querySelector(
           `input[name="planted-${planting.id}"]`,

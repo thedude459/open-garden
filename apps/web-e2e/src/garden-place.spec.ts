@@ -97,6 +97,8 @@ test('address lookup, map, and who can see the garden', async ({ browser }) => {
   await owner.goto('/gardens');
   await owner.context().route(/openstreetmap\.org\/export\/embed/, (route) => route.abort());
   await owner.reload();
+  await expect(owner.getByRole('link', { name: /Mapped garden/ })).toBeVisible();
+  await owner.getByRole('button', { name: 'New garden' }).click();
   await owner.getByPlaceholder('Garden name').fill('No map');
   await lookup(owner, WASHINGTON);
   await expect(owner.getByText('The map is unavailable.')).toBeVisible();

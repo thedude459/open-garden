@@ -498,12 +498,14 @@ export class GardenDetailPage implements OnInit, OnDestroy {
     this.loading.set(true);
     const detail = await this.api.detail(id);
     this.garden.set(detail);
+    // Apply before the season request. The form paints while that request is in
+    // flight, and a late applyForm would wipe a frost date just typed.
+    if (detail) this.applyForm(detail);
     try {
       this.season.set(await this.api.season(id));
     } catch {
       this.season.set(null);
     }
-    if (detail) this.applyForm(detail);
     this.pending.set(null);
     this.candidates.set([]);
     this.truncated.set(false);

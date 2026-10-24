@@ -50,7 +50,7 @@ import { EmptyState } from '../ui/empty-state';
         <button type="button" class="btn btn-secondary" (click)="creating.set(true)">New garden</button>
       </p>
     }
-    @if (items().length === 0 || creating()) {
+    @if ((!loading() && items().length === 0) || creating()) {
     <form class="filters card" (ngSubmit)="create()">
       <input [(ngModel)]="name" name="gardenName" placeholder="Garden name" required />
       <label>
@@ -168,7 +168,7 @@ export class GardenListPage implements OnInit, OnDestroy {
   items = signal<GardenSummaryDto[]>([]);
   readonly tasks = signal<TodayTaskDto[]>([]);
   readonly creating = signal(false);
-  loading = signal(false);
+  loading = signal(true);
   error = signal('');
   private loadGen = 0;
   private mapGen = 0;
