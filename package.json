@@ -50,7 +50,7 @@
     "@nx/devkit": "^24.0.1",
     "@nx/eslint": "^24.0.1",
     "@nx/eslint-plugin": "^23.3.0",
-    "@nx/js": "^23.3.0",
+    "@nx/js": "^24.0.1",
     "@nx/nest": "^23.3.0",
     "@nx/node": "^23.1.1",
     "@nx/playwright": "^23.3.0",
