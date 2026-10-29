@@ -51,7 +51,7 @@
     "@nx/eslint": "^24.0.1",
     "@nx/eslint-plugin": "^23.3.0",
     "@nx/js": "^24.0.1",
-    "@nx/nest": "^23.3.0",
+    "@nx/nest": "^24.0.1",
     "@nx/node": "^23.1.1",
     "@nx/playwright": "^23.3.0",
     "@nx/vite": "^23.3.0",
