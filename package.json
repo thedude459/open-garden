@@ -87,6 +87,6 @@
     "image-size": "npm:empty-npm-package@1.0.0",
     "esbuild": ">=0.25.0",
     "fast-uri": "^3.1.9",
-    "qs": "^6.16.0"
+    "qs": "^6.17.1"
   }
 }
