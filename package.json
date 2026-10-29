@@ -43,8 +43,8 @@
     "zone.js": "~0.16.3"
   },
   "devDependencies": {
-    "@angular/build": "~22.2.3",
-    "@angular/cli": "~22.2.3",
+    "@angular/build": "~22.2.4",
+    "@angular/cli": "~22.2.4",
     "@angular/compiler-cli": "~22.2.3",
     "@nx/angular": "^23.3.0",
     "@nx/devkit": "^23.3.0",
@@ -61,8 +61,8 @@
     "@types/express": "^5.0.0",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
-    "@typescript-eslint/eslint-plugin": "^8.71.2",
-    "@typescript-eslint/parser": "^8.71.2",
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
+    "@typescript-eslint/parser": "^8.72.0",
     "@vitest/coverage-v8": "^5.0.5",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.13.0",
