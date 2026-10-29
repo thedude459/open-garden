@@ -47,7 +47,7 @@
     "@angular/cli": "~22.2.4",
     "@angular/compiler-cli": "~22.2.3",
     "@nx/angular": "^23.3.0",
-    "@nx/devkit": "^23.3.0",
+    "@nx/devkit": "^24.0.1",
     "@nx/eslint": "^24.0.1",
     "@nx/eslint-plugin": "^23.3.0",
     "@nx/js": "^23.3.0",
