@@ -7,7 +7,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-export DATABASE_URL="${DATABASE_URL:-postgresql://open_garden:open_garden@localhost:5432/open_garden}"
+# Own database so test data never lands in the one the Docker app uses.
+export DATABASE_URL="${DATABASE_URL:-postgresql://open_garden:open_garden@localhost:5432/open_garden_e2e}"
 export SESSION_SECRET="${SESSION_SECRET:-ci-session-secret}"
 export SEED_DEMO_USERS="${SEED_DEMO_USERS:-true}"
 export CORS_ORIGIN="${CORS_ORIGIN:-http://localhost:4200}"
@@ -144,6 +145,7 @@ else
   npx playwright install chromium
 fi
 
+node scripts/ci/ensure-database.js
 npx nx run api:sync-plants
 
 PORT=3000 npx tsx apps/api/src/main.ts &
@@ -158,6 +160,9 @@ wait_for_services
 LIVE_STATUS=0
 PW_STATUS=0
 E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache || LIVE_STATUS=$?
+# Kills the API's database connections, so it runs alone after the other live specs.
+E2E_LIVE=1 E2E_DB_RECONNECT=1 npx vitest run --config vitest.config.ts \
+  apps/api-e2e/src/db-reconnect-http.spec.ts || LIVE_STATUS=$?
 npx nx e2e web-e2e || PW_STATUS=$?
 if [[ "${LIVE_STATUS}" -ne 0 || "${PW_STATUS}" -ne 0 ]]; then
   echo "e2e failed (live HTTP=${LIVE_STATUS} playwright=${PW_STATUS})"

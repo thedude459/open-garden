@@ -111,8 +111,12 @@ export async function inviteViewer(owner: Page, email: string) {
 
 export async function createSizedBed(page: Page, name: string, length = '8', width = '4') {
   const vegetable = page.locator('[data-area-kind="vegetable"]');
+  const addVegetable = page.getByRole('button', { name: 'Add vegetable garden' });
+  // count() does not wait. The button stays disabled until areas have loaded,
+  // so the count below reflects saved areas, not a list still in flight.
+  await expect(addVegetable).toBeEnabled();
   if ((await vegetable.count()) === 0) {
-    await page.getByRole('button', { name: 'Add vegetable garden' }).click();
+    await addVegetable.click();
     await expect(vegetable).toBeVisible();
   }
   await page.getByPlaceholder('Bed name').fill(name);

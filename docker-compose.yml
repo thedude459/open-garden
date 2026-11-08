@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    restart: unless-stopped
     ports:
       - "127.0.0.1:5432:5432"
     environment:
@@ -17,6 +18,7 @@ services:
 
   api:
     profiles: ["app"]
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -49,6 +51,7 @@ services:
 
   web:
     profiles: ["app"]
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.web

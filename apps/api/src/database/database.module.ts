@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Logger, Module } from '@nestjs/common';
 import { createDb } from '@open-garden/plant-catalog-data';
 import { DATABASE, DB_POOL } from './database.tokens';
 
@@ -12,7 +12,12 @@ import { DATABASE, DB_POOL } from './database.tokens';
         if (!url) {
           throw new Error('DATABASE_URL is required');
         }
-        const { db, pool } = createDb(url);
+        const logger = new Logger('DatabasePool');
+        const { db, pool } = createDb(url, {
+          applicationName: 'open-garden-api',
+          onPoolError: (error) =>
+            logger.error(`Idle client error, client discarded: ${error.message}`),
+        });
         return { db, pool };
       },
     },

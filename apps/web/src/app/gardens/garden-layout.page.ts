@@ -341,7 +341,7 @@ import { EmptyState } from '../ui/empty-state';
               </ul>
             }
             <p>
-              <button type="button" class="btn btn-secondary" (click)="addVegetable()">Add vegetable garden</button>
+              <button type="button" class="btn btn-secondary" [disabled]="!areasLoaded()" (click)="addVegetable()">Add vegetable garden</button>
               <button type="button" class="btn btn-secondary" (click)="addStation('tree')">Add tree</button>
               <button type="button" class="btn btn-secondary" (click)="addStation('berry')">Add berry patch</button>
             </p>
@@ -409,6 +409,8 @@ export class GardenLayoutPage implements OnInit {
   pendingStation: 'tree' | 'berry' | null = null;
   trayName = '';
   readonly areas = signal<PropertyAreaDto[]>([]);
+  /** False until the first areas request settles, so "Add vegetable garden" cannot duplicate one not yet shown. */
+  readonly areasLoaded = signal(false);
   readonly trays = signal<TrayDto[]>([]);
   readonly mulchChoices: { id: Mulch; label: string }[] = [
     { id: 'none', label: 'No mulch' },
@@ -566,6 +568,8 @@ export class GardenLayoutPage implements OnInit {
       this.trays.set(trays);
     } catch (err) {
       this.error.set(messageFrom(err));
+    } finally {
+      this.areasLoaded.set(true);
     }
   }
 

@@ -86,19 +86,25 @@ across years.
 - Companion suggestions (helps, hinders, pollinates) are in scope when a feature
   asks for them. They are advice. They MUST NOT block save unless that feature
   says so. Spacing remains the hard gate.
-- A property is the garden record. A vegetable garden, an orchard, and a
-  greenhouse are areas on that same record, not a second product or a second
-  database. Vegetable beds are raised or in-ground. An orchard is one bed per
-  tree and one bed per berry patch, and underplanting may share that bed. A
-  greenhouse is named trays. A vegetable area and a tray do not take trees
-  or shrubs.
+- A property is the garden record. A vegetable garden, an orchard, a
+  bramble patch, and a greenhouse are typed areas on that same record, not a
+  second product or a second database. Vegetable beds are raised or
+  in-ground. An orchard is one bed per tree, and underplanting may share that
+  bed. A bramble area holds cane fruit (raspberries, blackberries) and is its
+  own area type, not part of an orchard. A greenhouse is named trays.
+- Each area type declares which plants it accepts, by growth habit and use
+  from the catalog (for example, a vegetable area and a tray do not take
+  trees, shrubs, or canes; an orchard takes fruit and nut trees plus
+  herbaceous underplanting). A mismatch is **blocked**, like spacing — it is
+  a hard gate, not advice. New area types are added to that one list, not by
+  schema changes.
 - Principle IV still holds. An orchard canvas, a crop-family taxonomy, or a
   companion graph MUST NOT be built until a feature needs it. A provider
   call for companion pairs MUST NOT be added until a real source exists;
   until then, pairs are household data. Principle III applies once a provider
   is used.
 
-**Rationale**: The layout and reminder features and reminders left companions and
+**Rationale**: The layout and reminder features left companions and
 multi-year plants out of those versions. That exclusion is not permanent.
 The planting record has to be able to outlive a single season before an
 orchard feature arrives.
