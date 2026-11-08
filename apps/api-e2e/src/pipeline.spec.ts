@@ -29,7 +29,3 @@ test('pipelineRunListQuerySchema pages with defaults', () => {
   expect(pipelineRunListQuerySchema.safeParse({ pageSize: 101 }).success).toBe(false);
 });
 
-test('non-admin pipeline start is documented as 403 Admin role required', () => {
-  const error = { error: { code: 'FORBIDDEN', message: 'Admin role required' } };
-  expect(error.error.message).toBe('Admin role required');
-});
