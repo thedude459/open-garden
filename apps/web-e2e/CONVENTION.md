@@ -1,6 +1,6 @@
 # Browser e2e convention
 
-Layering, session, waits, and isolation for `apps/web-e2e`. Live HTTP proofs live in `apps/api-e2e` (`E2E_LIVE=1`). See `specs/012-e2e-test-streamline/contracts/e2e.md`.
+Layering, session, waits, and isolation for `apps/web-e2e`. Live HTTP proofs live in `apps/api-e2e` (`E2E_LIVE=1`). See `docs/e2e-contract.md`.
 
 ## Inventory (T022)
 
