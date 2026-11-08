@@ -34,6 +34,9 @@ jobs:
           results_file: scorecard.sarif
           results_format: sarif
           publish_results: true
+          # Fine-grained token with read-only Administration on this repository,
+          # so the Branch-Protection check can read the protection rules.
+          repo_token: ${{ secrets.SCORECARD_TOKEN }}
       - name: Keep the results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
