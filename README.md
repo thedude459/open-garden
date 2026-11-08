@@ -8,6 +8,11 @@ property with the rest of your household.
 It runs as three containers (web, API, and PostgreSQL) on any machine with
 Docker: a laptop, a home server or NAS, or a cloud VM.
 
+> **Project status: early (0.x).** Open Garden is usable but young. Expect
+> changes between minor versions (0.1 → 0.2), [back up](docs/deploy.md#backups)
+> before upgrading, and read the release notes. Version 1.0 will mark a stable
+> data model and supported upgrades.
+
 ## Install with Docker
 
 You need [Docker](https://docs.docker.com/get-docker/) with Compose v2

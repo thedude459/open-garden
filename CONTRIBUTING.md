@@ -109,10 +109,16 @@ own once checks pass, and majors wait for review.
 
 ## Releasing
 
-Releases use [semantic versioning](https://semver.org/) tags (`v0.1.0`). While
-the project is pre-1.0, a minor bump may include breaking changes; say so in
-the notes. Commit messages need no special format: the notes come from merged
-pull request titles.
+Releases use [semantic versioning](https://semver.org/) tags (`v0.1.0`).
+While the project is pre-1.0, releases are still normal (not pre-release)
+GitHub Releases: the 0.x number is what says "early". Bump the minor version
+for meaningful changes and the patch version for fixes; a minor bump may
+include breaking changes, so say so in the notes. Commit messages need no
+special format: the notes come from merged pull request titles.
+
+Use the pre-release flag only for release candidates (`v0.2.0-rc.1`) you want
+to try before the real release. Pre-releases do not become "latest", so the
+README install link and the `latest` image tag skip them.
 
 1. Make sure `main` is green.
 2. Publish a GitHub Release with a new tag, letting GitHub write the notes:
