@@ -28,6 +28,40 @@ get an ADR.
 | Isolate e2e data | The Docker stack's catalog and property list show leftover test rows ("Load Tomato" ×N, "Clickthrough …" properties). e2e must use its own database or Compose project name. |
 | Remove filler fixtures | `FixturePlantProvider` ships 40 "Pipeline Extra N" plants. Keep test fixtures in test code only. |
 
+### Open-source project hygiene
+
+Review of CI, scanning, images, tooling, and GitHub settings (November 2026).
+
+**Already in good shape:** every action pinned to a commit SHA; per-job
+least-privilege `permissions`; concurrency cancel; CodeQL on PR, push, and
+weekly; Gitleaks; Trivy + `npm audit` with a base-vs-head gate so only new
+findings fail; e2e skipped when a diff cannot change the app; Dependabot for
+npm and Actions with sensible groups; branch protection on `main` with all
+five checks required, admins included, no force pushes; GitHub secret
+scanning with push protection; Dependabot security updates.
+
+**Gaps, highest priority first:**
+
+| # | Area | Finding | Change |
+|---|---|---|---|
+| 1 | Supply chain | `dependabot-automerge.yml` enables auto-merge on every Dependabot PR, including majors, and `main` requires 0 approvals. A compromised or breaking release merges once CI is green. | Use `dependabot/fetch-metadata` and auto-merge only patch/minor (optionally dev-only); majors wait for a human. |
+| 2 | Security policy | No `SECURITY.md`; private vulnerability reporting is off. | Add `SECURITY.md` (supported versions, how to report, response time) and enable private vulnerability reporting. |
+| 3 | API image | Single stage, full `npm ci` with dev dependencies, whole repo copied, runs as root, and serves TypeScript with `npx tsx` at runtime. | Multi-stage: build a bundle, `npm ci --omit=dev`, copy only `dist`, run as `USER node`, `node dist/main.js`. Run migrations/seed as a separate one-shot command or Compose service. |
+| 4 | Web image | `nginx:alpine` runs as root; no security headers; server version exposed. | `nginxinc/nginx-unprivileged`; add CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `frame-ancestors`; `server_tokens off`. |
+| 5 | Images in CI | Dockerfiles are never built or scanned in CI; base images are floating tags. | CI job builds both images, scans with Trivy `image`, lints with hadolint. Pin bases by digest; add `docker` ecosystem to Dependabot (also covers `postgres:16-alpine`). |
+| 6 | Releases | `version` is `0.0.0`; no tags, releases, or changelog. | Semantic versioning with release-please (or Changesets); on tag, publish multi-arch images to GHCR with SBOM and build provenance (`actions/attest-build-provenance`), optionally signed with cosign. |
+| 7 | Community files | GitHub community profile is 42%: no `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates, or PR template. | Add all four (Contributor Covenant for the CoC; issue forms for bug, feature, and **data correction**). Add `CODEOWNERS` once there is a second maintainer. |
+| 8 | Repo metadata | No topics, homepage, or Discussions. | Topics (`gardening`, `self-hosted`, `pwa`, `angular`, `nestjs`), a homepage (docs or demo), Discussions for questions. |
+| 9 | Scorecard | No OpenSSF Scorecard. | Add the Scorecard workflow and badge; it checks most of the above continuously. |
+| 10 | Workflow linting | Workflows are not linted. | `actionlint` and `zizmor` (Actions security linter) in CI. |
+| 11 | Formatting | Prettier is installed but not enforced. | `prettier --check` in the `verify` job. |
+| 12 | Lint depth | ESLint has no Angular template or accessibility rules and no type-aware rules. | Add `angular-eslint` with template accessibility rules and `typescript-eslint` type-checked presets (warn first, then error). |
+| 13 | Dependency licenses | No check that dependencies stay license-compatible with the chosen code license. | `license-checker` (or Trivy `--scanners license`) with an allow-list. |
+| 14 | `legacy-peer-deps` | `.npmrc` sets `legacy-peer-deps=true`, hiding peer conflicts. | Remove once the TypeScript/typescript-eslint pin is resolved; document why if it must stay. |
+| 15 | Personal tool config | `.cursor/settings.json`, `.cursor/rules/ponytail.mdc`, and `.superdesign/` are tracked. | Move the design system to `docs/design-system.md`; keep editor/agent config untracked or clearly optional. |
+| 16 | Coverage gate scope | The 80% gate covers domain libs only. | Keep, but publish the coverage report as a CI artifact or PR comment so contributors see it. |
+| 17 | Gitleaks action | `gitleaks-action` needs a license key for organization-owned repos. | No action while the repo is personal; switch to the `gitleaks` CLI if it moves to an org. |
+
 ---
 
 ## Phase 1 — Open plant dataset
@@ -208,7 +242,8 @@ In rough priority order:
 
 | Order | Work | Why this order |
 |---|---|---|
-| 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) | Small, unblocks everything, and licensing must be settled before data contributions start. |
+| 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) and hygiene items 1–5 | Small, unblocks everything; licensing must be settled before data contributions start, and the auto-merge and image fixes reduce real risk now. |
+| 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | Cheap, visible wins; no dependency on data. |
 | 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. |
 | 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
