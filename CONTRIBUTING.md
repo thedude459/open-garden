@@ -91,17 +91,20 @@ is a required check on `main`.
 
 | Check | What it does |
 |---|---|
-| `verify` | Affected ESLint, the Vitest coverage gate, affected builds |
+| `verify` | Affected ESLint, the Vitest coverage gate, the dependency-license check, affected builds, and a report-only whole-codebase coverage table |
 | `sca` | `npm audit` (high+) and Trivy filesystem scan, compared with the base so only new findings fail |
 | `secrets` | Gitleaks |
+| `workflows` | actionlint and zizmor on the GitHub Actions workflows |
 | `analyze` | CodeQL for JavaScript/TypeScript |
-| `images (api)`, `images (web)` | hadolint, image build, and Trivy image scan (fixable HIGH/CRITICAL fail) |
+| `images (api)`, `images (web)` | hadolint, image build, and Trivy image scan (fixable HIGH/CRITICAL fail); skipped for documentation-only changes |
 | `e2e` | Live HTTP, then Playwright (2 workers, no retries) against a seeded API and web app |
 
 The `e2e` job passes without running browsers when a pull request only changes
 documentation, editor or formatter config, the lockfile, development
 dependencies, or workflow pins (`scripts/ci/e2e-needed.js`). A failed run
 uploads the Playwright report and traces.
+
+Outside pull requests, [Scorecard](.github/workflows/scorecard.yml) checks supply-chain practices on every push to `main` and weekly, and [Image scan](.github/workflows/image-scan.yml) scans the latest published images every week.
 
 Actions are pinned by commit SHA. Dependabot opens weekly updates for npm,
 GitHub Actions, and the Docker images; patch and minor updates merge on their
