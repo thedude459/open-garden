@@ -1,6 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { Client } from 'pg';
+import { existsSync } from 'node:fs';
 import { CatalogPipelineService } from '@open-garden/catalog-pipeline';
 import {
   createDb,
@@ -8,6 +6,7 @@ import {
   PipelineSettingsRepository,
   PlantRepository,
   PlantSourceRepository,
+  runMigrations,
 } from '@open-garden/plant-catalog-data';
 import { AuthService } from '@open-garden/auth';
 import { createPipelineSources } from '../admin/pipeline-sources';
@@ -17,23 +16,12 @@ if (existsSync('.env')) process.loadEnvFile();
 async function main() {
   const url = process.env['DATABASE_URL'];
   if (!url) throw new Error('DATABASE_URL required');
+  // --seed-only: skip the catalog pipeline when plants already exist (Docker boot).
   const seedOnly = process.argv.includes('--seed-only');
 
-  if (!seedOnly) {
-    const client = new Client({ connectionString: url });
-    await client.connect();
-    const migrationsDir = resolve(process.cwd(), 'libs/plant-catalog-data/migrations');
-    const files = readdirSync(migrationsDir)
-      .filter((f) => f.endsWith('.sql'))
-      .sort();
-    for (const file of files) {
-      const sql = readFileSync(resolve(migrationsDir, file), 'utf8');
-      await client.query(sql);
-    }
-    await client.end();
-  }
-
   const { db, pool } = createDb(url);
+  // Tracked: each migration runs once per database, never again on later boots.
+  await runMigrations(db);
   const auth = new AuthService(db);
   if (process.env['SEED_DEMO_USERS'] === 'true') {
     await auth.ensureAdmin('admin@example.com', 'password123');
