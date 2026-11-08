@@ -9,13 +9,28 @@ Docker host — a laptop, a home server or NAS, or a cloud VM.
 
 | Container | Image | Purpose |
 |---|---|---|
-| `web` | built from `Dockerfile.web` (nginx, runs as uid 101) | Serves the app and proxies `/api` to the API. Published on port **8080**. |
-| `api` | built from `Dockerfile.api` (Node, runs as uid 1000) | REST API. On start it waits for the database, applies pending migrations, and loads the plant catalog on first boot. Not published. |
-| `postgres` | `postgres:16-alpine` | Data, in the `pgdata` volume. Published on `127.0.0.1:5432` only, for local development. |
+| `web` | `ghcr.io/thedude459/open-garden-web` (nginx, runs as uid 101) | Serves the app and proxies `/api` to the API. Published on port **8080**. |
+| `api` | `ghcr.io/thedude459/open-garden-api` (Node, runs as uid 1000) | REST API. On start it waits for the database, applies pending migrations, and loads the plant catalog on first boot. Not published. |
+| `postgres` | `postgres:16-alpine` | Data, in the `open-garden_pgdata` volume. Not published. |
 
-`web` and `api` start with `docker compose --profile app …`; `postgres` starts
-with them, or on its own with plain `docker compose up -d postgres`. All three
-restart automatically unless you stopped them.
+All three start with `docker compose up -d` and restart automatically unless
+you stopped them. Each release's `compose.yaml` pins the image version; set
+`OPEN_GARDEN_VERSION` in `.env` to run a different one.
+
+**Building from source** uses `docker-compose.yml` in the repository instead:
+the same containers built locally, started with `docker compose --profile app
+up -d --build`. It also publishes Postgres on `127.0.0.1:5432` for development.
+Both files use the project name `open-garden`, so they share the same data
+volume.
+
+### Verifying an image
+
+Release images carry an SBOM and signed build provenance. With the
+[GitHub CLI](https://cli.github.com/):
+
+```bash
+gh attestation verify oci://ghcr.io/thedude459/open-garden-api:0.1.0 --owner thedude459
+```
 
 ## Configuration
 
@@ -48,7 +63,7 @@ install stays far inside them. If you host for many people, check their terms.
 
 ## Reaching it from other devices
 
-1. Set `WEB_HOST=0.0.0.0` and run `docker compose --profile app up -d`.
+1. Set `WEB_HOST=0.0.0.0` and run `docker compose up -d`.
 2. Open `http://<host-ip>:8080` from another device on the same network.
 3. Allow the port in the host's firewall if needed. To use port 80, set
    `WEB_PORT=80` or map host port 80 to container port 8080 in your Docker UI.
@@ -91,9 +106,9 @@ Keep copies somewhere other than this machine. To restore a dump, stop the API
 first, then load it over the current data:
 
 ```bash
-docker compose --profile app stop api web
+docker compose stop api web
 docker compose exec -T postgres pg_restore -U open_garden -d open_garden --clean --if-exists < open-garden-2026-11-08.dump
-docker compose --profile app up -d
+docker compose up -d
 ```
 
 Use your own user and database names if you changed `POSTGRES_USER` or
@@ -103,9 +118,13 @@ Use your own user and database names if you changed `POSTGRES_USER` or
 
 ```bash
 docker compose exec -T postgres pg_dump -U open_garden -Fc open_garden > before-upgrade.dump
-git pull
-docker compose --profile app up -d --build
+curl -fsSLO https://github.com/thedude459/open-garden/releases/latest/download/compose.yaml
+docker compose up -d
 ```
+
+Read the release notes first. To pick a specific version, download that
+release's `compose.yaml` or set `OPEN_GARDEN_VERSION`. When building from
+source, run `git pull && docker compose --profile app up -d --build` instead.
 
 The API applies any new database migrations when it starts; each one runs once.
 Check `docker compose logs api` if it does not become healthy.
@@ -122,7 +141,7 @@ own account an admin:
 
 1. Register it in the app as usual.
 2. Add `ADMIN_EMAIL=you@example.com` to `.env`.
-3. Restart the API: `docker compose --profile app up -d --force-recreate api`.
+3. Restart the API: `docker compose up -d --force-recreate api`.
    The log says `ADMIN_EMAIL: you@example.com has the admin role`.
 4. Sign out and in again.
 

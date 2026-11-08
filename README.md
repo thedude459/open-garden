@@ -11,16 +11,18 @@ Docker: a laptop, a home server or NAS, or a cloud VM.
 ## Install with Docker
 
 You need [Docker](https://docs.docker.com/get-docker/) with Compose v2
-(`docker compose version` should work) and about 1 GB of disk.
+(`docker compose version` should work) and about 1 GB of disk. Images are
+published for 64-bit Intel/AMD and ARM machines (including Apple Silicon and
+Raspberry Pi 4/5), so there is nothing to build.
 
-1. Get the code:
+1. Make a folder and download the latest release's `compose.yaml`:
 
    ```bash
-   git clone https://github.com/thedude459/open-garden.git
-   cd open-garden
+   mkdir open-garden && cd open-garden
+   curl -fsSLO https://github.com/thedude459/open-garden/releases/latest/download/compose.yaml
    ```
 
-2. Create `.env` next to `docker-compose.yml`:
+2. Create `.env` next to it:
 
    ```bash
    cat > .env <<EOF
@@ -37,11 +39,11 @@ You need [Docker](https://docs.docker.com/get-docker/) with Compose v2
 3. Start it:
 
    ```bash
-   docker compose --profile app up -d --build
+   docker compose up -d
    ```
 
-   The first start builds the images and loads the plant catalog; give it a
-   few minutes. `docker compose ps` shows `api` as `healthy` when it is ready.
+   The first start downloads the images and loads the plant catalog.
+   `docker compose ps` shows `api` as `healthy` when it is ready.
 
 4. Open **<http://127.0.0.1:8080>** and choose **Need an account?** to register.
    Add a property, then invite the rest of your household from its
@@ -52,24 +54,38 @@ devices, or to put it behind HTTPS, see **[docs/deploy.md](docs/deploy.md)**.
 
 ### Try it with demo data
 
-For a quick look instead of a real install, skip step 2 and run
-`cp .env.example .env` before step 3. Then sign in as
-`gardener@example.com` / `password123`; addresses and weather use built-in
-sample data. Do not use those settings for a garden other people rely on.
+For a quick look instead of a real install, use this `.env` in step 2:
+
+```bash
+SEED_DEMO_USERS=true
+PLACE_PROVIDER=fixture
+```
+
+Then sign in as `gardener@example.com` / `password123`; addresses and weather
+use built-in sample data. Do not use those settings for a garden other people
+rely on.
+
+### Build from source
+
+To run your own changes, clone the repository, create the same `.env` next to
+`docker-compose.yml`, and run `docker compose --profile app up -d --build`.
+Development without Docker is covered in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Day to day
 
+Run these in the folder with `compose.yaml` and `.env`.
+
 | Task | Command |
 |---|---|
-| Stop (data is kept) | `docker compose --profile app stop` |
-| Start again | `docker compose --profile app up -d` |
-| Update to the latest version | `git pull && docker compose --profile app up -d --build` |
+| Stop (data is kept) | `docker compose stop` |
+| Start again | `docker compose up -d` |
+| Update to the latest release | download the new `compose.yaml` (step 1), then `docker compose up -d` |
 | See logs | `docker compose logs -f api` |
 | Back up the database | see [docs/deploy.md](docs/deploy.md#backups) |
 
 Database changes are applied automatically when the API starts. Your data lives
-in the `pgdata` Docker volume; `docker compose down -v` **deletes it**, so leave
-off `-v` unless that is what you want.
+in the `open-garden_pgdata` Docker volume; `docker compose down -v` **deletes
+it**, so leave off `-v` unless that is what you want.
 
 ## More
 
