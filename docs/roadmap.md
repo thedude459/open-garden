@@ -62,6 +62,55 @@ scanning with push protection; Dependabot security updates.
 | 16 | Coverage gate scope | The 80% gate covers domain libs only. | Keep, but publish the coverage report as a CI artifact or PR comment so contributors see it. |
 | 17 | Gitleaks action | `gitleaks-action` needs a license key for organization-owned repos. | No action while the repo is personal; switch to the `gitleaks` CLI if it moves to an org. |
 
+### Tests
+
+Review of unit, API, and browser tests (November 2026), measured locally.
+
+**Measured:**
+
+| Suite | Size | Time | Result |
+|---|---|---|---|
+| Vitest (unit + API contract) | 83 files, 342 tests | ~4.4 s | 316 pass, 26 skipped (live HTTP specs that need `E2E_LIVE=1`) |
+| Coverage gate (configured scope) | 1,675 lines | — | 89% lines, 76% branches — passes |
+| Coverage of the whole codebase | 5,557 lines | — | **34% lines** |
+| e2e (live HTTP + Playwright) | 24 API + 46 browser spec files | ~3 min (live HTTP ~25 s, Playwright 2.5 min on 2 workers) | Live HTTP passed; Playwright 64 passed, 1 failed, 1 skipped. The failure followed an API crash (see item 13), caused here by Docker Desktop's disk going read-only and stopping Postgres mid-run |
+
+Coverage by area (lines, whole codebase):
+
+| Area | Lines | Covered |
+|---|---|---|
+| `apps/web` (Angular pages, services) | 2,699 | 1% |
+| `apps/api` (controllers, guards, boot) | 504 | 8% |
+| `libs/plant-catalog-data` (repositories, SQL) | 413 | 13% |
+| `libs/seasonal-plantings` | 287 | 67% |
+| Other domain libs | ~1,650 | 74–99% |
+
+**Already good:** domain logic lives in libraries with fast in-memory fakes;
+the Vitest run is quick; Playwright finds elements by accessible role
+(about 700 `getByRole` vs 300 CSS locators), uses no fixed sleeps, signs in
+through the API with a unique user per test, blocks external map tiles, keeps
+traces and screenshots on failure, runs with zero retries so flakiness is
+visible, and forbids `.only` in CI. Performance budgets (20-garden list,
+planner load, plant search) are tested.
+
+**Gaps, highest priority first:**
+
+| # | Finding | Change |
+|---|---|---|
+| 1 | The 80% gate measures only domain libraries. The Angular app (half the code) is at 1%, so the gate says little about what users touch. | Report whole-codebase coverage alongside the gate; add a separate, lower threshold for `apps/web` and raise it as component tests land. |
+| 2 | Only 2 Angular spec files exist; no component tests. UI behaviour is tested only through slow browser runs. | Add component tests (Angular Testing Library on Vitest) for the large pages as they are split in Phase 3: planner inspector, plantings list, configuration sections. |
+| 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | Integration tests against a real Postgres (Testcontainers or the CI service) with per-test transactions or schemas; include them in a second coverage report. |
+| 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | Use a separate database for e2e (e.g. `open_garden_e2e`, created by the script) or a separate Compose project. |
+| 5 | Some "contract" tests assert values they constructed themselves (e.g. `apps/api-e2e/src/gardens.spec.ts` "non-member GET is documented as 404" checks a literal it just built), which inflates counts without testing code. | Remove or replace with a real HTTP assertion. Audit for similar tautologies. |
+| 6 | API controllers, guards, and session handling are covered only by the live HTTP specs, which are skipped in the Vitest run and not counted in coverage. | Run live HTTP specs with coverage in the e2e job (or test controllers with Nest's testing module and in-memory repos) and merge the reports. |
+| 7 | No accessibility tests. | `@axe-core/playwright` checks on each main page; fail on serious/critical issues. Pairs with the Phase 3 accessibility pass. |
+| 8 | Browser tests run only in desktop Chromium, but the app has a mobile layout (the header overlap bug in Phase 3 would have been caught). | Add a mobile project (Pixel/iPhone viewport) for a tagged smoke subset; optionally WebKit for the PWA. |
+| 9 | Wall-clock budgets (`< 2000 ms`) run inside the functional e2e job on shared CI runners, which invites flaky failures. | Keep budgets but tag them (`@perf`), run them in their own step with a warm-up, and report timings as an artifact. |
+| 10 | Climate, calendar, and reminder logic depends on today's date; only one spec file uses fake timers. | Inject a clock (or use `vi.setSystemTime`) in date-dependent tests, including Southern Hemisphere and year-wrap cases from Phase 2. |
+| 11 | Each spec file starts a fresh worker (~88 ms each). | Small win: try `isolate: false` for pure libraries. Not urgent at 4 s. |
+| 12 | No visual regression baseline. | Optional, after the Phase 3 redesign settles: Playwright screenshot comparisons for a handful of key screens. |
+| 13 | **Bug found during the e2e run:** `createDb` in `libs/plant-catalog-data/src/lib/db.ts` builds a `pg` `Pool` with no `'error'` listener. When Postgres dropped an idle connection, Node threw an unhandled `'error'` event and the whole API process exited. In production, any database restart or network blip takes the API down until Docker restarts it. | Add `pool.on('error', …)` that logs and lets the pool reconnect; set a Compose `restart: unless-stopped` policy; add a test that kills a pooled connection and checks the API still answers. Fix in step 1. |
+
 ---
 
 ## Phase 1 — Open plant dataset
@@ -245,6 +294,7 @@ In rough priority order:
 | Order | Work | Why this order |
 |---|---|---|
 | 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) and hygiene items 1–5 | Small, unblocks everything; licensing must be settled before data contributions start, and the auto-merge and image fixes reduce real risk now. |
+| 1a | Test items 13, 1, 4, 5 (pool crash fix, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 7, 8 land alongside Phase 3; item 10 with Phase 2. |
 | 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | Cheap, visible wins; no dependency on data. |
 | 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. |
