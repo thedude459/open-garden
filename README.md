@@ -26,13 +26,13 @@ You need [Docker](https://docs.docker.com/get-docker/) with Compose v2
    cat > .env <<EOF
    POSTGRES_PASSWORD=$(openssl rand -hex 24)
    SEED_DEMO_USERS=false
-   PLACE_PROVIDER=live
    EOF
    ```
 
-   `PLACE_PROVIDER=live` turns on real address lookup, map previews, frost
-   dates, hardiness zones, and the rain outlook (OpenStreetMap, Open-Meteo, and
-   others; no API keys). Leave it out to use built-in sample data instead.
+   Address lookup, map previews, frost dates, hardiness zones, and the rain
+   outlook use free online services (OpenStreetMap, Open-Meteo, and others; no
+   API keys). To keep the app offline with built-in sample data instead, add
+   `PLACE_PROVIDER=fixture`.
 
 3. Start it:
 
