@@ -23,7 +23,7 @@ get an ADR.
 |---|---|
 | Retire Spec Kit | Done on branch `remove-speckit` (ADR 0017). Constitution is now `AGENTS.md`; `CLAUDE.md` imports it. |
 | Licensing | **Done:** code is `AGPL-3.0-or-later` (`LICENSE`, `package.json`, README). Follow-up for AGPL section 13: show a "Source code" link in the app (sidebar or sign-in page) pointing at the repository, so people using a hosted copy can get the source. |
-| Docker-only install docs | **Done:** README is a four-step Docker install (generated secrets, `PLACE_PROVIDER=live`, no demo users); `docs/deploy.md` covers configuration, network access, HTTPS, backups and restore, upgrades, and troubleshooting; `CONTRIBUTING.md` holds the development setup, tests, CI, and layout. Verified by following the README on a fresh clone, including backup and restore. **Follow-ups found:** (1) `SESSION_SECRET` is required but not used — sessions are random tokens stored hashed; use it (e.g. to sign cookies) or drop the requirement. (2) No way to get an admin without demo users — add a setting such as `ADMIN_EMAIL` that promotes that registered account. (3) Compose defaults to `PLACE_PROVIDER=fixture`; consider `live` as the default for installs and keep `fixture` for tests. |
+| Docker-only install docs | **Done:** README is a four-step Docker install (generated database password, no demo users; real place data by default); `docs/deploy.md` covers configuration, network access, HTTPS, backups and restore, upgrades, and troubleshooting; `CONTRIBUTING.md` holds the development setup, tests, CI, and layout. Verified by following the README on a fresh clone, including backup and restore. **Follow-ups:** (1) **Done:** `SESSION_SECRET` dropped; sessions are random 256-bit tokens stored hashed, so no signing secret is needed. (2) **Done:** `ADMIN_EMAIL` promotes an existing account to admin when the API starts (never at sign-up, since email is unverified). (3) **Done:** Compose defaults to `PLACE_PROVIDER=live` for installs; tests, CI, and `.env.example` keep `fixture`. |
 | Publish images | Build and push `api` and `web` images to GHCR on tagged releases so operators don't need to build from source. Ship a `compose.yaml` that uses the published images. |
 | Isolate e2e data | Done on branch `fix-stability-step-1`: `scripts/ci/e2e.sh` defaults to an `open_garden_e2e` database and creates it if missing. Existing test rows in the app database still need a one-time cleanup (or a fresh volume). |
 | Remove filler fixtures | **Done:** installs get only the 8 real sample plants. The test plants (Unknown Herb, Interval Herb, Pipeline Extra 01–40) and the second fixture source load only with `PLANT_TEST_FIXTURES=true`, which `scripts/ci/e2e.sh` and the CI e2e job set. Existing databases keep any filler plants already imported until the Phase 1 dataset import replaces the catalog. |
@@ -144,6 +144,64 @@ projects. The gaps match what the leading project (Immich) does differently:
 a middle layer of real-database tests, frontend component tests, e2e against
 the shipped images, and server logs uploaded with failed runs. Add to
 item 15: upload the API log as an artifact when e2e fails.
+
+### Coverage plan
+
+**Baseline (November 2026)**, from the report-only whole-codebase run
+(`npm run test:coverage:all`): **31% of lines**. The 80% gate passes because it
+measures the domain libraries only.
+
+| Area | Lines | Covered | What is missing |
+|---|---|---|---|
+| `apps/web` | 2,702 | 1% | Component and service tests; only Playwright exercises the UI |
+| `apps/api` | 501 | 13% | Controllers, guards, session handling — exercised by live HTTP tests, but those are not measured |
+| `libs/plant-catalog-data` | 418 | 14% | Every SQL repository; only the migration test touches a real database |
+| `libs/seasonal-plantings` | 287 | 67% | Below the 80% bar the other domain libraries meet |
+| Other domain libraries | ~1,400 | 79–99% | — |
+
+**Principles**
+
+- *Measure what is already tested before writing more.* Live HTTP and
+  Playwright exercise most of the API, so the 13% understates it.
+- *Never go down.* Each area gets a minimum that starts at today's number and
+  only rises.
+- *Test where mistakes cost most first:* SQL that can lose data and
+  authorization checks, before UI.
+
+**Steps**
+
+1. **Count the live tests.** Run the API with `NODE_V8_COVERAGE` during
+   `scripts/ci/e2e.sh`, convert it with `c8`, and merge it with the Vitest
+   report so `apps/api` and `libs/plant-catalog-data` show what the live HTTP
+   and Playwright suites really cover. Publish both numbers in the job summary.
+2. **Ratchet.** Add per-area thresholds to `vitest.coverage-all.config.ts` (and
+   the merged report from step 1) set to today's numbers, rounded down. A pull
+   request that lowers an area fails; a pull request that adds tests raises the
+   floor in the same change.
+3. **Database integration tests** for `libs/plant-catalog-data`, against
+   throwaway databases like `apps/api-e2e/src/migrations-db.spec.ts`. In order:
+   garden and membership repositories (who can see what), beds and plantings
+   (data loss), then the pipeline repositories. New repositories from Phase 1
+   (crops, varieties, dataset import) ship with these tests from the start.
+4. **API controllers and guards** with Nest's testing module and in-memory
+   repositories, for authorization and validation edge cases the live HTTP
+   tests do not reach.
+5. **Web services first, components with Phase 3.** The API clients, offline
+   cache, and planner draft logic can be unit-tested now. Component tests
+   (Angular Testing Library on Vitest) land as the large pages are split in
+   Phase 3: planner inspector, plantings list, configuration sections, and the
+   Today screen, which is new code and ships with tests.
+6. **`seasonal-plantings` to 85%**, then hold the domain gate at 80%.
+
+**Targets**
+
+| Area | Now | After Phase 2 (data and climate) | After Phase 3 (UI) |
+|---|---|---|---|
+| `apps/api` (merged with live tests) | 13% unmerged | 70% | 80% |
+| `libs/plant-catalog-data` | 14% | 70% | 80% |
+| `apps/web` | 1% | 20% (services) | 60% |
+| `libs/seasonal-plantings` | 67% | 85% | 85% |
+| Whole codebase | 31% | 50% | 70% |
 
 ---
 
@@ -356,12 +414,13 @@ In rough priority order:
 | Order | Work | Why this order |
 |---|---|---|
 | 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) and hygiene items 1–5 | Small, unblocks everything; licensing must be settled before data contributions start, and the auto-merge and image fixes reduce real risk now. |
-| 1a | Test items 13, 14, 1, 4, 5 (pool crash fix, flaky helper, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 7, 8 land alongside Phase 3; item 10 with Phase 2. |
+| 1a | Test items 13, 14, 1, 4, 5 (pool crash fix, flaky helper, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 6 are scheduled by the [coverage plan](#coverage-plan); 7, 8 land alongside Phase 3; item 10 with Phase 2. |
 | 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
+| 1c | [Coverage plan](#coverage-plan) steps 1–4: measure live tests, ratchet, database integration tests, API controller tests | The real numbers and a floor that only rises come first; the database and authorization tests protect the data before Phase 1 changes the schema. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | Cheap, visible wins; no dependency on data. |
-| 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. |
+| 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. New repositories ship with integration tests (coverage step 3). |
 | 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
-| 5 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector | Builds on 3–4. |
+| 5 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector | Builds on 3–4. Split pages and new screens ship with component tests (coverage step 5). |
 | 6 | Grow dataset to ~150 crops; companions from data | Runs in parallel in the data repo once the schema is stable. |
 | 7 | Phase 3 remaining + onboarding | |
 | 8 | Phase 4 features, in the order listed | |

@@ -24,11 +24,11 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 
 | Variable | Default | What it does |
 |---|---|---|
-| `SESSION_SECRET` | — (**required**) | Must be set or the API refuses to start, and must not be the example value when `SEED_DEMO_USERS=false`. Generate one with `openssl rand -hex 32`. *Sessions are currently random tokens stored hashed, so this value is not yet used to sign anything; it is checked so a real secret is in place when it is.* |
 | `POSTGRES_PASSWORD` | `open_garden` | Database password. Set your own before the **first** start: Postgres only reads it when it creates the `pgdata` volume. To change it later, change it inside Postgres too (see [Troubleshooting](#troubleshooting)). |
 | `POSTGRES_USER`, `POSTGRES_DB` | `open_garden` | Database user and name. Same first-start rule. |
+| `ADMIN_EMAIL` | unset | Gives the account with this email the admin role when the API starts. The account must already exist; see [Admin account](#admin-account). |
 | `SEED_DEMO_USERS` | unset (off) | `true` creates `gardener@example.com` and `admin@example.com` with password `password123`. For trying the app only. |
-| `PLACE_PROVIDER` | `fixture` | `live` uses real services for address lookup and map previews (OpenStreetMap Nominatim), hardiness zone and frost dates (phzmapi, FarmSense; US addresses today), and the rain outlook (Open-Meteo). `fixture` uses built-in sample data and makes no outside calls. |
+| `PLACE_PROVIDER` | `live` | `live` uses real services for address lookup and map previews (OpenStreetMap Nominatim), hardiness zone and frost dates (phzmapi, FarmSense; US addresses today), and the rain outlook (Open-Meteo). `fixture` uses built-in sample data and makes no outside calls; the tests and `.env.example` use it. |
 | `WEB_HOST` | `127.0.0.1` | Address the web port binds to on the host. `0.0.0.0` makes it reachable from other devices. |
 | `WEB_PORT` | `8080` | Host port for the web container. |
 | `COOKIE_SECURE` | `false` | Set `true` when people reach the app over HTTPS, so the session cookie is only sent over TLS. |
@@ -40,7 +40,7 @@ matters for the development setup in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ### Outside services
 
-With `PLACE_PROVIDER=live`, the API calls OpenStreetMap Nominatim, phzmapi.org,
+By default (`PLACE_PROVIDER=live`), the API sends the addresses people look up to OpenStreetMap Nominatim and the garden's coordinates to phzmapi.org,
 FarmSense, and Open-Meteo, and browsers load the OpenStreetMap embed. These are
 free services with usage policies (Nominatim allows about one request per
 second; Open-Meteo's free tier is for non-commercial use). A household
@@ -117,9 +117,19 @@ project makes that move.
 ## Admin account
 
 The admin role is only needed for the plant-catalog pipeline page
-(`/admin/pipeline`); the catalog loads by itself on first boot. Today the only
-way to get an admin is `SEED_DEMO_USERS=true`, which is not suitable for real
-use. A way to promote your own account is on the [roadmap](roadmap.md).
+(`/admin/pipeline`); the catalog loads by itself on first boot. To make your
+own account an admin:
+
+1. Register it in the app as usual.
+2. Add `ADMIN_EMAIL=you@example.com` to `.env`.
+3. Restart the API: `docker compose --profile app up -d --force-recreate api`.
+   The log says `ADMIN_EMAIL: you@example.com has the admin role`.
+4. Sign out and in again.
+
+The setting only promotes an account that already exists, and only when the
+API starts. Email addresses are not verified, so promoting at sign-up would
+let whoever registers that address first become admin. Removing the setting
+later does not take the role away.
 
 ## Troubleshooting
 
@@ -127,7 +137,7 @@ use. A way to promote your own account is on the [roadmap](roadmap.md).
 |---|---|
 | `bind: address already in use` naming 8080 or 5432 | Another program uses the port. Stop it, or set `WEB_PORT`. For 5432, stop the other Postgres. |
 | `api` never becomes healthy | `docker compose logs api`. Common causes are below. |
-| `SESSION_SECRET is required` / `must not be the example value` | Set a real `SESSION_SECRET` in `.env` (see [Configuration](#configuration)). |
+| `ADMIN_EMAIL: no account for … yet` in the API log | Register that email in the app, then restart the API. |
 | `password authentication failed for user` | `POSTGRES_PASSWORD` changed after the volume was created. Set it back, or change it in Postgres: `docker compose exec postgres psql -U open_garden -c "ALTER USER open_garden PASSWORD 'new-password'"`. |
-| Address lookup returns sample places | `PLACE_PROVIDER` is not `live`. |
+| Address lookup returns sample places | `PLACE_PROVIDER` is set to `fixture`, often because `.env` was copied from `.env.example`. Remove it or set `live`. |
 | Signing in seems to work, then you are back at the sign-in page | `COOKIE_SECURE=true` while the browser uses plain `http://`, so the browser drops the cookie. Use HTTPS, or set it back to `false`. |

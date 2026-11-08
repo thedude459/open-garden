@@ -53,6 +53,29 @@ describe('AuthService', () => {
     await expect(svc.register('a@example.com', 'password123')).rejects.toBe(dbError);
   });
 
+  it('promotes an existing account to admin by email, case-insensitively', async () => {
+    const where = vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'u1' }]) });
+    const set = vi.fn().mockReturnValue({ where });
+    const db = { update: vi.fn().mockReturnValue({ set }) };
+    const svc = new AuthService(db as never);
+    await expect(svc.promoteToAdmin('  Me@Example.com ')).resolves.toBe(true);
+    expect(set).toHaveBeenCalledWith({ role: 'admin' });
+  });
+
+  it('reports false and creates nothing when no account has the admin email', async () => {
+    const db = {
+      update: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }),
+        }),
+      }),
+      insert: vi.fn(),
+    };
+    const svc = new AuthService(db as never);
+    await expect(svc.promoteToAdmin('nobody@example.com')).resolves.toBe(false);
+    expect(db.insert).not.toHaveBeenCalled();
+  });
+
   it('returns null on bad login', async () => {
     const db = {
       select: vi.fn().mockReturnValue({

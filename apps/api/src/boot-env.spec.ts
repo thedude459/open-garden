@@ -2,40 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { assertBootEnv } from './boot-env';
 
 describe('assertBootEnv', () => {
-  it('throws naming SESSION_SECRET when missing', () => {
-    expect(() => assertBootEnv({ DATABASE_URL: 'postgresql://x' })).toThrow(/SESSION_SECRET/);
+  it('throws naming DATABASE_URL when missing or empty', () => {
+    expect(() => assertBootEnv({})).toThrow(/DATABASE_URL/);
+    expect(() => assertBootEnv({ DATABASE_URL: '  ' })).toThrow(/DATABASE_URL/);
   });
 
-  it('throws naming SESSION_SECRET when empty', () => {
+  it('starts with only DATABASE_URL; SESSION_SECRET is no longer needed', () => {
+    expect(() => assertBootEnv({ DATABASE_URL: 'postgresql://x' })).not.toThrow();
+    // An old .env that still sets it keeps working.
     expect(() =>
-      assertBootEnv({ SESSION_SECRET: '  ', DATABASE_URL: 'postgresql://x' }),
-    ).toThrow(/SESSION_SECRET/);
-  });
-
-  it('throws naming DATABASE_URL when missing', () => {
-    expect(() => assertBootEnv({ SESSION_SECRET: 's' })).toThrow(/DATABASE_URL/);
-  });
-
-  it('accepts non-empty SESSION_SECRET and DATABASE_URL', () => {
-    expect(() =>
-      assertBootEnv({ SESSION_SECRET: 's', DATABASE_URL: 'postgresql://x' }),
+      assertBootEnv({ DATABASE_URL: 'postgresql://x', SESSION_SECRET: 'dev-only-change-me-in-production' }),
     ).not.toThrow();
   });
 
-  it('rejects the example SESSION_SECRET when SEED_DEMO_USERS=false', () => {
+  it('accepts an ADMIN_EMAIL that looks like an email address', () => {
     expect(() =>
-      assertBootEnv({
-        SESSION_SECRET: 'dev-only-change-me-in-production',
-        DATABASE_URL: 'postgresql://x',
-        SEED_DEMO_USERS: 'false',
-      }),
-    ).toThrow(/example value/);
-    expect(() =>
-      assertBootEnv({
-        SESSION_SECRET: 'dev-only-change-me-in-production',
-        DATABASE_URL: 'postgresql://x',
-        SEED_DEMO_USERS: 'true',
-      }),
+      assertBootEnv({ DATABASE_URL: 'postgresql://x', ADMIN_EMAIL: 'me@example.com' }),
     ).not.toThrow();
+  });
+
+  it('rejects an ADMIN_EMAIL that is not an email address', () => {
+    expect(() =>
+      assertBootEnv({ DATABASE_URL: 'postgresql://x', ADMIN_EMAIL: 'me at example' }),
+    ).toThrow(/ADMIN_EMAIL is not an email address/);
   });
 });

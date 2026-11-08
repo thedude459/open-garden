@@ -18,3 +18,7 @@ Rain is applied when reminders are listed. It never writes `garden_care_events`.
 + CI stays deterministic without calling Nominatim or OpenStreetMap
 + Address lookup and the garden map need no paid API key
 - Live frost depends on an old FarmSense host; the upgrade path is vendored NOAA 1991–2020 normals
+
+## Amendment (November 2026)
+
+The Docker Compose install now defaults to `PLACE_PROVIDER=live`, so a new install shows real addresses and weather instead of sample data. The API code still treats anything but `live` as `fixture`, and the e2e script, CI, and `.env.example` set `fixture` explicitly, so tests stay deterministic and offline.

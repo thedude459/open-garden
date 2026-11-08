@@ -9,7 +9,6 @@ cd "$ROOT"
 
 # Own database so test data never lands in the one the Docker app uses.
 export DATABASE_URL="${DATABASE_URL:-postgresql://open_garden:open_garden@localhost:5432/open_garden_e2e}"
-export SESSION_SECRET="${SESSION_SECRET:-ci-session-secret}"
 export SEED_DEMO_USERS="${SEED_DEMO_USERS:-true}"
 export CORS_ORIGIN="${CORS_ORIGIN:-http://localhost:4200}"
 export PLANT_PROVIDER="${PLANT_PROVIDER:-fixture}"
