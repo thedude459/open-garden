@@ -96,7 +96,7 @@ npm run api:sync-plants         # blocking full fixture load (no 500 cap)
 Optional live source: set `PERENUAL_API_KEY` and PATCH settings
 `sourceOrder` to `["fixture", "perenual"]`. Local/CI default is fixture only.
 
-See `specs/007-data-pipeline/quickstart.md` for populate / merge / monitor checks.
+See `docs/catalog-pipeline-checks.md` for populate / merge / monitor checks.
 
 ## CI
 
