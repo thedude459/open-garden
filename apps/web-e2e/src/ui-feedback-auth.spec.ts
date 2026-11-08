@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { signedInPage } from './session';
+import { signedInPage, uniqueEmail } from './session';
 import { confirmFixtureAddress } from './planner-helpers';
 
 test('login shows busy then lands on gardens without leftover notice', async ({ page }) => {
@@ -25,12 +25,15 @@ test('join link opens register with email filled', async ({ page }) => {
 });
 
 test('Create garden busy + success notice; double click is one garden', async ({ browser }) => {
-  const page = await signedInPage(browser, `ui-create-${Date.now()}@example.com`);
+  const page = await signedInPage(browser, uniqueEmail('ui-create'));
   await page.goto('/gardens');
   await page.getByPlaceholder('Property name').fill('Only One');
   await confirmFixtureAddress(page);
   const create = page.getByRole('button', { name: 'Create property' });
-  await Promise.all([create.click(), create.click()]);
+  // A real double-click: both clicks hit the same button back to back. Two
+  // parallel click() calls raced the re-render after the first create, and the
+  // second waited for a button that no longer existed until the test timed out.
+  await create.dblclick();
   await expect(page.getByRole('link', { name: /Only One/ })).toHaveCount(1);
   await expect(page.getByLabel('Notification')).toContainText('Garden created');
 });
