@@ -49,14 +49,10 @@
     "@angular/build": "~22.2.6",
     "@angular/cli": "~22.2.6",
     "@angular/compiler-cli": "~22.2.4",
-    "@nx/angular": "^24.0.4",
     "@nx/devkit": "^24.0.4",
     "@nx/eslint": "^24.0.4",
     "@nx/eslint-plugin": "^24.0.4",
     "@nx/js": "^24.0.4",
-    "@nx/node": "^24.0.3",
-    "@nx/playwright": "^24.0.4",
-    "@nx/vite": "^24.0.4",
     "@nx/workspace": "^24.0.4",
     "@playwright/test": "^1.65.0",
     "@types/cookie-parser": "^1.4.8",
@@ -89,6 +85,7 @@
     "image-size": "npm:empty-npm-package@1.0.0",
     "esbuild": ">=0.25.0",
     "fast-uri": "^3.1.9",
-    "qs": "^6.17.1"
+    "qs": "^6.17.1",
+    "minimatch": "^11.0.1"
   }
 }

@@ -1,5 +1,11 @@
 # Open Garden
 
+[![CI](https://github.com/thedude459/open-garden/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/thedude459/open-garden/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/thedude459/open-garden)](https://github.com/thedude459/open-garden/releases/latest)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/thedude459/open-garden/badge)](https://scorecard.dev/viewer/?uri=github.com/thedude459/open-garden)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16466/badge)](https://www.bestpractices.dev/projects/16466)
+
 A self-hosted garden planner for households. Lay out beds on a scaled map of
 your property, record what you plant each season, see sowing and transplant
 windows for your frost dates, and keep up with watering and other care. Share a
