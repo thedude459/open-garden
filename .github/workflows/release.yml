@@ -116,7 +116,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      # Upload release assets; sign compose.yaml with a provenance attestation.
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -127,8 +130,18 @@ jobs:
         run: |
           sed "s/\${OPEN_GARDEN_VERSION:-latest}/\${OPEN_GARDEN_VERSION:-${VERSION}}/" deploy/compose.yaml > compose.yaml
           grep -q "OPEN_GARDEN_VERSION:-${VERSION}" compose.yaml
+      - name: Sign compose.yaml (build provenance)
+        id: attest
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: compose.yaml
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "${TAG}" compose.yaml --clobber --repo "${GITHUB_REPOSITORY}"
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          # The Sigstore bundle lets anyone verify compose.yaml came from this
+          # workflow: gh attestation verify compose.yaml --owner <owner>
+          cp "${BUNDLE}" compose.yaml.sigstore.json
+          gh release upload "${TAG}" compose.yaml compose.yaml.sigstore.json --clobber --repo "${GITHUB_REPOSITORY}"

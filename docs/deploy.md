@@ -32,6 +32,13 @@ Release images carry an SBOM and signed build provenance. With the
 gh attestation verify oci://ghcr.io/thedude459/open-garden-api:0.1.0 --owner thedude459
 ```
 
+From the next release on, the release's `compose.yaml` is signed too
+(`compose.yaml.sigstore.json` beside it). In the folder you downloaded it to:
+
+```bash
+gh attestation verify compose.yaml --owner thedude459
+```
+
 ## Configuration
 
 Put settings in `.env` next to `docker-compose.yml`, or set them as environment

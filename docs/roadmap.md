@@ -203,6 +203,37 @@ measures the domain libraries only.
 | `libs/seasonal-plantings` | 67% | 85% | 85% |
 | Whole codebase | 31% | 50% | 70% |
 
+### OpenSSF
+
+Open Garden follows the [Open Source Security Foundation](https://openssf.org/)
+guidance. Status from the OpenSSF Scorecard run of November 2026 (overall
+**7.1 / 10**; `scorecard.yml` re-runs weekly and on every push to `main`).
+
+| Check | Score | Status and plan |
+|---|---|---|
+| Pinned-Dependencies, SAST, Dangerous-Workflow, Binary-Artifacts, Dependency-Update-Tool, License, Packaging, Security-Policy, CI-Tests, Maintained | 10 | Passing. Keep them there: actions pinned by SHA (Dependabot updates them), CodeQL, zizmor, `SECURITY.md`, CI on every PR. |
+| Token-Permissions | 9 | **Fixing:** read-only defaults in `codeql.yml`; `verify` and `e2e` drop `actions: write`. Two write grants stay because the job needs them — `release.yml` (`contents: write` to upload release assets) and `dependabot-automerge.yml` (`contents: write` to enable auto-merge) — and their alerts are dismissed as *won't fix* with that reason. |
+| Vulnerabilities | 7 | **Fixing:** the three advisories were all development-only tooling. Removing the unused `@nx/angular`, `@nx/node`, `@nx/playwright`, and `@nx/vite` drops the Jest chain (`deepmerge` GHSA-gcqx-w48m-w2h4, `glob` GHSA-3g3m-2fjr-6pw4); an npm override moves `minimatch` to 11.0.5 (GHSA-g3hv-75wg-m249). `npm audit` (all dependencies) reports 0. Remove the override once Nx, ESLint, and Vitest depend on minimatch 11 themselves. |
+| Signed-Releases | 0 | **Fixing:** the release workflow signs `compose.yaml` with a Sigstore provenance attestation and attaches `compose.yaml.sigstore.json`. Scorecard looks at the last five releases, so the score rises as new releases ship. Images are already attested (SBOM + provenance). |
+| Branch-Protection | ? | Not scored: the workflow token cannot read branch-protection settings. **Maintainer action:** create a fine-grained token with read-only *Administration* access to this repository, save it as the `SCORECARD_TOKEN` secret, and pass it to the action as `repo_token`. The rules themselves are already strong (required checks, no force pushes, admins included). |
+| CII-Best-Practices | 0 | **Maintainer action:** register the project at [bestpractices.dev](https://www.bestpractices.dev/) and answer the *passing* questionnaire. Most criteria are already met (license, security policy, CI, tests, contribution guide, release notes); add the badge to the README when granted. |
+| Fuzzing | 0 | **Planned:** property-based tests with [fast-check](https://fast-check.dev/), which Scorecard recognises for TypeScript. Start where invariants are clear and bugs are costly: layout geometry and placement, frost-date and sowing-window maths (including Southern Hemisphere year-wrap from Phase 2), and request validation schemas. Ships with coverage-plan step 3–4. |
+| Code-Review | 0 | **Accepted for now:** a single maintainer cannot approve their own pull requests. When a second maintainer joins, require one approving review on `main`. |
+| Contributors | 0 | Grows with outside contributors; the issue forms, Discussions, and `CONTRIBUTING.md` are the on-ramp. |
+
+**Beyond Scorecard**
+
+- **SLSA:** images and `compose.yaml` carry GitHub build-provenance
+  attestations (SLSA Build Level 2). Level 3 needs provenance from an isolated
+  builder (the SLSA GitHub generator's reusable workflows); revisit after 1.0.
+- **Sigstore:** all release artifacts are signed through GitHub attestations;
+  verification is documented in `docs/deploy.md`.
+- **OpenSSF Best Practices badge:** aim for *passing* now, *silver* after 1.0
+  (needs a documented release process — done — and a second maintainer).
+- **Optional:** [Allstar](https://github.com/ossf/allstar) to enforce repository
+  policies continuously, and [OSV-Scanner](https://github.com/google/osv-scanner)
+  as a second vulnerability source alongside `npm audit` and Trivy.
+
 ---
 
 ## Phase 1 — Open plant dataset
@@ -425,6 +456,7 @@ In rough priority order:
 | 1a | Test items 13, 14, 1, 4, 5 (pool crash fix, flaky helper, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 6 are scheduled by the [coverage plan](#coverage-plan); 7, 8 land alongside Phase 3; item 10 with Phase 2. |
 | 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
 | 1c | [Coverage plan](#coverage-plan) steps 1–4: measure live tests, ratchet, database integration tests, API controller tests | The real numbers and a floor that only rises come first; the database and authorization tests protect the data before Phase 1 changes the schema. |
+| 1d | [OpenSSF](#openssf): token permissions, vulnerabilities, signed releases (done in this pass); `SCORECARD_TOKEN` and the Best Practices badge (maintainer); fast-check property tests (with coverage steps 3–4) | Raise the Scorecard score and close the code-scanning alerts before inviting contributors. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | Cheap, visible wins; no dependency on data. |
 | 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. New repositories ship with integration tests (coverage step 3). |
 | 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
