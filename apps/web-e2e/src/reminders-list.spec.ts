@@ -56,7 +56,13 @@ test('reminders list: harvest, no moderate water, empty CTA, viewer read-only', 
   await addFromCatalog(owner, 'Cherry Tomato');
   const tomato = owner.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
   await fillDate(tomato.locator('input[type="date"]').first(), '2026-01-01');
-  await tomato.getByRole('button', { name: 'Save planting' }).click();
+  // Wait for the save to reach the server: Reminders reads the planting date from it.
+  await Promise.all([
+    owner.waitForResponse(
+      (r) => r.request().method() === 'PATCH' && /\/plantings\/[^/]+$/.test(new URL(r.url()).pathname) && r.ok(),
+    ),
+    tomato.getByRole('button', { name: 'Save planting' }).click(),
+  ]);
 
   await goToReminders(owner);
   await expect(owner.getByText('Harvest')).toBeVisible();

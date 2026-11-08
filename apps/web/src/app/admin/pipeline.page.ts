@@ -2,7 +2,6 @@ import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type {
   PipelineCadence,
-  PipelineRunDetailDto,
   PipelineRunSourceDto,
   PipelineRunSummaryDto,
   PipelineSettingsDto,

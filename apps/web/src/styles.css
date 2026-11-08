@@ -180,6 +180,17 @@ textarea { min-height: 5.5rem; resize: vertical; }
   text-align: left;
 }
 
+.source-link {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0.2rem;
+}
+
+.source-link a,
+a.source-link {
+  color: inherit;
+}
+
 .sidebar-toggle,
 .sidebar-backdrop {
   display: none;
