@@ -54,12 +54,12 @@ scanning with push protection; Dependabot security updates.
 | 6 | Releases | **Done:** tag-driven releases (GitHub-generated notes from PR titles; release-please would need Conventional Commits, which this repo does not use) publish multi-arch images to GHCR with SBOM, build provenance, and GitHub attestations. Versioning: normal releases numbered 0.x until the data model is stable (1.0); pre-release flag only for release candidates. | — |
 | 7 | Community files | GitHub community profile is 42%: no `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates, or PR template. | Add all four (Contributor Covenant for the CoC; issue forms for bug, feature, and **data correction**). Add `CODEOWNERS` once there is a second maintainer. |
 | 8 | Repo metadata | No topics, homepage, or Discussions. | Topics (`gardening`, `self-hosted`, `pwa`, `angular`, `nestjs`), a homepage (docs or demo), Discussions for questions. |
-| 9 | Scorecard | No OpenSSF Scorecard. | Add the Scorecard workflow and badge; it checks most of the above continuously. |
-| 10 | Workflow linting | Workflows are not linted. | `actionlint` and `zizmor` (Actions security linter) in CI. |
+| 9 | Scorecard | **Done:** `scorecard.yml` runs on pushes to `main`, weekly, and on branch-protection changes; results go to code scanning and the public Scorecard site. | — |
+| 10 | Workflow linting | **Done:** the `workflows` CI job runs actionlint and zizmor (pinned images, zizmor online for impostor and known-vulnerable actions). All checkouts set `persist-credentials: false`. | — |
 | 11 | Formatting | Prettier is installed but not enforced. | `prettier --check` in the `verify` job. |
 | 12 | Lint depth | ESLint has no Angular template or accessibility rules and no type-aware rules. | Add `angular-eslint` with template accessibility rules and `typescript-eslint` type-checked presets (warn first, then error). |
-| 13 | Dependency licenses | No check that dependencies stay license-compatible with the chosen code license. | `license-checker` (or Trivy `--scanners license`) with an allow-list. |
-| 14 | `legacy-peer-deps` | `.npmrc` sets `legacy-peer-deps=true`, hiding peer conflicts. | Remove once the TypeScript/typescript-eslint pin is resolved; document why if it must stay. |
+| 13 | Dependency licenses | **Done:** `scripts/ci/license-check.js` (in `verify`) fails when a production dependency's license is outside an AGPL-compatible allow-list. | — |
+| 14 | `legacy-peer-deps` | **Done:** the only conflict was `@nx/nest` (a project generator nothing used) declaring NestJS <12. It is removed, `.npmrc` is gone, and `npm ci` resolves with strict peer dependencies. | — |
 | 15 | Personal tool config | **Done:** `.cursor/` and `.superdesign/` removed; design system moved to `docs/design-system.md`. | — |
 | 16 | Coverage gate scope | The 80% gate covers domain libs only. | Keep, but publish the coverage report as a CI artifact or PR comment so contributors see it. |
 | 17 | Gitleaks action | `gitleaks-action` needs a license key for organization-owned repos. | No action while the repo is personal; switch to the `gitleaks` CLI if it moves to an org. |
@@ -313,6 +313,14 @@ thin fields — it hard-codes zones 3–9 and sowing data is empty).
 Images: start with a consistent set of crop icons made for the project
 (CC0). Photos only from Wikimedia Commons with per-image license and
 attribution stored alongside.
+
+### Plant-data issues
+
+The `plant-data` issue form lives in this repository until `open-garden-data`
+exists. When the data repository is created: move the form there, replace it
+here with an issue-chooser link to the data repository, and transfer open
+`plant-data` issues (GitHub can transfer issues between repositories with the
+same owner).
 
 ### Curation workflow
 

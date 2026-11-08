@@ -1,0 +1,34 @@
+name: Image scan
+
+# New vulnerabilities are published against images that have not changed.
+# Weekly, scan the latest released images on ghcr.io; a failed run means a
+# fixable HIGH/CRITICAL finding — usually fixed by Dependabot's base-image
+# update plus a patch release.
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: scan (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [api, web]
+    steps:
+      - name: Scan ghcr.io/${{ github.repository_owner }}/open-garden-${{ matrix.image }}:latest
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ github.repository_owner }}/open-garden-${{ matrix.image }}:latest
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          scanners: vuln
+          exit-code: '1'
+          format: table

@@ -7,8 +7,9 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
-    # typescript-eslint does not support TypeScript 7.0 yet
-    # (https://github.com/typescript-eslint/typescript-eslint/issues/10940).
+    # TypeScript majors wait until typescript-eslint supports them: its
+    # 8.72 peer range is typescript >=4.8.4 <6.1.0, so TypeScript 7 would break
+    # linting. Remove this ignore once a typescript-eslint release allows 7.x.
     ignore:
       - dependency-name: typescript
         update-types:
