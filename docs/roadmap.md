@@ -68,7 +68,9 @@ scanning with push protection; Dependabot security updates.
 
 ### Decision: separate repository `open-garden-data`
 
-Recommended. Reasons:
+Decided (November 2026): a separate, public repository
+`thedude459/open-garden-data`, created when implementation reaches step 3
+of the [implementation order](#implementation-order). Reasons:
 
 - **Different license.** Data is CC0; code has its own license. Separate repos
   keep that boundary obvious to contributors and downstream users.
