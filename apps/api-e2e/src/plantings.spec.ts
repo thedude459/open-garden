@@ -26,15 +26,3 @@ test('invalid ISO dates are rejected', () => {
   expect(plantingPatchSchema.safeParse({ plantedOn: '2026-06-01' }).success).toBe(true);
   expect(plantingPatchSchema.safeParse({ plantedOn: null }).success).toBe(true);
 });
-
-test('non-member GET is documented as 404 Garden not found', () => {
-  const error = { error: { code: 'NOT_FOUND', message: 'Garden not found' } };
-  expect(error.error.message).toBe('Garden not found');
-});
-
-test('viewer mutate is documented as 403', () => {
-  const error = {
-    error: { code: 'FORBIDDEN', message: 'Viewers cannot update plantings' },
-  };
-  expect(error.error.message).toBe('Viewers cannot update plantings');
-});

@@ -14,6 +14,7 @@
     "migrate:generate": "drizzle-kit generate --config=libs/plant-catalog-data/drizzle.config.ts",
     "test": "bash scripts/ci/test.sh",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:all": "vitest run --coverage --config vitest.coverage-all.config.ts && node scripts/ci/coverage-summary.js",
     "test:all": "npm test && npm run e2e",
     "lint": "nx run-many -t lint --all",
     "e2e": "bash scripts/ci/e2e.sh",
