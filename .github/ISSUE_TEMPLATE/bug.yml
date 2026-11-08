@@ -1,0 +1,51 @@
+name: Bug report
+description: Something in Open Garden does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Security problems go through the
+        [private advisory form](https://github.com/thedude459/open-garden/security/advisories/new), not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+      placeholder: |
+        1. Open a property and go to Plantings
+        2. …
+        Expected: …
+        Got: …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release (from `compose.yaml` or the image tag), or the commit if built from source.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you run it
+      options:
+        - Docker, published images (compose.yaml from a release)
+        - Docker, built from source (docker-compose.yml)
+        - Development setup (npm run api:serve / web:serve)
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Host and browser
+      description: Operating system or NAS model, CPU architecture, and the browser you used.
+      placeholder: Synology DS923+ (amd64), Firefox 140
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Output of `docker compose logs api` around the problem. Remove anything private.
+      render: text

@@ -6,7 +6,7 @@ import { assertDatePair } from '@open-garden/seasonal-plantings/dates';
 import { normalizeBedName } from '@open-garden/seasonal-plantings/beds';
 import { groupPlantings, type PlantingGroup } from '@open-garden/seasonal-plantings/group-plantings';
 import type { FavoriteListItemDto, Mulch, PlantSummaryDto } from '@open-garden/shared-types';
-import { allowsPlant, MULCH_LABELS } from '@open-garden/shared-types';
+import { allowsPlant } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { PlantingsApiService } from './plantings-api.service';

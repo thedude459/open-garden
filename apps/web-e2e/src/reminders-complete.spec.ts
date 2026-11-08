@@ -32,7 +32,13 @@ async function setupGardenWithTomato(page: Page, name: string) {
     field.dispatchEvent(new Event('input', { bubbles: true }));
     field.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await tomato.getByRole('button', { name: 'Save planting' }).click();
+  // Wait for the save to reach the server: Reminders reads the planting date from it.
+  await Promise.all([
+    page.waitForResponse(
+      (r) => r.request().method() === 'PATCH' && /\/plantings\/[^/]+$/.test(new URL(r.url()).pathname) && r.ok(),
+    ),
+    tomato.getByRole('button', { name: 'Save planting' }).click(),
+  ]);
   await goToReminders(page);
 }
 
