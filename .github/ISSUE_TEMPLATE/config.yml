@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/thedude459/open-garden/security/advisories/new
+    about: Please report security problems privately, not as a public issue.
+  - name: Install and configuration guide
+    url: https://github.com/thedude459/open-garden/blob/main/docs/deploy.md
+    about: Settings, HTTPS, backups, upgrades, and troubleshooting.

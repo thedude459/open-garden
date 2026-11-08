@@ -105,4 +105,5 @@ it**, so leave off `-v` unless that is what you want.
 Open Garden is licensed under the [GNU Affero General Public License v3.0 or later](LICENSE)
 (`AGPL-3.0-or-later`). You may use, modify, and self-host it. If you run a modified
 version for other people over a network, you must offer them its source code
-(section 13). The plant dataset will be published separately under CC0.
+(section 13); the app's **Source code** link does this — point
+`apps/web/src/app/source-link.ts` at your modified source. The plant dataset will be published separately under CC0.

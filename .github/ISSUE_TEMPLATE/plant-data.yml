@@ -1,0 +1,38 @@
+name: Plant data correction
+description: A plant's sowing window, spacing, zones, or other details are wrong or missing.
+labels: [plant-data]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Plant data will move to its own CC0 dataset repository (see the roadmap). Until then,
+        corrections are tracked here. Please only send facts you can back up; describe them in your
+        own words rather than copying text from a book or website.
+  - type: input
+    id: plant
+    attributes:
+      label: Plant
+      description: Common name and, if you know it, the scientific name or variety.
+      placeholder: Cherry Tomato (Solanum lycopersicum)
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What is wrong or missing
+      placeholder: "Spacing shows 24 in; most growers use 18–24 in for cherry types."
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: Where the correct value comes from (extension service, seed company, your own records). Links help.
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Region or climate
+      description: Sowing and frost advice depends on climate. Where does your correction apply?
+      placeholder: USDA zone 6b, Ohio

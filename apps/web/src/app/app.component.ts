@@ -8,6 +8,7 @@ import { PlannerDraftService } from './gardens/planner-draft.service';
 import { staysOnPlanner } from './gardens/stays-on-planner';
 import { NoticeHost } from './ui/notice-host';
 import { NoticeService } from './ui/notice.service';
+import { SOURCE_CODE_URL } from './source-link';
 
 @Component({
   selector: 'og-root',
@@ -58,6 +59,7 @@ import { NoticeService } from './ui/notice.service';
               }
             </div>
             <button type="button" class="nav-text sidebar-signout" (click)="logout()">Sign out</button>
+            <a class="source-link" [href]="sourceCodeUrl" target="_blank" rel="noopener">Source code</a>
           </aside>
           <main class="shell">
             <router-outlet />
@@ -99,6 +101,7 @@ import { NoticeService } from './ui/notice.service';
   `,
 })
 export class AppComponent {
+  readonly sourceCodeUrl = SOURCE_CODE_URL;
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
   private readonly gardens = inject(GardensApiService);

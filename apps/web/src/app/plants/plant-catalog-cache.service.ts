@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
 

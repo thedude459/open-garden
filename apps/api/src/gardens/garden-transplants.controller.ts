@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Param, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
-import { deriveIndoorReminders, domainError } from '@open-garden/care-reminders';
+import { deriveIndoorReminders } from '@open-garden/care-reminders';
 import { CareEventRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { asOfQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';

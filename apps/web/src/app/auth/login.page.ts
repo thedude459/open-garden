@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthApiService } from './auth-api.service';
 import { NoticeService } from '../ui/notice.service';
+import { SOURCE_CODE_URL } from '../source-link';
 
 @Component({
   standalone: true,
@@ -33,6 +34,10 @@ import { NoticeService } from '../ui/notice.service';
         {{ mode() === 'login' ? 'Need an account?' : 'Have an account?' }}
       </button>
     </form>
+    <p class="source-link">
+      Open Garden is free software (AGPL-3.0).
+      <a [href]="sourceCodeUrl" target="_blank" rel="noopener">Source code</a>
+    </p>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -40,6 +45,7 @@ import { NoticeService } from '../ui/notice.service';
   `,
 })
 export class LoginPage {
+  readonly sourceCodeUrl = SOURCE_CODE_URL;
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);

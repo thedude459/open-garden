@@ -8,7 +8,6 @@ import {
   RemindersOfflineQueue,
   type ClientReminderList,
   type ReminderQueueAction,
-  type ReminderQueueItem,
 } from './reminders-offline.queue';
 
 const API = '/api';

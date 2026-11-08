@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest something Open Garden should do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/thedude459/open-garden/blob/main/docs/roadmap.md)
+        first — it may already be planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The gardening task or problem, in your own words. What is hard about it today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: How you imagine it working. Sketches and examples from other tools are welcome.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Planner and beds
+        - Plantings and seasons
+        - Calendar and reminders
+        - Plant catalog and data
+        - Sharing and households
+        - Install and operations
+        - Other
