@@ -10,6 +10,7 @@ import { allowsPlant, MULCH_LABELS } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { PlantingsApiService } from './plantings-api.service';
+import { NoticeService } from '../ui/notice.service';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
 @Component({
   standalone: true,
@@ -324,6 +325,8 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       <button
                         type="button"
                         class="btn btn-primary"
+                        [attr.aria-busy]="notices.busyMap().has('save-planting-' + p.id) || null"
+                        [disabled]="notices.busyMap().has('save-planting-' + p.id)"
                         (click)="save(p, plantedInput.value, harvestInput.value, bedSelect.value)"
                       >
                         Save planting
@@ -364,6 +367,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
 })
 export class GardenPlantingsPage implements OnInit {
   private readonly api = inject(PlantingsApiService);
+  readonly notices = inject(NoticeService);
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
@@ -644,7 +648,23 @@ export class GardenPlantingsPage implements OnInit {
     }
   }
 
+  /**
+   * One save per planting at a time. A second save started before the first
+   * finished could reload the list before the first reached the server, then
+   * drop the first's result as stale, leaving a rejected date on screen.
+   */
   async save(planting: ClientPlanting, plantedOn: string, harvestedOn: string, bedId: string) {
+    await this.notices.run(`save-planting-${planting.id}`, () =>
+      this.saveNow(planting, plantedOn, harvestedOn, bedId),
+    );
+  }
+
+  private async saveNow(
+    planting: ClientPlanting,
+    plantedOn: string,
+    harvestedOn: string,
+    bedId: string,
+  ) {
     this.error.set('');
     const planted = plantedOn || null;
     const harvested = harvestedOn || null;
