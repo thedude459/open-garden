@@ -10,7 +10,7 @@ import type {
 import type { PlantUpsertInput } from './plant-repository';
 import { PlantRepository } from './plant-repository';
 import { PlantSourceRepository } from './plant-source-repository';
-import type { AppDatabase } from './db';
+import { isUniqueViolation, type AppDatabase } from './db';
 import {
   catalogPipelineMergeDecisions,
   catalogPipelineRunSources,
@@ -31,12 +31,6 @@ export interface PublishCatalogInput {
   recordsRejected: number;
   sources: PipelineRunSourceDto[];
   merges: PipelineMergeDecisionDto[];
-}
-
-function isUniqueViolation(err: unknown): boolean {
-  if (!err || typeof err !== 'object') return false;
-  const e = err as { code?: string; cause?: { code?: string } };
-  return e.code === '23505' || e.cause?.code === '23505';
 }
 
 function toSummary(row: {
