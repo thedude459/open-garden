@@ -9,7 +9,7 @@ COPY . .
 RUN node scripts/docker/build-api.mjs
 
 # Runtime: the bundle, the SQL migrations, and the entrypoint. No node_modules,
-# no TypeScript tooling, no source tree. Runs as the unprivileged `node` user.
+# no TypeScript tooling, no source tree. Runs as the unprivileged `node` user (uid 1000).
 FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS runtime
 ENV NODE_ENV=production \
     NODE_OPTIONS=--enable-source-maps \
@@ -23,7 +23,7 @@ RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack 
 COPY --from=build --chown=root:root /app/dist/api-runtime ./dist
 COPY --chown=root:root libs/plant-catalog-data/migrations ./libs/plant-catalog-data/migrations
 COPY --chown=root:root scripts/docker/api-entrypoint.sh ./api-entrypoint.sh
-USER node
+USER 1000:1000
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=6 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
