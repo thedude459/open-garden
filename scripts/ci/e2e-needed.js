@@ -1,15 +1,30 @@
 #!/usr/bin/env node
 // Whether CI should run the browser suite. App changes and production
-// dependency bumps run it. Lockfile, devDependency, and workflow-pin diffs do not.
+// dependency bumps run it. Lockfile, devDependency, workflow-pin,
+// documentation, and editor/formatter config diffs do not.
+// Build- and test-affecting files (.dockerignore, .gitignore, .nvmrc, .npmrc,
+// scripts/) are deliberately not listed, so they still run the suite.
 'use strict';
 
 const fs = require('fs');
 
-const EXACT = new Set(['package.json', 'package-lock.json', '.github/dependabot.yml']);
+const EXACT = new Set([
+  'package.json',
+  'package-lock.json',
+  '.github/dependabot.yml',
+  'LICENSE',
+  '.editorconfig',
+  '.prettierrc',
+  '.prettierignore',
+]);
+
+const PREFIXES = ['.github/workflows/', '.github/actions/', 'docs/', '.vscode/'];
 
 function allowed(path) {
   if (EXACT.has(path)) return true;
-  return path.startsWith('.github/workflows/') || path.startsWith('.github/actions/');
+  // No app code loads Markdown, so README, AGENTS.md, ADRs, and conventions are docs only.
+  if (path.endsWith('.md')) return true;
+  return PREFIXES.some((prefix) => path.startsWith(prefix));
 }
 
 function dependencyBlock(json) {
@@ -35,6 +50,18 @@ function selfcheck() {
     [true, ['package.json'], base, prod],
     [true, ['package.json', 'apps/api/src/main.ts'], base, devOnly],
     [false, []],
+    // Documentation and editor config only.
+    [false, ['README.md', 'AGENTS.md', 'docs/roadmap.md', 'docs/adr/0018-x.md', 'LICENSE']],
+    [false, ['apps/web-e2e/CONVENTION.md', '.vscode/extensions.json', '.prettierrc', '.editorconfig']],
+    // Docs alongside app code still run.
+    [true, ['README.md', 'apps/web/src/app/app.component.ts']],
+    // Build- and test-affecting config still runs.
+    [true, ['.dockerignore']],
+    [true, ['.gitignore']],
+    [true, ['.nvmrc']],
+    [true, ['scripts/ci/e2e.sh']],
+    // A path that merely contains "docs" is not the docs folder.
+    [true, ['apps/web/src/docs-page.ts']],
   ];
   for (const [expected, files, left = base, right = base] of cases) {
     if (needsE2e(files, left, right) !== expected) {
