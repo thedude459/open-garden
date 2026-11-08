@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AuthService } from './auth-service';
+import { AuthService, EMAIL_TAKEN_MESSAGE } from './auth-service';
 
 describe('AuthService', () => {
   beforeEach(() => {
@@ -23,6 +23,34 @@ describe('AuthService', () => {
       displayName: 'A',
       role: 'user',
     });
+  });
+
+  it('turns a duplicate email into a CONFLICT instead of a raw query error', async () => {
+    // Drizzle wraps the pg error; the unique-violation code sits on `cause`.
+    const dbError = Object.assign(new Error('Failed query: insert into "users" ... params: x'), {
+      cause: { code: '23505' },
+    });
+    const db = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({ returning: vi.fn().mockRejectedValue(dbError) }),
+      }),
+    };
+    const svc = new AuthService(db as never);
+    await expect(svc.register('taken@example.com', 'password123')).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: EMAIL_TAKEN_MESSAGE,
+    });
+  });
+
+  it('rethrows other insert failures unchanged', async () => {
+    const dbError = new Error('connection refused');
+    const db = {
+      insert: vi.fn().mockReturnValue({
+        values: vi.fn().mockReturnValue({ returning: vi.fn().mockRejectedValue(dbError) }),
+      }),
+    };
+    const svc = new AuthService(db as never);
+    await expect(svc.register('a@example.com', 'password123')).rejects.toBe(dbError);
   });
 
   it('returns null on bad login', async () => {

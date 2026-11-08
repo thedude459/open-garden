@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -66,8 +67,14 @@ export class LoginPage {
         }
         this.auth.markAuthenticated();
         await this.router.navigateByUrl('/gardens');
-      } catch {
-        this.notices.error('Authentication failed');
+      } catch (err) {
+        // Sign-in keeps one generic message. Sign-up says when the email is
+        // already registered, so people know to sign in instead.
+        const taken =
+          this.mode() === 'register' && err instanceof HttpErrorResponse && err.status === 409
+            ? (err.error as { error?: { message?: string } } | null)?.error?.message
+            : undefined;
+        this.notices.error(taken ?? 'Authentication failed');
       }
     });
   }

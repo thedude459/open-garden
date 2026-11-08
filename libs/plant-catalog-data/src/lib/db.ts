@@ -31,4 +31,11 @@ export function createDb(
   return { db, pool };
 }
 
+/** True when a query failed on a unique constraint (Postgres 23505), directly or wrapped by Drizzle. */
+export function isUniqueViolation(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { code?: string; cause?: { code?: string } };
+  return e.code === '23505' || e.cause?.code === '23505';
+}
+
 export * from './schema';
