@@ -16,19 +16,3 @@ test('calendar list query defaults pageSize to 100 and caps at 200', () => {
   expect(calendarListQuerySchema.safeParse({ pageSize: 201 }).success).toBe(false);
   expect(calendarListQuerySchema.parse({ pageSize: 200 }).pageSize).toBe(200);
 });
-
-test('non-member GET is documented as 404 Garden not found', () => {
-  const error = { error: { code: 'NOT_FOUND', message: 'Garden not found' } };
-  expect(error.error.message).toBe('Garden not found');
-});
-
-test('CalendarDto does not include an emphasized flag', () => {
-  const dto = {
-    gardenId: 'g',
-    myRole: 'owner',
-    windowsAvailable: true,
-    entries: [{ plantId: 'p', windows: { indoorStart: null } }],
-  };
-  expect('emphasized' in dto).toBe(false);
-  expect(dto.entries[0] && 'emphasized' in dto.entries[0]).toBe(false);
-});

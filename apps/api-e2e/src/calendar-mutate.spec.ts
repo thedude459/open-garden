@@ -11,10 +11,3 @@ test('missing plantId uses the documented validation message', () => {
   ).toMatch(/Plant is required|Invalid uuid|Required/i);
 });
 
-test('viewer mutate is documented as 403', () => {
-  const error = {
-    error: { code: 'FORBIDDEN', message: 'Viewers cannot update this calendar' },
-  };
-  expect(error.error.code).toBe('FORBIDDEN');
-  expect(error.error.message).toBe('Viewers cannot update this calendar');
-});

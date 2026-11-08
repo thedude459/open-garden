@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FixturePlantProvider } from './fixture-plant-provider';
 
 describe('FixturePlantProvider', () => {
-  const provider = new FixturePlantProvider();
+  const provider = new FixturePlantProvider({ includeTestPlants: true });
 
   it('searches by common name', async () => {
     const results = await provider.searchByName('tomato');
@@ -29,7 +29,16 @@ describe('FixturePlantProvider', () => {
     expect(page.nextCursor).toBeDefined();
   });
 
-  it('lists at least 50 unique varieties including named catalog plants', async () => {
+  it('ships only real plants by default, with no test plants', async () => {
+    const page = await new FixturePlantProvider().listPage({ limit: 100 });
+    const names = page.items.map((p) => p.commonName);
+    expect(names).toContain('Cherry Tomato');
+    expect(names).toContain('Sweet Basil');
+    expect(names.filter((n) => /Pipeline|Unknown Herb|Interval Herb/.test(n))).toEqual([]);
+    expect(page.nextCursor).toBeUndefined();
+  });
+
+  it('with test plants: at least 50 unique varieties including named catalog plants', async () => {
     const page = await provider.listPage({ limit: 100 });
     expect(page.items.length).toBeGreaterThanOrEqual(50);
     const names = new Set(page.items.map((p) => p.commonName));

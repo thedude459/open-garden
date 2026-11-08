@@ -13,10 +13,3 @@ test('bed patch requires a name', () => {
   expect(bedPatchSchema.safeParse({}).success).toBe(false);
   expect(bedPatchSchema.safeParse({ name: 'Patio' }).success).toBe(true);
 });
-
-test('duplicate bed name is documented as 409', () => {
-  const error = {
-    error: { code: 'CONFLICT', message: 'That garden already has a bed with that name' },
-  };
-  expect(error.error.code).toBe('CONFLICT');
-});
