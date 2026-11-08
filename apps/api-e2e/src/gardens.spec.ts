@@ -23,8 +23,3 @@ test('garden patch allows clearing frost', () => {
   expect(gardenPatchSchema.safeParse({ firstFrost: null }).success).toBe(true);
 });
 
-test('non-member GET is documented as 404', () => {
-  const error = { error: { code: 'NOT_FOUND', message: 'Garden not found' } };
-  expect(error.error.code).toBe('NOT_FOUND');
-  expect(error.error.message).toBe('Garden not found');
-});
