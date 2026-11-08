@@ -42,8 +42,7 @@ test-results/
 /.sass-cache
 /connect.lock
 /typings
-.cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
-# Superdesign agent scratch (HTML component templates)
-.superdesign/tmp/
+# Local Superdesign mockups (tool removed from the repo; keep any local copies out of git)
+.superdesign/

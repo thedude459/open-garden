@@ -137,3 +137,10 @@ Dependabot opens weekly npm + Actions PRs. `main` requires the status checks abo
 | `libs/auth` | `auth` | layer:domain |
 | `libs/care-reminders` | `care-reminders` | layer:domain |
 | `libs/web-ui` | `web-ui` | notices and busy helpers |
+
+## License
+
+Open Garden is licensed under the [GNU Affero General Public License v3.0 or later](LICENSE)
+(`AGPL-3.0-or-later`). You may use, modify, and self-host it. If you run a modified
+version for other people over a network, you must offer them its source code
+(section 13). The plant dataset will be published separately under CC0.

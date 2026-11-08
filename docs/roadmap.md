@@ -22,13 +22,13 @@ get an ADR.
 | Item | Notes |
 |---|---|
 | Retire Spec Kit | Done on branch `remove-speckit` (ADR 0017). Constitution is now `AGENTS.md`; `CLAUDE.md` imports it. |
-| Decide licensing | See [Licensing](#licensing). Fix the mismatch: `LICENSE` is GPLv2, `package.json` says MIT. |
+| Licensing | **Done:** code is `AGPL-3.0-or-later` (`LICENSE`, `package.json`, README). Follow-up for AGPL section 13: show a "Source code" link in the app (sidebar or sign-in page) pointing at the repository, so people using a hosted copy can get the source. |
 | Docker-only install docs | README "Quick start" becomes `docker compose --profile app up -d`. Host-mode dev loop, NAS notes, and test commands move to `CONTRIBUTING.md`. Add a short "Deploying" page with environment variables only (no platform-specific steps). |
 | Publish images | Build and push `api` and `web` images to GHCR on tagged releases so operators don't need to build from source. Ship a `compose.yaml` that uses the published images. |
 | Isolate e2e data | Done on branch `fix-stability-step-1`: `scripts/ci/e2e.sh` defaults to an `open_garden_e2e` database and creates it if missing. Existing test rows in the app database still need a one-time cleanup (or a fresh volume). |
 | Remove filler fixtures | `FixturePlantProvider` ships 40 "Pipeline Extra N" plants. Keep test fixtures in test code only. |
 | Migrations | `sync-cli.ts` re-runs **every** SQL file on every boot and relies on `IF NOT EXISTS`; nothing records what has run. Data-changing statements therefore repeat forever — `0012` runs `DELETE FROM garden_beds WHERE kind = 'orchard'` on each start, and the bed PATCH API still accepts `kind: "orchard"`, so such a bed is deleted on the next restart. **Fix:** apply migrations with Drizzle's migrator (the `meta/_journal.json` it needs already exists), which records applied files in a table. **Squash while pre-1.0:** right before the Phase 1 crop/variety change, replace `0001`–`0012` with one idempotent baseline (existing databases are already at that schema, so it is a no-op for them) and mark it applied. After the first tagged release, released migrations are never edited — only new ones are added. |
-| Repo clutter | `doc/` holds three empty generated files (an unused doc generator's output, committed by accident) — delete. `.superdesign/`: keep `design-system.md` as `docs/design-system.md`; delete the generated `init/` snapshots and `resume.json`. `.cursor/`: only needed if you use Cursor; its `ponytail.mdc` style rule can move into `AGENTS.md`, which Cursor reads anyway. |
+| Repo clutter | **Done:** removed `doc/` (empty generated files), `.cursor/`, and `.superdesign/`. The design system is now `docs/design-system.md`; the `ponytail` coding-style rule is now in `AGENTS.md`. |
 
 ### Open-source project hygiene
 
@@ -60,7 +60,7 @@ scanning with push protection; Dependabot security updates.
 | 12 | Lint depth | ESLint has no Angular template or accessibility rules and no type-aware rules. | Add `angular-eslint` with template accessibility rules and `typescript-eslint` type-checked presets (warn first, then error). |
 | 13 | Dependency licenses | No check that dependencies stay license-compatible with the chosen code license. | `license-checker` (or Trivy `--scanners license`) with an allow-list. |
 | 14 | `legacy-peer-deps` | `.npmrc` sets `legacy-peer-deps=true`, hiding peer conflicts. | Remove once the TypeScript/typescript-eslint pin is resolved; document why if it must stay. |
-| 15 | Personal tool config | `.cursor/settings.json`, `.cursor/rules/ponytail.mdc`, and `.superdesign/` are tracked. | Move the design system to `docs/design-system.md`; keep editor/agent config untracked or clearly optional. |
+| 15 | Personal tool config | **Done:** `.cursor/` and `.superdesign/` removed; design system moved to `docs/design-system.md`. | — |
 | 16 | Coverage gate scope | The 80% gate covers domain libs only. | Keep, but publish the coverage report as a CI artifact or PR comment so contributors see it. |
 | 17 | Gitleaks action | `gitleaks-action` needs a license key for organization-owned repos. | No action while the repo is personal; switch to the `gitleaks` CLI if it moves to an org. |
 
@@ -316,7 +316,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 11 | Property cards say "0 placements" and show only zone. | Small map or layout thumbnail, plant count, next task. Plain words ("plants", not "placements"). |
 | 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | Fix header layout; on mobile the canvas is view-first with a bottom sheet for actions. |
 | 13 | Vocabulary varies: Transplant View, Planting tray, Direct seed, placements. | Glossary in `AGENTS.md`; one term per concept. Fold Transplants into a "Seed starting" section of Calendar. |
-| 14 | Brand mark is a plain leaf-green circle. This is intentional in `.superdesign/design-system.md` ("solid leaf-green circle on sage"), but it reads as a missing image. | Revisit with the design system during the redesign; keep it if it is the chosen mark. |
+| 14 | Brand mark is a plain leaf-green circle. This is intentional in `docs/design-system.md` ("solid leaf-green circle on sage"), but it reads as a missing image. | Revisit with the design system during the redesign; keep it if it is the chosen mark. |
 | 15 | Six per-garden nav items. | Four: **Plan** (layout + plantings), **Calendar** (incl. seed starting), **Tasks**, **Settings**. |
 
 Also: guided first run (name → location → climate auto-filled → pick crops
@@ -373,12 +373,12 @@ In rough priority order:
 - **Data (`open-garden-data`): CC0-1.0.** Maximally free; compatible with
   OpenFarm (CC0), USDA (public domain), and Wikidata (CC0). Requires
   avoiding share-alike sources.
-- **Code: AGPL-3.0-or-later recommended.** It keeps the current copyleft
-  intent of GPLv2 and also requires anyone who hosts a modified version to
-  share their changes — the gap GPLv2 leaves for web apps. If the priority
-  is the widest possible reuse (including closed forks), choose MIT instead.
-  Either way, make `LICENSE` and `package.json` agree. All non-bot commits
-  are by one author, so relicensing needs no other sign-off.
+- **Code: AGPL-3.0-or-later (decided November 2026).** It keeps the copyleft
+  intent of the earlier GPLv2 and also requires anyone who hosts a modified
+  version to share their changes — the gap GPLv2 leaves for web apps. All
+  non-bot commits were by one author, so relicensing needed no other
+  sign-off. Contributions are accepted under the same license (state this in
+  `CONTRIBUTING.md`).
 - **Icons/artwork:** CC0 if made for the project; otherwise record the
   license per file.
 
