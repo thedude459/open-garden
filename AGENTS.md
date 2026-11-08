@@ -143,6 +143,39 @@ orchard feature arrives.
   validation, least privilege, safe error handling, no hardcoded secrets,
   secure defaults — in addition to automated scanning gates.
 
+## Coding style: simplest thing that works
+
+Lazy means efficient, not careless. The best code is the code never written.
+After you understand the problem (read the task and the code it touches,
+trace the real flow end to end), stop at the first rung that holds:
+
+1. Does this need to be built at all? (YAGNI)
+2. Does it already exist in this codebase? Reuse the helper or pattern.
+3. Does the standard library or a native platform feature cover it?
+4. Does an already-installed dependency solve it?
+5. Can this be one line?
+6. Only then: write the minimum code that works.
+
+- Fix the root cause, not the symptom: grep every caller of the function you
+  touch and fix the shared function once.
+- No abstractions, dependencies, or boilerplate nobody asked for. Deletion
+  over addition. Boring over clever. Fewest files possible.
+- Shortest working diff wins, but only once you understand the problem. The
+  smallest change in the wrong place is a second bug.
+- Question complex requests: "Do you actually need X, or does Y cover it?"
+- When two approaches are the same size, pick the edge-case-correct one.
+- Mark deliberate simplifications that cut a real corner with a known
+  ceiling (global lock, O(n²) scan, naive heuristic) with a `ponytail:`
+  comment naming the ceiling and the upgrade path.
+
+Never lazy about: understanding the problem, input validation at trust
+boundaries, error handling that prevents data loss, security, accessibility,
+or anything explicitly requested. Non-trivial logic leaves one runnable check
+behind — the smallest test that fails if the logic breaks.
+
+The visual design system (brand, palette, type, components) is in
+`docs/design-system.md`.
+
 ## Working in this repo
 
 - Plan a change in the pull request description: problem, approach, and how
