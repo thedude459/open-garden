@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant,
+import {
+  addTransplant,
   createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout, confirmFixtureAddress } from './planner-helpers';
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('planner overview: beds, areas, labels, no planting drag', async ({ browser }) => {
   test.setTimeout(120_000);
@@ -26,9 +29,10 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
-  await owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }).dragTo(
-    owner.locator('[data-bed-name="North"]'),
-  );
+  await owner
+    .getByLabel('Planting tray')
+    .getByRole('button', { name: 'Cherry Tomato' })
+    .dragTo(owner.locator('[data-bed-name="North"]'));
   expect((await saveLayout(owner)).status()).toBe(200);
   await owner.getByRole('link', { name: 'Back to overview' }).click();
 
@@ -77,5 +81,7 @@ test('planner overview: transplants with no beds stay off the map until a bed ex
   await createSizedBed(owner, 'First');
   expect((await saveLayout(owner)).status()).toBe(200);
   await owner.getByRole('button', { name: 'Open bed First' }).click();
-  await expect(owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' })).toBeVisible();
+  await expect(
+    owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }),
+  ).toBeVisible();
 });

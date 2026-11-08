@@ -91,7 +91,9 @@ if (process.argv[2] === 'selfcheck') {
   if (problems.length) {
     console.error('Production dependencies with licenses outside the allow-list:');
     for (const p of problems) console.error(`  ${p}`);
-    console.error('Add the license to ALLOWED in scripts/ci/license-check.js only if it is compatible with AGPL-3.0-or-later.');
+    console.error(
+      'Add the license to ALLOWED in scripts/ci/license-check.js only if it is compatible with AGPL-3.0-or-later.',
+    );
     process.exit(1);
   }
   console.log('All production dependency licenses are on the allow-list.');

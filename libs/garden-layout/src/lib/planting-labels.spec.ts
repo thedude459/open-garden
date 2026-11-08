@@ -3,9 +3,7 @@ import { layoutPlantingLabels, shortenPlantingMarkName } from './planting-labels
 
 describe('layoutPlantingLabels', () => {
   it('puts each name below its mark', () => {
-    const labels = layoutPlantingLabels([
-      { id: 'a', name: 'Basil', x: 20, y: 20, r: 6 },
-    ]);
+    const labels = layoutPlantingLabels([{ id: 'a', name: 'Basil', x: 20, y: 20, r: 6 }]);
     expect(labels[0]?.x).toBe(20);
     expect(labels[0]?.y).toBeGreaterThan(26);
   });
@@ -39,9 +37,7 @@ describe('shortenPlantingMarkName', () => {
 
 describe('layoutPlantingLabels', () => {
   it('puts each name below its mark', () => {
-    const labels = layoutPlantingLabels([
-      { id: 'a', name: 'Basil', x: 20, y: 20, r: 6 },
-    ]);
+    const labels = layoutPlantingLabels([{ id: 'a', name: 'Basil', x: 20, y: 20, r: 6 }]);
     expect(labels[0]?.x).toBe(20);
     expect(labels[0]?.y).toBeGreaterThan(26);
   });

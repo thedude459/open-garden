@@ -21,11 +21,7 @@ export interface ClimateLookup {
 
 export interface RainOutlook {
   /** Millimeters of rain keyed by YYYY-MM-DD. Null when the forecast cannot be read. */
-  daily(
-    latitude: number,
-    longitude: number,
-    asOf: string,
-  ): Promise<Record<string, number> | null>;
+  daily(latitude: number, longitude: number, asOf: string): Promise<Record<string, number> | null>;
 }
 
 export class PlaceLookupError extends Error {

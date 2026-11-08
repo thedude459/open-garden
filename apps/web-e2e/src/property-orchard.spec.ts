@@ -1,7 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { confirmFixtureAddress, createSizedBed, newUser, saveLayout } from './planner-helpers';
 
-test('a tree gets its own mulched bed and stays out of a vegetable bed search', async ({ browser }) => {
+test('a tree gets its own mulched bed and stays out of a vegetable bed search', async ({
+  browser,
+}) => {
   test.setTimeout(120_000);
   const page = await newUser(browser, `orchard-${Date.now()}@example.com`);
   await page.goto('/gardens');
@@ -14,7 +16,9 @@ test('a tree gets its own mulched bed and stays out of a vegetable bed search', 
   await page.locator('select[name="bedMulch"]').selectOption('wood_chips');
   await page.getByRole('button', { name: 'Add tree' }).click();
   expect((await saveLayout(page)).ok()).toBeTruthy();
-  await expect(page.locator('li').filter({ hasText: 'Tree' }).getByText('Wood chips')).toBeVisible();
+  await expect(
+    page.locator('li').filter({ hasText: 'Tree' }).getByText('Wood chips'),
+  ).toBeVisible();
 
   await createSizedBed(page, 'Veg');
   expect((await saveLayout(page)).ok()).toBeTruthy();

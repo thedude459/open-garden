@@ -10,7 +10,9 @@ import { gardenCreateSchema, gardenPatchSchema } from '@open-garden/shared-types
 test('garden create contract requires a name and address', () => {
   expect(gardenCreateSchema.safeParse({}).success).toBe(false);
   expect(gardenCreateSchema.safeParse({ name: 'Backyard' }).success).toBe(false);
-  expect(gardenCreateSchema.safeParse({ name: 'Backyard', place: WASHINGTON_PLACE }).success).toBe(true);
+  expect(gardenCreateSchema.safeParse({ name: 'Backyard', place: WASHINGTON_PLACE }).success).toBe(
+    true,
+  );
 });
 
 test('garden create rejects names longer than 120 characters', () => {
@@ -22,4 +24,3 @@ test('garden create rejects names longer than 120 characters', () => {
 test('garden patch allows clearing frost', () => {
   expect(gardenPatchSchema.safeParse({ firstFrost: null }).success).toBe(true);
 });
-

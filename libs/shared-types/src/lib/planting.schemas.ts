@@ -92,7 +92,9 @@ export const bedCreateSchema = z.object({
   kind: z.enum(['bed', 'orchard']).optional(),
   site: z.enum(['raised', 'in_ground']).optional(),
   station: z.enum(['tree', 'berry']).optional(),
-  mulch: z.enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic']).optional(),
+  mulch: z
+    .enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic'])
+    .optional(),
   areaId: z.uuid().optional(),
 });
 
@@ -101,7 +103,9 @@ export const bedPatchSchema = z.object({
   sun: z.enum(['full', 'part', 'shade']).nullable().optional(),
   kind: z.enum(['bed', 'orchard']).optional(),
   site: z.enum(['raised', 'in_ground']).optional(),
-  mulch: z.enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic']).optional(),
+  mulch: z
+    .enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic'])
+    .optional(),
 });
 
 export const areaCreateSchema = z.object({

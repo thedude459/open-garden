@@ -57,7 +57,9 @@ function deps(overrides: Partial<PlannerSaveDeps> = {}): PlannerSaveDeps & {
   deletePlanting: ReturnType<typeof vi.fn>;
   putLayout: ReturnType<typeof vi.fn>;
 } {
-  const saved = layout({ beds: [{ id: 'bed-new', name: 'East', geometry: layout().beds[0]!.geometry }] });
+  const saved = layout({
+    beds: [{ id: 'bed-new', name: 'East', geometry: layout().beds[0]!.geometry }],
+  });
   return {
     createBed: vi.fn(async () => undefined),
     deleteBed: vi.fn(async () => undefined),

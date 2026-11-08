@@ -113,7 +113,12 @@ describe('CatalogPipelineService', () => {
     const mem = new MemoryPipeline();
     mem.settings.sourceOrder = ['a'];
     const provider = new MemoryProvider('a', [
-      samplePlant({ commonName: 'Cycle', species: 'Cycle species', waterNeeds: 'Low', externalId: 'c1' }),
+      samplePlant({
+        commonName: 'Cycle',
+        species: 'Cycle species',
+        waterNeeds: 'Low',
+        externalId: 'c1',
+      }),
     ]);
     const svc = mem.service([provider]);
     await svc.runAndWait();

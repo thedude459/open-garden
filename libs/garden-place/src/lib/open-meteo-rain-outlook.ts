@@ -33,7 +33,9 @@ export class OpenMeteoRainOutlook implements RainOutlook {
     try {
       const response = await this.fetchFn(url, { signal: AbortSignal.timeout(3000) });
       if (!response.ok) return null;
-      return parseRainSums((await response.json()) as { daily?: { time?: string[]; rain_sum?: Array<number | null> } });
+      return parseRainSums(
+        (await response.json()) as { daily?: { time?: string[]; rain_sum?: Array<number | null> } },
+      );
     } catch {
       return null;
     }

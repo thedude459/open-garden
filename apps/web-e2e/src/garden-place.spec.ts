@@ -73,9 +73,11 @@ test('address lookup, map, and who can see the garden', async ({ browser }) => {
   await expect(owner.getByRole('button', { name: 'Save garden' })).toBeEnabled();
   await saveGarden(owner);
   await expect(
-    owner.getByRole('main').getByText(
-      'This place was saved. Enter the growing zone and frost dates that could not be determined.',
-    ),
+    owner
+      .getByRole('main')
+      .getByText(
+        'This place was saved. Enter the growing zone and frost dates that could not be determined.',
+      ),
   ).toBeVisible();
   await expect(owner.locator('iframe.garden-map')).toBeVisible();
 
@@ -195,8 +197,14 @@ test('rain covers Washington watering and leaves other gardens required', async 
 
   await owner.goto(`/gardens/${wet.id}/reminders`);
   await expect(owner.getByText(RAIN_NOTE)).toBeVisible();
-  await expect(owner.locator('li').filter({ hasText: RAIN_NOTE }).getByText('Overdue')).toHaveCount(0);
-  await owner.locator('li').filter({ hasText: RAIN_NOTE }).getByRole('button', { name: 'Complete' }).click();
+  await expect(owner.locator('li').filter({ hasText: RAIN_NOTE }).getByText('Overdue')).toHaveCount(
+    0,
+  );
+  await owner
+    .locator('li')
+    .filter({ hasText: RAIN_NOTE })
+    .getByRole('button', { name: 'Complete' })
+    .click();
   await expect(owner.getByText(RAIN_NOTE)).toHaveCount(0);
 
   await stranger.goto(`/gardens/${wet.id}/reminders`);

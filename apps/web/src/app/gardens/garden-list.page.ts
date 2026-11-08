@@ -31,12 +31,23 @@ import { EmptyState } from '../ui/empty-state';
                   @if (task.bedName) {
                     · {{ task.bedName }}
                   }
-                  · {{ task.kind === 'thisWeek' ? 'Start this week' : task.kind === 'overdue' ? 'Overdue' : 'Due today' }}
+                  ·
+                  {{
+                    task.kind === 'thisWeek'
+                      ? 'Start this week'
+                      : task.kind === 'overdue'
+                        ? 'Overdue'
+                        : 'Due today'
+                  }}
                 </p>
               </div>
               <a
                 class="btn btn-secondary"
-                [routerLink]="task.kind === 'thisWeek' ? ['/gardens', task.gardenId, 'calendar'] : ['/gardens', task.gardenId, 'reminders']"
+                [routerLink]="
+                  task.kind === 'thisWeek'
+                    ? ['/gardens', task.gardenId, 'calendar']
+                    : ['/gardens', task.gardenId, 'reminders']
+                "
               >
                 Open
               </a>
@@ -47,71 +58,73 @@ import { EmptyState } from '../ui/empty-state';
     }
     @if (items().length > 0 && !creating()) {
       <p>
-        <button type="button" class="btn btn-secondary" (click)="creating.set(true)">New property</button>
+        <button type="button" class="btn btn-secondary" (click)="creating.set(true)">
+          New property
+        </button>
       </p>
     }
     @if ((!loading() && items().length === 0) || creating()) {
-    <form class="filters card" (ngSubmit)="create()">
-      <input [(ngModel)]="name" name="gardenName" placeholder="Property name" required />
-      <label>
-        Length (ft)
-        <input
-          type="number"
-          min="0.5"
-          step="0.5"
-          name="gardenLength"
-          [(ngModel)]="lengthFeet"
-          required
-        />
-      </label>
-      <label>
-        Width (ft)
-        <input
-          type="number"
-          min="0.5"
-          step="0.5"
-          name="gardenWidth"
-          [(ngModel)]="widthFeet"
-          required
-        />
-      </label>
-      <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
-      <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
-      <button type="button" class="btn btn-secondary" (click)="lookup()" [disabled]="lookingUp()">
-        Look up address
-      </button>
-      @if (lookupError()) {
-        <p class="error">{{ lookupError() }}</p>
-      }
-      @if (truncated()) {
-        <p>Type a more specific address.</p>
-      }
-      @for (candidate of candidates(); track candidate.placeId) {
-        <button type="button" class="btn btn-secondary" (click)="choose(candidate)">
-          {{ candidate.formattedAddress }}
+      <form class="filters card" (ngSubmit)="create()">
+        <input [(ngModel)]="name" name="gardenName" placeholder="Property name" required />
+        <label>
+          Length (ft)
+          <input
+            type="number"
+            min="0.5"
+            step="0.5"
+            name="gardenLength"
+            [(ngModel)]="lengthFeet"
+            required
+          />
+        </label>
+        <label>
+          Width (ft)
+          <input
+            type="number"
+            min="0.5"
+            step="0.5"
+            name="gardenWidth"
+            [(ngModel)]="widthFeet"
+            required
+          />
+        </label>
+        <input [(ngModel)]="notes" name="gardenNotes" placeholder="Notes (optional)" />
+        <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
+        <button type="button" class="btn btn-secondary" (click)="lookup()" [disabled]="lookingUp()">
+          Look up address
         </button>
-      }
-      @if (mapSrc(); as src) {
-        <iframe
-          class="garden-map"
-          style="width: 100%; height: 220px; border: 0"
-          [src]="src"
-          title="Garden map"
-          (error)="onMapError()"
-        ></iframe>
-      }
-      @if (mapUnavailable()) {
-        <p>The map is unavailable.</p>
-      }
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
-        [disabled]="notices.busyMap().has('create-garden') || !canCreate()"
-      >
-        Create property
-      </button>
-    </form>
+        @if (lookupError()) {
+          <p class="error">{{ lookupError() }}</p>
+        }
+        @if (truncated()) {
+          <p>Type a more specific address.</p>
+        }
+        @for (candidate of candidates(); track candidate.placeId) {
+          <button type="button" class="btn btn-secondary" (click)="choose(candidate)">
+            {{ candidate.formattedAddress }}
+          </button>
+        }
+        @if (mapSrc(); as src) {
+          <iframe
+            class="garden-map"
+            style="width: 100%; height: 220px; border: 0"
+            [src]="src"
+            title="Garden map"
+            (error)="onMapError()"
+          ></iframe>
+        }
+        @if (mapUnavailable()) {
+          <p>The map is unavailable.</p>
+        }
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [attr.aria-busy]="notices.busyMap().has('create-garden') || null"
+          [disabled]="notices.busyMap().has('create-garden') || !canCreate()"
+        >
+          Create property
+        </button>
+      </form>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
@@ -127,7 +140,10 @@ import { EmptyState } from '../ui/empty-state';
             </span>
             <span class="garden-facts">
               <span>{{ g.bedCount }} {{ g.bedCount === 1 ? 'bed' : 'beds' }}</span>
-              <span>{{ g.placementCount }} {{ g.placementCount === 1 ? 'placement' : 'placements' }}</span>
+              <span
+                >{{ g.placementCount }}
+                {{ g.placementCount === 1 ? 'placement' : 'placements' }}</span
+              >
               <span>
                 @if (g.hardinessZone != null) {
                   Zone {{ g.hardinessZone }}
@@ -360,4 +376,3 @@ function withCounts(g: GardenSummaryDto): GardenSummaryDto {
     placementCount: g.placementCount ?? 0,
   };
 }
-

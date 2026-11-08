@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, newUser, openOverview, saveLayout, uniqueEmail, confirmFixtureAddress } from './planner-helpers';
+import {
+  createSizedBed,
+  newUser,
+  openOverview,
+  saveLayout,
+  uniqueEmail,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({ browser }) => {
   test.setTimeout(120_000);

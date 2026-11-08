@@ -45,9 +45,8 @@ import { PipelineApiService } from './pipeline-api.service';
       <button type="button" class="btn btn-primary" (click)="startRun()">Start run</button>
       @if (current(); as run) {
         <p>
-          Status: <strong>{{ run.status }}</strong>
-          · upserted {{ run.plantsUpserted }}
-          · rejected {{ run.recordsRejected }}
+          Status: <strong>{{ run.status }}</strong> · upserted {{ run.plantsUpserted }} · rejected
+          {{ run.recordsRejected }}
         </p>
         @if (run.sources?.length) {
           <ul>

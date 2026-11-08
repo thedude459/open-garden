@@ -38,8 +38,7 @@ export const routes: Routes = [
   {
     path: 'gardens/:id/calendar',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./gardens/garden-calendar.page').then((m) => m.GardenCalendarPage),
+    loadComponent: () => import('./gardens/garden-calendar.page').then((m) => m.GardenCalendarPage),
   },
   {
     path: 'gardens/:id/plantings',
@@ -51,8 +50,7 @@ export const routes: Routes = [
     path: 'gardens/:id/layout/beds/:bedId',
     canActivate: [authGuard],
     canDeactivate: [unsavedLayoutGuard],
-    loadComponent: () =>
-      import('./gardens/garden-bed-view.page').then((m) => m.GardenBedViewPage),
+    loadComponent: () => import('./gardens/garden-bed-view.page').then((m) => m.GardenBedViewPage),
   },
   {
     path: 'gardens/:id/layout',

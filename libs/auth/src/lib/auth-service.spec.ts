@@ -7,9 +7,9 @@ describe('AuthService', () => {
   });
 
   it('registers a user', async () => {
-    const returning = vi.fn().mockResolvedValue([
-      { id: 'u1', email: 'a@example.com', displayName: 'A', role: 'user' },
-    ]);
+    const returning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'u1', email: 'a@example.com', displayName: 'A', role: 'user' }]);
     const db = {
       insert: vi.fn().mockReturnValue({
         values: vi.fn().mockReturnValue({ returning }),

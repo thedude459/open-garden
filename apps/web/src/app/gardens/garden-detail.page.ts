@@ -5,7 +5,12 @@ import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { feetToInches, inchesToFeetInput, snapHalfFoot } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type { GardenDetailDto, GardenRole, PlaceCandidateDto, SeasonDto } from '@open-garden/shared-types';
+import type {
+  GardenDetailDto,
+  GardenRole,
+  PlaceCandidateDto,
+  SeasonDto,
+} from '@open-garden/shared-types';
 import { CalendarApiService } from './calendar-api.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
@@ -30,23 +35,35 @@ import { PlannerDraftService } from './planner-draft.service';
         <section>
           <h3>Season {{ season.openYear }}</h3>
           @if (canEdit()) {
-            <button type="button" class="btn btn-secondary" (click)="closeSeason()">Close season</button>
+            <button type="button" class="btn btn-secondary" (click)="closeSeason()">
+              Close season
+            </button>
           }
           @if (season.closedYear != null) {
             <h4>{{ season.closedYear }}</h4>
             @for (row of season.review; track row.id) {
               <p>
                 {{ row.commonName }}
-                @if (row.bedName) { · {{ row.bedName }} }
-                @if (row.harvestedOn) { · harvested {{ row.harvestedOn }} }
-                @if (row.note) { · {{ row.note }} }
+                @if (row.bedName) {
+                  · {{ row.bedName }}
+                }
+                @if (row.harvestedOn) {
+                  · harvested {{ row.harvestedOn }}
+                }
+                @if (row.note) {
+                  · {{ row.note }}
+                }
               </p>
             }
             @for (again of season.plantAgain; track again.bedId + again.plantId) {
               <p>
                 {{ again.bedName }} · {{ again.commonName }}
                 @if (canEdit()) {
-                  <button type="button" class="btn btn-secondary" (click)="plantAgain(again.plantId)">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="plantAgain(again.plantId)"
+                  >
                     Plant again
                   </button>
                 }
@@ -118,7 +135,12 @@ import { PlannerDraftService } from './planner-draft.service';
           <p>{{ g.place?.formattedAddress || 'No address is set' }}</p>
           @if (canEdit()) {
             <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
-            <button type="button" class="btn btn-secondary" (click)="lookup()" [disabled]="lookingUp()">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="lookup()"
+              [disabled]="lookingUp()"
+            >
               Look up address
             </button>
           }
@@ -279,7 +301,12 @@ import { PlannerDraftService } from './planner-draft.service';
       </ul>
       @if (g.myRole === 'owner') {
         <form class="filters" (ngSubmit)="invite()">
-          <input [(ngModel)]="inviteEmail" name="inviteEmail" type="email" placeholder="Member email" />
+          <input
+            [(ngModel)]="inviteEmail"
+            name="inviteEmail"
+            type="email"
+            placeholder="Member email"
+          />
           <select [(ngModel)]="inviteRole" name="inviteRole">
             <option value="collaborator">collaborator</option>
             <option value="viewer">viewer</option>
@@ -293,7 +320,9 @@ import { PlannerDraftService } from './planner-draft.service';
             Invite
           </button>
         </form>
-        <p class="muted">They need an account. If they don't have one yet, copy a join link for this email.</p>
+        <p class="muted">
+          They need an account. If they don't have one yet, copy a join link for this email.
+        </p>
         <button
           type="button"
           class="btn btn-secondary"
@@ -520,7 +549,11 @@ export class GardenDetailPage implements OnInit, OnDestroy {
       this.season.set(await this.api.closeSeason(id));
       this.notices.success('Season closed');
     } catch (err) {
-      this.error.set(err instanceof HttpErrorResponse ? 'Could not close the season' : 'Could not close the season');
+      this.error.set(
+        err instanceof HttpErrorResponse
+          ? 'Could not close the season'
+          : 'Could not close the season',
+      );
     }
   }
 
@@ -531,7 +564,9 @@ export class GardenDetailPage implements OnInit, OnDestroy {
       await this.calendarApi.add(id, { plantId });
       this.notices.success('Added to this year’s calendar');
     } catch (err) {
-      this.error.set(err instanceof HttpErrorResponse ? 'Could not add that plant' : 'Could not add that plant');
+      this.error.set(
+        err instanceof HttpErrorResponse ? 'Could not add that plant' : 'Could not add that plant',
+      );
     }
   }
 
@@ -549,7 +584,9 @@ export class GardenDetailPage implements OnInit, OnDestroy {
       );
       this.pairReason = '';
     } catch (err) {
-      this.error.set(err instanceof HttpErrorResponse ? 'Could not save that pair' : 'Could not save that pair');
+      this.error.set(
+        err instanceof HttpErrorResponse ? 'Could not save that pair' : 'Could not save that pair',
+      );
     }
   }
 
@@ -704,4 +741,3 @@ function messageFrom(err: unknown): string {
   }
   return 'Could not update garden';
 }
-

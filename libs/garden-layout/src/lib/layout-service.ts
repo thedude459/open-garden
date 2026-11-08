@@ -102,9 +102,7 @@ export class LayoutService {
       return {
         id: row.id,
         spacingInches: row.spacingInches,
-        placement: put
-          ? { bedId: put.bedId, xInches: put.xInches, yInches: put.yInches }
-          : null,
+        placement: put ? { bedId: put.bedId, xInches: put.xInches, yInches: put.yInches } : null,
       };
     });
     const flags = evaluateLayout(proposedBeds, proposedPlantings);
@@ -169,29 +167,21 @@ export class LayoutService {
       this.plantings.listAllForLayout(gardenId),
       this.areas.listByGarden(gardenId),
     ]);
-    const advice = this.years
-      ? await this.years.layoutAdvice(gardenId)
-      : { prior: [], pairs: [] };
+    const advice = this.years ? await this.years.layoutAdvice(gardenId) : { prior: [], pairs: [] };
     const beds = bedRows.map((row) => ({
       id: row.id,
       name: row.name,
       geometry: toGeometry(row),
       sun: (row.sun === 'full' || row.sun === 'part' || row.sun === 'shade' ? row.sun : null) as
-        | 'full'
-        | 'part'
-        | 'shade'
-        | null,
+        'full' | 'part' | 'shade' | null,
       kind: row.kind === 'orchard' ? ('orchard' as const) : ('bed' as const),
       site: row.site === 'raised' ? ('raised' as const) : ('in_ground' as const),
       station: (row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null) as
-        | 'tree'
-        | 'berry'
-        | null,
+        'tree' | 'berry' | null,
       mulch: mulchOrNone(row.mulch),
     }));
     const plantings = plantingRows.map((row) => {
-      const placed =
-        row.layoutXInches !== null && row.layoutYInches !== null && row.bedId !== null;
+      const placed = row.layoutXInches !== null && row.layoutYInches !== null && row.bedId !== null;
       return {
         id: row.id,
         plantId: row.plantId,
@@ -208,7 +198,8 @@ export class LayoutService {
         spacingFeet: (row as { spacingFeet?: number | null }).spacingFeet ?? null,
         sunRequirements: (row as { sunRequirements?: string | null }).sunRequirements ?? null,
         life: ((row as { life?: string }).life ?? 'annual') as 'annual' | 'perennial' | 'tree',
-        startMethod: ((row as { startMethod?: string }).startMethod ?? 'direct_seed') as StartMethod,
+        startMethod: ((row as { startMethod?: string }).startMethod ??
+          'direct_seed') as StartMethod,
         indoorStartedOn: (row as { indoorStartedOn?: string | null }).indoorStartedOn ?? null,
         placement: placed
           ? {

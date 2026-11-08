@@ -3,7 +3,11 @@ import { embedMapReachable, embedMapUrl } from './embed-map';
 import { WASHINGTON_PLACE } from './fixtures';
 import { FixturePlaceLookup } from './fixture-place-lookup';
 import { NominatimPlaceLookup } from './nominatim-place-lookup';
-import { PLACE_NOT_FOUND_MESSAGE, PLACE_UNAVAILABLE_MESSAGE, STREET_ADDRESS_MESSAGE } from './ports';
+import {
+  PLACE_NOT_FOUND_MESSAGE,
+  PLACE_UNAVAILABLE_MESSAGE,
+  STREET_ADDRESS_MESSAGE,
+} from './ports';
 
 describe('FixturePlaceLookup', () => {
   const lookup = new FixturePlaceLookup();

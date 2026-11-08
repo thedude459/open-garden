@@ -1,6 +1,13 @@
 import { Injectable } from '@angular/core';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { BedCreateDto, NamedBedDto, PlantingCreateDto, PlantingDto, PlantingListDto, PlantingPatchDto } from '@open-garden/shared-types';
+import type {
+  BedCreateDto,
+  NamedBedDto,
+  PlantingCreateDto,
+  PlantingDto,
+  PlantingListDto,
+  PlantingPatchDto,
+} from '@open-garden/shared-types';
 
 export type QueueOp = 'create' | 'update' | 'delete';
 
@@ -95,9 +102,7 @@ export class PlantingsOfflineQueue {
   }
 
   overlay(list: PlantingListDto, pending: QueueItem[]): ClientPlantingList {
-    const plantings = new Map<string, ClientPlanting>(
-      list.plantings.map((p) => [p.id, { ...p }]),
-    );
+    const plantings = new Map<string, ClientPlanting>(list.plantings.map((p) => [p.id, { ...p }]));
     const beds = new Map<string, ClientBed>(list.beds.map((b) => [b.id, { ...b }]));
     for (const item of pending) {
       if (item.kind === 'planting') {

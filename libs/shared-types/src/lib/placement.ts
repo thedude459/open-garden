@@ -2,7 +2,15 @@ export type AreaKind = 'vegetable' | 'orchard' | 'greenhouse';
 export type BedSite = 'raised' | 'in_ground';
 export type BedStation = 'tree' | 'berry';
 
-export const MULCHES = ['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic'] as const;
+export const MULCHES = [
+  'none',
+  'wood_chips',
+  'straw',
+  'leaves',
+  'compost',
+  'paper',
+  'plastic',
+] as const;
 export type Mulch = (typeof MULCHES)[number];
 
 export const MULCH_LABELS: Record<Mulch, string> = {

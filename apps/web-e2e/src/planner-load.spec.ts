@@ -18,7 +18,9 @@ test('100-placement overview and bed view are interactive within 2s without per-
 }) => {
   test.setTimeout(120_000);
   const page = await signedInPage(browser, `planner-load-${Date.now()}@example.com`);
-  const created = await page.request.post('/api/gardens', { data: { place: fixturePlace, name: 'Load planner' } });
+  const created = await page.request.post('/api/gardens', {
+    data: { place: fixturePlace, name: 'Load planner' },
+  });
   expect(created.status()).toBe(201);
   const garden = (await created.json()) as { id: string };
   const bedRes = await page.request.post(`/api/gardens/${garden.id}/beds`, {

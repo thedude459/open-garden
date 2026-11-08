@@ -69,9 +69,9 @@ describe('MembershipService', () => {
       email: 'friend@example.com',
       role: 'collaborator',
     });
-    await expect(
-      membershipService.removeMember(ownerId, garden.id, ownerId),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(membershipService.removeMember(ownerId, garden.id, ownerId)).rejects.toMatchObject(
+      { code: 'FORBIDDEN' },
+    );
     const transferred = await membershipService.patchMember(ownerId, garden.id, friendId, {
       role: 'owner',
     });

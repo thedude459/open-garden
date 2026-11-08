@@ -11,12 +11,7 @@ export type PlanHit =
   | { kind: 'empty' };
 
 export type PlanGesture =
-  | 'pan'
-  | 'move-planting'
-  | 'move-area'
-  | 'resize-area'
-  | 'move-bed'
-  | 'resize-bed';
+  'pan' | 'move-planting' | 'move-area' | 'resize-area' | 'move-bed' | 'resize-bed';
 
 export function classifyGesture(hit: PlanHit): PlanGesture {
   switch (hit.kind) {

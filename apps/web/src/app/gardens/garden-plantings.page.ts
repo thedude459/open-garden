@@ -4,7 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { assertDatePair } from '@open-garden/seasonal-plantings/dates';
 import { normalizeBedName } from '@open-garden/seasonal-plantings/beds';
-import { groupPlantings, type PlantingGroup } from '@open-garden/seasonal-plantings/group-plantings';
+import {
+  groupPlantings,
+  type PlantingGroup,
+} from '@open-garden/seasonal-plantings/group-plantings';
 import type { FavoriteListItemDto, Mulch, PlantSummaryDto } from '@open-garden/shared-types';
 import { allowsPlant } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
@@ -21,9 +24,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
       <p class="error">{{ error() }}</p>
     }
     @for (issue of failures(); track issue.key) {
-      <p class="needs-attention" role="status">
-        needs-attention: {{ issue.failedMessage }}
-      </p>
+      <p class="needs-attention" role="status">needs-attention: {{ issue.failedMessage }}</p>
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
@@ -39,7 +40,9 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
           (results)="onCatalog($event)"
           (failed)="onSearchFailed($event)"
         >
-          <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
+          <button type="button" class="btn btn-secondary" (click)="loadFavorites()">
+            Show favorites
+          </button>
         </og-plant-picker>
         @if (manyTrays()) {
           <label>
@@ -101,11 +104,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
       <div class="filters">
         <label>
           Bed
-          <select
-            name="bedFilter"
-            [ngModel]="bedFilter"
-            (ngModelChange)="bedFilter = $event"
-          >
+          <select name="bedFilter" [ngModel]="bedFilter" (ngModelChange)="bedFilter = $event">
             <option value="">All beds</option>
             @for (b of list()!.beds; track b.id) {
               <option [value]="b.id">{{ b.name }}</option>
@@ -118,7 +117,10 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
         }
       </div>
       @if (visibleGroups().length === 0 && !list()!.plantings.length && !list()!.beds.length) {
-        <p class="muted">No plantings yet. Search the catalog or your favorites to record one. Create beds on Garden Overview.</p>
+        <p class="muted">
+          No plantings yet. Search the catalog or your favorites to record one. Create beds on
+          Garden Overview.
+        </p>
       } @else if (visibleGroups().length === 0) {
         <p class="muted">No plantings match this bed filter.</p>
       } @else {
@@ -153,8 +155,8 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                     <option value="full">Full sun</option>
                     <option value="part">Part sun</option>
                     <option value="shade">Shade</option>
-                    </select>
-                  </label>
+                  </select>
+                </label>
                 <label>
                   Ground
                   <select
@@ -202,7 +204,11 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
             }
             <div class="card-list">
               @for (p of group.plantings; track p.id) {
-                <article class="row" [class.pending-row]="p.sync === 'pending'" [class.needs-attention-row]="p.sync === 'failed'">
+                <article
+                  class="row"
+                  [class.pending-row]="p.sync === 'pending'"
+                  [class.needs-attention-row]="p.sync === 'failed'"
+                >
                   <div>
                     <strong>{{ p.commonName }}</strong>
                     <span class="muted">
@@ -261,7 +267,9 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                         <select #bedSelect [attr.name]="'bed-' + p.id">
                           <option value="" [selected]="!p.bedId">Unassigned</option>
                           @for (b of list()!.beds; track b.id) {
-                            <option [value]="b.id" [selected]="p.bedId === b.id">{{ b.name }}</option>
+                            <option [value]="b.id" [selected]="p.bedId === b.id">
+                              {{ b.name }}
+                            </option>
                           }
                         </select>
                       </label>
@@ -331,7 +339,9 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       >
                         Save planting
                       </button>
-                      <button type="button" class="btn btn-secondary" (click)="sowAgain(p)">Sow again</button>
+                      <button type="button" class="btn btn-secondary" (click)="sowAgain(p)">
+                        Sow again
+                      </button>
                     }
                   </div>
                   @if (canEdit()) {
@@ -347,10 +357,18 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                     } @else {
                       <span>
                         <p>Permanently remove this planting? This cannot be undone.</p>
-                        <button type="button" class="btn btn-destructive" (click)="confirmRemove(p)">
+                        <button
+                          type="button"
+                          class="btn btn-destructive"
+                          (click)="confirmRemove(p)"
+                        >
                           Confirm remove
                         </button>
-                        <button type="button" class="btn btn-secondary" (click)="confirmRemoveId.set(null)">
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          (click)="confirmRemoveId.set(null)"
+                        >
                           Cancel
                         </button>
                       </span>
@@ -497,16 +515,16 @@ export class GardenPlantingsPage implements OnInit {
     const epoch = ++this.listEpoch;
     try {
       const created = await this.api.create(
-          this.gardenId,
-          { plantId: plant.id },
-          {
-            commonName: plant.commonName,
-            species: plant.species,
-            cultivar: plant.cultivar,
-            plantType: plant.plantType,
-            status: plant.status === 'deprecated' ? 'deprecated' : 'active',
-          },
-        );
+        this.gardenId,
+        { plantId: plant.id },
+        {
+          commonName: plant.commonName,
+          species: plant.species,
+          cultivar: plant.cultivar,
+          plantType: plant.plantType,
+          status: plant.status === 'deprecated' ? 'deprecated' : 'active',
+        },
+      );
       if (epoch !== this.listEpoch) return;
       this.list.set(created);
       this.failures.set(await this.api.syncFailures(this.gardenId));
@@ -638,7 +656,8 @@ export class GardenPlantingsPage implements OnInit {
         plantId: planting.plantId,
         plantedOn: `${today.getFullYear()}-${month}-${day}`,
         startMethod: planting.startMethod,
-        indoorStartedOn: planting.startMethod === 'transplant' ? `${today.getFullYear()}-${month}-${day}` : null,
+        indoorStartedOn:
+          planting.startMethod === 'transplant' ? `${today.getFullYear()}-${month}-${day}` : null,
         bedId: planting.bedId,
         life: planting.life ?? 'annual',
       });
@@ -683,7 +702,10 @@ export class GardenPlantingsPage implements OnInit {
         rootstock: this.rootstockDraft[planting.id] ?? planting.rootstock ?? null,
         yearsToFruit: numberOrNull(this.yearsDraft[planting.id] ?? planting.yearsToFruit),
         spacingFeet: numberOrNull(this.feetDraft[planting.id] ?? planting.spacingFeet),
-        plantedYear: life === 'tree' ? (planting.plantedYear ?? new Date().getFullYear()) : planting.plantedYear,
+        plantedYear:
+          life === 'tree'
+            ? (planting.plantedYear ?? new Date().getFullYear())
+            : planting.plantedYear,
       });
       if (epoch !== this.listEpoch) return;
       const list = this.list();

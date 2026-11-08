@@ -7,9 +7,7 @@ describe('variety-key', () => {
   });
 
   it('builds species|cultivar key', () => {
-    expect(buildVarietyKey('Solanum lycopersicum', 'Cherry')).toBe(
-      'solanum lycopersicum|cherry',
-    );
+    expect(buildVarietyKey('Solanum lycopersicum', 'Cherry')).toBe('solanum lycopersicum|cherry');
   });
 
   it('uses empty cultivar segment for species-only', () => {

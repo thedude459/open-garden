@@ -2,8 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
 import { openConfiguration, confirmFixtureAddress } from './planner-helpers';
 
-
-
 test('cached garden list and detail stay readable when the API is unreachable', async ({
   browser,
 }) => {

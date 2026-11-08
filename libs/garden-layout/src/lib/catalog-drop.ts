@@ -28,7 +28,12 @@ export function catalogDropOutcome(
   }
   const local = planToLocal(geo, planX, planY);
   const flags = evaluateLayout(
-    [{ id: openBed.id, geometry: { lengthInches: geo.lengthInches, widthInches: geo.widthInches } }],
+    [
+      {
+        id: openBed.id,
+        geometry: { lengthInches: geo.lengthInches, widthInches: geo.widthInches },
+      },
+    ],
     [
       ...existing.map((p) => ({
         id: p.id,

@@ -51,7 +51,9 @@ async function restorePlantingApis(page: Page) {
   await page.unroute('**/api/gardens/**/beds**');
 }
 
-test('offline cache stays readable and queued add syncs for another member', async ({ browser }) => {
+test('offline cache stays readable and queued add syncs for another member', async ({
+  browser,
+}) => {
   test.setTimeout(90_000);
   const stamp = Date.now();
   const owner = await newUser(browser, `plant-off-owner-${stamp}@example.com`);
@@ -66,12 +68,16 @@ test('offline cache stays readable and queued add syncs for another member', asy
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
 
   await addFromCatalog(owner, 'Sweet Basil');
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending')).toBeVisible();
+  await expect(
+    owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending'),
+  ).toBeVisible();
 
   await restorePlantingApis(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending')).toHaveCount(0);
+  await expect(
+    owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending'),
+  ).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`plant-off-friend-${stamp}@example.com`);
@@ -110,7 +116,9 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
   await tomato.getByRole('button', { name: 'Save planting' }).click();
   await expect(tomato.getByText('pending')).toBeVisible();
   await addFromCatalog(owner, 'Sweet Basil');
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending')).toBeVisible();
+  await expect(
+    owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending'),
+  ).toBeVisible();
 
   const friendTomato = friend.locator('article').filter({ hasText: 'Cherry Tomato' });
   await friendTomato.getByRole('button', { name: 'Remove Cherry Tomato' }).click();

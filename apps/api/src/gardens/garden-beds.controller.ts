@@ -61,11 +61,7 @@ export class GardenBedsController {
 
   @Delete(':bedId')
   @HttpCode(204)
-  remove(
-    @CurrentUser() user: AuthUser,
-    @Param('id') id: string,
-    @Param('bedId') bedId: string,
-  ) {
+  remove(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('bedId') bedId: string) {
     return this.plantings.deleteBed(user.id, id, bedId);
   }
 }

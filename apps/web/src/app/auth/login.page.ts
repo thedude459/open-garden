@@ -11,36 +11,42 @@ import { SOURCE_CODE_URL } from '../source-link';
   imports: [FormsModule],
   template: `
     <div class="auth-page">
-    <div class="brand-hero">
-      <img src="assets/icon-512.png" alt="Open Garden" width="72" height="72" />
-      <p class="muted">Household garden planner</p>
-    </div>
-    <h2>{{ mode() === 'login' ? 'Sign in' : 'Create account' }}</h2>
-    <form class="authform card" (ngSubmit)="submit()">
-      @if (mode() === 'register') {
-        <input [(ngModel)]="displayName" name="displayName" placeholder="Display name" required />
+      <div class="brand-hero">
+        <img src="assets/icon-512.png" alt="Open Garden" width="72" height="72" />
+        <p class="muted">Household garden planner</p>
+      </div>
+      <h2>{{ mode() === 'login' ? 'Sign in' : 'Create account' }}</h2>
+      <form class="authform card" (ngSubmit)="submit()">
+        @if (mode() === 'register') {
+          <input [(ngModel)]="displayName" name="displayName" placeholder="Display name" required />
+        }
+        <input [(ngModel)]="email" name="email" type="email" placeholder="Email" required />
+        <input
+          [(ngModel)]="password"
+          name="password"
+          type="password"
+          placeholder="Password"
+          required
+        />
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [attr.aria-busy]="notices.busyMap().has('login') || null"
+          [disabled]="notices.busyMap().has('login')"
+        >
+          {{ mode() === 'login' ? 'Login' : 'Register' }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="toggle()">
+          {{ mode() === 'login' ? 'Need an account?' : 'Have an account?' }}
+        </button>
+      </form>
+      <p class="source-link">
+        Open Garden is free software (AGPL-3.0).
+        <a [href]="sourceCodeUrl" target="_blank" rel="noopener">Source code</a>
+      </p>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
       }
-      <input [(ngModel)]="email" name="email" type="email" placeholder="Email" required />
-      <input [(ngModel)]="password" name="password" type="password" placeholder="Password" required />
-      <button
-        type="submit"
-        class="btn btn-primary"
-        [attr.aria-busy]="notices.busyMap().has('login') || null"
-        [disabled]="notices.busyMap().has('login')"
-      >
-        {{ mode() === 'login' ? 'Login' : 'Register' }}
-      </button>
-      <button type="button" class="btn btn-secondary" (click)="toggle()">
-        {{ mode() === 'login' ? 'Need an account?' : 'Have an account?' }}
-      </button>
-    </form>
-    <p class="source-link">
-      Open Garden is free software (AGPL-3.0).
-      <a [href]="sourceCodeUrl" target="_blank" rel="noopener">Source code</a>
-    </p>
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
     </div>
   `,
 })

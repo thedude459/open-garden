@@ -38,9 +38,9 @@ export class AuthApiService {
   }
 
   async logout() {
-    await firstValueFrom(
-      this.http.post(`${API}/auth/logout`, {}, { withCredentials: true }),
-    ).catch(() => undefined);
+    await firstValueFrom(this.http.post(`${API}/auth/logout`, {}, { withCredentials: true })).catch(
+      () => undefined,
+    );
     this.user = null;
     sessionStorage.removeItem('og_user_id');
     sessionStorage.removeItem('og_role');

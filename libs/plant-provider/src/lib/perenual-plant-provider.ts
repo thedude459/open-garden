@@ -41,7 +41,11 @@ export class PerenualPlantProvider implements PlantDataProvider {
     if (!res.ok) {
       throw new Error(`Perenual list failed: ${res.status}`);
     }
-    const body = (await res.json()) as { data?: PerenualSpecies[]; current_page?: number; last_page?: number };
+    const body = (await res.json()) as {
+      data?: PerenualSpecies[];
+      current_page?: number;
+      last_page?: number;
+    };
     const items = (body.data ?? []).slice(0, options?.limit ?? 30).map(mapSpecies);
     const nextCursor =
       body.current_page && body.last_page && body.current_page < body.last_page
@@ -61,9 +65,7 @@ interface PerenualSpecies {
 }
 
 function mapSpecies(s: PerenualSpecies): ProviderPlant {
-  const scientific = Array.isArray(s.scientific_name)
-    ? s.scientific_name[0]
-    : s.scientific_name;
+  const scientific = Array.isArray(s.scientific_name) ? s.scientific_name[0] : s.scientific_name;
   return {
     externalId: String(s.id),
     commonName: s.common_name?.trim() || scientific || `Species ${s.id}`,

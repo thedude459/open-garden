@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant,
+import {
+  addTransplant,
   createSizedBed,
   newUser,
   openOverview,
-  saveLayout, confirmFixtureAddress } from './planner-helpers';
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('Save layout busy + success notice; offline Save persists until Dismiss', async ({
   browser,
@@ -64,18 +67,18 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   const tray = owner.getByLabel('Planting tray');
-  await tray.getByRole('button', { name: 'Cherry Tomato' }).dragTo(
-    owner.getByRole('heading', { name: 'Bed View' }),
-  );
+  await tray
+    .getByRole('button', { name: 'Cherry Tomato' })
+    .dragTo(owner.getByRole('heading', { name: 'Bed View' }));
   const miss = owner.getByLabel('Notification');
   await expect(miss).toContainText('Drop missed a bed');
   await expect(miss).toHaveAttribute('role', 'alert');
   await owner.getByRole('button', { name: 'Dismiss' }).click();
   await expect(miss).toHaveCount(0);
 
-  await tray.getByRole('button', { name: 'Cherry Tomato' }).dragTo(
-    owner.locator('[data-bed-name="North"]'),
-  );
+  await tray
+    .getByRole('button', { name: 'Cherry Tomato' })
+    .dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByText('Unsaved changes')).toBeVisible();
   await expect(owner.getByLabel('Notification')).toHaveCount(0);
 });

@@ -6,8 +6,13 @@ export function planToLocal(
   planX: number,
   planY: number,
 ): { x: number; y: number } {
-  const { originXInches: ox, originYInches: oy, lengthInches: L, widthInches: W, orientation } =
-    bed;
+  const {
+    originXInches: ox,
+    originYInches: oy,
+    lengthInches: L,
+    widthInches: W,
+    orientation,
+  } = bed;
   let x: number;
   let y: number;
   switch (orientation) {
@@ -31,7 +36,11 @@ export function planToLocal(
   return { x: Math.round(x), y: Math.round(y) };
 }
 
-export function roundTripLocal(bed: RotatableBed, localX: number, localY: number): { x: number; y: number } {
+export function roundTripLocal(
+  bed: RotatableBed,
+  localX: number,
+  localY: number,
+): { x: number; y: number } {
   const plan = localToPlan(bed, localX, localY);
   return planToLocal(bed, plan.x, plan.y);
 }

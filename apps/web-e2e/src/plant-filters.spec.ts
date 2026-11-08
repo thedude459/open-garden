@@ -6,7 +6,10 @@ test('filters narrow list', async ({ browser }) => {
   await page.goto('/plants');
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
   await expect(
-    page.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first(),
+    page
+      .getByRole('link')
+      .filter({ hasText: /Tomato|Basil|Maple/i })
+      .first(),
   ).toBeVisible({ timeout: 15_000 });
   await page.locator('select[name="plantType"]').selectOption('herb');
   await page.getByRole('button', { name: 'Apply' }).click();

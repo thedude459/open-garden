@@ -14,7 +14,13 @@
 
 const fs = require('fs');
 
-const DOC_EXACT = new Set(['LICENSE', '.editorconfig', '.prettierrc', '.prettierignore', '.github/zizmor.yml']);
+const DOC_EXACT = new Set([
+  'LICENSE',
+  '.editorconfig',
+  '.prettierrc',
+  '.prettierignore',
+  '.github/zizmor.yml',
+]);
 const DOC_PREFIXES = ['docs/', '.vscode/', '.github/ISSUE_TEMPLATE/'];
 
 /** Documentation and editor config: nothing in the app or images reads it. */
@@ -62,7 +68,10 @@ function selfcheck() {
     [false, []],
     // Documentation and editor config only.
     [false, ['README.md', 'AGENTS.md', 'docs/roadmap.md', 'docs/adr/0018-x.md', 'LICENSE']],
-    [false, ['apps/web-e2e/CONVENTION.md', '.vscode/extensions.json', '.prettierrc', '.editorconfig']],
+    [
+      false,
+      ['apps/web-e2e/CONVENTION.md', '.vscode/extensions.json', '.prettierrc', '.editorconfig'],
+    ],
     // Docs alongside app code still run.
     [true, ['README.md', 'apps/web/src/app/app.component.ts']],
     // Build- and test-affecting config still runs.
@@ -99,14 +108,22 @@ function selfcheck() {
 }
 
 function decide(filesPath, basePath, headPath) {
-  const files = fs.readFileSync(filesPath, 'utf8').split('\n').map((line) => line.trim()).filter(Boolean);
+  const files = fs
+    .readFileSync(filesPath, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
   const base = fs.readFileSync(basePath, 'utf8');
   const head = fs.readFileSync(headPath, 'utf8');
   console.log(needsE2e(files, base, head) ? 'run' : 'skip');
 }
 
 function decideImages(filesPath) {
-  const files = fs.readFileSync(filesPath, 'utf8').split('\n').map((line) => line.trim()).filter(Boolean);
+  const files = fs
+    .readFileSync(filesPath, 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
   console.log(needsImages(files) ? 'run' : 'skip');
 }
 
@@ -117,6 +134,8 @@ if (process.argv[2] === 'selfcheck') {
 } else if (process.argv[2] === 'decide-images') {
   decideImages(process.argv[3]);
 } else {
-  console.error('usage: e2e-needed.js selfcheck | decide <files> <base-package.json> <head-package.json> | decide-images <files>');
+  console.error(
+    'usage: e2e-needed.js selfcheck | decide <files> <base-package.json> <head-package.json> | decide-images <files>',
+  );
   process.exit(2);
 }

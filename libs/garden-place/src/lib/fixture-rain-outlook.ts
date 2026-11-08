@@ -2,11 +2,7 @@ import { isWashingtonPoint } from './fixtures';
 import type { RainOutlook } from './ports';
 
 export class FixtureRainOutlook implements RainOutlook {
-  async daily(
-    latitude: number,
-    longitude: number,
-    asOf: string,
-  ): Promise<Record<string, number>> {
+  async daily(latitude: number, longitude: number, asOf: string): Promise<Record<string, number>> {
     const rainy = isWashingtonPoint(latitude, longitude);
     return {
       [shiftIsoDate(asOf, -1)]: 0,

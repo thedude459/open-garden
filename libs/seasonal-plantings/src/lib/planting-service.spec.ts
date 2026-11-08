@@ -228,9 +228,14 @@ describe('PlantingService', () => {
       plantId: tomato.id,
       bedId: first.bed.id,
     });
-    const unassigned = await mem.service.update(mem.ownerId, mem.gardenId, planting.list.plantings[0]!.id, {
-      bedId: null,
-    });
+    const unassigned = await mem.service.update(
+      mem.ownerId,
+      mem.gardenId,
+      planting.list.plantings[0]!.id,
+      {
+        bedId: null,
+      },
+    );
     expect(unassigned.bedId).toBeNull();
     await expect(
       mem.service.deleteBed(mem.ownerId, mem.gardenId, 'missing-bed'),
@@ -299,7 +304,12 @@ function createMemory() {
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id))
         .map(withPlant);
       const start = (page - 1) * pageSize;
-      return { items: items.slice(start, start + pageSize), totalCount: items.length, page, pageSize };
+      return {
+        items: items.slice(start, start + pageSize),
+        totalCount: items.length,
+        page,
+        pageSize,
+      };
     },
     async getById(id: string) {
       return plantingRows.get(id) ?? null;
@@ -359,14 +369,22 @@ function createMemory() {
     },
     async deleteDirectSeedInBed(gId: string, bedId: string) {
       for (const [id, planting] of [...plantingRows.entries()]) {
-        if (planting.gardenId === gId && planting.bedId === bedId && planting.startMethod === 'direct_seed') {
+        if (
+          planting.gardenId === gId &&
+          planting.bedId === bedId &&
+          planting.startMethod === 'direct_seed'
+        ) {
           plantingRows.delete(id);
         }
       }
     },
     async unassignTransplantsInBed(gId: string, bedId: string) {
       for (const planting of plantingRows.values()) {
-        if (planting.gardenId === gId && planting.bedId === bedId && planting.startMethod === 'transplant') {
+        if (
+          planting.gardenId === gId &&
+          planting.bedId === bedId &&
+          planting.startMethod === 'transplant'
+        ) {
           planting.bedId = null;
         }
       }
@@ -374,7 +392,12 @@ function createMemory() {
     async listUnplacedTransplants(gId: string) {
       return [...plantingRows.values()]
         .filter((r) => r.gardenId === gId && r.startMethod === 'transplant' && r.bedId === null)
-        .map((r) => ({ ...withPlant(r), spacingInches: null, layoutXInches: null, layoutYInches: null }));
+        .map((r) => ({
+          ...withPlant(r),
+          spacingInches: null,
+          layoutXInches: null,
+          layoutYInches: null,
+        }));
     },
   };
   const bedRepo = {
@@ -392,8 +415,9 @@ function createMemory() {
     },
     async findByNormalizedName(gId: string, nameNormalized: string) {
       return (
-        [...bedRows.values()].find((b) => b.gardenId === gId && b.nameNormalized === nameNormalized) ??
-        null
+        [...bedRows.values()].find(
+          (b) => b.gardenId === gId && b.nameNormalized === nameNormalized,
+        ) ?? null
       );
     },
     async insert(input: {

@@ -1,8 +1,10 @@
-import type { GardenInviteDto, GardenMemberPatchDto, GardenRole, MemberDto } from '@open-garden/shared-types';
 import type {
-  GardenMembershipRepository,
-  GardenRepository,
-} from '@open-garden/plant-catalog-data';
+  GardenInviteDto,
+  GardenMemberPatchDto,
+  GardenRole,
+  MemberDto,
+} from '@open-garden/shared-types';
+import type { GardenMembershipRepository, GardenRepository } from '@open-garden/plant-catalog-data';
 import { domainError } from './domain-error';
 
 export class MembershipService {
@@ -58,10 +60,7 @@ export class MembershipService {
       return this.transfer(actorId, gardenId, targetUserId);
     }
     if (target.role === 'owner') {
-      throw domainError(
-        'VALIDATION_ERROR',
-        'Transfer ownership before changing the owner role',
-      );
+      throw domainError('VALIDATION_ERROR', 'Transfer ownership before changing the owner role');
     }
     await this.memberships.updateRole(gardenId, targetUserId, dto.role);
     return this.memberDto(gardenId, targetUserId);
@@ -73,10 +72,7 @@ export class MembershipService {
 
     if (actorId === targetUserId) {
       if (actor.role === 'owner') {
-        throw domainError(
-          'FORBIDDEN',
-          'Transfer ownership or delete the garden before leaving',
-        );
+        throw domainError('FORBIDDEN', 'Transfer ownership or delete the garden before leaving');
       }
       await this.memberships.delete(gardenId, actorId);
       return;
@@ -106,15 +102,9 @@ export class MembershipService {
     const target = await this.memberships.get(gardenId, targetUserId);
     if (!target) throw domainError('NOT_FOUND', 'Member not found');
 
-    const clash = await this.gardens.findOwnedByNormalizedName(
-      targetUserId,
-      garden.nameNormalized,
-    );
+    const clash = await this.gardens.findOwnedByNormalizedName(targetUserId, garden.nameNormalized);
     if (clash) {
-      throw domainError(
-        'CONFLICT',
-        'The new owner already has a garden with that name',
-      );
+      throw domainError('CONFLICT', 'The new owner already has a garden with that name');
     }
 
     // Demote the current owner first so the partial unique owner index is never

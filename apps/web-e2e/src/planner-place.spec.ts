@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { createSizedBed,
+import {
+  createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout, confirmFixtureAddress } from './planner-helpers';
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('Overview create uses visible viewport center; grab-offset move; viewer cannot create', async ({
   browser,
@@ -55,7 +58,9 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await owner.getByRole('button', { name: 'Edit size North' }).click();
   const ox = await originX.inputValue();
-  await owner.locator('[data-bed-name="North"]').dragTo(plan, { targetPosition: { x: 100, y: 60 } });
+  await owner
+    .locator('[data-bed-name="North"]')
+    .dragTo(plan, { targetPosition: { x: 100, y: 60 } });
   await expect(originX).not.toHaveValue(ox);
   const movedX = await originX.inputValue();
   const movedY = await originY.inputValue();

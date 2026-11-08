@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  Inject,
-  Post,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, Inject, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService, type AuthUser } from '@open-garden/auth';
 import { authLoginSchema, authRegisterSchema } from '@open-garden/shared-types';
@@ -24,10 +16,7 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(
-    @Body() body: unknown,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async register(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const parsed = authRegisterSchema.safeParse(body);
     if (!parsed.success) {
       const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid credentials') as Error & {
@@ -46,10 +35,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  async login(
-    @Body() body: unknown,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async login(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const parsed = authLoginSchema.safeParse(body);
     if (!parsed.success) {
       const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid credentials') as Error & {
@@ -71,10 +57,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(204)
   @UseGuards(SessionGuard)
-  async logout(
-    @Res({ passthrough: true }) res: Response,
-    @CurrentUser() _user: AuthUser,
-  ) {
+  async logout(@Res({ passthrough: true }) res: Response, @CurrentUser() _user: AuthUser) {
     const token = (res.req as { cookies?: { og_session?: string } }).cookies?.og_session;
     if (token) await this.auth.logout(token);
     res.clearCookie('og_session', sessionCookieOptions(forwardedProto(res)));

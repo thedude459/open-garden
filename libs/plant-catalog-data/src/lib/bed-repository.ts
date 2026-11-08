@@ -31,9 +31,7 @@ export class BedRepository {
     const [row] = await this.db
       .select()
       .from(gardenBeds)
-      .where(
-        and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.nameNormalized, nameNormalized)),
-      )
+      .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.nameNormalized, nameNormalized)))
       .limit(1);
     return row ?? null;
   }
@@ -156,4 +154,3 @@ export class BedRepository {
     return deleted.length > 0;
   }
 }
-

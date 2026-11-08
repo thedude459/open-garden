@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { applyPlantSearch,
+import {
+  applyPlantSearch,
   createSizedBed,
   inviteViewer,
   newUser,
   openOverview,
-  saveLayout, confirmFixtureAddress } from './planner-helpers';
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('Bed View on-mark prefixes, no bed size caption, select shows full name', async ({
   browser,

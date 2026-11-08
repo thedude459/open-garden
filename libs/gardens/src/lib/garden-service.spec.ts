@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FixtureClimateLookup, MAIN_STREET_PLACES, WASHINGTON_PLACE } from '@open-garden/garden-place';
+import {
+  FixtureClimateLookup,
+  MAIN_STREET_PLACES,
+  WASHINGTON_PLACE,
+} from '@open-garden/garden-place';
 import { createGardenMemory } from './test-memory';
 
 describe('GardenService', () => {
@@ -19,7 +23,11 @@ describe('GardenService', () => {
 
   it('stores size on half-foot steps, defaulting to 20 by 10 ft', async () => {
     const { service, ownerId } = createGardenMemory();
-    const named = await service.create(ownerId, { name: 'Plot', lengthInches: 100, widthInches: 50 });
+    const named = await service.create(ownerId, {
+      name: 'Plot',
+      lengthInches: 100,
+      widthInches: 50,
+    });
     expect(named.lengthInches).toBe(102);
     expect(named.widthInches).toBe(48);
     const plain = await service.create(ownerId, { name: 'Plain' });
@@ -137,9 +145,9 @@ describe('GardenService', () => {
 
   it('requires a confirmed place, stores it, and still loads a garden with no address', async () => {
     const mem = createGardenMemory();
-    await expect(mem.service.create(mem.ownerId, { name: 'Plot', place: undefined })).rejects.toThrow(
-      'A garden address is required',
-    );
+    await expect(
+      mem.service.create(mem.ownerId, { name: 'Plot', place: undefined }),
+    ).rejects.toThrow('A garden address is required');
     await expect(
       mem.service.create(mem.ownerId, {
         name: 'Long',
@@ -147,7 +155,10 @@ describe('GardenService', () => {
       }),
     ).rejects.toThrow('A confirmed garden address is required');
 
-    const created = await mem.service.create(mem.ownerId, { name: 'Mapped', place: WASHINGTON_PLACE });
+    const created = await mem.service.create(mem.ownerId, {
+      name: 'Mapped',
+      place: WASHINGTON_PLACE,
+    });
     expect(created.place).toMatchObject({
       formattedAddress: WASHINGTON_PLACE.formattedAddress,
       latitude: WASHINGTON_PLACE.latitude,
@@ -158,7 +169,9 @@ describe('GardenService', () => {
     });
     expect(created.seasonNotice).toBeNull();
 
-    const replaced = await mem.service.patch(mem.ownerId, created.id, { place: MAIN_STREET_PLACES[0] });
+    const replaced = await mem.service.patch(mem.ownerId, created.id, {
+      place: MAIN_STREET_PLACES[0],
+    });
     expect(replaced.place?.placeId).toBe('fixture-main-il');
 
     const bare = await mem.gardens.createOwned({
@@ -202,7 +215,9 @@ describe('GardenService', () => {
     expect(created.hardinessZone).toBe(8);
     expect(created.lastFrost).toEqual({ month: 4, day: 15 });
     expect(created.firstFrost).toEqual({ month: 10, day: 20 });
-    expect(created.seasonNotice).toBe('Growing zone and frost dates were updated from this address.');
+    expect(created.seasonNotice).toBe(
+      'Growing zone and frost dates were updated from this address.',
+    );
 
     const edited = await service.patch(ownerId, created.id, { hardinessZone: 5 });
     expect(edited.hardinessZone).toBe(5);

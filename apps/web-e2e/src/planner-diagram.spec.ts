@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant, createSizedBed, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
+import {
+  addTransplant,
+  createSizedBed,
+  newUser,
+  openOverview,
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks on Overview', async ({
   browser,
@@ -30,9 +37,10 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   await addTransplant(owner, 'Cherry Tomato');
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
-  await owner.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }).dragTo(
-    owner.locator('[data-bed-name="Raised bed 1"]'),
-  );
+  await owner
+    .getByLabel('Planting tray')
+    .getByRole('button', { name: 'Cherry Tomato' })
+    .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
   expect((await saveLayout(owner)).status()).toBe(200);
   await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toBeVisible();
   await expect(owner.getByLabel('Bed plan').locator('.layout-plant-label')).toBeVisible();

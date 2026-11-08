@@ -90,7 +90,9 @@ export async function openOverview(page: Page) {
 
 export async function openConfiguration(page: Page) {
   await page.waitForURL(/\/gardens\/[^/?#]+/);
-  const config = page.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Configuration', exact: true });
+  const config = page
+    .locator('nav[aria-label="Garden"]')
+    .getByRole('link', { name: 'Configuration', exact: true });
   if (await config.isVisible()) {
     await config.click();
   } else {

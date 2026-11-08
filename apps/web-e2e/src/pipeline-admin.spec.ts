@@ -44,9 +44,9 @@ test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ bro
   const page = await signedInPage(browser, `pipe-gardener-${Date.now()}@example.com`);
   await page.goto('/plants');
   await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-  await expect(page.locator('nav').getByRole('link', { name: 'Pipeline', exact: true })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.locator('nav').getByRole('link', { name: 'Pipeline', exact: true }),
+  ).toHaveCount(0);
   await page.goto('/admin/pipeline');
   await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Catalog pipeline' })).toHaveCount(0);

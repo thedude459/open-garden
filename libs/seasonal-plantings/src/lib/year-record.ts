@@ -18,9 +18,9 @@ export function survivesSeasonClose(life: PlantingLife): boolean {
   return life !== 'annual';
 }
 
-export function plantAgainRows<T extends { plantId: string; bedId: string | null; life: PlantingLife }>(
-  rows: T[],
-): T[] {
+export function plantAgainRows<
+  T extends { plantId: string; bedId: string | null; life: PlantingLife },
+>(rows: T[]): T[] {
   const seen = new Set<string>();
   const out: T[] = [];
   for (const row of rows) {

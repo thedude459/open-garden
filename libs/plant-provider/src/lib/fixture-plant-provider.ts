@@ -214,12 +214,14 @@ export class FixturePlantProvider implements PlantDataProvider {
     if (!q) {
       return this.plants.slice(0, limit);
     }
-    return this.plants.filter(
-      (p) =>
-        p.commonName.toLowerCase().includes(q) ||
-        p.species.toLowerCase().includes(q) ||
-        (p.cultivar?.toLowerCase().includes(q) ?? false),
-    ).slice(0, limit);
+    return this.plants
+      .filter(
+        (p) =>
+          p.commonName.toLowerCase().includes(q) ||
+          p.species.toLowerCase().includes(q) ||
+          (p.cultivar?.toLowerCase().includes(q) ?? false),
+      )
+      .slice(0, limit);
   }
 
   async listPage(options?: { cursor?: string; limit?: number }) {

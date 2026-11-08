@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { deriveReminders, type DerivePlantingInput } from './derive';
 
-function planting(overrides: Partial<DerivePlantingInput> & { plantingId: string }): DerivePlantingInput {
+function planting(
+  overrides: Partial<DerivePlantingInput> & { plantingId: string },
+): DerivePlantingInput {
   return {
     plantId: 'plant-1',
     commonName: 'Test',
@@ -112,10 +114,7 @@ describe('deriveReminders', () => {
 
   it('two plantings of same variety yield two harvest items', () => {
     const items = deriveReminders(
-      [
-        planting({ plantingId: 'a' }),
-        planting({ plantingId: 'b', plantId: 'plant-1' }),
-      ],
+      [planting({ plantingId: 'a' }), planting({ plantingId: 'b', plantId: 'plant-1' })],
       [],
       '2026-08-17',
     );

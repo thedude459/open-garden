@@ -21,12 +21,18 @@ import { NoticeService } from '../ui/notice.service';
         }
       </p>
       <dl class="plant-facts">
-        <dt>Type</dt><dd>{{ p.plantType }}</dd>
-        <dt>Zones</dt><dd>{{ p.zoneMin }}–{{ p.zoneMax }}</dd>
-        <dt>Sun</dt><dd>{{ p.sunRequirements ?? 'Unavailable' }}</dd>
-        <dt>Water</dt><dd>{{ p.waterNeeds ?? 'Unavailable' }}</dd>
-        <dt>Days to maturity</dt><dd>{{ p.daysToMaturity ?? 'Unavailable' }}</dd>
-        <dt>Spacing (in)</dt><dd>{{ p.spacingInches ?? 'Unavailable' }}</dd>
+        <dt>Type</dt>
+        <dd>{{ p.plantType }}</dd>
+        <dt>Zones</dt>
+        <dd>{{ p.zoneMin }}–{{ p.zoneMax }}</dd>
+        <dt>Sun</dt>
+        <dd>{{ p.sunRequirements ?? 'Unavailable' }}</dd>
+        <dt>Water</dt>
+        <dd>{{ p.waterNeeds ?? 'Unavailable' }}</dd>
+        <dt>Days to maturity</dt>
+        <dd>{{ p.daysToMaturity ?? 'Unavailable' }}</dd>
+        <dt>Spacing (in)</dt>
+        <dd>{{ p.spacingInches ?? 'Unavailable' }}</dd>
       </dl>
       <button
         type="button"

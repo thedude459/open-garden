@@ -116,7 +116,7 @@ describe('LayoutService placements', () => {
       mem.service.put(mem.ownerId, mem.gardenId, {
         ...valid,
         areas: [],
-      placements: [
+        placements: [
           { plantingId: a.id, bedId: bed.id, xInches: 20, yInches: 20 },
           { plantingId: b.id, bedId: bed.id, xInches: 30, yInches: 20 },
         ],
@@ -217,10 +217,14 @@ describe('LayoutService areas', () => {
     const after = await mem.service.get(mem.ownerId, mem.gardenId);
     expect(after.areas).toHaveLength(0);
 
-    await expect(mem.service.deleteArea(mem.viewerId, mem.gardenId, area.id)).rejects.toMatchObject({
-      message: 'Viewers cannot update layout',
-    });
-    await expect(mem.service.deleteArea(mem.strangerId, mem.gardenId, area.id)).rejects.toMatchObject({
+    await expect(mem.service.deleteArea(mem.viewerId, mem.gardenId, area.id)).rejects.toMatchObject(
+      {
+        message: 'Viewers cannot update layout',
+      },
+    );
+    await expect(
+      mem.service.deleteArea(mem.strangerId, mem.gardenId, area.id),
+    ).rejects.toMatchObject({
       message: 'Garden not found',
     });
   });
@@ -243,9 +247,7 @@ describe('LayoutService load path', () => {
         },
       ],
       areas: [],
-      placements: [
-        { plantingId: planting.id, bedId: bed.id, xInches: 12, yInches: 12 },
-      ],
+      placements: [{ plantingId: planting.id, bedId: bed.id, xInches: 12, yInches: 12 }],
     });
     const spy = vi.spyOn(mem.plantings, 'listAllForLayout');
     const getById = vi.fn();

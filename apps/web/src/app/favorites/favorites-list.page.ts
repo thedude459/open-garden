@@ -22,7 +22,9 @@ import { FavoritesApiService } from './favorites-api.service';
                 <span class="badge">Unavailable</span>
               }
             </a>
-            <button type="button" class="btn btn-secondary" (click)="remove(f.plant.id)">Remove</button>
+            <button type="button" class="btn btn-secondary" (click)="remove(f.plant.id)">
+              Remove
+            </button>
           </div>
         }
       </div>

@@ -191,7 +191,9 @@ export function createLayoutMemory() {
 
   const areaRepo = {
     async listByGarden(gId: string) {
-      return [...areaRows.values()].filter((a) => a.gardenId === gId).sort((a, b) => a.name.localeCompare(b.name));
+      return [...areaRows.values()]
+        .filter((a) => a.gardenId === gId)
+        .sort((a, b) => a.name.localeCompare(b.name));
     },
     async getInGarden(gId: string, id: string) {
       const row = areaRows.get(id);
@@ -199,8 +201,9 @@ export function createLayoutMemory() {
     },
     async findByNormalizedName(gId: string, nameNormalized: string) {
       return (
-        [...areaRows.values()].find((a) => a.gardenId === gId && a.nameNormalized === nameNormalized) ??
-        null
+        [...areaRows.values()].find(
+          (a) => a.gardenId === gId && a.nameNormalized === nameNormalized,
+        ) ?? null
       );
     },
     async upsert(

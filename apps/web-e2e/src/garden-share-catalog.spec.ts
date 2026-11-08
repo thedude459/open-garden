@@ -7,10 +7,19 @@ test('sharing a garden does not share favorites; catalog stays available', async
   const friend = await signedInPage(browser, `fav-friend-${stamp}@example.com`);
 
   await owner.goto('/plants');
-  await expect(owner.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first()).toBeVisible({
+  await expect(
+    owner
+      .getByRole('link')
+      .filter({ hasText: /Tomato|Basil|Maple/i })
+      .first(),
+  ).toBeVisible({
     timeout: 15_000,
   });
-  await owner.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first().click();
+  await owner
+    .getByRole('link')
+    .filter({ hasText: /Tomato|Basil|Maple/i })
+    .first()
+    .click();
   await owner.getByRole('button', { name: /favorite/i }).click();
   await expect(owner.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
   await owner.goto('/favorites');
@@ -21,6 +30,9 @@ test('sharing a garden does not share favorites; catalog stays available', async
   await expect(friend.getByText(/No favorites yet/i)).toBeVisible();
   await friend.goto('/plants');
   await expect(
-    friend.getByRole('link').filter({ hasText: /Tomato|Basil|Maple/i }).first(),
+    friend
+      .getByRole('link')
+      .filter({ hasText: /Tomato|Basil|Maple/i })
+      .first(),
   ).toBeVisible();
 });

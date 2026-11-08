@@ -20,7 +20,11 @@ describe('placement notes', () => {
       ],
     });
     expect(flags).toEqual([
-      expect.objectContaining({ kind: 'sun', blocking: false, message: expect.stringContaining('Tomato') }),
+      expect.objectContaining({
+        kind: 'sun',
+        blocking: false,
+        message: expect.stringContaining('Tomato'),
+      }),
     ]);
   });
 
@@ -60,7 +64,9 @@ describe('placement notes', () => {
     });
     expect(flags.map((flag) => flag.kind).sort()).toEqual(['companion', 'repeat']);
     expect(flags.every((flag) => flag.blocking === false)).toBe(true);
-    expect(flags.find((flag) => flag.kind === 'companion')?.message).toBe('Basil helps Tomato — scent');
+    expect(flags.find((flag) => flag.kind === 'companion')?.message).toBe(
+      'Basil helps Tomato — scent',
+    );
   });
 
   it('uses foot spacing for a tree and catalog inches otherwise', () => {

@@ -20,7 +20,7 @@ body:
     id: wrong
     attributes:
       label: What is wrong or missing
-      placeholder: "Spacing shows 24 in; most growers use 18–24 in for cherry types."
+      placeholder: 'Spacing shows 24 in; most growers use 18–24 in for cherry types.'
     validations:
       required: true
   - type: textarea

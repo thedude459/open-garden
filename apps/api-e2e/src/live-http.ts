@@ -7,7 +7,9 @@ export function uniqueEmail(prefix = 'e2e'): string {
 }
 
 /** Parse `og_session` from a `Set-Cookie` header or list of headers. */
-export function parseOgSessionCookie(setCookie: string | string[] | null | undefined): string | undefined {
+export function parseOgSessionCookie(
+  setCookie: string | string[] | null | undefined,
+): string | undefined {
   const headers = Array.isArray(setCookie) ? setCookie : setCookie ? [setCookie] : [];
   for (const header of headers) {
     const first = header.split(';')[0]?.trim() ?? '';

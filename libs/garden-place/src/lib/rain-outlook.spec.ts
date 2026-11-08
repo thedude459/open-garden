@@ -6,11 +6,19 @@ import { OpenMeteoRainOutlook, parseRainSums } from './open-meteo-rain-outlook';
 describe('rain outlook', () => {
   it('rains 5 mm on the Washington asOf and 0 mm otherwise', async () => {
     const rain = new FixtureRainOutlook();
-    const wet = await rain.daily(WASHINGTON_PLACE.latitude, WASHINGTON_PLACE.longitude, '2026-10-03');
+    const wet = await rain.daily(
+      WASHINGTON_PLACE.latitude,
+      WASHINGTON_PLACE.longitude,
+      '2026-10-03',
+    );
     expect(wet?.['2026-10-03']).toBe(5);
     expect(wet?.['2026-10-02']).toBe(0);
     expect(wet?.['2026-10-04']).toBe(0);
-    const dry = await rain.daily(MAIN_STREET_PLACES[1]!.latitude, MAIN_STREET_PLACES[1]!.longitude, '2026-10-03');
+    const dry = await rain.daily(
+      MAIN_STREET_PLACES[1]!.latitude,
+      MAIN_STREET_PLACES[1]!.longitude,
+      '2026-10-03',
+    );
     expect(dry?.['2026-10-03']).toBe(0);
   });
 

@@ -198,7 +198,12 @@ export class PlantingsApiService {
         clientMutationId: crypto.randomUUID(),
         updatedAt: Date.now(),
       });
-      return { id: bedId, name, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      return {
+        id: bedId,
+        name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
     }
   }
 
@@ -259,7 +264,9 @@ export class PlantingsApiService {
     if (item.kind === 'planting') {
       if (item.op === 'create') {
         await firstValueFrom(
-          this.http.post(`${API}/gardens/${gardenId}/plantings`, item.body, { withCredentials: true }),
+          this.http.post(`${API}/gardens/${gardenId}/plantings`, item.body, {
+            withCredentials: true,
+          }),
         );
         return;
       }
@@ -284,7 +291,9 @@ export class PlantingsApiService {
     }
     if (item.op === 'update') {
       await firstValueFrom(
-        this.http.patch(`${API}/gardens/${gardenId}/beds/${id}`, item.body, { withCredentials: true }),
+        this.http.patch(`${API}/gardens/${gardenId}/beds/${id}`, item.body, {
+          withCredentials: true,
+        }),
       );
       return;
     }

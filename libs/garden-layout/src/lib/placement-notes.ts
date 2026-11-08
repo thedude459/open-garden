@@ -20,7 +20,10 @@ export function normalizeSun(value: string | null | undefined): 'full' | 'part' 
   return null;
 }
 
-export function sunDisagrees(bedSun: string | null | undefined, plantSun: string | null | undefined): boolean {
+export function sunDisagrees(
+  bedSun: string | null | undefined,
+  plantSun: string | null | undefined,
+): boolean {
   const bed = normalizeSun(bedSun);
   const plant = normalizeSun(plantSun);
   if (!bed || !plant || bed === 'part' || plant === 'part') return false;
@@ -28,7 +31,10 @@ export function sunDisagrees(bedSun: string | null | undefined, plantSun: string
 }
 
 /** Feet win for a tree. Catalog inches stay when feet are unset. */
-export function spacingInchesFor(spacingFeet: number | null | undefined, catalogInches: number | null): number | null {
+export function spacingInchesFor(
+  spacingFeet: number | null | undefined,
+  catalogInches: number | null,
+): number | null {
   if (spacingFeet != null && spacingFeet > 0) return Math.round(spacingFeet * 12);
   return catalogInches;
 }
@@ -82,7 +88,8 @@ export function placementNotes(input: {
     });
     if (!together) continue;
     seenPairs.add(key);
-    const verb = pair.kind === 'helps' ? 'helps' : pair.kind === 'hinders' ? 'hinders' : 'pollinates';
+    const verb =
+      pair.kind === 'helps' ? 'helps' : pair.kind === 'hinders' ? 'hinders' : 'pollinates';
     const left = pair.plantName || names.get(pair.plantId) || 'Plant';
     const right = pair.otherName || names.get(pair.otherPlantId) || 'Plant';
     const ids = placed

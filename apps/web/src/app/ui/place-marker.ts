@@ -8,7 +8,9 @@ import { RouterLink } from '@angular/router';
   template: `
     <nav class="place-marker" aria-label="You are here">
       @if (gardenId()) {
-        <a [routerLink]="['/gardens', gardenId(), 'layout']" aria-label="Garden home">{{ gardenName() }}</a>
+        <a [routerLink]="['/gardens', gardenId(), 'layout']" aria-label="Garden home">{{
+          gardenName()
+        }}</a>
       } @else {
         <span>{{ gardenName() }}</span>
       }

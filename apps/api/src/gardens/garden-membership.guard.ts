@@ -1,15 +1,7 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, NotFoundException } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthUser } from '@open-garden/auth';
-import {
-  GardenMembershipRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { GardenMembershipRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { Inject } from '@nestjs/common';
 import { CURRENT_USER } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';

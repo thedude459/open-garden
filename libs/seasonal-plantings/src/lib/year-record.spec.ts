@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { nextOpenYear, plantAgainRows, plantingIsCurrent, survivesSeasonClose } from './year-record';
+import {
+  nextOpenYear,
+  plantAgainRows,
+  plantingIsCurrent,
+  survivesSeasonClose,
+} from './year-record';
 
 describe('year record', () => {
   it('keeps trees and hides last year’s annuals once a season is open', () => {

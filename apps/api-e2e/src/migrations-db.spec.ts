@@ -6,7 +6,9 @@ import { createDb, MIGRATIONS_FOLDER, runMigrations } from '@open-garden/plant-c
 
 const databaseUrl = process.env['DATABASE_URL'];
 const folder = resolve(process.cwd(), MIGRATIONS_FOLDER);
-const sqlFiles = readdirSync(folder).filter((f) => f.endsWith('.sql')).sort();
+const sqlFiles = readdirSync(folder)
+  .filter((f) => f.endsWith('.sql'))
+  .sort();
 const created: string[] = [];
 
 function urlFor(name: string): string {
@@ -65,12 +67,18 @@ async function insertOrchardBed(url: string): Promise<void> {
 }
 
 async function orchardBeds(url: string): Promise<number> {
-  const rows = await query<{ n: string }>(url, `select count(*) as n from garden_beds where kind = 'orchard'`);
+  const rows = await query<{ n: string }>(
+    url,
+    `select count(*) as n from garden_beds where kind = 'orchard'`,
+  );
   return Number(rows[0]?.n);
 }
 
 async function recorded(url: string): Promise<number> {
-  const rows = await query<{ n: string }>(url, 'select count(*) as n from drizzle.__drizzle_migrations');
+  const rows = await query<{ n: string }>(
+    url,
+    'select count(*) as n from drizzle.__drizzle_migrations',
+  );
   return Number(rows[0]?.n);
 }
 

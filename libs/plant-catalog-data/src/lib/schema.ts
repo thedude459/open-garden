@@ -349,9 +349,7 @@ export const catalogPipelineMergeDecisions = pgTable(
     contributingSources: text('contributing_sources').array().notNull(),
     fieldWinners: jsonb('field_winners').$type<Record<string, string>>().notNull(),
   },
-  (t) => [
-    uniqueIndex('catalog_pipeline_merge_decisions_run_key_uidx').on(t.runId, t.varietyKey),
-  ],
+  (t) => [uniqueIndex('catalog_pipeline_merge_decisions_run_key_uidx').on(t.runId, t.varietyKey)],
 );
 
 export const catalogPlantSources = pgTable(
@@ -448,11 +446,7 @@ export const gardenCareEvents = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex('garden_care_events_occurrence_uidx').on(
-      t.plantingId,
-      t.kind,
-      t.occurrenceOn,
-    ),
+    uniqueIndex('garden_care_events_occurrence_uidx').on(t.plantingId, t.kind, t.occurrenceOn),
     index('garden_care_events_planting_id_idx').on(t.plantingId),
   ],
 );

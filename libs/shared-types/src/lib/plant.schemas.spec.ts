@@ -24,8 +24,6 @@ describe('auth schemas', () => {
   });
 
   it('rejects short passwords on register', () => {
-    expect(() =>
-      authRegisterSchema.parse({ email: 'a@b.com', password: 'short' }),
-    ).toThrow();
+    expect(() => authRegisterSchema.parse({ email: 'a@b.com', password: 'short' })).toThrow();
   });
 });

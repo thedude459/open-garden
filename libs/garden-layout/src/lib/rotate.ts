@@ -19,8 +19,13 @@ export function localToPlan(
   localX: number,
   localY: number,
 ): { x: number; y: number } {
-  const { originXInches: ox, originYInches: oy, lengthInches: L, widthInches: W, orientation } =
-    bed;
+  const {
+    originXInches: ox,
+    originYInches: oy,
+    lengthInches: L,
+    widthInches: W,
+    orientation,
+  } = bed;
   switch (orientation) {
     case 0:
       return { x: ox + localX, y: oy + localY };
