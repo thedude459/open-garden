@@ -22,6 +22,7 @@ import {
 import { plantListQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
+import { plantTestFixturesEnabled } from '../admin/pipeline-sources';
 
 @Controller('plants')
 @UseGuards(SessionGuard)
@@ -84,5 +85,5 @@ export function createProvider(): PlantDataProvider {
     const key = process.env['PERENUAL_API_KEY'] ?? '';
     return new PerenualPlantProvider(key);
   }
-  return new FixturePlantProvider();
+  return new FixturePlantProvider({ includeTestPlants: plantTestFixturesEnabled() });
 }

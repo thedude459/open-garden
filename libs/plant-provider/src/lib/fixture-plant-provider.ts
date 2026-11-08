@@ -135,6 +135,10 @@ const NAMED_FIXTURES: ProviderPlant[] = [
       transplant: null,
     },
   },
+];
+
+/** Plants the tests rely on: no spacing (Unknown Herb) and care intervals (Interval Herb). */
+const TEST_HERBS: ProviderPlant[] = [
   {
     externalId: 'fix-unknown-herb',
     commonName: 'Unknown Herb',
@@ -165,6 +169,7 @@ const NAMED_FIXTURES: ProviderPlant[] = [
   },
 ];
 
+/** 40 filler varieties for pipeline paging and multi-source merge tests (see fixture-b). */
 const EXTRA_FIXTURES: ProviderPlant[] = Array.from({ length: 40 }, (_, i) => {
   const n = String(i + 1).padStart(2, '0');
   return {
@@ -182,18 +187,34 @@ const EXTRA_FIXTURES: ProviderPlant[] = Array.from({ length: 40 }, (_, i) => {
   };
 });
 
-const FIXTURES: ProviderPlant[] = [...NAMED_FIXTURES, ...EXTRA_FIXTURES];
+const TEST_FIXTURES: ProviderPlant[] = [...TEST_HERBS, ...EXTRA_FIXTURES];
 
+export interface FixturePlantProviderOptions {
+  /** Add the test-only plants (Unknown Herb, Interval Herb, Pipeline Extra 01–40). */
+  includeTestPlants?: boolean;
+}
+
+/**
+ * Built-in sample catalog. By default only real plants, so a fresh install
+ * never shows test data; e2e and CI turn the test plants on.
+ */
 export class FixturePlantProvider implements PlantDataProvider {
   readonly id = 'fixture';
+  private readonly plants: ProviderPlant[];
+
+  constructor(options: FixturePlantProviderOptions = {}) {
+    this.plants = options.includeTestPlants
+      ? [...NAMED_FIXTURES, ...TEST_FIXTURES]
+      : NAMED_FIXTURES;
+  }
 
   async searchByName(query: string, options?: { limit?: number }): Promise<ProviderPlant[]> {
     const q = query.trim().toLowerCase();
     const limit = options?.limit ?? 20;
     if (!q) {
-      return FIXTURES.slice(0, limit);
+      return this.plants.slice(0, limit);
     }
-    return FIXTURES.filter(
+    return this.plants.filter(
       (p) =>
         p.commonName.toLowerCase().includes(q) ||
         p.species.toLowerCase().includes(q) ||
@@ -204,11 +225,11 @@ export class FixturePlantProvider implements PlantDataProvider {
   async listPage(options?: { cursor?: string; limit?: number }) {
     const limit = options?.limit ?? 50;
     const start = options?.cursor ? Number.parseInt(options.cursor, 10) : 0;
-    const items = FIXTURES.slice(start, start + limit);
+    const items = this.plants.slice(start, start + limit);
     const next = start + limit;
     return {
       items,
-      nextCursor: next < FIXTURES.length ? String(next) : undefined,
+      nextCursor: next < this.plants.length ? String(next) : undefined,
     };
   }
 }
