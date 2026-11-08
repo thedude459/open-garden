@@ -1,0 +1,58 @@
+# Open Garden — install from published images.
+#
+# Each GitHub Release attaches this file as compose.yaml with its version
+# pinned. Put it in a folder with a .env file (see the README) and run:
+#
+#   docker compose up -d
+#
+# Settings: https://github.com/thedude459/open-garden/blob/main/docs/deploy.md
+# To build the images from source instead, use docker-compose.yml in the repository.
+name: open-garden
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-open_garden}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-open_garden}
+      POSTGRES_DB: ${POSTGRES_DB:-open_garden}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: ghcr.io/thedude459/open-garden-api:${OPEN_GARDEN_VERSION:-latest}
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      PLANT_PROVIDER: ${PLANT_PROVIDER:-fixture}
+      PLACE_PROVIDER: ${PLACE_PROVIDER:-live}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-open_garden}:${POSTGRES_PASSWORD:-open_garden}@postgres:5432/${POSTGRES_DB:-open_garden}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/thedude459/open-garden-web:${OPEN_GARDEN_VERSION:-latest}
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "${WEB_HOST:-127.0.0.1}:${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
