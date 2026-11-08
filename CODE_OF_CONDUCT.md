@@ -7,16 +7,23 @@ plant dataset — to be treated with respect.
 ## Our standard
 
 This project adopts the
-[Contributor Covenant, version 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
-as its code of conduct. In short: be welcoming and considerate, assume good
-intent, accept constructive criticism gracefully, and focus on what is best for
-the people who use Open Garden. Harassment, personal attacks, and publishing
-others' private information are not acceptable.
+[Contributor Covenant, version 3.0](https://www.contributor-covenant.org/version/3/0/code_of_conduct/)
+as its code of conduct. Read it in full there; in short:
+
+- **Encouraged:** be welcoming and considerate, assume good intent, take
+  responsibility for your mistakes, and focus on what helps the people who use
+  Open Garden.
+- **Restricted:** harassment, personal attacks, discriminatory jokes or
+  language, and publishing other people's private information are not
+  acceptable.
+- **Repairing harm:** when something goes wrong, the aim is to stop the harm
+  and repair it, with consequences that match its impact — from a private
+  conversation up to a temporary or permanent ban.
 
 It applies in all project spaces and when someone represents the project
 elsewhere.
 
-## Reporting
+## Reporting an issue
 
 Report unacceptable behavior privately to the project maintainer through
 GitHub: open a
@@ -24,6 +31,5 @@ GitHub: open a
 and start the title with **"Conduct:"**, or contact the maintainer through
 their GitHub profile. Do not report conduct issues in public issues.
 
-Reports are reviewed promptly and kept confidential. The maintainer will
-respond as the Contributor Covenant's enforcement guidelines describe, from a
-private warning to a temporary or permanent ban, depending on the impact.
+Reports are reviewed promptly and kept confidential, and handled as the
+Contributor Covenant 3.0 describes in "Addressing and Repairing Harm".
