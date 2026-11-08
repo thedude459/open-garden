@@ -107,6 +107,41 @@ Actions are pinned by commit SHA. Dependabot opens weekly updates for npm,
 GitHub Actions, and the Docker images; patch and minor updates merge on their
 own once checks pass, and majors wait for review.
 
+## Releasing
+
+Releases use [semantic versioning](https://semver.org/) tags (`v0.1.0`).
+While the project is pre-1.0, releases are still normal (not pre-release)
+GitHub Releases: the 0.x number is what says "early". Bump the minor version
+for meaningful changes and the patch version for fixes; a minor bump may
+include breaking changes, so say so in the notes. Commit messages need no
+special format: the notes come from merged pull request titles.
+
+Use the pre-release flag only for release candidates (`v0.2.0-rc.1`) you want
+to try before the real release. Pre-releases do not become "latest", so the
+README install link and the `latest` image tag skip them.
+
+1. Make sure `main` is green.
+2. Publish a GitHub Release with a new tag, letting GitHub write the notes:
+
+   ```bash
+   gh release create v0.1.0 --target main --generate-notes
+   ```
+
+   Edit the notes to call out anything operators must do (new settings,
+   breaking changes). Mark a release candidate (`v0.2.0-rc.1`) as a
+   pre-release; it then does not move the `latest` tag.
+3. The [Release workflow](.github/workflows/release.yml) then:
+   - builds `api` and `web` for `linux/amd64` and `linux/arm64`
+   - pushes them to `ghcr.io/thedude459/open-garden-{api,web}` tagged `0.1.0`,
+     `0.1`, `0`, and `latest`, with an SBOM and build provenance
+   - records a GitHub attestation and scans the pushed images with Trivy
+   - attaches `compose.yaml` (from `deploy/compose.yaml`, with the version
+     pinned) to the release; the README install downloads it
+
+The first time, check that both packages under the repository's **Packages**
+are **public** (Package settings → Change visibility), or installs cannot pull
+them.
+
 ## Pull requests
 
 - Branch from `main`; keep a pull request to one change.

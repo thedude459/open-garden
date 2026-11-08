@@ -1,7 +1,8 @@
 # Base images are pinned by digest; Dependabot (docker ecosystem) bumps them.
 
 # Build: install everything, then bundle the API and boot scripts with esbuild.
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS build
+# Build once on the runner's own platform; the output (JS and static files) runs anywhere.
+FROM --platform=$BUILDPLATFORM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci --ignore-scripts
