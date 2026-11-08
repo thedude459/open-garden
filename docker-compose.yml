@@ -19,6 +19,8 @@ services:
   api:
     profiles: ["app"]
     restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -52,11 +54,13 @@ services:
   web:
     profiles: ["app"]
     restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     build:
       context: .
       dockerfile: Dockerfile.web
     ports:
-      - "${WEB_HOST:-127.0.0.1}:${WEB_PORT:-8080}:80"
+      - "${WEB_HOST:-127.0.0.1}:${WEB_PORT:-8080}:8080"
     depends_on:
       api:
         condition: service_healthy
