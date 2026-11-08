@@ -46,7 +46,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
     const message =
       exception instanceof Error ? exception.message : 'Unexpected error';
-    const exposeDetails = isDomain || process.env['NODE_ENV'] !== 'production';
+    // Only domain errors carry messages written for users. Anything else (a
+    // failed query, a driver error) can include SQL and parameters such as
+    // password hashes, so it stays in the server log in every environment.
+    const exposeDetails = isDomain;
     const httpStatus =
       exception && typeof exception === 'object' && 'httpStatus' in exception
         ? Number((exception as { httpStatus?: unknown }).httpStatus)

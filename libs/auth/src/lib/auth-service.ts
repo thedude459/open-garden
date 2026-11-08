@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { and, eq, gt } from 'drizzle-orm';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
-import { sessions, users } from '@open-garden/plant-catalog-data';
+import { isUniqueViolation, sessions, users } from '@open-garden/plant-catalog-data';
 
 export interface AuthUser {
   id: string;
@@ -16,15 +16,23 @@ export class AuthService {
 
   async register(email: string, password: string, displayName?: string): Promise<AuthUser> {
     const passwordHash = await bcrypt.hash(password, 10);
-    const [user] = await this.db
-      .insert(users)
-      .values({
-        email: email.trim().toLowerCase(),
-        passwordHash,
-        displayName: displayName ?? null,
-        role: 'user',
-      })
-      .returning();
+    let user: typeof users.$inferSelect | undefined;
+    try {
+      [user] = await this.db
+        .insert(users)
+        .values({
+          email: email.trim().toLowerCase(),
+          passwordHash,
+          displayName: displayName ?? null,
+          role: 'user',
+        })
+        .returning();
+    } catch (err) {
+      // The unique constraint decides, so two sign-ups racing for one email
+      // get the same answer as a second sign-up later.
+      if (isUniqueViolation(err)) throw emailTaken();
+      throw err;
+    }
     if (!user) throw new Error('Registration failed');
     return mapUser(user);
   }
@@ -77,6 +85,14 @@ export class AuthService {
     await this.db.update(users).set({ role: 'admin' }).where(eq(users.id, user.id));
     return { ...user, role: 'admin' };
   }
+}
+
+export const EMAIL_TAKEN_MESSAGE = 'An account with this email already exists. Sign in instead.';
+
+function emailTaken(): Error & { code: 'CONFLICT' } {
+  const err = new Error(EMAIL_TAKEN_MESSAGE) as Error & { code: 'CONFLICT' };
+  err.code = 'CONFLICT';
+  return err;
 }
 
 function hashToken(token: string): string {
