@@ -174,7 +174,7 @@ test('rain covers Washington watering and leaves other gardens required', async 
   const client = new Client({
     connectionString:
       process.env['DATABASE_URL'] ??
-      'postgresql://open_garden:open_garden@localhost:5432/open_garden',
+      'postgresql://open_garden:open_garden@localhost:5432/open_garden_e2e',
   });
   await client.connect();
   await client.query(

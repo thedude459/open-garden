@@ -67,7 +67,9 @@ same script runs only the coverage gate (one Vitest process). Affected lint and
 build still use `nx-set-shas`. `npx nx affected -t test` is the faster local pass.
 `npm run e2e` installs Playwright Chromium,
 starts the same stack as CI, then stops the API and web processes when it
-finishes. If Docker is not running, the e2e script starts it (Docker Desktop
+finishes. It uses its own database, `open_garden_e2e` (created if missing),
+so test data never appears in the app you run with Docker. Set `DATABASE_URL`
+to override. If Docker is not running, the e2e script starts it (Docker Desktop
 on macOS) and waits until the daemon is ready before Compose Postgres.
 
 ## Common Nx commands
