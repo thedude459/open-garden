@@ -46,8 +46,8 @@ scanning with push protection; Dependabot security updates.
 
 | # | Area | Finding | Change |
 |---|---|---|---|
-| 1 | Supply chain | `dependabot-automerge.yml` enables auto-merge on every Dependabot PR, including majors, and `main` requires 0 approvals. A compromised or breaking release merges once CI is green. | Use `dependabot/fetch-metadata` and auto-merge only patch/minor (optionally dev-only); majors wait for a human. |
-| 2 | Security policy | No `SECURITY.md`; private vulnerability reporting is off. | Add `SECURITY.md` (supported versions, how to report, response time) and enable private vulnerability reporting. |
+| 1 | Supply chain | **Done:** `dependabot-automerge.yml` reads `dependabot/fetch-metadata` and auto-merges only patch and minor updates; majors wait for review. | — |
+| 2 | Security policy | **Done:** `SECURITY.md` added and private vulnerability reporting enabled on the repository. | — |
 | 3 | API image | Single stage, full `npm ci` with dev dependencies, whole repo copied, runs as root, and serves TypeScript with `npx tsx` at runtime. | Multi-stage: build a bundle, `npm ci --omit=dev`, copy only `dist`, run as `USER node`, `node dist/main.js`. Run migrations/seed as a separate one-shot command or Compose service. |
 | 4 | Web image | `nginx:alpine` runs as root; no security headers; server version exposed. | `nginxinc/nginx-unprivileged`; add CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `frame-ancestors`; `server_tokens off`. |
 | 5 | Images in CI | Dockerfiles are never built or scanned in CI; base images are floating tags. | CI job builds both images, scans with Trivy `image`, lints with hadolint. Pin bases by digest; add `docker` ecosystem to Dependabot (also covers `postgres:16-alpine`). |

@@ -70,3 +70,27 @@ updates:
         applies-to: security-updates
         patterns:
           - '*'
+
+  # Base images (node, nginx) in Dockerfile.api / Dockerfile.web.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+
+  # postgres image in docker-compose.yml.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    ignore:
+      # A Postgres major upgrade needs a dump and restore of existing volumes;
+      # do it deliberately, not from an automated PR.
+      - dependency-name: postgres
+        update-types:
+          - version-update:semver-major
