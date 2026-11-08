@@ -1,7 +1,7 @@
 # Base images are pinned by digest; Dependabot (docker ecosystem) bumps them.
 
 # Build: install everything, then bundle the API and boot scripts with esbuild.
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS build
+FROM node:26-bookworm-slim@sha256:add5c17c14752c54d2f3d519ec46a3815684d41c33f198bcb09fb998f7dcbf68 AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci --ignore-scripts
@@ -10,7 +10,7 @@ RUN node scripts/docker/build-api.mjs
 
 # Runtime: the bundle, the SQL migrations, and the entrypoint. No node_modules,
 # no TypeScript tooling, no source tree. Runs as the unprivileged `node` user (uid 1000).
-FROM node:24-bookworm-slim@sha256:01d566e8d94d8c619591d78652babfccd3c6992a3dffa9ed5ab39e11cf6c70e9 AS runtime
+FROM node:26-bookworm-slim@sha256:add5c17c14752c54d2f3d519ec46a3815684d41c33f198bcb09fb998f7dcbf68 AS runtime
 ENV NODE_ENV=production \
     NODE_OPTIONS=--enable-source-maps \
     COOKIE_SECURE=false \
