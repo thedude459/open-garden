@@ -73,7 +73,9 @@ Review of unit, API, and browser tests (November 2026), measured locally.
 | Vitest (unit + API contract) | 83 files, 342 tests | ~4.4 s | 316 pass, 26 skipped (live HTTP specs that need `E2E_LIVE=1`) |
 | Coverage gate (configured scope) | 1,675 lines | — | 89% lines, 76% branches — passes |
 | Coverage of the whole codebase | 5,557 lines | — | **34% lines** |
-| e2e (live HTTP + Playwright) | 24 API + 46 browser spec files | ~3 min (live HTTP ~25 s, Playwright 2.5 min on 2 workers) | Live HTTP passed; Playwright 64 passed, 1 failed, 1 skipped. The failure followed an API crash (see item 13), caused here by Docker Desktop's disk going read-only and stopping Postgres mid-run |
+| e2e, first attempt | 24 API + 46 browser spec files | ~3 min | Interrupted: Docker Desktop's disk went read-only, Postgres stopped, and the API crashed (item 13). 64 passed, 1 failed after the crash |
+| e2e, clean run 1 (fresh `open_garden_e2e` database) | same | 2 min 11 s total (Playwright 1.5 min on 2 workers) | **All passed** (live HTTP; Playwright 65 passed, 1 skipped) |
+| e2e, clean run 2 (same database, back to back) | same | 1 min 51 s total | Live HTTP passed; Playwright 64 passed, **1 flaky failure** (item 14), 1 skipped |
 
 Coverage by area (lines, whole codebase):
 
@@ -110,6 +112,36 @@ planner load, plant search) are tested.
 | 11 | Each spec file starts a fresh worker (~88 ms each). | Small win: try `isolate: false` for pure libraries. Not urgent at 4 s. |
 | 12 | No visual regression baseline. | Optional, after the Phase 3 redesign settles: Playwright screenshot comparisons for a handful of key screens. |
 | 13 | **Bug found during the e2e run:** `createDb` in `libs/plant-catalog-data/src/lib/db.ts` builds a `pg` `Pool` with no `'error'` listener. When Postgres dropped an idle connection, Node threw an unhandled `'error'` event and the whole API process exited. In production, any database restart or network blip takes the API down until Docker restarts it. | Add `pool.on('error', …)` that logs and lets the pool reconnect; set a Compose `restart: unless-stopped` policy; add a test that kills a pooled connection and checks the API still answers. Fix in step 1. |
+| 14 | **Flaky test found by running the suite twice:** `createSizedBed` in `apps/web-e2e/src/planner-helpers.ts` checks `await vegetable.count() === 0` before adding a vegetable garden. `count()` does not wait, so when the area list has not rendered yet after navigating back to Overview, the helper adds a second vegetable garden and `planner-beds.spec.ts` fails with a strict-mode violation. Passed in run 1, failed in run 2. | Wait for the layout to finish loading (e.g. a loaded marker or the bed list) before branching, or create the area through the API in setup. Audit other `count()`-then-act helpers. Add a nightly `--repeat-each=3` job to surface flakes before they reach PRs. |
+| 15 | e2e runs the API with `tsx` and the web app with the Angular dev server, not the Docker images people actually run. The one `stack-compose` check is skipped unless `STACK_E2E=1`. | Once images are built in CI (hygiene item 5), run the Playwright suite against the Compose stack, as Immich does. Keep the fast host-mode run for local work. |
+| 16 | No machine-readable results: CI keeps only the HTML report on failure. | Add the JUnit reporter and publish results to the PR (test summary), so slow and flaky tests are visible over time. |
+
+#### How this compares with similar open-source projects
+
+Checked against the CI and test layout of three active projects (November
+2026): **Immich** (self-hosted photos; NestJS + Postgres + TypeScript, the
+closest stack), **LiteFarm** (open-source farm management; Node + React +
+Postgres), and **Growstuff** (open crop data and garden journals; Rails).
+
+| Practice | Immich | LiteFarm | Growstuff | Open Garden |
+|---|---|---|---|---|
+| Fast unit tests on every PR | Yes (server, web, CLI) | Yes (API with Jest, webapp unit) | Yes (RSpec) | **Yes**, 4 s |
+| Integration tests against a real database | Yes: "medium" tests (~70 files) with Testcontainers, separate Vitest config | Yes: Jest API tests with Postgres | Yes | Only through live HTTP in e2e; repositories untested (item 3) |
+| Frontend unit/component tests | Yes (~60 web spec files, plus web "medium" tests) | Yes, plus Chromatic visual tests of Storybook stories | View/feature specs | **No** (2 files, item 2) |
+| Browser e2e | Playwright against the Docker Compose stack | Cypress (their wiki reports flakiness on hosted runners) | Feature specs split into parallel jobs by area | **Yes**, Playwright, well structured; host mode, not images (item 15) |
+| e2e against built images | Yes | — | — | No (item 15) |
+| Runs only what a change affects | Yes (path filters per job) | — | Split by feature area | **Yes** (Nx affected, e2e skip gate) |
+| Workflow security linting | Yes (zizmor) | — | — | No (hygiene item 10) |
+| API contract / migration checks | Yes (OpenAPI drift check, migration-order check) | — | — | Zod contracts shared; no OpenAPI or migration-order check |
+| Accessibility / visual checks | — | Chromatic visual review | — | No (items 7, 12) |
+| Artifacts on failure | Playwright report + Docker logs | Cypress Cloud | — | Playwright report and traces; no server logs |
+
+**Takeaways:** Open Garden's fast unit layer, role-based Playwright tests,
+change-aware CI, and security scanning are already at or above these
+projects. The gaps match what the leading project (Immich) does differently:
+a middle layer of real-database tests, frontend component tests, e2e against
+the shipped images, and server logs uploaded with failed runs. Add to
+item 15: upload the API log as an artifact when e2e fails.
 
 ---
 
@@ -294,7 +326,7 @@ In rough priority order:
 | Order | Work | Why this order |
 |---|---|---|
 | 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) and hygiene items 1–5 | Small, unblocks everything; licensing must be settled before data contributions start, and the auto-merge and image fixes reduce real risk now. |
-| 1a | Test items 13, 1, 4, 5 (pool crash fix, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 7, 8 land alongside Phase 3; item 10 with Phase 2. |
+| 1a | Test items 13, 14, 1, 4, 5 (pool crash fix, flaky helper, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 7, 8 land alongside Phase 3; item 10 with Phase 2. |
 | 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | Cheap, visible wins; no dependency on data. |
 | 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. |
