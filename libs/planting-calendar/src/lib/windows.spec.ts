@@ -120,11 +120,15 @@ describe('computeWindows', () => {
   });
 
   it('missing guidance or incomplete frost yields unavailable windows', () => {
-    const noGuidance = computeWindows(typicalFrost, {
-      indoorStart: null,
-      outdoorSow: null,
-      transplant: null,
-    }, 65);
+    const noGuidance = computeWindows(
+      typicalFrost,
+      {
+        indoorStart: null,
+        outdoorSow: null,
+        transplant: null,
+      },
+      65,
+    );
     expect(noGuidance).toEqual({
       indoorStart: null,
       outdoorSow: null,

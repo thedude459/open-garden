@@ -1,7 +1,12 @@
 import { Injectable } from '@angular/core';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { addIsoDateDays, sortReminders } from '@open-garden/care-reminders/derive';
-import type { CareKind, ReminderItemDto, ReminderListDto, ReminderUrgency } from '@open-garden/shared-types';
+import type {
+  CareKind,
+  ReminderItemDto,
+  ReminderListDto,
+  ReminderUrgency,
+} from '@open-garden/shared-types';
 
 export type ReminderQueueAction = 'complete' | 'dismiss';
 
@@ -97,8 +102,7 @@ export class RemindersOfflineQueue {
       suppressed.add(q.key);
       const original =
         list.items.find(
-          (i) =>
-            i.plantingId === q.plantingId && i.kind === q.kind && i.dueOn === q.dueOn,
+          (i) => i.plantingId === q.plantingId && i.kind === q.kind && i.dueOn === q.dueOn,
         ) ?? list.items.find((i) => i.plantingId === q.plantingId && i.kind === q.kind);
 
       if (q.failedMessage && original) {

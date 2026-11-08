@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  lifeForPlant,
-  mulchOrNone,
-  placementRefusal,
-  plantOutPatch,
-} from './placement';
+import { lifeForPlant, mulchOrNone, placementRefusal, plantOutPatch } from './placement';
 
 const herb = { plantId: 'herb', plantType: 'herb' };
 const apple = { plantId: 'apple', plantType: 'tree' };

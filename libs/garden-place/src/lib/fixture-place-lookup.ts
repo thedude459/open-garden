@@ -5,7 +5,12 @@ import {
   WASHINGTON_PLACE,
   WASHINGTON_QUERY,
 } from './fixtures';
-import { PLACE_NOT_FOUND_MESSAGE, PlaceLookupError, STREET_ADDRESS_MESSAGE, type PlaceLookup } from './ports';
+import {
+  PLACE_NOT_FOUND_MESSAGE,
+  PlaceLookupError,
+  STREET_ADDRESS_MESSAGE,
+  type PlaceLookup,
+} from './ports';
 
 export class FixturePlaceLookup implements PlaceLookup {
   async lookup(query: string): Promise<PlaceLookupDto> {

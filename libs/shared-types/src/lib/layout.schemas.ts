@@ -11,7 +11,11 @@ const inch = z.number().int();
 
 const areaBody = z.object({
   id: z.uuid(),
-  name: z.string().trim().min(1, 'Area name is required').max(120, 'Area name must be at most 120 characters'),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Area name is required')
+    .max(120, 'Area name must be at most 120 characters'),
   originXInches: inch,
   originYInches: inch,
   lengthInches: inch.min(1, 'Area length and width must be at least 1 inch'),

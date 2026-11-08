@@ -1,9 +1,5 @@
 import type { ReminderItemDto } from '@open-garden/shared-types';
-import {
-  deriveReminders,
-  type DeriveEventInput,
-  type DerivePlantingInput,
-} from './derive';
+import { deriveReminders, type DeriveEventInput, type DerivePlantingInput } from './derive';
 
 export interface IndoorDerivePlantingInput extends DerivePlantingInput {
   startMethod: 'direct_seed' | 'transplant';
@@ -18,12 +14,7 @@ export function deriveIndoorReminders(
   asOf: string,
 ): ReminderItemDto[] {
   const eligible: DerivePlantingInput[] = plantings
-    .filter(
-      (p) =>
-        p.startMethod === 'transplant' &&
-        !p.placed &&
-        p.indoorStartedOn != null,
-    )
+    .filter((p) => p.startMethod === 'transplant' && !p.placed && p.indoorStartedOn != null)
     .map((p) => ({
       ...p,
       plantedOn: p.indoorStartedOn,

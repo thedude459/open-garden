@@ -18,7 +18,13 @@ export {
 } from './lib/display-units';
 export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';
-export { pairRequiredSpacing, fitClearance, placementFits, centerDistance, remainingGridCount } from './lib/spacing';
+export {
+  pairRequiredSpacing,
+  fitClearance,
+  placementFits,
+  centerDistance,
+  remainingGridCount,
+} from './lib/spacing';
 export {
   HALF_FOOT_INCHES,
   snapHalfFoot,

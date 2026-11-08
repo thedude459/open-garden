@@ -35,7 +35,10 @@ describe.skipIf(!databaseUrl)('garden list assembly budget', () => {
     const oneMs = Date.now() - oneStart;
 
     for (let i = 1; i < 20; i++) {
-      await gardens.create(user.id, { name: `Garden ${String(i).padStart(2, '0')}`, place: WASHINGTON_PLACE });
+      await gardens.create(user.id, {
+        name: `Garden ${String(i).padStart(2, '0')}`,
+        place: WASHINGTON_PLACE,
+      });
     }
     const twentyStart = Date.now();
     const page = await gardens.list(user.id, 1, 20);
@@ -44,9 +47,8 @@ describe.skipIf(!databaseUrl)('garden list assembly budget', () => {
     expect(page.items.every((g) => g.bedCount === 0 && g.placementCount === 0)).toBe(true);
     expect(page.items.find((g) => g.id === first.id)).toBeTruthy();
     expect(twentyMs, `garden.list.assembly_ms=${twentyMs}`).toBeLessThan(1000);
-    expect(
-      twentyMs,
-      `garden.list.assembly_ms=${twentyMs} one_garden_ms=${oneMs}`,
-    ).toBeLessThan(Math.max(50, oneMs * 8));
+    expect(twentyMs, `garden.list.assembly_ms=${twentyMs} one_garden_ms=${oneMs}`).toBeLessThan(
+      Math.max(50, oneMs * 8),
+    );
   });
 });

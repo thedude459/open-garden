@@ -3,11 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/plant-favorites/src",
   "projectType": "library",
-  "tags": [
-    "type:lib",
-    "scope:plant",
-    "layer:domain"
-  ],
+  "tags": ["type:lib", "scope:plant", "layer:domain"],
   "targets": {
     "test": {
       "executor": "nx:run-commands",

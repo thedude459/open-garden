@@ -37,9 +37,7 @@
         "libs/seasonal-plantings/src/lib/group-plantings.ts"
       ],
       "@open-garden/garden-layout": ["libs/garden-layout/src/index.ts"],
-      "@open-garden/garden-layout/evaluate": [
-        "libs/garden-layout/src/lib/evaluate-layout.ts"
-      ],
+      "@open-garden/garden-layout/evaluate": ["libs/garden-layout/src/lib/evaluate-layout.ts"],
       "@open-garden/garden-layout/rotate": ["libs/garden-layout/src/lib/rotate.ts"],
       "@open-garden/garden-layout/plan-coords": ["libs/garden-layout/src/lib/plan-coords.ts"],
       "@open-garden/garden-layout/hit-test": ["libs/garden-layout/src/lib/hit-test.ts"],

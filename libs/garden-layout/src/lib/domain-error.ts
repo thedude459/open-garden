@@ -1,8 +1,4 @@
-export type DomainErrorCode =
-  | 'VALIDATION_ERROR'
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'FORBIDDEN';
+export type DomainErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT' | 'FORBIDDEN';
 
 export function domainError(
   code: DomainErrorCode,
@@ -24,11 +20,12 @@ export const LAYOUT_ERRORS = {
   rotationInvalid: () =>
     domainError('VALIDATION_ERROR', 'Bed rotation must be 0, 90, 180, or 270 degrees'),
   placementRequired: () => domainError('VALIDATION_ERROR', 'Placement position is required'),
-  spacingProblems: () =>
-    domainError('VALIDATION_ERROR', 'Layout has spacing or fit problems', 422),
+  spacingProblems: () => domainError('VALIDATION_ERROR', 'Layout has spacing or fit problems', 422),
   viewerLayout: () => domainError('FORBIDDEN', 'Viewers cannot update layout'),
   areaNotFound: () => domainError('NOT_FOUND', 'Area not found'),
   areaNameRequired: () => domainError('VALIDATION_ERROR', 'Area name is required'),
-  areaNameTooLong: () => domainError('VALIDATION_ERROR', 'Area name must be at most 120 characters'),
-  areaNameTaken: () => domainError('CONFLICT', 'That garden already has an area with that name', 409),
+  areaNameTooLong: () =>
+    domainError('VALIDATION_ERROR', 'Area name must be at most 120 characters'),
+  areaNameTaken: () =>
+    domainError('CONFLICT', 'That garden already has an area with that name', 409),
 } as const;

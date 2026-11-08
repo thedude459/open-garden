@@ -2,8 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
 import { openPlantingsFromGarden, confirmFixtureAddress } from './planner-helpers';
 
-
-
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Property name').fill(name);
@@ -109,7 +107,9 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Record bed/ }).click();
   await openPlantingsFromGarden(friend);
-  await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' }).first()).toBeVisible();
+  await expect(
+    friend.locator('article').filter({ hasText: 'Cherry Tomato' }).first(),
+  ).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Show favorites' })).toHaveCount(0);
   await expect(friend.getByText('Your favorites')).toHaveCount(0);
   await expect(friend.getByRole('button', { name: 'Search catalog' })).toHaveCount(0);

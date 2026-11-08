@@ -2,8 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
 import { addTransplant, confirmFixtureAddress } from './planner-helpers';
 
-
-
 async function openReminders(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Property name').fill(name);
@@ -59,16 +57,19 @@ test('reminders list: harvest, no moderate water, empty CTA, viewer read-only', 
   // Wait for the save to reach the server: Reminders reads the planting date from it.
   await Promise.all([
     owner.waitForResponse(
-      (r) => r.request().method() === 'PATCH' && /\/plantings\/[^/]+$/.test(new URL(r.url()).pathname) && r.ok(),
+      (r) =>
+        r.request().method() === 'PATCH' &&
+        /\/plantings\/[^/]+$/.test(new URL(r.url()).pathname) &&
+        r.ok(),
     ),
     tomato.getByRole('button', { name: 'Save planting' }).click(),
   ]);
 
   await goToReminders(owner);
   await expect(owner.getByText('Harvest')).toBeVisible();
-  await expect(owner.locator('li').filter({ hasText: 'Cherry Tomato' }).getByText('Water')).toHaveCount(
-    0,
-  );
+  await expect(
+    owner.locator('li').filter({ hasText: 'Cherry Tomato' }).getByText('Water'),
+  ).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-list-viewer-${stamp}@example.com`);

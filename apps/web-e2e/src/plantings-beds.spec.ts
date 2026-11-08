@@ -1,8 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { createSizedBed, openPlantingsFromGarden, saveLayout, confirmFixtureAddress } from './planner-helpers';
-
-
+import {
+  createSizedBed,
+  openPlantingsFromGarden,
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
@@ -47,15 +50,24 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(owner.getByRole('heading', { name: 'Raised bed 1' })).toBeVisible();
   await expect(owner.getByRole('heading', { name: 'Unassigned' })).toBeVisible();
   await expect(
-    owner.locator('section').filter({ has: owner.getByRole('heading', { name: 'Raised bed 1' }) }).locator('article'),
+    owner
+      .locator('section')
+      .filter({ has: owner.getByRole('heading', { name: 'Raised bed 1' }) })
+      .locator('article'),
   ).toHaveCount(1);
   await expect(
-    owner.locator('section').filter({ has: owner.getByRole('heading', { name: 'Unassigned' }) }).locator('article'),
+    owner
+      .locator('section')
+      .filter({ has: owner.getByRole('heading', { name: 'Unassigned' }) })
+      .locator('article'),
   ).toHaveCount(1);
 
   await expect(owner.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
   await expect(
-    owner.locator('section').filter({ has: owner.getByRole('heading', { name: 'Patio pots' }) }).getByText('No plantings in this bed.'),
+    owner
+      .locator('section')
+      .filter({ has: owner.getByRole('heading', { name: 'Patio pots' }) })
+      .getByText('No plantings in this bed.'),
   ).toBeVisible();
 
   const basil = owner.locator('article').filter({ hasText: 'Sweet Basil' });
@@ -81,7 +93,11 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await owner.getByRole('button', { name: 'Rename Raised bed 1' }).click();
   await expect(owner.getByRole('heading', { name: 'North bed' })).toBeVisible();
   await expect(
-    owner.locator('section').filter({ has: owner.getByRole('heading', { name: 'North bed' }) }).locator('article').filter({ hasText: 'Cherry Tomato' }),
+    owner
+      .locator('section')
+      .filter({ has: owner.getByRole('heading', { name: 'North bed' }) })
+      .locator('article')
+      .filter({ hasText: 'Cherry Tomato' }),
   ).toBeVisible();
 
   await owner.getByRole('button', { name: 'Delete bed North bed' }).click();

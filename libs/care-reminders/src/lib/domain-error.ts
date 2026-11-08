@@ -1,8 +1,4 @@
-export type DomainErrorCode =
-  | 'VALIDATION_ERROR'
-  | 'NOT_FOUND'
-  | 'CONFLICT'
-  | 'FORBIDDEN';
+export type DomainErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT' | 'FORBIDDEN';
 
 export function domainError(
   code: DomainErrorCode,

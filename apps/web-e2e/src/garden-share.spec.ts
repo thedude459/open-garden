@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration, openOverview, confirmFixtureAddress } from './planner-helpers';
+import {
+  saveGarden,
+  openConfiguration,
+  openOverview,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('invite collaborator, demote to viewer, member list visible', async ({ browser }) => {
   const stamp = Date.now();

@@ -26,12 +26,7 @@ export class CareEventRepository {
     }));
   }
 
-  async upsertEvent(
-    plantingId: string,
-    kind: CareKind,
-    occurrenceOn: string,
-    action: CareAction,
-  ) {
+  async upsertEvent(plantingId: string, kind: CareKind, occurrenceOn: string, action: CareAction) {
     await this.db
       .insert(gardenCareEvents)
       .values({
@@ -42,11 +37,7 @@ export class CareEventRepository {
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [
-          gardenCareEvents.plantingId,
-          gardenCareEvents.kind,
-          gardenCareEvents.occurrenceOn,
-        ],
+        target: [gardenCareEvents.plantingId, gardenCareEvents.kind, gardenCareEvents.occurrenceOn],
         set: {
           action,
           updatedAt: new Date(),

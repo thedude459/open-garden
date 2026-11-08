@@ -65,7 +65,10 @@ export class CalendarEntryRepository {
     await this.db
       .delete(gardenCalendarEntries)
       .where(
-        and(eq(gardenCalendarEntries.gardenId, gardenId), eq(gardenCalendarEntries.plantId, plantId)),
+        and(
+          eq(gardenCalendarEntries.gardenId, gardenId),
+          eq(gardenCalendarEntries.plantId, plantId),
+        ),
       );
   }
 }

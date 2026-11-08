@@ -34,8 +34,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
       @if (calendar(); as cal) {
         @if (!cal.windowsAvailable) {
           <p class="banner" role="status">
-            Windows cannot be produced until both last frost and first frost dates are set.
-            Plants on this calendar are still listed below.
+            Windows cannot be produced until both last frost and first frost dates are set. Plants
+            on this calendar are still listed below.
           </p>
         }
         @if (canEdit()) {
@@ -47,7 +47,9 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
             (results)="onCatalog($event)"
             (failed)="onSearchFailed($event)"
           >
-            <button type="button" class="btn btn-secondary" (click)="loadFavorites()">Show favorites</button>
+            <button type="button" class="btn btn-secondary" (click)="loadFavorites()">
+              Show favorites
+            </button>
           </og-plant-picker>
           @if (catalogHits().length) {
             <ul class="card-list">
@@ -100,7 +102,9 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
           <p class="muted">No plants on this calendar yet.</p>
         } @else if (visible().length === 0) {
           <p class="muted">No plants match this type.</p>
-          <button type="button" class="btn btn-secondary" (click)="clearFilter()">Clear filter</button>
+          <button type="button" class="btn btn-secondary" (click)="clearFilter()">
+            Clear filter
+          </button>
         } @else {
           <div class="card-list">
             @for (e of visible(); track e.plantId) {
@@ -197,7 +201,10 @@ export class GardenCalendarPage implements OnInit {
   }
 
   openPlanting(plantId: string): PlantingDto | null {
-    return this.recorded().find((planting) => planting.plantId === plantId && !planting.harvestedOn) ?? null;
+    return (
+      this.recorded().find((planting) => planting.plantId === plantId && !planting.harvestedOn) ??
+      null
+    );
   }
 
   async record(entry: CalendarEntryDto) {
@@ -210,7 +217,11 @@ export class GardenCalendarPage implements OnInit {
       });
       await this.load();
     } catch (err) {
-      this.error.set(err instanceof HttpErrorResponse ? 'Could not record planting' : 'Could not record planting');
+      this.error.set(
+        err instanceof HttpErrorResponse
+          ? 'Could not record planting'
+          : 'Could not record planting',
+      );
     }
   }
 
@@ -248,7 +259,9 @@ export class GardenCalendarPage implements OnInit {
 
   onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
-    this.catalogHits.set(this.hasOrchard() ? items : items.filter((plant) => allowsPlant(null, plant.plantType)));
+    this.catalogHits.set(
+      this.hasOrchard() ? items : items.filter((plant) => allowsPlant(null, plant.plantType)),
+    );
   }
 
   onSearchFailed(err: unknown) {
@@ -326,7 +339,20 @@ function mdKey(md: { month: number; day: number }): number {
 }
 
 function formatMd(md: { month: number; day: number }): string {
-  const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const names = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   return `${names[md.month - 1] ?? md.month} ${md.day}`;
 }
 

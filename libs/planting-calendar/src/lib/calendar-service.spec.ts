@@ -73,7 +73,9 @@ describe('CalendarService', () => {
 
   it('refuses a tree until the property has an orchard', async () => {
     const blocked = createMemory(false);
-    await expect(blocked.service.add(blocked.ownerId, blocked.gardenId, maple.id)).rejects.toMatchObject({
+    await expect(
+      blocked.service.add(blocked.ownerId, blocked.gardenId, maple.id),
+    ).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
       message: 'Trees and shrubs belong in an orchard',
     });
@@ -114,7 +116,9 @@ describe('CalendarService', () => {
   });
 });
 
-function plantRow(partial: Partial<ReturnType<typeof plantRow>> & { id: string; commonName: string }) {
+function plantRow(
+  partial: Partial<ReturnType<typeof plantRow>> & { id: string; commonName: string },
+) {
   return {
     id: partial.id,
     commonName: partial.commonName,

@@ -71,7 +71,9 @@ export class PipelineSettingsRepository {
   ): Promise<PipelineSettingsRow> {
     const current = await this.get();
     const sourceOrder =
-      input.sourceOrder !== undefined ? collapseSourceOrder(input.sourceOrder) : current.sourceOrder;
+      input.sourceOrder !== undefined
+        ? collapseSourceOrder(input.sourceOrder)
+        : current.sourceOrder;
     await this.db
       .update(catalogPipelineSettings)
       .set({

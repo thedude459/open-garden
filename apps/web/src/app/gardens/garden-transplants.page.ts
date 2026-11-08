@@ -2,7 +2,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import type { PlantSummaryDto, ReminderItemDto, TransplantListDto } from '@open-garden/shared-types';
+import type {
+  PlantSummaryDto,
+  ReminderItemDto,
+  TransplantListDto,
+} from '@open-garden/shared-types';
 import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { PlantPicker } from '../plants/plant-picker';
@@ -88,7 +92,11 @@ import { PlaceMarker } from '../ui/place-marker';
                   >
                     Confirm delete
                   </button>
-                  <button type="button" class="btn btn-secondary" (click)="confirmDeleteId.set(null)">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="confirmDeleteId.set(null)"
+                  >
                     Cancel
                   </button>
                 }
@@ -104,8 +112,12 @@ import { PlaceMarker } from '../ui/place-marker';
             <li class="row">
               <span>{{ item.commonName }} · {{ item.kind }} · {{ item.dueOn }}</span>
               @if (canEdit()) {
-                <button type="button" class="btn btn-secondary" (click)="complete(item)">Complete</button>
-                <button type="button" class="btn btn-secondary" (click)="dismiss(item)">Dismiss</button>
+                <button type="button" class="btn btn-secondary" (click)="complete(item)">
+                  Complete
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="dismiss(item)">
+                  Dismiss
+                </button>
               }
             </li>
           }

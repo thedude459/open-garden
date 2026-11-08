@@ -16,13 +16,15 @@
   --radius: 6px;
   --elev-1: 0 1px 2px rgba(31, 42, 31, 0.06);
   --elev-2: 0 8px 24px rgba(31, 42, 31, 0.12);
-  --font-ui: system-ui, "Segoe UI", sans-serif;
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-ui: system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --bar: 3.5rem;
   font-family: var(--font-ui);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -32,7 +34,9 @@ body {
   line-height: 1.45;
 }
 
-h1, h2, .brand-name {
+h1,
+h2,
+.brand-name {
   font-family: var(--font-display);
   font-weight: 400;
   letter-spacing: -0.02em;
@@ -51,13 +55,25 @@ h3 {
   line-height: 1.3;
 }
 
-p { margin: 0.35rem 0; }
+p {
+  margin: 0.35rem 0;
+}
 
-a { color: var(--leaf); }
+a {
+  color: var(--leaf);
+}
 
-button, input, select, textarea { font: inherit; color: inherit; }
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
 
-input, select, textarea {
+input,
+select,
+textarea {
   min-height: 2.5rem;
   padding: 0.45rem 0.7rem;
   border: 1px solid rgba(47, 93, 58, 0.28);
@@ -66,14 +82,19 @@ input, select, textarea {
   min-width: 0;
 }
 
-textarea { min-height: 5.5rem; resize: vertical; }
+textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
 
 :focus-visible {
   outline: 2px solid var(--leaf);
   outline-offset: 2px;
 }
 
-.app { min-height: 100vh; }
+.app {
+  min-height: 100vh;
+}
 
 .app-bar {
   position: sticky;
@@ -89,7 +110,9 @@ textarea { min-height: 5.5rem; resize: vertical; }
   border-bottom: 1px solid var(--line);
 }
 
-.app:has(.brand-hero) .app-bar { display: none; }
+.app:has(.brand-hero) .app-bar {
+  display: none;
+}
 
 .nav-brand {
   display: flex;
@@ -106,13 +129,16 @@ textarea { min-height: 5.5rem; resize: vertical; }
   border-radius: 50%;
 }
 
-.brand-name, .nav-brand h1 {
+.brand-name,
+.nav-brand h1 {
   margin: 0;
   font-size: 1.35rem;
   line-height: 1;
 }
 
-.app-bar-end { margin-left: auto; }
+.app-bar-end {
+  margin-left: auto;
+}
 
 .app-frame {
   display: flex;
@@ -225,16 +251,22 @@ a.source-link {
   gap: 0.75rem 1rem;
 }
 
-.page-head h2 { margin: 0; }
+.page-head h2 {
+  margin: 0;
+}
 
-.page-head .muted { margin: 0.2rem 0 0; }
+.page-head .muted {
+  margin: 0.2rem 0 0;
+}
 
 .back-link {
   margin: 0 0 0.35rem;
   font-weight: 600;
 }
 
-.back-link a { text-decoration: none; }
+.back-link a {
+  text-decoration: none;
+}
 
 .place-marker {
   display: flex;
@@ -246,7 +278,10 @@ a.source-link {
   font-size: 0.9rem;
 }
 
-.place-marker a { text-decoration: none; font-weight: 600; }
+.place-marker a {
+  text-decoration: none;
+  font-weight: 600;
+}
 
 .planner {
   display: flex;
@@ -261,7 +296,9 @@ a.source-link {
   gap: 0.5rem;
 }
 
-.planner-alerts:not(:has(p)) { display: none; }
+.planner-alerts:not(:has(p)) {
+  display: none;
+}
 
 .planner-alerts p {
   margin: 0;
@@ -308,7 +345,9 @@ og-garden-plan-canvas {
   background-image:
     radial-gradient(rgba(255, 255, 255, 0.08) 0.8px, transparent 1.2px),
     linear-gradient(180deg, #7a9a66 0%, #5f7d4e 100%);
-  background-size: 14px 14px, 100% 100%;
+  background-size:
+    14px 14px,
+    100% 100%;
 }
 
 .layout-plan {
@@ -354,9 +393,13 @@ og-garden-plan-canvas {
   border-radius: 8px;
 }
 
-.planner-rail h3 { margin: 0; }
+.planner-rail h3 {
+  margin: 0;
+}
 
-.planner-rail .filters { margin: 0; }
+.planner-rail .filters {
+  margin: 0;
+}
 
 .planner-rail form.filters:not(.plant-panel-filters) {
   display: grid;
@@ -381,7 +424,9 @@ og-garden-plan-canvas {
   padding: 0.65rem 0;
 }
 
-.planner-rail .card-list { gap: 0; }
+.planner-rail .card-list {
+  gap: 0;
+}
 
 .card-list > .stack {
   margin: 0;
@@ -429,7 +474,7 @@ og-garden-plan-canvas {
   min-width: 5.5rem;
 }
 
-.bed-rail .plant-panel-list .btn[aria-pressed="true"] {
+.bed-rail .plant-panel-list .btn[aria-pressed='true'] {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
@@ -485,7 +530,9 @@ og-garden-plan-canvas {
   pointer-events: none;
 }
 
-.layout-bed.selected { fill: #3f2c20; }
+.layout-bed.selected {
+  fill: #3f2c20;
+}
 
 .layout-grid {
   stroke: rgba(232, 214, 180, 0.22);
@@ -580,7 +627,9 @@ og-garden-plan-canvas {
   background: var(--sand);
 }
 
-.unplaced-tray { margin: 0; }
+.unplaced-tray {
+  margin: 0;
+}
 
 .brand-hero {
   display: flex;
@@ -605,7 +654,10 @@ og-garden-plan-canvas {
   padding: 2.25rem 0 2rem;
 }
 
-.auth-page h2 { margin: 0 0 1rem; text-align: center; }
+.auth-page h2 {
+  margin: 0 0 1rem;
+  text-align: center;
+}
 
 .authform.card,
 .auth-page .error {
@@ -693,10 +745,15 @@ a.garden-card:focus-visible {
 }
 
 .row > img,
-.row > .plant-stand-in { flex: 0 0 auto; }
+.row > .plant-stand-in {
+  flex: 0 0 auto;
+}
 
 .row > span,
-.row > div { flex: 1 1 12rem; min-width: 0; }
+.row > div {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
 
 .row > button,
 .row > .btn,
@@ -713,9 +770,13 @@ a.row {
 
 a.row:hover,
 a.row:focus-visible,
-.row:hover { border-color: rgba(47, 93, 58, 0.4); }
+.row:hover {
+  border-color: rgba(47, 93, 58, 0.4);
+}
 
-article.row { align-items: flex-start; }
+article.row {
+  align-items: flex-start;
+}
 
 article.row p {
   display: flex;
@@ -771,7 +832,9 @@ article.row p {
   color: #fff;
 }
 
-.btn.btn-primary:hover { background: #264d31; }
+.btn.btn-primary:hover {
+  background: #264d31;
+}
 
 .btn.btn-secondary {
   background: var(--paper);
@@ -784,13 +847,13 @@ article.row p {
   color: #fff;
 }
 
-.btn[aria-busy="true"] {
+.btn[aria-busy='true'] {
   opacity: 0.7;
   cursor: wait;
 }
 
 .btn[disabled],
-.btn[aria-disabled="true"] {
+.btn[aria-disabled='true'] {
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -809,13 +872,13 @@ article.row p {
   border: 1px solid rgba(47, 93, 58, 0.25);
 }
 
-.notice-host[data-kind="error"],
-.notice-host[data-kind="miss"] {
+.notice-host[data-kind='error'],
+.notice-host[data-kind='miss'] {
   border-color: rgba(138, 31, 31, 0.4);
   background: #fff6f6;
 }
 
-.notice-host[data-kind="success"] {
+.notice-host[data-kind='success'] {
   border-color: rgba(47, 93, 58, 0.35);
   background: #f3f8f2;
 }
@@ -841,7 +904,9 @@ article.row p {
   gap: var(--space-2);
 }
 
-.empty-actions:empty { display: none; }
+.empty-actions:empty {
+  display: none;
+}
 
 .filters {
   display: flex;
@@ -852,9 +917,13 @@ article.row p {
 }
 
 .filters > input,
-.filters > select { flex: 1 1 11rem; }
+.filters > select {
+  flex: 1 1 11rem;
+}
 
-.filters > button { flex: 0 0 auto; }
+.filters > button {
+  flex: 0 0 auto;
+}
 
 .filters > label {
   display: grid;
@@ -871,7 +940,9 @@ article.row p {
 }
 
 .plant-panel-filters > input,
-.plant-panel-filters > button { grid-column: 1 / -1; }
+.plant-panel-filters > button {
+  grid-column: 1 / -1;
+}
 
 fieldset.filters {
   border: 1px solid var(--line);
@@ -887,7 +958,9 @@ legend {
   font-size: 0.92rem;
 }
 
-.muted { color: var(--muted); }
+.muted {
+  color: var(--muted);
+}
 
 .badge {
   display: inline-block;
@@ -897,7 +970,10 @@ legend {
   color: #7a4e00;
 }
 
-.error { color: #8a1f1f; font-weight: 600; }
+.error {
+  color: #8a1f1f;
+  font-weight: 600;
+}
 
 .stack {
   display: grid;
@@ -906,11 +982,17 @@ legend {
   max-width: 40rem;
 }
 
-.stack label { display: grid; gap: 0.3rem; font-weight: 600; }
+.stack label {
+  display: grid;
+  gap: 0.3rem;
+  font-weight: 600;
+}
 
 .stack input,
 .stack select,
-.stack textarea { width: 100%; }
+.stack textarea {
+  width: 100%;
+}
 
 .this-week {
   display: inline-block;
@@ -974,12 +1056,24 @@ legend {
   text-transform: uppercase;
 }
 
-.plant-stand-in[data-plant-type="vegetable"] { background: #2f5d3a; }
-.plant-stand-in[data-plant-type="herb"] { background: #4a7c59; }
-.plant-stand-in[data-plant-type="flower"] { background: #8a4d6e; }
-.plant-stand-in[data-plant-type="fruit"] { background: #b85c38; }
-.plant-stand-in[data-plant-type="shrub"] { background: #5a6b3f; }
-.plant-stand-in[data-plant-type="tree"] { background: #3d4f2f; }
+.plant-stand-in[data-plant-type='vegetable'] {
+  background: #2f5d3a;
+}
+.plant-stand-in[data-plant-type='herb'] {
+  background: #4a7c59;
+}
+.plant-stand-in[data-plant-type='flower'] {
+  background: #8a4d6e;
+}
+.plant-stand-in[data-plant-type='fruit'] {
+  background: #b85c38;
+}
+.plant-stand-in[data-plant-type='shrub'] {
+  background: #5a6b3f;
+}
+.plant-stand-in[data-plant-type='tree'] {
+  background: #3d4f2f;
+}
 
 .plant-facts {
   display: grid;
@@ -993,8 +1087,14 @@ legend {
   border-radius: 8px;
 }
 
-.plant-facts dt { margin: 0; color: var(--muted); font-weight: 600; }
-.plant-facts dd { margin: 0; }
+.plant-facts dt {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+.plant-facts dd {
+  margin: 0;
+}
 
 .member-actions {
   display: flex;
@@ -1031,7 +1131,9 @@ legend {
     height: calc(42vh + 3.25rem);
   }
 
-  .app-frame { flex-direction: column; }
+  .app-frame {
+    flex-direction: column;
+  }
 
   .sidebar {
     position: fixed;
@@ -1039,11 +1141,17 @@ legend {
     transform: translateX(-100%);
   }
 
-  .sidebar.open { transform: none; }
+  .sidebar.open {
+    transform: none;
+  }
 
-  .garden-side-nav { display: none; }
+  .garden-side-nav {
+    display: none;
+  }
 
-  .shell { padding-bottom: 4.75rem; }
+  .shell {
+    padding-bottom: 4.75rem;
+  }
 
   .garden-tab-bar {
     display: flex;
@@ -1071,7 +1179,10 @@ legend {
     padding: 0.35rem 0.2rem;
   }
 
-  .garden-tab-bar a.active { color: var(--leaf); font-weight: 700; }
+  .garden-tab-bar a.active {
+    color: var(--leaf);
+    font-weight: 700;
+  }
 
   .garden-more {
     display: flex;
@@ -1106,7 +1217,9 @@ legend {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
   }
 }

@@ -54,7 +54,12 @@ npm run e2e           # Postgres, seed, API + production web build, live HTTP + 
 npm run test:all      # both
 npm run e2e:only      # Playwright only, against an API and web you already started
 npx nx affected -t test   # faster local pass over what you changed
+npm run format        # format with Prettier (CI runs npm run format:check)
 ```
+
+The one-time Prettier reformat is listed in `.git-blame-ignore-revs`; run
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once so local
+`git blame` skips it (GitHub does this automatically).
 
 `npm run e2e` uses its own database, `open_garden_e2e` (created if missing), so
 test data never lands in your app database. Set `DATABASE_URL` to override. It
@@ -91,7 +96,7 @@ is a required check on `main`.
 
 | Check | What it does |
 |---|---|
-| `verify` | Affected ESLint, the Vitest coverage gate, the dependency-license check, affected builds, and a report-only whole-codebase coverage table |
+| `verify` | Prettier check, affected ESLint, the Vitest coverage gate, the dependency-license check, affected builds, and a report-only whole-codebase coverage table |
 | `sca` | `npm audit` (high+) and Trivy filesystem scan, compared with the base so only new findings fail |
 | `secrets` | Gitleaks |
 | `workflows` | actionlint and zizmor on the GitHub Actions workflows |

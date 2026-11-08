@@ -18,7 +18,9 @@ describe('spacing helpers', () => {
 
   it('counts grid spots this spacing can still use', () => {
     expect(remainingGridCount(48, 48, 24, [])).toBe(4);
-    expect(remainingGridCount(48, 48, 24, [{ xInches: 12, yInches: 12, spacingInches: 24 }])).toBe(3);
+    expect(remainingGridCount(48, 48, 24, [{ xInches: 12, yInches: 12, spacingInches: 24 }])).toBe(
+      3,
+    );
     expect(remainingGridCount(10, 10, 24, [])).toBe(0);
   });
 });

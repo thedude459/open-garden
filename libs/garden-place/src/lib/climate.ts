@@ -67,16 +67,22 @@ export class LiveClimateLookup implements ClimateLookup {
     }
   }
 
-  private async frost(place: PlaceCandidateDto): Promise<{ last: MonthDay | null; first: MonthDay | null }> {
+  private async frost(
+    place: PlaceCandidateDto,
+  ): Promise<{ last: MonthDay | null; first: MonthDay | null }> {
     try {
       const stationsUrl = new URL('https://api.farmsense.net/v1/frostdates/stations/');
       stationsUrl.searchParams.set('lat', String(place.latitude));
       stationsUrl.searchParams.set('lon', String(place.longitude));
       const stationsRes = await this.fetchFn(stationsUrl, { signal: AbortSignal.timeout(3000) });
       if (!stationsRes.ok) return { last: null, first: null };
-      const stations = (await stationsRes.json()) as Array<{ id?: string | number; distance?: number }>;
+      const stations = (await stationsRes.json()) as Array<{
+        id?: string | number;
+        distance?: number;
+      }>;
       const nearest = [...stations].sort(
-        (a, b) => (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY),
+        (a, b) =>
+          (a.distance ?? Number.POSITIVE_INFINITY) - (b.distance ?? Number.POSITIVE_INFINITY),
       )[0];
       if (nearest?.id == null) return { last: null, first: null };
       const last = await this.probability(nearest.id, 1);
@@ -93,7 +99,10 @@ export class LiveClimateLookup implements ClimateLookup {
     url.searchParams.set('season', String(season));
     const response = await this.fetchFn(url, { signal: AbortSignal.timeout(3000) });
     if (!response.ok) return null;
-    const rows = (await response.json()) as Array<{ temperature?: string | number; prob_50?: string }>;
+    const rows = (await response.json()) as Array<{
+      temperature?: string | number;
+      prob_50?: string;
+    }>;
     const row = rows.find((item) => Number(item.temperature) === 32);
     return mmdd(row?.prob_50);
   }

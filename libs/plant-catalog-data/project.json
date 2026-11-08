@@ -3,11 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/plant-catalog-data/src",
   "projectType": "library",
-  "tags": [
-    "type:lib",
-    "scope:plant",
-    "layer:data-access"
-  ],
+  "tags": ["type:lib", "scope:plant", "layer:data-access"],
   "targets": {
     "test": {
       "executor": "nx:run-commands",

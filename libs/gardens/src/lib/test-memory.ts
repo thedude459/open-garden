@@ -58,10 +58,7 @@ export function createGardenMemory(opts?: { climate?: ClimateLookup | null }) {
     async findOwnedByNormalizedName(ownerId: string, nameNormalized: string, excludeId?: string) {
       return (
         [...gardens.values()].find(
-          (g) =>
-            g.ownerId === ownerId &&
-            g.nameNormalized === nameNormalized &&
-            g.id !== excludeId,
+          (g) => g.ownerId === ownerId && g.nameNormalized === nameNormalized && g.id !== excludeId,
         ) ?? null
       );
     },
@@ -161,7 +158,11 @@ export function createGardenMemory(opts?: { climate?: ClimateLookup | null }) {
   const rawCreate = service.create.bind(service);
   service.create = (async (actorId: string, dto: GardenCreateDto) => {
     const name = dto.name?.trim() ?? '';
-    if (!Object.prototype.hasOwnProperty.call(dto, 'place') && name.length > 0 && name.length <= 120) {
+    if (
+      !Object.prototype.hasOwnProperty.call(dto, 'place') &&
+      name.length > 0 &&
+      name.length <= 120
+    ) {
       return rawCreate(actorId, { ...dto, place: WASHINGTON_PLACE });
     }
     return rawCreate(actorId, dto);

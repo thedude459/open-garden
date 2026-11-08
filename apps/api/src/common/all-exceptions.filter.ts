@@ -28,11 +28,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
-      res.status(status).json(
-        typeof body === 'string'
-          ? { error: { code: 'INTERNAL', message: body } }
-          : body,
-      );
+      res
+        .status(status)
+        .json(typeof body === 'string' ? { error: { code: 'INTERNAL', message: body } } : body);
       return;
     }
 
@@ -44,8 +42,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (!isDomain) {
       this.logger.error(exception);
     }
-    const message =
-      exception instanceof Error ? exception.message : 'Unexpected error';
+    const message = exception instanceof Error ? exception.message : 'Unexpected error';
     // Only domain errors carry messages written for users. Anything else (a
     // failed query, a driver error) can include SQL and parameters such as
     // password hashes, so it stays in the server log in every environment.

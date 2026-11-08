@@ -3,7 +3,11 @@ import type { ReminderItemDto } from '@open-garden/shared-types';
 import { sortReminders } from './sort';
 
 function item(
-  overrides: Partial<ReminderItemDto> & { plantingId: string; kind: ReminderItemDto['kind']; dueOn: string },
+  overrides: Partial<ReminderItemDto> & {
+    plantingId: string;
+    kind: ReminderItemDto['kind'];
+    dueOn: string;
+  },
 ): ReminderItemDto {
   return {
     urgency: 'upcoming',

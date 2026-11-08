@@ -5,6 +5,8 @@ export default defineConfig({
   out: './libs/plant-catalog-data/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: process.env['DATABASE_URL'] ?? 'postgresql://open_garden:open_garden@localhost:5432/open_garden',
+    url:
+      process.env['DATABASE_URL'] ??
+      'postgresql://open_garden:open_garden@localhost:5432/open_garden',
   },
 });

@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { applyPlantSearch, createSizedBed, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
+import {
+  applyPlantSearch,
+  createSizedBed,
+  newUser,
+  openOverview,
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
-test('invalid catalog drops reject with a specific notice and no planting', async ({
-  browser,
-}) => {
+test('invalid catalog drops reject with a specific notice and no planting', async ({ browser }) => {
   test.setTimeout(120_000);
   const owner = await newUser(browser, `planner-rej-${Date.now()}@example.com`);
   await owner.goto('/gardens');
@@ -29,18 +34,18 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toBeVisible();
 
   await applyPlantSearch(owner, 'Cherry Tomato');
-  await owner.getByRole('button', { name: 'Place Cherry Tomato' }).dragTo(
-    owner.locator('[data-bed-name="North"]'),
-  );
+  await owner
+    .getByRole('button', { name: 'Place Cherry Tomato' })
+    .dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
   await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Dismiss' }).click();
   await owner.getByLabel('Zone').selectOption({ label: 'Any zone' });
   await applyPlantSearch(owner, 'Honeycrisp Apple');
-  await owner.getByRole('button', { name: 'Place Honeycrisp Apple' }).dragTo(
-    owner.locator('[data-bed-name="North"]'),
-  );
+  await owner
+    .getByRole('button', { name: 'Place Honeycrisp Apple' })
+    .dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByLabel('Notification')).toContainText('Does not fit in this bed');
   await expect(owner.getByRole('img', { name: 'Honeycrisp Apple' })).toHaveCount(0);
 
@@ -48,9 +53,9 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await applyPlantSearch(owner, 'Spinach');
   await expect(owner.getByRole('button', { name: 'Place Spinach' })).toBeVisible();
   await owner.context().setOffline(true);
-  await owner.getByRole('button', { name: 'Place Spinach' }).dragTo(
-    owner.locator('[data-bed-name="North"]'),
-  );
+  await owner
+    .getByRole('button', { name: 'Place Spinach' })
+    .dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByLabel('Notification')).toContainText(/need to be online/i);
   await expect(owner.getByRole('img', { name: 'Spinach' })).toHaveCount(0);
 });

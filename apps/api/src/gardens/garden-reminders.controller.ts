@@ -12,7 +12,11 @@ import {
 import type { AuthUser } from '@open-garden/auth';
 import { CareReminderService, applyRainCover, domainError } from '@open-garden/care-reminders';
 import { PlantingService } from '@open-garden/seasonal-plantings';
-import { FixtureRainOutlook, OpenMeteoRainOutlook, type RainOutlook } from '@open-garden/garden-place';
+import {
+  FixtureRainOutlook,
+  OpenMeteoRainOutlook,
+  type RainOutlook,
+} from '@open-garden/garden-place';
 import {
   CareEventRepository,
   GardenMembershipRepository,
@@ -20,10 +24,7 @@ import {
   PlantingRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
-import {
-  asOfQuerySchema,
-  reminderMutationSchema,
-} from '@open-garden/shared-types';
+import { asOfQuerySchema, reminderMutationSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
@@ -44,7 +45,9 @@ export class GardenRemindersController {
     this.gardens = new GardenRepository(bundle.db);
     this.plantings = openPlantingService(bundle.db);
     this.rain =
-      process.env['PLACE_PROVIDER'] === 'live' ? new OpenMeteoRainOutlook() : new FixtureRainOutlook();
+      process.env['PLACE_PROVIDER'] === 'live'
+        ? new OpenMeteoRainOutlook()
+        : new FixtureRainOutlook();
     this.reminders = new CareReminderService(
       {
         getMembership: async (gardenId, userId) => {

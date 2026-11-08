@@ -2,8 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
 import { confirmFixtureAddress } from './planner-helpers';
 
-
-
 async function abortReminders(page: Page) {
   await page.route('**/api/gardens/**/reminders**', (route) => route.abort());
 }
@@ -34,16 +32,22 @@ async function openRemindersWithPlant(page: Page, gardenName: string) {
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Cherry Tomato' }).click();
   const tomato = page.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
-  await tomato.locator('input[type="date"]').first().evaluate((el) => {
-    const field = el as HTMLInputElement;
-    field.value = '2026-01-01';
-    field.dispatchEvent(new Event('input', { bubbles: true }));
-    field.dispatchEvent(new Event('change', { bubbles: true }));
-  });
+  await tomato
+    .locator('input[type="date"]')
+    .first()
+    .evaluate((el) => {
+      const field = el as HTMLInputElement;
+      field.value = '2026-01-01';
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+    });
   // Wait for the save to reach the server: Reminders reads the planting date from it.
   await Promise.all([
     page.waitForResponse(
-      (r) => r.request().method() === 'PATCH' && /\/plantings\/[^/]+$/.test(new URL(r.url()).pathname) && r.ok(),
+      (r) =>
+        r.request().method() === 'PATCH' &&
+        /\/plantings\/[^/]+$/.test(new URL(r.url()).pathname) &&
+        r.ok(),
     ),
     tomato.getByRole('button', { name: 'Save planting' }).click(),
   ]);

@@ -149,7 +149,9 @@ export class GardenRepository {
       await tx
         .update(gardenMemberships)
         .set({ role: 'owner' })
-        .where(and(eq(gardenMemberships.gardenId, gardenId), eq(gardenMemberships.userId, toUserId)));
+        .where(
+          and(eq(gardenMemberships.gardenId, gardenId), eq(gardenMemberships.userId, toUserId)),
+        );
       const [garden] = await tx
         .update(gardens)
         .set({ ownerId: toUserId, updatedAt: new Date() })

@@ -1,10 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import {
-  RemindersApiService,
-  RemindersColdOfflineError,
-} from './reminders-api.service';
+import { RemindersApiService, RemindersColdOfflineError } from './reminders-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { type ClientReminderItem, type ClientReminderList } from './reminders-offline.queue';
@@ -35,36 +32,46 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
         @for (group of groups(data.items); track group.bedName) {
           <h3>{{ group.bedName }}</h3>
           <ul class="card-list">
-          @for (item of group.items; track trackItem(item)) {
-            <li class="row">
-              <div>
-                <strong>{{ item.commonName }}</strong>
-                @if (item.status !== 'active') {
-                  <span class="badge">Unavailable variety</span>
-                }
-                <p>
-                  <span class="badge">{{ kindLabel(item.kind) }}</span>
-                  <span class="badge" [class.reminder-overdue]="item.required !== false && item.urgency === 'overdue'">{{ urgencyLabel(item) }}</span>
-                  due {{ item.dueOn }}
-                  @if (item.rainNote) {
-                    <span>{{ item.rainNote }}</span>
+            @for (item of group.items; track trackItem(item)) {
+              <li class="row">
+                <div>
+                  <strong>{{ item.commonName }}</strong>
+                  @if (item.status !== 'active') {
+                    <span class="badge">Unavailable variety</span>
                   }
-                  @if (item.sync === 'pending') {
-                    <span class="badge">pending</span>
-                  }
-                  @if (item.sync === 'failed') {
-                    <span class="badge">needs attention</span>
-                  }
-                </p>
-              </div>
-              @if (canEdit()) {
-                <div class="filters">
-                  <button type="button" class="btn btn-secondary" (click)="complete(item)">Complete</button>
-                  <button type="button" class="btn btn-secondary" (click)="dismiss(item)">Dismiss</button>
+                  <p>
+                    <span class="badge">{{ kindLabel(item.kind) }}</span>
+                    <span
+                      class="badge"
+                      [class.reminder-overdue]="
+                        item.required !== false && item.urgency === 'overdue'
+                      "
+                      >{{ urgencyLabel(item) }}</span
+                    >
+                    due {{ item.dueOn }}
+                    @if (item.rainNote) {
+                      <span>{{ item.rainNote }}</span>
+                    }
+                    @if (item.sync === 'pending') {
+                      <span class="badge">pending</span>
+                    }
+                    @if (item.sync === 'failed') {
+                      <span class="badge">needs attention</span>
+                    }
+                  </p>
                 </div>
-              }
-            </li>
-          }
+                @if (canEdit()) {
+                  <div class="filters">
+                    <button type="button" class="btn btn-secondary" (click)="complete(item)">
+                      Complete
+                    </button>
+                    <button type="button" class="btn btn-secondary" (click)="dismiss(item)">
+                      Dismiss
+                    </button>
+                  </div>
+                }
+              </li>
+            }
           </ul>
         }
       }
@@ -132,7 +139,11 @@ export class GardenRemindersPage implements OnInit {
 
   async complete(item: ClientReminderItem) {
     const ok = await this.mutate(item, 'complete');
-    if (!ok || item.kind !== 'harvest' || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+    if (
+      !ok ||
+      item.kind !== 'harvest' ||
+      (typeof navigator !== 'undefined' && navigator.onLine === false)
+    ) {
       return;
     }
     const body = { plantingId: item.plantingId, kind: item.kind, dueOn: item.dueOn };

@@ -11,10 +11,7 @@ import type {
   PageDto,
   PlaceCandidateDto,
 } from '@open-garden/shared-types';
-import type {
-  GardenMembershipRepository,
-  GardenRepository,
-} from '@open-garden/plant-catalog-data';
+import type { GardenMembershipRepository, GardenRepository } from '@open-garden/plant-catalog-data';
 import { domainError } from './domain-error';
 import { validateSiteProfile } from './site-profile';
 
@@ -96,7 +93,10 @@ export class GardenService {
     const nextName = dto.name !== undefined ? requireName(dto.name) : garden.name;
     const nextNotes = dto.notes !== undefined ? normalizeNotes(dto.notes) : garden.notes;
     if (dto.notes !== undefined) validateNotes(dto.notes);
-    const nextPlace = dto.place !== undefined ? requirePlace(dto.place, 'A confirmed garden address is required') : null;
+    const nextPlace =
+      dto.place !== undefined
+        ? requirePlace(dto.place, 'A confirmed garden address is required')
+        : null;
     const season = nextPlace ? await this.seasonFrom(nextPlace, dto) : null;
     const nextZone = season
       ? season.hardinessZone
@@ -208,7 +208,11 @@ export class GardenService {
 
   private async seasonFrom(
     place: PlaceCandidateDto,
-    dto: { hardinessZone?: number | null; lastFrost?: MonthDayDto | null; firstFrost?: MonthDayDto | null },
+    dto: {
+      hardinessZone?: number | null;
+      lastFrost?: MonthDayDto | null;
+      firstFrost?: MonthDayDto | null;
+    },
   ): Promise<{
     hardinessZone: number | null;
     lastFrost: MonthDayDto | null;
@@ -230,13 +234,18 @@ export class GardenService {
         seasonNotice: null,
       };
     }
-    let facts = { hardinessZone: null as number | null, lastFrost: null as MonthDayDto | null, firstFrost: null as MonthDayDto | null };
+    let facts = {
+      hardinessZone: null as number | null,
+      lastFrost: null as MonthDayDto | null,
+      firstFrost: null as MonthDayDto | null,
+    };
     try {
       facts = await this.climate.lookup(place);
     } catch {
       facts = { hardinessZone: null, lastFrost: null, firstFrost: null };
     }
-    const filled = facts.hardinessZone != null && facts.lastFrost != null && facts.firstFrost != null;
+    const filled =
+      facts.hardinessZone != null && facts.lastFrost != null && facts.firstFrost != null;
     return { ...facts, seasonNotice: filled ? SEASON_UPDATED : SEASON_PARTIAL };
   }
 }

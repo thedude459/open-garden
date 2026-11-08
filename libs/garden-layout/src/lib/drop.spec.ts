@@ -87,23 +87,37 @@ describe('applyPlantingDrop', () => {
 
   it('uses the selected bed when it contains the drop point', () => {
     const before = planting({ placement: null, bedId: null });
-    const next = applyPlantingDrop([before], [east, west], 'p1', before, {
-      kind: 'bed',
-      bedId: 'west',
-      planX: 50,
-      planY: 10,
-    }, 'east');
+    const next = applyPlantingDrop(
+      [before],
+      [east, west],
+      'p1',
+      before,
+      {
+        kind: 'bed',
+        bedId: 'west',
+        planX: 50,
+        planY: 10,
+      },
+      'east',
+    );
     expect(next[0]?.bedId).toBe('east');
   });
 
   it('uses the topmost bed when the selected bed does not contain the point', () => {
     const before = planting({ placement: null, bedId: null });
-    const next = applyPlantingDrop([before], [east, west], 'p1', before, {
-      kind: 'bed',
-      bedId: 'west',
-      planX: 120,
-      planY: 10,
-    }, 'east');
+    const next = applyPlantingDrop(
+      [before],
+      [east, west],
+      'p1',
+      before,
+      {
+        kind: 'bed',
+        bedId: 'west',
+        planX: 120,
+        planY: 10,
+      },
+      'east',
+    );
     expect(next[0]?.bedId).toBe('west');
   });
 

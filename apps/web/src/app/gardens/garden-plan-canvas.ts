@@ -52,7 +52,14 @@ type Gesture =
       plantingId: string;
       before: LayoutPlantingDto;
     }
-  | { type: 'move-bed'; bedId: string; startX: number; startY: number; originX: number; originY: number }
+  | {
+      type: 'move-bed';
+      bedId: string;
+      startX: number;
+      startY: number;
+      originX: number;
+      originY: number;
+    }
   | {
       type: 'resize-bed';
       bedId: string;
@@ -63,7 +70,14 @@ type Gesture =
       planWidth: number;
       planHeight: number;
     }
-  | { type: 'move-area'; areaId: string; startX: number; startY: number; originX: number; originY: number }
+  | {
+      type: 'move-area';
+      areaId: string;
+      startX: number;
+      startY: number;
+      originX: number;
+      originY: number;
+    }
   | {
       type: 'resize-area';
       areaId: string;
@@ -148,24 +162,24 @@ type Gesture =
               }
             }
             @if (showBedCaption()) {
-            <text
-              [attr.x]="geo.originXInches + planSize(geo).width / 2"
-              [attr.y]="geo.originYInches + 10"
-              text-anchor="middle"
-              class="layout-label"
-            >
-              Bed · {{ bed.name }} · {{ formatPlanSize(geo.lengthInches, geo.widthInches) }}
-            </text>
-            @for (name of priorNames(bed.id); track name) {
               <text
                 [attr.x]="geo.originXInches + planSize(geo).width / 2"
-                [attr.y]="geo.originYInches + planSize(geo).height - 8 - $index * 8"
+                [attr.y]="geo.originYInches + 10"
                 text-anchor="middle"
-                class="layout-label-faded"
+                class="layout-label"
               >
-                {{ name }}
+                Bed · {{ bed.name }} · {{ formatPlanSize(geo.lengthInches, geo.widthInches) }}
               </text>
-            }
+              @for (name of priorNames(bed.id); track name) {
+                <text
+                  [attr.x]="geo.originXInches + planSize(geo).width / 2"
+                  [attr.y]="geo.originYInches + planSize(geo).height - 8 - $index * 8"
+                  text-anchor="middle"
+                  class="layout-label-faded"
+                >
+                  {{ name }}
+                </text>
+              }
             }
             @if (!allowPlantingDrag()) {
               @for (label of labelsFor(bed.id); track label.name) {
@@ -213,29 +227,29 @@ type Gesture =
               }
             }
             @if (showPlantingMarks()) {
-            @for (planting of placedIn(bed.id); track planting.id) {
-              @if (mark(planting, geo); as m) {
-                <g [attr.aria-label]="plantingLabel(planting)" role="img">
-                  <circle
-                    [attr.cx]="m.x"
-                    [attr.cy]="m.y"
-                    [attr.r]="m.r"
-                    class="layout-plant"
-                    [class.layout-plant-invalid]="isPreviewInvalid(planting.id)"
-                    [attr.data-planting-id]="planting.id"
-                  />
-                  <text
-                    [attr.x]="m.x"
-                    [attr.y]="m.y"
-                    text-anchor="middle"
-                    dominant-baseline="central"
-                    class="layout-plant-label"
-                  >
-                    {{ shortenMark(planting, m.r) }}
-                  </text>
-                </g>
+              @for (planting of placedIn(bed.id); track planting.id) {
+                @if (mark(planting, geo); as m) {
+                  <g [attr.aria-label]="plantingLabel(planting)" role="img">
+                    <circle
+                      [attr.cx]="m.x"
+                      [attr.cy]="m.y"
+                      [attr.r]="m.r"
+                      class="layout-plant"
+                      [class.layout-plant-invalid]="isPreviewInvalid(planting.id)"
+                      [attr.data-planting-id]="planting.id"
+                    />
+                    <text
+                      [attr.x]="m.x"
+                      [attr.y]="m.y"
+                      text-anchor="middle"
+                      dominant-baseline="central"
+                      class="layout-plant-label"
+                    >
+                      {{ shortenMark(planting, m.r) }}
+                    </text>
+                  </g>
+                }
               }
-            }
             }
           }
         }
@@ -423,7 +437,15 @@ export class GardenPlanCanvas {
       }
     }
     for (const area of this.drawnAreas()) {
-      if (rectAtPlotEdge(frame, area.originXInches, area.originYInches, area.lengthInches, area.widthInches)) {
+      if (
+        rectAtPlotEdge(
+          frame,
+          area.originXInches,
+          area.originYInches,
+          area.lengthInches,
+          area.widthInches,
+        )
+      ) {
         return true;
       }
     }
@@ -552,7 +574,10 @@ export class GardenPlanCanvas {
     return this.overviewNamesByBed().get(bedId) ?? NO_NAMES;
   }
 
-  mark(planting: LayoutPlantingDto, geo: BedGeometryDto): { x: number; y: number; r: number } | null {
+  mark(
+    planting: LayoutPlantingDto,
+    geo: BedGeometryDto,
+  ): { x: number; y: number; r: number } | null {
     const preview = this.previewPlant();
     if (preview && preview.id === planting.id) {
       return { x: preview.x, y: preview.y, r: plantingFootprintRadius(planting.spacingInches) };
@@ -625,7 +650,11 @@ export class GardenPlanCanvas {
       this.gesture = null;
       return;
     }
-    if (kind === 'pan' || hit.kind === 'empty' || (hit.kind === 'planting' && !this.allowPlantingDrag())) {
+    if (
+      kind === 'pan' ||
+      hit.kind === 'empty' ||
+      (hit.kind === 'planting' && !this.allowPlantingDrag())
+    ) {
       this.gesture = { type: 'pan', lastX: ev.clientX, lastY: ev.clientY };
       return;
     }
@@ -845,9 +874,7 @@ export class GardenPlanCanvas {
         return;
       }
       const overTray = Boolean(
-        document
-          .elementFromPoint(ev.clientX, ev.clientY)
-          ?.closest('[aria-label="Planting tray"]'),
+        document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[aria-label="Planting tray"]'),
       );
       const hit = hitTestPlan(this.drawnBeds(), this.plantings(), plan.x, plan.y, HANDLE_INCHES);
       const target: DropTarget = overTray ? { kind: 'tray' } : this.dropTarget(hit, plan);
@@ -955,14 +982,7 @@ export class GardenPlanCanvas {
 
   private emitPlantingSelect(clientX: number, clientY: number) {
     const plan = this.clientToPlan(clientX, clientY);
-    const hit = hitTestPlan(
-      this.drawnBeds(),
-      this.plantings(),
-      plan.x,
-      plan.y,
-      HANDLE_INCHES,
-      [],
-    );
+    const hit = hitTestPlan(this.drawnBeds(), this.plantings(), plan.x, plan.y, HANDLE_INCHES, []);
     this.selectPlanting.emit(hit.kind === 'planting' ? hit.plantingId : null);
   }
 }

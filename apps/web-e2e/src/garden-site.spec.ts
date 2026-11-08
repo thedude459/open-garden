@@ -26,7 +26,9 @@ test('site profile persists, can clear one frost, and rejects reversed pairs', a
   await page.locator('select[name="firstMonth"]').selectOption({ label: 'Month' });
   await page.locator('input[name="firstDay"]').fill('');
   await saveGarden(page);
-  await expect(page.getByRole('group', { name: /First frost/i }).getByText(/Not set/i)).toBeVisible();
+  await expect(
+    page.getByRole('group', { name: /First frost/i }).getByText(/Not set/i),
+  ).toBeVisible();
   await page.locator('select[name="lastMonth"]').selectOption('10');
   await page.locator('input[name="lastDay"]').fill('20');
   await page.locator('select[name="firstMonth"]').selectOption('4');

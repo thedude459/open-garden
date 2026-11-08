@@ -45,10 +45,19 @@ test('catalog search busy and favorite success notice', async ({ browser }) => {
   await page.getByPlaceholder('Search name / species / variety').fill('Tomato');
   const apply = page.getByRole('button', { name: 'Apply' });
   await apply.click();
-  await expect(page.getByRole('link').filter({ hasText: /Tomato/i }).first()).toBeVisible({
+  await expect(
+    page
+      .getByRole('link')
+      .filter({ hasText: /Tomato/i })
+      .first(),
+  ).toBeVisible({
     timeout: 15_000,
   });
-  await page.getByRole('link').filter({ hasText: /Tomato/i }).first().click();
+  await page
+    .getByRole('link')
+    .filter({ hasText: /Tomato/i })
+    .first()
+    .click();
   const fav = page.getByRole('button', { name: /favorite/i });
   await fav.click();
   await expect(page.getByLabel('Notification')).toBeVisible();

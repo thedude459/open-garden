@@ -9,8 +9,6 @@ import {
   confirmFixtureAddress,
 } from './planner-helpers';
 
-
-
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Property name').fill(name);
@@ -56,7 +54,12 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
 
   await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
   await expect(owner.getByText(/Sow Aug 25 – Sep 8/)).toBeVisible();
-  await expect(owner.locator('article').filter({ hasText: 'Red Maple' }).getByText(/Indoor unavailable/)).toBeVisible();
+  await expect(
+    owner
+      .locator('article')
+      .filter({ hasText: 'Red Maple' })
+      .getByText(/Indoor unavailable/),
+  ).toBeVisible();
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');

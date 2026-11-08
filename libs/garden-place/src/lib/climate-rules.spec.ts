@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { FixtureClimateLookup, LiveClimateLookup, keepFrostPair, mmdd, zoneNumberFromLabel } from './climate';
+import {
+  FixtureClimateLookup,
+  LiveClimateLookup,
+  keepFrostPair,
+  mmdd,
+  zoneNumberFromLabel,
+} from './climate';
 import { MAIN_STREET_PLACES, WASHINGTON_PLACE } from './fixtures';
 
 describe('climate rules', () => {
@@ -55,8 +61,10 @@ describe('climate rules', () => {
       if (parsed.pathname.includes('/stations/')) {
         return json([{ id: 's1', distance: 2 }]);
       }
-      if (parsed.searchParams.get('season') === '1') return json([{ temperature: '32', prob_50: '1015' }]);
-      if (parsed.searchParams.get('season') === '2') return json([{ temperature: 32, prob_50: '0401' }]);
+      if (parsed.searchParams.get('season') === '1')
+        return json([{ temperature: '32', prob_50: '1015' }]);
+      if (parsed.searchParams.get('season') === '2')
+        return json([{ temperature: 32, prob_50: '0401' }]);
       throw new Error(parsed.toString());
     }) as typeof fetch;
     const facts = await new LiveClimateLookup(fetchFn).lookup(WASHINGTON_PLACE);

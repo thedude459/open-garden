@@ -38,7 +38,9 @@ export interface PipelineRunPort {
     runId: string;
     status: Exclude<PipelineRunStatus, 'running'>;
     errorMessage: string | null;
-    plants: Array<PlantUpsertInput & { sourceLinks: Array<{ sourceId: string; externalId: string }> }>;
+    plants: Array<
+      PlantUpsertInput & { sourceLinks: Array<{ sourceId: string; externalId: string }> }
+    >;
     deprecateKeys: string[];
     plantsReactivated: number;
     recordsRejected: number;
@@ -83,7 +85,12 @@ export class CatalogPipelineService {
     try {
       return await this.runs.insertRunning(triggeredBy);
     } catch (err) {
-      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'CONFLICT') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'code' in err &&
+        (err as { code: string }).code === 'CONFLICT'
+      ) {
         throw PIPELINE_ERRORS.alreadyRunning();
       }
       throw err;
@@ -105,7 +112,12 @@ export class CatalogPipelineService {
     try {
       return await this.start('schedule');
     } catch (err) {
-      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'CONFLICT') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'code' in err &&
+        (err as { code: string }).code === 'CONFLICT'
+      ) {
         return null;
       }
       throw err;
@@ -135,8 +147,10 @@ export class CatalogPipelineService {
       }
 
       const sourceRows: PipelineRunSourceDto[] = [];
-      const batches: Array<{ sourceId: string; plants: import('@open-garden/plant-provider').ProviderPlant[] }> =
-        [];
+      const batches: Array<{
+        sourceId: string;
+        plants: import('@open-garden/plant-provider').ProviderPlant[];
+      }> = [];
 
       for (const sourceId of enabled) {
         const provider = registry.get(sourceId);
@@ -167,8 +181,10 @@ export class CatalogPipelineService {
       if (succeeded.length === 0) {
         await this.runs.markTerminal(runId, {
           status: 'failed',
-          errorMessage: notes.concat(failed.map((row) => row.errorMessage).filter(Boolean) as string[]).join('. ') ||
-            'All sources failed',
+          errorMessage:
+            notes
+              .concat(failed.map((row) => row.errorMessage).filter(Boolean) as string[])
+              .join('. ') || 'All sources failed',
         });
         return (await this.runs.getById(runId)) ?? existing;
       }
@@ -213,7 +229,10 @@ export class CatalogPipelineService {
         failed.length === 0 ? 'succeeded' : 'incomplete';
       const errorMessage =
         notes.length > 0 || failed.length > 0
-          ? [...notes, ...failed.map((row) => `${row.sourceId}: ${row.errorMessage ?? 'failed'}`)].join('. ')
+          ? [
+              ...notes,
+              ...failed.map((row) => `${row.sourceId}: ${row.errorMessage ?? 'failed'}`),
+            ].join('. ')
           : null;
 
       await this.runs.publish({

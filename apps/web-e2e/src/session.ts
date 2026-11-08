@@ -9,7 +9,9 @@ export function uniqueEmail(prefix = 'e2e'): string {
 
 type AuthUser = { id: string; email: string; role: string };
 
-function ogSessionFromHeaders(res: { headersArray: () => { name: string; value: string }[] }): string {
+function ogSessionFromHeaders(res: {
+  headersArray: () => { name: string; value: string }[];
+}): string {
   for (const header of res.headersArray()) {
     if (header.name.toLowerCase() !== 'set-cookie') continue;
     const first = header.value.split(';')[0]?.trim() ?? '';

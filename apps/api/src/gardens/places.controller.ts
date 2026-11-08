@@ -34,7 +34,10 @@ export class PlacesController {
     }
     const parsed = placeLookupBodySchema.safeParse(body);
     if (!parsed.success) {
-      throw domainError('VALIDATION_ERROR', 'Type a street address. A city, region, or country is not a garden site.');
+      throw domainError(
+        'VALIDATION_ERROR',
+        'Type a street address. A city, region, or country is not a garden site.',
+      );
     }
     try {
       return await this.lookup.lookup(parsed.data.query);

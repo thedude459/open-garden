@@ -15,7 +15,10 @@ export type EvaluatePlanting = {
   placement: { bedId: string; xInches: number; yInches: number } | null;
 };
 
-export function evaluateLayout(beds: EvaluateBed[], plantings: EvaluatePlanting[]): LayoutFlagDto[] {
+export function evaluateLayout(
+  beds: EvaluateBed[],
+  plantings: EvaluatePlanting[],
+): LayoutFlagDto[] {
   const flags: LayoutFlagDto[] = [];
   const bedById = new Map(beds.map((b) => [b.id, b]));
   const placed = plantings.filter((p) => p.placement);

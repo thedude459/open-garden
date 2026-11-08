@@ -16,7 +16,9 @@ export function plantTestFixturesEnabled(env: NodeJS.ProcessEnv = process.env): 
 
 export function createPipelineSources(env: NodeJS.ProcessEnv = process.env): PlantDataProvider[] {
   const testFixtures = plantTestFixturesEnabled(env);
-  const sources: PlantDataProvider[] = [new FixturePlantProvider({ includeTestPlants: testFixtures })];
+  const sources: PlantDataProvider[] = [
+    new FixturePlantProvider({ includeTestPlants: testFixtures }),
+  ];
   if (testFixtures) {
     sources.push(new FixtureBPlantProvider());
   }

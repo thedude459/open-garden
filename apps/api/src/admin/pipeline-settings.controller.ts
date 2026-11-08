@@ -1,10 +1,7 @@
 import { Body, Controller, Get, Inject, Patch, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { PIPELINE_ERRORS } from '@open-garden/catalog-pipeline';
-import {
-  PipelineSettingsRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { PipelineSettingsRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { pipelineSettingsPatchSchema, type PipelineSettingsDto } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
@@ -27,10 +24,7 @@ export class PipelineSettingsController {
   }
 
   @Patch()
-  async patch(
-    @CurrentUser() user: AuthUser,
-    @Body() body: unknown,
-  ): Promise<PipelineSettingsDto> {
+  async patch(@CurrentUser() user: AuthUser, @Body() body: unknown): Promise<PipelineSettingsDto> {
     const parsed = pipelineSettingsPatchSchema.safeParse(body ?? {});
     if (!parsed.success) {
       throw PIPELINE_ERRORS.invalidSettings();

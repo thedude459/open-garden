@@ -80,9 +80,7 @@ describe('evaluateLayout', () => {
         },
       ],
     );
-    expect(flags).toEqual([
-      { kind: 'unavailable', plantingIds: ['a'], blocking: false },
-    ]);
+    expect(flags).toEqual([{ kind: 'unavailable', plantingIds: ['a'], blocking: false }]);
   });
 
   it('leaves leftover null-spacing plantings present (unavailable, not dropped)', () => {
@@ -93,17 +91,12 @@ describe('evaluateLayout', () => {
     };
     const flags = evaluateLayout([bed], [leftover]);
     expect(leftover.placement).toEqual({ bedId: 'bed-1', xInches: 20, yInches: 20 });
-    expect(flags).toEqual([
-      { kind: 'unavailable', plantingIds: ['legacy'], blocking: false },
-    ]);
+    expect(flags).toEqual([{ kind: 'unavailable', plantingIds: ['legacy'], blocking: false }]);
   });
 
   it('does not compare plantings across overlapping beds', () => {
     const flags = evaluateLayout(
-      [
-        bed,
-        { id: 'bed-2', geometry: { lengthInches: 96, widthInches: 48 } },
-      ],
+      [bed, { id: 'bed-2', geometry: { lengthInches: 96, widthInches: 48 } }],
       [
         {
           id: 'a',

@@ -13,22 +13,19 @@ function bed(orientation: RotatableBed['orientation']): RotatableBed {
 }
 
 describe('planToLocal', () => {
-  it.each([0, 90, 180, 270] as const)(
-    'round-trips local coords at %s degrees',
-    (orientation) => {
-      const geo = bed(orientation);
-      const samples = [
-        [0, 0],
-        [12, 6],
-        [96, 48],
-        [40, 20],
-      ] as const;
-      for (const [lx, ly] of samples) {
-        const plan = localToPlan(geo, lx, ly);
-        expect(planToLocal(geo, plan.x, plan.y)).toEqual({ x: lx, y: ly });
-      }
-    },
-  );
+  it.each([0, 90, 180, 270] as const)('round-trips local coords at %s degrees', (orientation) => {
+    const geo = bed(orientation);
+    const samples = [
+      [0, 0],
+      [12, 6],
+      [96, 48],
+      [40, 20],
+    ] as const;
+    for (const [lx, ly] of samples) {
+      const plan = localToPlan(geo, lx, ly);
+      expect(planToLocal(geo, plan.x, plan.y)).toEqual({ x: lx, y: ly });
+    }
+  });
 
   it('returns integer inches', () => {
     const geo = bed(0);

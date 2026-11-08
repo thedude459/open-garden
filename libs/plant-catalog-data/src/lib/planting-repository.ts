@@ -62,10 +62,7 @@ export class PlantingRepository {
       .limit(pageSize)
       .offset(offset);
 
-    const [total] = await this.db
-      .select({ value: count() })
-      .from(gardenPlantings)
-      .where(where);
+    const [total] = await this.db.select({ value: count() }).from(gardenPlantings).where(where);
 
     return {
       items: rows,
@@ -195,7 +192,9 @@ export class PlantingRepository {
         ...(patch.harvestedOn !== undefined ? { harvestedOn: patch.harvestedOn } : {}),
         ...(patch.bedId !== undefined ? { bedId: patch.bedId } : {}),
         ...(patch.trayId !== undefined ? { trayId: patch.trayId } : {}),
-        ...(patch.clientMutationId !== undefined ? { clientMutationId: patch.clientMutationId } : {}),
+        ...(patch.clientMutationId !== undefined
+          ? { clientMutationId: patch.clientMutationId }
+          : {}),
         ...(patch.life !== undefined ? { life: patch.life } : {}),
         ...(patch.note !== undefined ? { note: patch.note } : {}),
         ...(patch.photo !== undefined ? { photo: patch.photo || null } : {}),
@@ -440,4 +439,3 @@ export class PlantingRepository {
       .onConflictDoNothing();
   }
 }
-

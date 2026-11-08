@@ -1,8 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration, openCalendar, confirmFixtureAddress } from './planner-helpers';
-
-
+import {
+  saveGarden,
+  openConfiguration,
+  openCalendar,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
@@ -57,7 +60,9 @@ test('this-week emphasis follows view-time date on a cached calendar', async ({ 
   await page.clock.install({ time: new Date('2026-02-20T15:00:00') });
   await createFrostGarden(page, 'Clock bed');
   await addFromCatalog(page, 'Cherry Tomato');
-  await expect(page.locator('article').filter({ hasText: 'Cherry Tomato' }).getByText('This week')).toBeVisible();
+  await expect(
+    page.locator('article').filter({ hasText: 'Cherry Tomato' }).getByText('This week'),
+  ).toBeVisible();
 
   await page.route('**/api/gardens/**/calendar**', (route) => route.abort());
   await page.clock.setFixedTime(new Date('2026-06-28T15:00:00'));

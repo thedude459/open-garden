@@ -102,7 +102,12 @@ describe('mergeCatalogRecords', () => {
           sourceId: 'a',
           plants: [
             plant({ commonName: '', species: 'Nope' }),
-            plant({ commonName: 'Ok', species: 'Ok species', sunRequirements: null, waterNeeds: null }),
+            plant({
+              commonName: 'Ok',
+              species: 'Ok species',
+              sunRequirements: null,
+              waterNeeds: null,
+            }),
           ],
         },
       ],

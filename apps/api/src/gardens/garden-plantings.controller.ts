@@ -74,7 +74,10 @@ export class GardenPlantingsController {
   ) {
     const parsed = plantingPatchSchema.safeParse(body);
     if (!parsed.success) {
-      throw domainError('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Date must be YYYY-MM-DD');
+      throw domainError(
+        'VALIDATION_ERROR',
+        parsed.error.issues[0]?.message ?? 'Date must be YYYY-MM-DD',
+      );
     }
     return this.plantings.update(user.id, id, plantingId, parsed.data);
   }

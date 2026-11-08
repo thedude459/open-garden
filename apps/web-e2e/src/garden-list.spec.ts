@@ -3,9 +3,7 @@ import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
 import { saveGarden, openConfiguration, confirmFixtureAddress } from './planner-helpers';
 
-test('empty state, create, list, detail, rename, cancel vs confirm delete', async ({
-  browser,
-}) => {
+test('empty state, create, list, detail, rename, cancel vs confirm delete', async ({ browser }) => {
   const email = `owner-${Date.now()}@example.com`;
   const page = await signedInPage(browser, email);
   await page.goto('/gardens');

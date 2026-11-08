@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { addTransplant, createSizedBed, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
+import {
+  addTransplant,
+  createSizedBed,
+  newUser,
+  openOverview,
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('cached layout stays readable when layout API is aborted', async ({ browser }) => {
   test.setTimeout(90_000);
@@ -90,9 +97,10 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await addTransplant(page, 'Cherry Tomato');
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
-  await page.getByLabel('Planting tray').getByRole('button', { name: 'Cherry Tomato' }).dragTo(
-    page.locator('[data-bed-name="East"]'),
-  );
+  await page
+    .getByLabel('Planting tray')
+    .getByRole('button', { name: 'Cherry Tomato' })
+    .dragTo(page.locator('[data-bed-name="East"]'));
   expect((await saveLayout(page)).status()).toBe(200);
 
   await page.getByRole('link', { name: 'Back to overview' }).click();
@@ -100,11 +108,14 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await addTransplant(page, 'Sweet Basil');
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
-  await page.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' }).dragTo(
-    page.locator('[data-bed-name="East"]'),
-  );
+  await page
+    .getByLabel('Planting tray')
+    .getByRole('button', { name: 'Sweet Basil' })
+    .dragTo(page.locator('[data-bed-name="East"]'));
   await expect(page.getByLabel('Notification')).toContainText('Too close to another plant');
-  await expect(page.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' })).toBeVisible();
+  await expect(
+    page.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' }),
+  ).toBeVisible();
 
   await page.route('**/api/gardens/**/layout**', async (route) => {
     if (route.request().method() === 'PUT') {

@@ -17,7 +17,9 @@ describe('CareReminderService', () => {
 
   it('non-member gets garden not found', async () => {
     const mem = createReminderMemory();
-    await expect(mem.service.list(mem.gardenId, mem.strangerId, '2026-08-17')).rejects.toMatchObject({
+    await expect(
+      mem.service.list(mem.gardenId, mem.strangerId, '2026-08-17'),
+    ).rejects.toMatchObject({
       message: 'Garden not found',
     });
   });
@@ -41,7 +43,11 @@ describe('CareReminderService', () => {
 
   it('viewer cannot complete or dismiss', async () => {
     const mem = createReminderMemory();
-    const planting = mem.addPlanting({ id: 'p1', plantId: 'plant-tomato', plantedOn: '2026-01-01' });
+    const planting = mem.addPlanting({
+      id: 'p1',
+      plantId: 'plant-tomato',
+      plantedOn: '2026-01-01',
+    });
     await expect(
       mem.service.complete(mem.gardenId, mem.viewerId, planting.id, 'harvest', '2026-03-02'),
     ).rejects.toMatchObject({ message: 'Viewers cannot update reminders' });
@@ -49,7 +55,11 @@ describe('CareReminderService', () => {
 
   it('non-member cannot mutate', async () => {
     const mem = createReminderMemory();
-    const planting = mem.addPlanting({ id: 'p1', plantId: 'plant-tomato', plantedOn: '2026-01-01' });
+    const planting = mem.addPlanting({
+      id: 'p1',
+      plantId: 'plant-tomato',
+      plantedOn: '2026-01-01',
+    });
     await expect(
       mem.service.complete(mem.gardenId, mem.strangerId, planting.id, 'harvest', '2026-03-02'),
     ).rejects.toMatchObject({ message: 'Garden not found' });
@@ -82,7 +92,11 @@ describe('CareReminderService', () => {
 
   it('last upsert wins on same occurrence key', async () => {
     const mem = createReminderMemory();
-    const planting = mem.addPlanting({ id: 'p1', plantId: 'plant-tomato', plantedOn: '2026-01-01' });
+    const planting = mem.addPlanting({
+      id: 'p1',
+      plantId: 'plant-tomato',
+      plantedOn: '2026-01-01',
+    });
     await mem.service.complete(mem.gardenId, mem.ownerId, planting.id, 'harvest', '2026-03-02');
     await mem.service.dismiss(mem.gardenId, mem.ownerId, planting.id, 'harvest', '2026-03-02');
     expect(mem.getEvent(planting.id, 'harvest', '2026-03-02')?.action).toBe('dismissed');
@@ -102,7 +116,11 @@ describe('CareReminderService', () => {
 
   it('list after planting delete omits reminders', async () => {
     const mem = createReminderMemory();
-    const planting = mem.addPlanting({ id: 'p1', plantId: 'plant-tomato', plantedOn: '2026-01-01' });
+    const planting = mem.addPlanting({
+      id: 'p1',
+      plantId: 'plant-tomato',
+      plantedOn: '2026-01-01',
+    });
     let list = await mem.service.list(mem.gardenId, mem.ownerId, '2026-08-17');
     expect(list.items.some((i) => i.plantingId === planting.id)).toBe(true);
     mem.deletePlanting(mem.gardenId, planting.id);

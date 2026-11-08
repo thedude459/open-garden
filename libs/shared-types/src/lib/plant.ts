@@ -1,10 +1,4 @@
-export type PlantType =
-  | 'vegetable'
-  | 'herb'
-  | 'flower'
-  | 'fruit'
-  | 'shrub'
-  | 'tree';
+export type PlantType = 'vegetable' | 'herb' | 'flower' | 'fruit' | 'shrub' | 'tree';
 
 export type PlantStatus = 'active' | 'deprecated';
 
@@ -71,13 +65,7 @@ export interface FavoriteDto {
 
 export interface ApiErrorDto {
   error: {
-    code:
-      | 'UNAUTHORIZED'
-      | 'FORBIDDEN'
-      | 'NOT_FOUND'
-      | 'VALIDATION_ERROR'
-      | 'CONFLICT'
-      | 'INTERNAL';
+    code: 'UNAUTHORIZED' | 'FORBIDDEN' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'CONFLICT' | 'INTERNAL';
     message: string;
   };
 }

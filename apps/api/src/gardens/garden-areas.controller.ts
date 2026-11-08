@@ -25,7 +25,8 @@ export class GardenAreasController {
   @Post('areas')
   createArea(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
     const parsed = areaCreateSchema.safeParse(body);
-    if (!parsed.success) throw domainError('VALIDATION_ERROR', 'Choose a vegetable garden, orchard, or greenhouse');
+    if (!parsed.success)
+      throw domainError('VALIDATION_ERROR', 'Choose a vegetable garden, orchard, or greenhouse');
     return this.plantings.createArea(user.id, id, parsed.data.kind);
   }
 

@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { createSizedBed, inviteViewer, newUser, openOverview, saveLayout, confirmFixtureAddress } from './planner-helpers';
+import {
+  createSizedBed,
+  inviteViewer,
+  newUser,
+  openOverview,
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans only', async ({
   browser,

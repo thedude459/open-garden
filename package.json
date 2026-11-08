@@ -17,6 +17,8 @@
     "test:coverage:all": "vitest run --coverage --config vitest.coverage-all.config.ts && node scripts/ci/coverage-summary.js",
     "test:all": "npm test && npm run e2e",
     "lint": "nx run-many -t lint --all",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "e2e": "bash scripts/ci/e2e.sh",
     "e2e:only": "nx e2e web-e2e",
     "graph": "nx graph"

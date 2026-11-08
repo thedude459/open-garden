@@ -47,7 +47,9 @@ export class GardensController {
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     const climate =
-      process.env['PLACE_PROVIDER'] === 'live' ? new LiveClimateLookup() : new FixtureClimateLookup();
+      process.env['PLACE_PROVIDER'] === 'live'
+        ? new LiveClimateLookup()
+        : new FixtureClimateLookup();
     const memberships = new GardenMembershipRepository(bundle.db);
     const plantings = new PlantingRepository(bundle.db);
     const events = new CareEventRepository(bundle.db);
@@ -123,12 +125,7 @@ export class GardensController {
       try {
         const calendar = await this.calendar.list(user.id, garden.id, 1, 200);
         for (const entry of calendar.entries) {
-          if (
-            !overlapsThisWeek(
-              [entry.windows.outdoorSow, entry.windows.transplant],
-              today,
-            )
-          ) {
+          if (!overlapsThisWeek([entry.windows.outdoorSow, entry.windows.transplant], today)) {
             continue;
           }
           thisWeek += 1;
@@ -187,7 +184,9 @@ function gardenIssueMessage(
   issue: { path: PropertyKey[]; message: string } | undefined,
 ): string {
   const place =
-    body && typeof body === 'object' && 'place' in body ? (body as { place?: unknown }).place : undefined;
+    body && typeof body === 'object' && 'place' in body
+      ? (body as { place?: unknown }).place
+      : undefined;
   if (issue?.path[0] === 'place' && place == null) return 'A garden address is required';
   return issue?.message ?? 'Invalid garden';
 }

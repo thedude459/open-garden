@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Questions and ideas
+    url: https://github.com/thedude459/open-garden/discussions
+    about: Ask how to do something or float an idea before filing an issue.
   - name: Report a security vulnerability
     url: https://github.com/thedude459/open-garden/security/advisories/new
     about: Please report security problems privately, not as a public issue.

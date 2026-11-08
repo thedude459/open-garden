@@ -3,11 +3,7 @@ import type { ReminderItemDto } from '@open-garden/shared-types';
 import { applyRainCover, RAIN_NOTE } from './rain-cover';
 import { sortReminders } from './sort';
 
-function item(
-  kind: ReminderItemDto['kind'],
-  dueOn: string,
-  plantingId = 'p1',
-): ReminderItemDto {
+function item(kind: ReminderItemDto['kind'], dueOn: string, plantingId = 'p1'): ReminderItemDto {
   return {
     plantingId,
     kind,
@@ -42,9 +38,9 @@ describe('applyRainCover', () => {
     expect(covered[2]).toMatchObject({ required: true, rainNote: null });
     expect(covered[0]).toMatchObject({ required: true, rainNote: null });
     expect(covered[3]).toMatchObject({ required: true, rainNote: null });
-    expect(sortReminders(covered).map((row) => `${row.plantingId}:${row.kind}:${row.dueOn}`)).toEqual(
-      sortReminders(rows).map((row) => `${row.plantingId}:${row.kind}:${row.dueOn}`),
-    );
+    expect(
+      sortReminders(covered).map((row) => `${row.plantingId}:${row.kind}:${row.dueOn}`),
+    ).toEqual(sortReminders(rows).map((row) => `${row.plantingId}:${row.kind}:${row.dueOn}`));
   });
 
   it('leaves watering required when the day is missing or the forecast was not read', () => {

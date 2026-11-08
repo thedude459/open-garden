@@ -3,7 +3,9 @@ import { liveEnabled, parseOgSessionCookie } from './live-http';
 
 describe('parseOgSessionCookie', () => {
   it('reads og_session from a Set-Cookie header', () => {
-    expect(parseOgSessionCookie('og_session=abc123; Path=/; HttpOnly; SameSite=Lax')).toBe('abc123');
+    expect(parseOgSessionCookie('og_session=abc123; Path=/; HttpOnly; SameSite=Lax')).toBe(
+      'abc123',
+    );
   });
 
   it('reads og_session from a list of Set-Cookie headers', () => {

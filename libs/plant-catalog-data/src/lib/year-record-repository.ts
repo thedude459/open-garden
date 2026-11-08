@@ -87,7 +87,9 @@ export class YearRecordRepository {
     };
   }
 
-  async layoutAdvice(gardenId: string): Promise<{ prior: PriorCropDto[]; pairs: CompanionPairDto[] }> {
+  async layoutAdvice(
+    gardenId: string,
+  ): Promise<{ prior: PriorCropDto[]; pairs: CompanionPairDto[] }> {
     const openYear = (await this.openYear(gardenId)) ?? new Date().getUTCFullYear();
     const rows = await this.rowsForYear(gardenId, openYear - 1);
     const seen = new Set<string>();

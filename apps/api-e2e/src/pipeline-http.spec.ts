@@ -16,12 +16,16 @@ async function json(res: { json: () => Promise<unknown> }) {
 }
 
 async function waitForPipelineIdle(client: LiveClient, timeoutMs = 30_000): Promise<void> {
-  await waitUntil(async () => {
-    const res = await client.get('/api/admin/pipeline/runs?page=1&pageSize=5');
-    if (!res.ok()) return false;
-    const body = (await json(res)) as RunList;
-    return !body.items.some((item) => item.status === 'running');
-  }, timeoutMs, 'timed out waiting for pipeline idle');
+  await waitUntil(
+    async () => {
+      const res = await client.get('/api/admin/pipeline/runs?page=1&pageSize=5');
+      if (!res.ok()) return false;
+      const body = (await json(res)) as RunList;
+      return !body.items.some((item) => item.status === 'running');
+    },
+    timeoutMs,
+    'timed out waiting for pipeline idle',
+  );
 }
 
 async function startPipelineRun(client: LiveClient) {
@@ -36,12 +40,16 @@ async function startPipelineRun(client: LiveClient) {
 }
 
 async function waitForPlant(client: LiveClient, name: string, timeoutMs = 30_000) {
-  await waitUntil(async () => {
-    const res = await client.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
-    if (!res.ok()) return false;
-    const body = (await res.json()) as { items: Array<{ commonName: string }> };
-    return body.items.some((item) => item.commonName === name);
-  }, timeoutMs, `timed out waiting for plant ${name}`);
+  await waitUntil(
+    async () => {
+      const res = await client.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
+      if (!res.ok()) return false;
+      const body = (await res.json()) as { items: Array<{ commonName: string }> };
+      return body.items.some((item) => item.commonName === name);
+    },
+    timeoutMs,
+    `timed out waiting for plant ${name}`,
+  );
 }
 
 describe.skipIf(!liveEnabled)('pipeline http', () => {
@@ -126,12 +134,16 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
       merges: Array<{ varietyKey: string; fieldWinners: Record<string, string> }>;
       status: string;
     } | null = null;
-    await waitUntil(async () => {
-      const res = await request.get(`/api/admin/pipeline/runs/${run.id}`);
-      if (!res.ok()) return false;
-      detail = (await json(res)) as typeof detail;
-      return Boolean(detail && detail.status !== 'running');
-    }, 30_000, 'timed out waiting for pipeline run detail');
+    await waitUntil(
+      async () => {
+        const res = await request.get(`/api/admin/pipeline/runs/${run.id}`);
+        if (!res.ok()) return false;
+        detail = (await json(res)) as typeof detail;
+        return Boolean(detail && detail.status !== 'running');
+      },
+      30_000,
+      'timed out waiting for pipeline run detail',
+    );
     expect(detail?.status).not.toBe('running');
     expect(detail?.sources.length).toBeGreaterThan(0);
     expect(detail?.merges.length).toBeGreaterThan(0);

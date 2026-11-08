@@ -1,8 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { saveGarden, openConfiguration, openCalendar, confirmFixtureAddress } from './planner-helpers';
-
-
+import {
+  saveGarden,
+  openConfiguration,
+  openCalendar,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
@@ -57,7 +60,9 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await addFromCatalog(owner, 'Cherry Tomato');
   await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(1);
 
-  await expect(owner.locator('article').filter({ hasText: 'Papaya' }).getByText('Zone mismatch')).toBeVisible();
+  await expect(
+    owner.locator('article').filter({ hasText: 'Papaya' }).getByText('Zone mismatch'),
+  ).toBeVisible();
   await expect(
     owner.locator('article').filter({ hasText: 'Honeycrisp Apple' }).getByText('Zone mismatch'),
   ).toHaveCount(0);

@@ -1,11 +1,27 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, HostListener, OnInit, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  OnInit,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { catalogDropOutcome, plantingDropOutcome, remainingGridCount } from '@open-garden/garden-layout';
+import {
+  catalogDropOutcome,
+  plantingDropOutcome,
+  remainingGridCount,
+} from '@open-garden/garden-layout';
 import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/drop';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
-import type { FavoriteListItemDto, LayoutPlantingDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type {
+  FavoriteListItemDto,
+  LayoutPlantingDto,
+  PlantSummaryDto,
+} from '@open-garden/shared-types';
 import { allowsPlant } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
@@ -24,230 +40,247 @@ import { EmptyState } from '../ui/empty-state';
   template: `
     <p class="back-link"><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
     <div class="planner">
-    <header class="page-head">
-      <div>
-        <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" [current]="bed()?.name ?? 'Bed'" />
-        <h2>Bed View</h2>
-      </div>
-      @if (!loading() && draft() && bed()) {
-        <div class="planner-toolbar">
-          <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
-          <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
-          @if (canEdit()) {
-            <button
-              type="button"
-              class="btn btn-primary"
-              (click)="save()"
-              [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
-              [disabled]="notices.busyMap().has('save-layout')"
-            >
-              Save layout
-            </button>
+      <header class="page-head">
+        <div>
+          <og-place-marker
+            [gardenId]="gardenId"
+            [gardenName]="gardenName()"
+            [current]="bed()?.name ?? 'Bed'"
+          />
+          <h2>Bed View</h2>
+        </div>
+        @if (!loading() && draft() && bed()) {
+          <div class="planner-toolbar">
+            <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
+            <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
+            @if (canEdit()) {
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="save()"
+                [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
+                [disabled]="notices.busyMap().has('save-layout')"
+              >
+                Save layout
+              </button>
+            }
+          </div>
+        }
+      </header>
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+      @if (status()) {
+        <p role="status">{{ status() }}</p>
+      }
+      @if (selectedPlantingName()) {
+        <p role="status">{{ selectedPlantingName() }}</p>
+      }
+      @if (loading()) {
+        <p class="muted">Loading…</p>
+      } @else if (!draft() || !bed()) {
+        <p class="muted">Bed unavailable or not found.</p>
+      } @else {
+        <div class="planner-alerts">
+          @if (armedPlant(); as picked) {
+            <p class="place-hint" role="status">
+              @if (slotsLeft(picked) === 0) {
+                No room left for {{ picked.commonName }} ({{ picked.spacingInches }} in).
+              } @else {
+                Click the bed to place {{ picked.commonName }}. About {{ slotsLeft(picked) }} more
+                fit at {{ picked.spacingInches }} in.
+              }
+            </p>
+          }
+          @if (dirty()) {
+            <p role="status">Unsaved changes</p>
+          }
+          @for (flag of flags(); track $index) {
+            <p class="needs-attention" role="status">
+              @if (flag.message) {
+                {{ flag.message }}
+              } @else if (flag.kind === 'spacing') {
+                Too close
+              } @else if (flag.kind === 'fit') {
+                Does not fit
+              } @else {
+                Spacing unavailable
+              }
+            </p>
           }
         </div>
-      }
-    </header>
-    @if (error()) {
-      <p class="error">{{ error() }}</p>
-    }
-    @if (status()) {
-      <p role="status">{{ status() }}</p>
-    }
-    @if (selectedPlantingName()) {
-      <p role="status">{{ selectedPlantingName() }}</p>
-    }
-    @if (loading()) {
-      <p class="muted">Loading…</p>
-    } @else if (!draft() || !bed()) {
-      <p class="muted">Bed unavailable or not found.</p>
-    } @else {
-      <div class="planner-alerts">
-        @if (armedPlant(); as picked) {
-          <p class="place-hint" role="status">
-            @if (slotsLeft(picked) === 0) {
-              No room left for {{ picked.commonName }} ({{ picked.spacingInches }} in).
-            } @else {
-              Click the bed to place {{ picked.commonName }}. About {{ slotsLeft(picked) }} more fit at
-              {{ picked.spacingInches }} in.
-            }
-          </p>
-        }
-        @if (dirty()) {
-          <p role="status">Unsaved changes</p>
-        }
-        @for (flag of flags(); track $index) {
-          <p class="needs-attention" role="status">
-            @if (flag.message) {
-              {{ flag.message }}
-            } @else if (flag.kind === 'spacing') {
-              Too close
-            } @else if (flag.kind === 'fit') {
-              Does not fit
-            } @else {
-              Spacing unavailable
-            }
-          </p>
-        }
-      </div>
-      <div class="planner-stage">
-        <og-garden-plan-canvas
-          [beds]="[bed()!]"
-          [plantings]="draft()!.plantings"
-          [priorCrops]="draft()!.priorCrops ?? []"
-          [canEdit]="canEdit()"
-          [online]="online()"
-          [allowBedGeometry]="false"
-          [allowPlantingDrag]="true"
-          [showPlantingMarks]="true"
-          [showBedCaption]="false"
-          [probeSpacing]="armedPlant()?.spacingInches ?? null"
-          [planLabel]="'Bed plan'"
-          (plantingDrop)="onPlantingDrop($event)"
-          (gestureEnd)="refreshFlags()"
-          (missedBed)="onMissedBed()"
-          (offlineRequired)="onOfflineRequired()"
-          (planActivate)="onPlanActivate()"
-          (planPointer)="onPlanPointer($event)"
-          (selectPlanting)="onSelectPlanting($event)"
-        />
-        <aside class="planner-rail bed-rail">
-          <section id="plant-panel" class="plant-panel" aria-label="Plant panel">
-            @if (canEdit()) {
-              <h3>Add a plant</h3>
-              @if (!armedPlant()) {
-                <p class="muted">Choose Place, then click the bed. Or drag the plant onto it.</p>
-              }
-              @if (!inBed().length) {
-                <div class="empty-actions">
-                  <button type="button" class="btn btn-secondary" (click)="focusPlantPanel()">
-                    Direct seed
-                  </button>
-                  <a class="btn btn-secondary" [routerLink]="['/gardens', gardenId, 'transplants']">
-                    Transplants
-                  </a>
-                </div>
-              }
-              @if (favorites().length) {
-                <h3>Favorites</h3>
-                <ul class="card-list">
-                  @for (f of shownFavorites(); track f.favoriteId) {
-                    @if (!f.unavailable) {
-                      @if (catalogPlant(f.plant); as p) {
-                        <li class="row">
-                          <span>
-                            <strong>{{ p.commonName }}</strong>
-                            <span class="muted"> · {{ p.plantType }}</span>
-                          </span>
-                          <button
-                            type="button"
-                            class="btn btn-primary"
-                            [attr.aria-label]="'Place ' + p.commonName"
-                            [attr.aria-pressed]="armedPlant()?.id === p.id"
-                            (pointerdown)="onArmPointerDown($event, p)"
-                          >
-                            Place
-                          </button>
-                        </li>
+        <div class="planner-stage">
+          <og-garden-plan-canvas
+            [beds]="[bed()!]"
+            [plantings]="draft()!.plantings"
+            [priorCrops]="draft()!.priorCrops ?? []"
+            [canEdit]="canEdit()"
+            [online]="online()"
+            [allowBedGeometry]="false"
+            [allowPlantingDrag]="true"
+            [showPlantingMarks]="true"
+            [showBedCaption]="false"
+            [probeSpacing]="armedPlant()?.spacingInches ?? null"
+            [planLabel]="'Bed plan'"
+            (plantingDrop)="onPlantingDrop($event)"
+            (gestureEnd)="refreshFlags()"
+            (missedBed)="onMissedBed()"
+            (offlineRequired)="onOfflineRequired()"
+            (planActivate)="onPlanActivate()"
+            (planPointer)="onPlanPointer($event)"
+            (selectPlanting)="onSelectPlanting($event)"
+          />
+          <aside class="planner-rail bed-rail">
+            <section id="plant-panel" class="plant-panel" aria-label="Plant panel">
+              @if (canEdit()) {
+                <h3>Add a plant</h3>
+                @if (!armedPlant()) {
+                  <p class="muted">Choose Place, then click the bed. Or drag the plant onto it.</p>
+                }
+                @if (!inBed().length) {
+                  <div class="empty-actions">
+                    <button type="button" class="btn btn-secondary" (click)="focusPlantPanel()">
+                      Direct seed
+                    </button>
+                    <a
+                      class="btn btn-secondary"
+                      [routerLink]="['/gardens', gardenId, 'transplants']"
+                    >
+                      Transplants
+                    </a>
+                  </div>
+                }
+                @if (favorites().length) {
+                  <h3>Favorites</h3>
+                  <ul class="card-list">
+                    @for (f of shownFavorites(); track f.favoriteId) {
+                      @if (!f.unavailable) {
+                        @if (catalogPlant(f.plant); as p) {
+                          <li class="row">
+                            <span>
+                              <strong>{{ p.commonName }}</strong>
+                              <span class="muted"> · {{ p.plantType }}</span>
+                            </span>
+                            <button
+                              type="button"
+                              class="btn btn-primary"
+                              [attr.aria-label]="'Place ' + p.commonName"
+                              [attr.aria-pressed]="armedPlant()?.id === p.id"
+                              (pointerdown)="onArmPointerDown($event, p)"
+                            >
+                              Place
+                            </button>
+                          </li>
+                        }
                       }
                     }
+                  </ul>
+                }
+                <og-plant-picker
+                  [filters]="true"
+                  [live]="true"
+                  [zone]="gardenZone()"
+                  (results)="onCatalog($event)"
+                  (searched)="searched.set(true)"
+                  (zoneChange)="activeZone.set($event)"
+                  (failed)="onSearchFailed($event)"
+                />
+              } @else if (!inBed().length) {
+                <og-empty-state title="This bed is empty" [body]="emptyPlantingBody()" />
+              }
+              @if (searched() && catalogHits().length === 0 && canEdit()) {
+                <og-empty-state title="No plants match" body="Try another name or clear filters." />
+              }
+              @if (catalogHits().length) {
+                <ul class="card-list plant-panel-list">
+                  @for (p of catalogHits(); track p.id) {
+                    <li class="row">
+                      @if (p.illustrationUrl) {
+                        <img
+                          [src]="p.illustrationUrl"
+                          alt=""
+                          width="32"
+                          height="32"
+                          decoding="async"
+                        />
+                      } @else {
+                        <span class="plant-stand-in" [attr.data-plant-type]="p.plantType">{{
+                          p.plantType.slice(0, 1)
+                        }}</span>
+                      }
+                      <span>
+                        <strong>{{ p.commonName }}</strong>
+                        <span class="muted"> · {{ p.plantType }}</span>
+                        @if (activeZone() !== undefined) {
+                          <span class="muted"> · Fits zone {{ activeZone() }}</span>
+                        }
+                      </span>
+                      @if (canEdit()) {
+                        <button
+                          type="button"
+                          class="btn btn-primary"
+                          [attr.aria-label]="'Place ' + p.commonName"
+                          [attr.aria-pressed]="armedPlant()?.id === p.id"
+                          (pointerdown)="onArmPointerDown($event, p)"
+                        >
+                          Place
+                        </button>
+                      }
+                    </li>
                   }
                 </ul>
               }
-              <og-plant-picker
-                [filters]="true"
-                [live]="true"
-                [zone]="gardenZone()"
-                (results)="onCatalog($event)"
-                (searched)="searched.set(true)"
-                (zoneChange)="activeZone.set($event)"
-                (failed)="onSearchFailed($event)"
-              />
-            } @else if (!inBed().length) {
-              <og-empty-state title="This bed is empty" [body]="emptyPlantingBody()" />
-            }
-            @if (searched() && catalogHits().length === 0 && canEdit()) {
-              <og-empty-state title="No plants match" body="Try another name or clear filters." />
-            }
-            @if (catalogHits().length) {
-              <ul class="card-list plant-panel-list">
-                @for (p of catalogHits(); track p.id) {
+            </section>
+            @if (inBed().length) {
+              <h3>In this bed</h3>
+              <ul class="card-list">
+                @for (p of inBed(); track p.id) {
                   <li class="row">
-                    @if (p.illustrationUrl) {
-                    <img [src]="p.illustrationUrl" alt="" width="32" height="32" decoding="async" />
-                    } @else {
-                      <span class="plant-stand-in" [attr.data-plant-type]="p.plantType">{{
-                        p.plantType.slice(0, 1)
-                      }}</span>
-                    }
-                    <span>
-                      <strong>{{ p.commonName }}</strong>
-                      <span class="muted"> · {{ p.plantType }}</span>
-                      @if (activeZone() !== undefined) {
-                        <span class="muted"> · Fits zone {{ activeZone() }}</span>
-                      }
-                    </span>
+                    <span>{{ plantingLabel(p) }}</span>
                     @if (canEdit()) {
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        [attr.aria-label]="'Place ' + p.commonName"
-                        [attr.aria-pressed]="armedPlant()?.id === p.id"
-                        (pointerdown)="onArmPointerDown($event, p)"
-                      >
-                        Place
-                      </button>
+                      @if (confirmRemoveId() !== p.id) {
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          [attr.aria-label]="'Remove from bed ' + p.commonName"
+                          (click)="confirmRemoveId.set(p.id)"
+                        >
+                          Remove
+                        </button>
+                      } @else {
+                        <span class="member-actions">
+                          <button
+                            type="button"
+                            class="btn btn-primary"
+                            [attr.aria-label]="'Confirm remove ' + p.commonName"
+                            (click)="removeFromBed(p)"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            (click)="confirmRemoveId.set(null)"
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      }
                     }
                   </li>
                 }
               </ul>
             }
-          </section>
-          @if (inBed().length) {
-            <h3>In this bed</h3>
-            <ul class="card-list">
-              @for (p of inBed(); track p.id) {
-                <li class="row">
-                  <span>{{ plantingLabel(p) }}</span>
-                  @if (canEdit()) {
-                    @if (confirmRemoveId() !== p.id) {
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        [attr.aria-label]="'Remove from bed ' + p.commonName"
-                        (click)="confirmRemoveId.set(p.id)"
-                      >
-                        Remove
-                      </button>
-                    } @else {
-                      <span class="member-actions">
-                        <button
-                          type="button"
-                          class="btn btn-primary"
-                          [attr.aria-label]="'Confirm remove ' + p.commonName"
-                          (click)="removeFromBed(p)"
-                        >
-                          Confirm
-                        </button>
-                        <button type="button" class="btn btn-secondary" (click)="confirmRemoveId.set(null)">
-                          Cancel
-                        </button>
-                      </span>
-                    }
-                  }
-                </li>
-              }
-            </ul>
-          }
-          <og-planting-tray
-            [plantings]="trayPlantings()"
-            [canEdit]="canEdit()"
-            [online]="online()"
-            (startDrag)="onTrayStart($event)"
-            (offlineRequired)="onOfflineRequired()"
-          />
-        </aside>
-      </div>
-    }
+            <og-planting-tray
+              [plantings]="trayPlantings()"
+              [canEdit]="canEdit()"
+              [online]="online()"
+              (startDrag)="onTrayStart($event)"
+              (offlineRequired)="onOfflineRequired()"
+            />
+          </aside>
+        </div>
+      }
     </div>
   `,
 })
@@ -331,9 +364,7 @@ export class GardenBedViewPage implements OnInit {
           target = { kind: 'bed', bedId: hit.bedId, planX: plan.x, planY: plan.y };
         } else if (hit.kind === 'planting') {
           const bedId = d.plantings.find((p) => p.id === hit.plantingId)?.placement?.bedId;
-          target = bedId
-            ? { kind: 'bed', bedId, planX: plan.x, planY: plan.y }
-            : { kind: 'empty' };
+          target = bedId ? { kind: 'bed', bedId, planX: plan.x, planY: plan.y } : { kind: 'empty' };
           if (target.kind === 'empty') this.onMissedBed();
         } else {
           target = { kind: 'empty' };
@@ -446,7 +477,9 @@ export class GardenBedViewPage implements OnInit {
   }
 
   onCatalog(items: PlantSummaryDto[]) {
-    this.catalogHits.set(items.filter((plant) => allowsPlant(this.bed()?.station, plant.plantType)));
+    this.catalogHits.set(
+      items.filter((plant) => allowsPlant(this.bed()?.station, plant.plantType)),
+    );
   }
 
   shownFavorites() {
@@ -617,7 +650,14 @@ export class GardenBedViewPage implements OnInit {
   private applyDrop(plantingId: string, before: LayoutPlantingDto, target: DropTarget) {
     const d = this.draft();
     if (!d) return;
-    const plantings = applyPlantingDrop(d.plantings, d.beds, plantingId, before, target, this.bedId);
+    const plantings = applyPlantingDrop(
+      d.plantings,
+      d.beds,
+      plantingId,
+      before,
+      target,
+      this.bedId,
+    );
     if (target.kind === 'bed') {
       const outcome = plantingDropOutcome(d.beds, plantings, plantingId);
       if (outcome !== 'ok') {

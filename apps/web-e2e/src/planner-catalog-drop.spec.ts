@@ -1,12 +1,15 @@
 import { expect, test } from '@playwright/test';
-import { applyPlantSearch,
+import {
+  applyPlantSearch,
   createSizedBed,
   inviteViewer,
   newUser,
   openConfiguration,
   openOverview,
   saveGarden,
-  saveLayout, confirmFixtureAddress } from './planner-helpers';
+  saveLayout,
+  confirmFixtureAddress,
+} from './planner-helpers';
 
 test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed marks', async ({
   browser,

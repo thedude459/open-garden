@@ -62,7 +62,10 @@ export class AreaRepository {
           updatedAt: new Date(),
         })
         .where(
-          and(eq(gardenNonPlantingAreas.gardenId, gardenId), eq(gardenNonPlantingAreas.id, input.id)),
+          and(
+            eq(gardenNonPlantingAreas.gardenId, gardenId),
+            eq(gardenNonPlantingAreas.id, input.id),
+          ),
         )
         .returning();
       return row!;

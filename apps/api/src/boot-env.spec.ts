@@ -11,7 +11,10 @@ describe('assertBootEnv', () => {
     expect(() => assertBootEnv({ DATABASE_URL: 'postgresql://x' })).not.toThrow();
     // An old .env that still sets it keeps working.
     expect(() =>
-      assertBootEnv({ DATABASE_URL: 'postgresql://x', SESSION_SECRET: 'dev-only-change-me-in-production' }),
+      assertBootEnv({
+        DATABASE_URL: 'postgresql://x',
+        SESSION_SECRET: 'dev-only-change-me-in-production',
+      }),
     ).not.toThrow();
   });
 
