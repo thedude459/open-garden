@@ -25,8 +25,10 @@ get an ADR.
 | Decide licensing | See [Licensing](#licensing). Fix the mismatch: `LICENSE` is GPLv2, `package.json` says MIT. |
 | Docker-only install docs | README "Quick start" becomes `docker compose --profile app up -d`. Host-mode dev loop, NAS notes, and test commands move to `CONTRIBUTING.md`. Add a short "Deploying" page with environment variables only (no platform-specific steps). |
 | Publish images | Build and push `api` and `web` images to GHCR on tagged releases so operators don't need to build from source. Ship a `compose.yaml` that uses the published images. |
-| Isolate e2e data | The Docker stack's catalog and property list show leftover test rows ("Load Tomato" ×N, "Clickthrough …" properties). e2e must use its own database or Compose project name. |
+| Isolate e2e data | Done on branch `fix-stability-step-1`: `scripts/ci/e2e.sh` defaults to an `open_garden_e2e` database and creates it if missing. Existing test rows in the app database still need a one-time cleanup (or a fresh volume). |
 | Remove filler fixtures | `FixturePlantProvider` ships 40 "Pipeline Extra N" plants. Keep test fixtures in test code only. |
+| Migrations | `sync-cli.ts` re-runs **every** SQL file on every boot and relies on `IF NOT EXISTS`; nothing records what has run. Data-changing statements therefore repeat forever — `0012` runs `DELETE FROM garden_beds WHERE kind = 'orchard'` on each start, and the bed PATCH API still accepts `kind: "orchard"`, so such a bed is deleted on the next restart. **Fix:** apply migrations with Drizzle's migrator (the `meta/_journal.json` it needs already exists), which records applied files in a table. **Squash while pre-1.0:** right before the Phase 1 crop/variety change, replace `0001`–`0012` with one idempotent baseline (existing databases are already at that schema, so it is a no-op for them) and mark it applied. After the first tagged release, released migrations are never edited — only new ones are added. |
+| Repo clutter | `doc/` holds three empty generated files (an unused doc generator's output, committed by accident) — delete. `.superdesign/`: keep `design-system.md` as `docs/design-system.md`; delete the generated `init/` snapshots and `resume.json`. `.cursor/`: only needed if you use Cursor; its `ponytail.mdc` style rule can move into `AGENTS.md`, which Cursor reads anyway. |
 
 ### Open-source project hygiene
 
@@ -189,7 +191,9 @@ page.
 ### Data model (v1)
 
 - **Crop** (species level): id, common names (by locale), scientific name,
-  family, plant type, life cycle (annual/biennial/perennial), frost
+  family, plant type, **growth habit** (tree, shrub, cane, vine,
+  herbaceous), **use** (fruit, nut, vegetable, herb, flower), life cycle
+  (annual/biennial/perennial), frost
   tolerance (tender/half-hardy/hardy), min/opt/max growing temperature,
   sun, water, spacing (in-row, between-row), depth, germination days,
   sowing windows relative to frost (indoor start, direct sow, transplant),
@@ -207,6 +211,32 @@ pointing at it. Companion pairs move from per-garden to catalog data; a
 household can still add or override its own pairs. This needs a principle
 VIII change in `AGENTS.md`, since that principle says companion pairs stay
 household data until a real source exists.
+
+### Area types
+
+Decided (November 2026): areas are typed, each type accepts plants by growth
+habit and use, mismatches are **blocked**, and bramble is its own type.
+
+| Area type | Accepts | Blocks |
+|---|---|---|
+| Vegetable | Herbaceous vegetables, herbs, flowers | Trees, shrubs, canes |
+| Orchard | Fruit and nut trees; herbaceous underplanting in a tree's bed | Canes, other shrubs, vegetables as main plantings |
+| Bramble | Cane fruit (raspberry, blackberry and hybrids) | Trees, vegetables |
+| Greenhouse (trays) | Seedlings of herbaceous plants | Trees, shrubs, canes |
+
+- The rules live in one list in code (`libs/shared-types`), shared by API
+  validation and the planner UI, so the planner can grey out plants an area
+  will not take and explain why. Adding a type (berry bushes, herb spiral,
+  perennial border) is one entry plus its rules.
+- Replace the `garden_areas.kind` CHECK constraint with validation against
+  that list, so a new type needs no constraint migration.
+- "Add berry patch" on the Overview becomes "Add bramble area"; existing
+  berry stations in orchards move to a bramble area in a migration.
+- Remove the legacy `garden_beds.kind` (`bed`/`orchard`) column and its API
+  field. It predates areas, and migration 0012 deletes `kind = 'orchard'`
+  beds on every boot (see the migrations item in Phase 0).
+- Needs the dataset's habit and use fields, so it ships with or after the
+  first dataset import.
 
 ### Sources (all compatible with CC0 output)
 
@@ -286,7 +316,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 11 | Property cards say "0 placements" and show only zone. | Small map or layout thumbnail, plant count, next task. Plain words ("plants", not "placements"). |
 | 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | Fix header layout; on mobile the canvas is view-first with a bottom sheet for actions. |
 | 13 | Vocabulary varies: Transplant View, Planting tray, Direct seed, placements. | Glossary in `AGENTS.md`; one term per concept. Fold Transplants into a "Seed starting" section of Calendar. |
-| 14 | Brand mark renders as a plain dark circle. | Real icon/wordmark; reuse for PWA icons. |
+| 14 | Brand mark is a plain leaf-green circle. This is intentional in `.superdesign/design-system.md` ("solid leaf-green circle on sage"), but it reads as a missing image. | Revisit with the design system during the redesign; keep it if it is the chosen mark. |
 | 15 | Six per-garden nav items. | Four: **Plan** (layout + plantings), **Calendar** (incl. seed starting), **Tasks**, **Settings**. |
 
 Also: guided first run (name → location → climate auto-filled → pick crops
