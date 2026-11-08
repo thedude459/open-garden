@@ -75,6 +75,21 @@ export class AuthService {
     return row ? mapUser(row.user) : null;
   }
 
+  /**
+   * Give an existing account the admin role. Never creates an account: email
+   * addresses are not verified, so promoting at sign-up would let whoever
+   * registers the address first become admin. Returns false when no account
+   * has that email yet.
+   */
+  async promoteToAdmin(email: string): Promise<boolean> {
+    const rows = await this.db
+      .update(users)
+      .set({ role: 'admin' })
+      .where(eq(users.email, email.trim().toLowerCase()))
+      .returning({ id: users.id });
+    return rows.length > 0;
+  }
+
   async ensureAdmin(email: string, password: string): Promise<AuthUser> {
     const existing = await this.login(email, password);
     if (existing) {

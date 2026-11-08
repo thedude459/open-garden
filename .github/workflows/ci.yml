@@ -216,7 +216,6 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://open_garden:open_garden@localhost:5432/open_garden
-      SESSION_SECRET: ci-session-secret
       CORS_ORIGIN: http://localhost:4200
       PLANT_PROVIDER: fixture
       CI: true

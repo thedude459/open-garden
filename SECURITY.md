@@ -36,6 +36,6 @@ In scope: the API, the web app, the Docker images and Compose files in this
 repository, and their default configuration.
 
 Out of scope: problems that need an operator to weaken the documented setup
-(for example a reused `SESSION_SECRET`, demo users left enabled in production,
+(for example the default `POSTGRES_PASSWORD`, demo users left enabled in production,
 or exposing Postgres to the internet), and vulnerabilities in dependencies that
 are already tracked by an upstream advisory — Dependabot picks those up.

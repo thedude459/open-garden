@@ -24,7 +24,6 @@ You need [Docker](https://docs.docker.com/get-docker/) with Compose v2
 
    ```bash
    cat > .env <<EOF
-   SESSION_SECRET=$(openssl rand -hex 32)
    POSTGRES_PASSWORD=$(openssl rand -hex 24)
    SEED_DEMO_USERS=false
    PLACE_PROVIDER=live

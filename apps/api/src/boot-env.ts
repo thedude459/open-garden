@@ -1,6 +1,9 @@
-const REQUIRED = ['SESSION_SECRET', 'DATABASE_URL'] as const;
-const EXAMPLE_SECRET = 'dev-only-change-me-in-production';
+const REQUIRED = ['DATABASE_URL'] as const;
 
+/**
+ * Fail fast on configuration the API cannot run with. Sessions are random
+ * tokens stored hashed in Postgres, so there is no signing secret to check.
+ */
 export function assertBootEnv(env: NodeJS.ProcessEnv = process.env): void {
   for (const key of REQUIRED) {
     const value = env[key];
@@ -8,10 +11,9 @@ export function assertBootEnv(env: NodeJS.ProcessEnv = process.env): void {
       throw new Error(`${key} is required`);
     }
   }
-  if (env['SEED_DEMO_USERS'] === 'false' && env['SESSION_SECRET']?.trim() === EXAMPLE_SECRET) {
-    throw new Error(
-      'SESSION_SECRET must not be the example value when SEED_DEMO_USERS is false',
-    );
+  const adminEmail = env['ADMIN_EMAIL']?.trim();
+  if (adminEmail && !/^[^\s@]+@[^\s@]+$/.test(adminEmail)) {
+    throw new Error(`ADMIN_EMAIL is not an email address: ${adminEmail}`);
   }
 }
 

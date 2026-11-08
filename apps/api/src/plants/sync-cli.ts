@@ -27,6 +27,15 @@ async function main() {
     await auth.ensureAdmin('admin@example.com', 'password123');
     await auth.register('gardener@example.com', 'password123', 'Gardener').catch(() => undefined);
   }
+  const adminEmail = process.env['ADMIN_EMAIL']?.trim();
+  if (adminEmail) {
+    const promoted = await auth.promoteToAdmin(adminEmail);
+    console.log(
+      promoted
+        ? `ADMIN_EMAIL: ${adminEmail} has the admin role`
+        : `ADMIN_EMAIL: no account for ${adminEmail} yet; register it, then restart the API`,
+    );
+  }
 
   const plants = new PlantRepository(db);
   if (seedOnly) {
