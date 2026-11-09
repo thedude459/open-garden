@@ -26,6 +26,6 @@ test('20-garden list shows counts within 2s without per-row data GETs', async ({
   const interactiveMs = Date.now() - started;
   expect(interactiveMs, `garden list interactive_ms=${interactiveMs}`).toBeLessThan(2000);
   await expect(page.getByText(/0 beds/)).toHaveCount(20);
-  await expect(page.getByText(/0 placements/)).toHaveCount(20);
+  await expect(page.getByText(/0 plants in beds/)).toHaveCount(20);
   expect(extra, extra.join('\n')).toEqual([]);
 });

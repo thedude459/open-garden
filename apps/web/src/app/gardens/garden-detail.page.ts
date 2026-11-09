@@ -194,13 +194,14 @@ import { PlannerDraftService } from './planner-draft.service';
           }
           <select
             name="lastMonth"
+            aria-label="Last frost month"
             [ngModel]="emptyIfNull(lastMonth)"
             (ngModelChange)="lastMonth = toOptionalNumber($event)"
             [disabled]="!canEdit()"
           >
             <option value="">Month</option>
-            @for (m of months; track m) {
-              <option [value]="m">{{ m }}</option>
+            @for (m of months; track m.value) {
+              <option [value]="m.value">{{ m.label }}</option>
             }
           </select>
           <input
@@ -209,6 +210,7 @@ import { PlannerDraftService } from './planner-draft.service';
             max="31"
             [(ngModel)]="lastDay"
             name="lastDay"
+            aria-label="Last frost day"
             placeholder="Day"
             [disabled]="!canEdit()"
           />
@@ -220,13 +222,14 @@ import { PlannerDraftService } from './planner-draft.service';
           }
           <select
             name="firstMonth"
+            aria-label="First frost month"
             [ngModel]="emptyIfNull(firstMonth)"
             (ngModelChange)="firstMonth = toOptionalNumber($event)"
             [disabled]="!canEdit()"
           >
             <option value="">Month</option>
-            @for (m of months; track m) {
-              <option [value]="m">{{ m }}</option>
+            @for (m of months; track m.value) {
+              <option [value]="m.value">{{ m.label }}</option>
             }
           </select>
           <input
@@ -235,6 +238,7 @@ import { PlannerDraftService } from './planner-draft.service';
             max="31"
             [(ngModel)]="firstDay"
             name="firstDay"
+            aria-label="First frost day"
             placeholder="Day"
             [disabled]="!canEdit()"
           />
@@ -411,7 +415,11 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   inviteEmail = '';
   inviteRole: 'collaborator' | 'viewer' = 'collaborator';
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-  months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  /** Month names in the browser's language; the saved value stays 1–12. */
+  months = Array.from({ length: 12 }, (_, i) => ({
+    value: i + 1,
+    label: new Date(2024, i, 1).toLocaleString(undefined, { month: 'long' }),
+  }));
   private mapGen = 0;
   private mapWatch: ReturnType<typeof setTimeout> | null = null;
 

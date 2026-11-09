@@ -22,7 +22,7 @@ test('planner transplants: add/delete, viewer cannot mutate, indoor items stay o
   await owner.getByRole('link', { name: /Planner transplants/ }).click();
   await openOverview(owner);
   await owner.getByRole('link', { name: 'Transplants' }).click();
-  await expect(owner.getByRole('heading', { name: 'Transplant View' })).toBeVisible();
+  await expect(owner.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
   await addTransplant(owner, 'Cherry Tomato');
   await expect(owner.getByText(/Cherry Tomato · started/)).toBeVisible();
 

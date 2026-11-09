@@ -38,7 +38,7 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
-    .getByLabel('Planting tray')
+    .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Cherry Tomato' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
   expect((await saveLayout(owner)).status()).toBe(200);

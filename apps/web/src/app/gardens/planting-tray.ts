@@ -5,8 +5,8 @@ import type { LayoutPlantingDto } from '@open-garden/shared-types';
   standalone: true,
   selector: 'og-planting-tray',
   template: `
-    <section class="unplaced-tray" aria-label="Planting tray">
-      <h3>Planting tray</h3>
+    <section class="unplaced-tray" aria-label="Waiting transplants">
+      <h3>Waiting transplants</h3>
       @if (!plantings().length) {
         <p class="muted">No transplants waiting.</p>
       } @else {

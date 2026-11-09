@@ -98,7 +98,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
   await page
-    .getByLabel('Planting tray')
+    .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Cherry Tomato' })
     .dragTo(page.locator('[data-bed-name="East"]'));
   expect((await saveLayout(page)).status()).toBe(200);
@@ -109,12 +109,12 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
   await page
-    .getByLabel('Planting tray')
+    .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Sweet Basil' })
     .dragTo(page.locator('[data-bed-name="East"]'));
   await expect(page.getByLabel('Notification')).toContainText('Too close to another plant');
   await expect(
-    page.getByLabel('Planting tray').getByRole('button', { name: 'Sweet Basil' }),
+    page.getByLabel('Waiting transplants').getByRole('button', { name: 'Sweet Basil' }),
   ).toBeVisible();
 
   await page.route('**/api/gardens/**/layout**', async (route) => {
@@ -181,7 +181,7 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   const dismiss = page.getByRole('button', { name: 'Dismiss' });
   if (await dismiss.isVisible()) await dismiss.click();
   await page.getByRole('link', { name: 'Transplants' }).click();
-  await expect(page.getByRole('heading', { name: 'Transplant View' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
   await page.context().setOffline(true);
   await page.locator('input[name="transplantSearch"]').fill('Cherry Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();

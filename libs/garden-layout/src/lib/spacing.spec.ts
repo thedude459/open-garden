@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { fitClearance, pairRequiredSpacing, placementFits, remainingGridCount } from './spacing';
+import {
+  fitClearance,
+  fitsInBed,
+  pairRequiredSpacing,
+  placementFits,
+  remainingGridCount,
+} from './spacing';
 
 describe('spacing helpers', () => {
+  it('a plant fits a bed only when the bed is at least its spacing both ways', () => {
+    expect(fitsInBed(48, 24, 24)).toBe(true);
+    expect(fitsInBed(48, 23, 24)).toBe(false);
+    expect(fitsInBed(10, 10, null)).toBe(true);
+  });
+
   it('uses the larger known spacing and skips unknown pairs', () => {
     expect(pairRequiredSpacing(12, 24)).toBe(24);
     expect(pairRequiredSpacing(null, 24)).toBeNull();

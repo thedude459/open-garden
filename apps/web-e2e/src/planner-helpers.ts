@@ -128,7 +128,7 @@ export async function createSizedBed(page: Page, name: string, length = '8', wid
 }
 
 export async function addTransplant(page: Page, name: string, date = '2026-03-01') {
-  await expect(page.getByRole('heading', { name: 'Transplant View' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
   const search = page.locator('input[name="transplantSearch"]');
   await expect(search).toBeVisible();
   await search.fill(name);

@@ -21,6 +21,7 @@ export { assertCompleteGeometry, isOrientation } from './lib/geometry';
 export {
   pairRequiredSpacing,
   fitClearance,
+  fitsInBed,
   placementFits,
   centerDistance,
   remainingGridCount,

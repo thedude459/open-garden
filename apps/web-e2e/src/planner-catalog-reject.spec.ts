@@ -25,7 +25,7 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   const arm = owner.getByRole('button', { name: 'Place Sweet Basil' });
   await expect(arm).toBeVisible();
   await arm.dragTo(owner.getByRole('heading', { name: 'Bed View' }));
-  await expect(owner.getByLabel('Notification')).toContainText('Drop missed a bed');
+  await expect(owner.getByLabel('Notification')).toContainText('Place it inside the bed');
   await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toHaveCount(0);
   await expect(arm).toHaveAttribute('aria-pressed', 'false');
 
@@ -46,12 +46,24 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await owner
     .getByRole('button', { name: 'Place Honeycrisp Apple' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
-  await expect(owner.getByLabel('Notification')).toContainText('Does not fit in this bed');
+  await expect(owner.getByLabel('Notification')).toContainText(
+    /Too big for this bed: needs [\d.]+ ft of space/,
+  );
   await expect(owner.getByRole('img', { name: 'Honeycrisp Apple' })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Dismiss' }).click();
   await applyPlantSearch(owner, 'Spinach');
   await expect(owner.getByRole('button', { name: 'Place Spinach' })).toBeVisible();
+  // 1.5 in from the corner of the 96 × 48 in bed: inside it, but Spinach (6 in
+  // spacing) needs 3 in from the edge.
+  await owner.getByRole('button', { name: 'Place Spinach' }).click();
+  const bed = owner.locator('[data-bed-name="North"]');
+  const box = await bed.boundingBox();
+  expect(box).toBeTruthy();
+  await bed.click({ position: { x: (box!.width * 1.5) / 96, y: (box!.height * 1.5) / 48 } });
+  await expect(owner.getByLabel('Notification')).toContainText('Too close to the bed edge');
+  await expect(owner.getByRole('img', { name: 'Spinach' })).toHaveCount(0);
+  await owner.getByRole('button', { name: 'Dismiss' }).click();
   await owner.context().setOffline(true);
   await owner
     .getByRole('button', { name: 'Place Spinach' })
