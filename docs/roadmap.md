@@ -106,7 +106,7 @@ planner load, plant search) are tested.
 | 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | Integration tests against a real Postgres (Testcontainers or the CI service) with per-test transactions or schemas; include them in a second coverage report. |
 | 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | Use a separate database for e2e (e.g. `open_garden_e2e`, created by the script) or a separate Compose project. |
 | 5 | Some "contract" tests assert values they constructed themselves. | **Done:** 19 self-checking tests removed from `apps/api-e2e` (3 files emptied and deleted). Each behaviour they named is covered by a live HTTP, domain unit, or Playwright test. |
-| 6 | API controllers, guards, and session handling are covered only by the live HTTP specs, which are skipped in the Vitest run and not counted in coverage. | Run live HTTP specs with coverage in the e2e job (or test controllers with Nest's testing module and in-memory repos) and merge the reports. |
+| 6 | API controllers, guards, and session handling were only exercised by live HTTP specs, which coverage did not count. | **Done:** live-test coverage is measured and reported (`apps/api` 76% unit + live). Controller tests for edge cases follow in coverage step 4. |
 | 7 | No accessibility tests. | `@axe-core/playwright` checks on each main page; fail on serious/critical issues. Pairs with the Phase 3 accessibility pass. |
 | 8 | Browser tests run only in desktop Chromium, but the app has a mobile layout (the header overlap bug in Phase 3 would have been caught). | Add a mobile project (Pixel/iPhone viewport) for a tagged smoke subset; optionally WebKit for the PWA. |
 | 9 | Wall-clock budgets (`< 2000 ms`) run inside the functional e2e job on shared CI runners, which invites flaky failures. | Keep budgets but tag them (`@perf`), run them in their own step with a warm-up, and report timings as an artifact. |
@@ -115,7 +115,7 @@ planner load, plant search) are tested.
 | 12 | No visual regression baseline. | Optional, after the Phase 3 redesign settles: Playwright screenshot comparisons for a handful of key screens. |
 | 13 | **Bug found during the e2e run:** `createDb` in `libs/plant-catalog-data/src/lib/db.ts` builds a `pg` `Pool` with no `'error'` listener. When Postgres dropped an idle connection, Node threw an unhandled `'error'` event and the whole API process exited. In production, any database restart or network blip takes the API down until Docker restarts it. | Add `pool.on('error', …)` that logs and lets the pool reconnect; set a Compose `restart: unless-stopped` policy; add a test that kills a pooled connection and checks the API still answers. Fix in step 1. |
 | 14 | **Flaky test found by running the suite twice:** `createSizedBed` in `apps/web-e2e/src/planner-helpers.ts` checks `await vegetable.count() === 0` before adding a vegetable garden. `count()` does not wait, so when the area list has not rendered yet after navigating back to Overview, the helper adds a second vegetable garden and `planner-beds.spec.ts` fails with a strict-mode violation. Passed in run 1, failed in run 2. | Wait for the layout to finish loading (e.g. a loaded marker or the bed list) before branching, or create the area through the API in setup. Audit other `count()`-then-act helpers. Add a nightly `--repeat-each=3` job to surface flakes before they reach PRs. |
-| 15 | e2e runs the API with `tsx` and the web app with the Angular dev server, not the Docker images people actually run. The one `stack-compose` check is skipped unless `STACK_E2E=1`. | Once images are built in CI (hygiene item 5), run the Playwright suite against the Compose stack, as Immich does. Keep the fast host-mode run for local work. |
+| 15 | e2e ran the API with `tsx` and the web app with the Angular dev server, not what people run. | **API done:** e2e now runs the API from the same esbuild bundle the image ships. Still to do: run Playwright against the Compose stack (web image), and upload the API log when e2e fails. |
 | 16 | No machine-readable results: CI keeps only the HTML report on failure. | Add the JUnit reporter and publish results to the PR (test summary), so slow and flaky tests are visible over time. |
 
 #### How this compares with similar open-source projects
@@ -170,14 +170,19 @@ measures the domain libraries only.
 
 **Steps**
 
-1. **Count the live tests.** Run the API with `NODE_V8_COVERAGE` during
-   `scripts/ci/e2e.sh`, convert it with `c8`, and merge it with the Vitest
-   report so `apps/api` and `libs/plant-catalog-data` show what the live HTTP
-   and Playwright suites really cover. Publish both numbers in the job summary.
-2. **Ratchet.** Add per-area thresholds to `vitest.coverage-all.config.ts` (and
-   the merged report from step 1) set to today's numbers, rounded down. A pull
-   request that lowers an area fails; a pull request that adds tests raises the
-   floor in the same change.
+1. **Count the live tests. Done:** `scripts/ci/e2e.sh` runs the API from the
+   esbuild bundle under `NODE_V8_COVERAGE` (`E2E_COVERAGE=1` in CI);
+   `scripts/ci/coverage-e2e.mjs` maps it to the TypeScript sources and
+   `coverage-summary.js --e2e` combines it with the unit run line by line.
+   Result (November 2026): **unit 31% → unit + live 44%**; `apps/api` 12% → 76%,
+   `libs/plant-catalog-data` 14% → 87%, `libs/seasonal-plantings` 66% → 85%.
+   The web app's browser code (1%) is not measured yet — Playwright browser
+   coverage is a later step.
+2. **Ratchet. Done:** `scripts/ci/coverage-floors.json` holds today's unit
+   coverage per area (rounded down); `verify` fails when an area drops below its
+   floor. Pull requests that add tests raise the floor. A combined
+   (unit + live) ratchet can follow once those numbers have been stable for a
+   few weeks.
 3. **Database integration tests** for `libs/plant-catalog-data`, against
    throwaway databases like `apps/api-e2e/src/migrations-db.spec.ts`. In order:
    garden and membership repositories (who can see what), beds and plantings

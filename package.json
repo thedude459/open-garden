@@ -14,7 +14,7 @@
     "migrate:generate": "drizzle-kit generate --config=libs/plant-catalog-data/drizzle.config.ts",
     "test": "bash scripts/ci/test.sh",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:all": "vitest run --coverage --config vitest.coverage-all.config.ts && node scripts/ci/coverage-summary.js",
+    "test:coverage:all": "vitest run --coverage --config vitest.coverage-all.config.ts && node scripts/ci/coverage-summary.js --check scripts/ci/coverage-floors.json",
     "test:all": "npm test && npm run e2e",
     "lint": "nx run-many -t lint --all",
     "format": "prettier --write .",
@@ -64,10 +64,12 @@
     "@vitest/coverage-v8": "^5.1.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.14.0",
+    "istanbul-lib-coverage": "^3.2.2",
     "nx": "^24.0.3",
     "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
+    "v8-to-istanbul": "^9.3.0",
     "vitest": "^5.1.0"
   },
   "overrides": {

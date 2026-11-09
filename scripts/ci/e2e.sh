@@ -149,7 +149,18 @@ fi
 node scripts/ci/ensure-database.js
 npx nx run api:sync-plants
 
-PORT=3000 npx tsx apps/api/src/main.ts &
+# Run the API from the same esbuild bundle the Docker image ships.
+node scripts/docker/build-api.mjs >/dev/null
+API_ENV=(PORT=3000)
+API_NODE_ARGS=(--enable-source-maps)
+if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
+  # Record which API code the live HTTP and Playwright suites exercise.
+  rm -rf coverage/e2e
+  mkdir -p coverage/e2e/v8
+  API_ENV+=("NODE_V8_COVERAGE=${ROOT}/coverage/e2e/v8")
+  API_NODE_ARGS+=(--import ./scripts/ci/coverage-flush.mjs)
+fi
+env "${API_ENV[@]}" node "${API_NODE_ARGS[@]}" dist/api-runtime/main.js &
 API_PID=$!
 
 PORT=4200 npx nx serve web --configuration=production --host=0.0.0.0 --port=4200 &
@@ -165,6 +176,13 @@ E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache || LIVE_STATUS=$?
 E2E_LIVE=1 E2E_DB_RECONNECT=1 npx vitest run --config vitest.config.ts \
   apps/api-e2e/src/db-reconnect-http.spec.ts || LIVE_STATUS=$?
 npx nx e2e web-e2e || PW_STATUS=$?
+if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
+  # Stop the API cleanly so Node writes its coverage, then map it to the sources.
+  kill -TERM "${API_PID}" 2>/dev/null || true
+  wait "${API_PID}" 2>/dev/null || true
+  API_PID=""
+  node scripts/ci/coverage-e2e.mjs coverage/e2e/v8 coverage/e2e/coverage-final.json || true
+fi
 if [[ "${LIVE_STATUS}" -ne 0 || "${PW_STATUS}" -ne 0 ]]; then
   echo "e2e failed (live HTTP=${LIVE_STATUS} playwright=${PW_STATUS})"
   exit 1

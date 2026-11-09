@@ -41,7 +41,9 @@ jobs:
           node scripts/ci/license-check.js
       - name: Test
         run: bash scripts/ci/test.sh
-      - name: Whole-codebase coverage (report only)
+      - name: Whole-codebase coverage and per-area ratchet
+        # Reports every app and lib; fails if any area drops below its floor in
+        # scripts/ci/coverage-floors.json.
         run: |
           node scripts/ci/coverage-summary.js selfcheck
           npm run test:coverage:all
@@ -290,6 +292,8 @@ jobs:
       PLANT_PROVIDER: fixture
       PLANT_TEST_FIXTURES: 'true'
       CI: true
+      # Measure which API code the live HTTP and Playwright suites exercise.
+      E2E_COVERAGE: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -343,6 +347,19 @@ jobs:
       - name: End-to-end tests
         if: steps.e2e-gate.outputs.run == 'run'
         run: bash scripts/ci/e2e.sh
+      - name: Coverage with live tests
+        if: steps.e2e-gate.outputs.run == 'run'
+        run: |
+          node scripts/ci/coverage-e2e.mjs selfcheck
+          npx vitest run --coverage --config vitest.coverage-all.config.ts
+          node scripts/ci/coverage-summary.js --e2e coverage/e2e/coverage-final.json
+      - name: Upload live-test coverage
+        if: steps.e2e-gate.outputs.run == 'run'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-e2e
+          path: coverage/e2e/coverage-final.json
+          retention-days: 14
       - name: Upload Playwright results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
