@@ -358,11 +358,10 @@ attribution stored alongside.
 
 ### Plant-data issues
 
-The `plant-data` issue form lives in this repository until `open-garden-data`
-exists. When the data repository is created: move the form there, replace it
-here with an issue-chooser link to the data repository, and transfer open
-`plant-data` issues (GitHub can transfer issues between repositories with the
-same owner).
+**Done:** [`open-garden-data`](https://github.com/thedude459/open-garden-data)
+exists (schema, validator, release workflow, one example crop). The
+`plant-data` issue form moved there; this repository's issue chooser links to
+it. There were no open `plant-data` issues to transfer.
 
 ### Curation workflow
 
@@ -469,7 +468,7 @@ In rough priority order:
 | 1c | [Coverage plan](#coverage-plan) steps 1–4: measure live tests, ratchet, database integration tests, API controller tests | The real numbers and a floor that only rises come first; the database and authorization tests protect the data before Phase 1 changes the schema. |
 | 1d | [OpenSSF](#openssf): token permissions, vulnerabilities, signed releases (done in this pass); `SCORECARD_TOKEN` and the Best Practices badge (maintainer); fast-check property tests (with coverage steps 3–4) | Raise the Scorecard score and close the code-scanning alerts before inviting contributors. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | **Done.** Cheap, visible wins; no dependency on data. |
-| 3 | Phase 1 data repo + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. New repositories ship with integration tests (coverage step 3). |
+| 3 | Phase 1 data repo (**created**) + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. New repositories ship with integration tests (coverage step 3). |
 | 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
 | 5 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector | Builds on 3–4. Split pages and new screens ship with component tests (coverage step 5). |
 | 6 | Grow dataset to ~150 crops; companions from data | Runs in parallel in the data repo once the schema is stable. |

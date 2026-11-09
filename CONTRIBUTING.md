@@ -4,6 +4,10 @@ Thanks for helping. This guide covers running the app from source, the tests,
 and how changes get in. To *run* Open Garden rather than work on it, see the
 [README](README.md) and [docs/deploy.md](docs/deploy.md).
 
+Plant data (sowing windows, spacing, families, companions) lives in its own
+CC0 repository, [open-garden-data](https://github.com/thedude459/open-garden-data).
+Corrections and new crops go there, and need no TypeScript.
+
 ## Before you start
 
 - Read [AGENTS.md](AGENTS.md): the project's principles (library-first,
