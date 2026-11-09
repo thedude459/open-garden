@@ -103,10 +103,10 @@ planner load, plant search) are tested.
 |---|---|---|
 | 1 | The 80% gate measures only domain libraries. | **Done (report):** `npm run test:coverage:all` measures apps and libs without thresholds; CI posts a per-area table to the `verify` job summary and uploads the HTML report. A separate threshold for `apps/web` waits for component tests (item 2). |
 | 2 | Only 2 Angular spec files exist; no component tests. UI behaviour is tested only through slow browser runs. | Add component tests (Angular Testing Library on Vitest) for the large pages as they are split in Phase 3: planner inspector, plantings list, configuration sections. |
-| 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | Integration tests against a real Postgres (Testcontainers or the CI service) with per-test transactions or schemas; include them in a second coverage report. |
+| 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | **Done:** `*.db.spec.ts` run every repository against PGlite (real PostgreSQL in WebAssembly, migrations applied) inside the unit run — no Docker — and count in the per-area report (14% → 81%). The lib stays outside the 80% gate until the pipeline-run repository is covered too. |
 | 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | Use a separate database for e2e (e.g. `open_garden_e2e`, created by the script) or a separate Compose project. |
 | 5 | Some "contract" tests assert values they constructed themselves. | **Done:** 19 self-checking tests removed from `apps/api-e2e` (3 files emptied and deleted). Each behaviour they named is covered by a live HTTP, domain unit, or Playwright test. |
-| 6 | API controllers, guards, and session handling were only exercised by live HTTP specs, which coverage did not count. | **Done:** live-test coverage is measured and reported (`apps/api` 76% unit + live). Controller tests for edge cases follow in coverage step 4. |
+| 6 | API controllers, guards, and session handling were only exercised by live HTTP specs, which coverage did not count. | **Done:** live-test coverage is measured and reported (`apps/api` 76% unit + live). Guard tests landed with coverage step 4; controller validation edge cases follow. |
 | 7 | No accessibility tests. | `@axe-core/playwright` checks on each main page; fail on serious/critical issues. Pairs with the Phase 3 accessibility pass. |
 | 8 | Browser tests run only in desktop Chromium, but the app has a mobile layout (the header overlap bug in Phase 3 would have been caught). | Add a mobile project (Pixel/iPhone viewport) for a tagged smoke subset; optionally WebKit for the PWA. |
 | 9 | Wall-clock budgets (`< 2000 ms`) run inside the functional e2e job on shared CI runners, which invites flaky failures. | Keep budgets but tag them (`@perf`), run them in their own step with a warm-up, and report timings as an artifact. |
@@ -183,14 +183,20 @@ measures the domain libraries only.
    floor. Pull requests that add tests raise the floor. A combined
    (unit + live) ratchet can follow once those numbers have been stable for a
    few weeks.
-3. **Database integration tests** for `libs/plant-catalog-data`, against
-   throwaway databases like `apps/api-e2e/src/migrations-db.spec.ts`. In order:
-   garden and membership repositories (who can see what), beds and plantings
-   (data loss), then the pipeline repositories. New repositories from Phase 1
-   (crops, varieties, dataset import) ship with these tests from the start.
-4. **API controllers and guards** with Nest's testing module and in-memory
-   repositories, for authorization and validation edge cases the live HTTP
-   tests do not reach.
+3. **Database integration tests. Done:** `libs/plant-catalog-data/src/lib/*.db.spec.ts`
+   run against PGlite (`test-db.ts` applies the migrations to an in-process
+   PostgreSQL), so they need no Docker and count as unit coverage: gardens and
+   memberships (who can see what, one owner, transfer), beds, areas, trays,
+   favorites, plantings (property scoping, placement, bed clean-up, season
+   visibility, harvest history), catalog search and deprecation, calendar,
+   care events, season close, companion pairs, and pipeline settings.
+   `libs/plant-catalog-data` 14% → 81%. Still to cover: the pipeline-run
+   repository. New repositories from Phase 1 (crops, varieties, dataset
+   import) ship with these tests from the start.
+4. **API guards and controllers. Guards done:** `apps/api/src/auth/guards.spec.ts`
+   covers sign-in, admin, and property membership (a non-member gets 404).
+   `apps/api` 12% → 19% unit. Next: controller validation edge cases the live
+   HTTP tests do not reach.
 5. **Web services first, components with Phase 3.** The API clients, offline
    cache, and planner draft logic can be unit-tested now. Component tests
    (Angular Testing Library on Vitest) land as the large pages are split in
@@ -222,7 +228,7 @@ guidance. Status from the OpenSSF Scorecard run of November 2026 (overall
 | Signed-Releases | 0 | **Fixing:** the release workflow signs `compose.yaml` with a Sigstore provenance attestation and attaches `compose.yaml.sigstore.json`. Scorecard looks at the last five releases, so the score rises as new releases ship. Images are already attested (SBOM + provenance). |
 | Branch-Protection | ? | **Done:** `scorecard.yml` passes the `SCORECARD_TOKEN` secret (fine-grained, read-only *Administration*, renew before it expires) as `repo_token`, so the check can read the rules. Expect a partial score: required checks, no force pushes, and admins included count, but zero required approvals (single maintainer) does not. |
 | CII-Best-Practices | 0 | **Registered:** [bestpractices.dev project 16466](https://www.bestpractices.dev/projects/16466), badge in the README (in progress, 18% in November 2026). **Maintainer action:** finish the *passing* questionnaire; most criteria are already met (license, `SECURITY.md`, `CONTRIBUTING.md`, CI with tests, release notes, signed releases, static analysis). Scorecard gives partial credit while in progress and full credit at *passing*. |
-| Fuzzing | 0 | **Planned:** property-based tests with [fast-check](https://fast-check.dev/), which Scorecard recognises for TypeScript. Start where invariants are clear and bugs are costly: layout geometry and placement, frost-date and sowing-window maths (including Southern Hemisphere year-wrap from Phase 2), and request validation schemas. Ships with coverage-plan step 3–4. |
+| Fuzzing | 0 | **Done:** property-based tests with [fast-check](https://fast-check.dev/) (`*.property.spec.ts`), which Scorecard recognises for TypeScript: layout geometry, ISO dates, month-day arithmetic, and frost-pair rules. Add more with Phase 2's Southern Hemisphere maths and for request validation schemas. |
 | Code-Review | 0 | **Accepted for now:** a single maintainer cannot approve their own pull requests. When a second maintainer joins, require one approving review on `main`. |
 | Contributors | 0 | Grows with outside contributors; the issue forms, Discussions, and `CONTRIBUTING.md` are the on-ramp. |
 
@@ -390,7 +396,7 @@ year than first frost — which is every Southern Hemisphere garden.
 |---|---|
 | Frost dates anywhere | Compute from Open-Meteo historical daily minimum temperature (already used for rain outlook; no key). Median last spring / first fall day ≤ 0 °C over the last 30 years, plus a 10%-risk date. Cache per rounded lat/long. |
 | Hardiness zone anywhere | Derive from mean annual extreme minimum over the same 30 years using the USDA temperature bands (the bands are just numbers and work globally). Keep the zone label, show °C/°F. |
-| Southern Hemisphere | Treat the growing season as a range that may wrap the year end. Fix `keepFrostPair` and calendar math. |
+| Southern Hemisphere | Treat the growing season as a range that may wrap the year end. Fix `keepFrostPair` and calendar math. `planting-calendar`'s `addDays` works in a fixed leap year (2024) and drops the year, so windows that cross the year end can be a day off around 29 February (found by a fast-check property; see `month-day.property.spec.ts`). Carry the year through. |
 | Frost-free climates | Use the crop's temperature window and wet/dry season instead of frost anchors. |
 | Units | Per-user metric/imperial setting; store metric internally, display either. |
 | Locale | Month names instead of numbers, locale date formats, crop common names by locale from Wikidata. |

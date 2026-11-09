@@ -48,6 +48,7 @@ export default defineConfig({
         '**/reminders.ts',
         '**/pipeline.ts',
         '**/test-memory.ts',
+        '**/test-db.ts',
         // DB-backed modules need integration fixtures; covered separately later
         'libs/plant-catalog-data/**',
       ],
