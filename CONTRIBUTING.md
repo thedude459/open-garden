@@ -66,6 +66,20 @@ test data never lands in your app database. Set `DATABASE_URL` to override. It
 starts Docker if needed (Docker Desktop on macOS) and stops the API and web
 processes when it finishes.
 
+**Coverage.** Two numbers matter:
+
+- The **80% gate** on the domain libraries (`npm run test:coverage`).
+- The **per-area ratchet** (`npm run test:coverage:all`): every app and lib has a
+  floor in [`scripts/ci/coverage-floors.json`](scripts/ci/coverage-floors.json),
+  and CI fails if an area's unit coverage drops below it. When you add tests,
+  raise the floor in the same pull request
+  (`node scripts/ci/coverage-summary.js --write scripts/ci/coverage-floors.json`);
+  lower one only on purpose, and say why.
+
+`E2E_COVERAGE=1 npm run e2e` also records which API code the live HTTP and
+Playwright suites run; CI reports *unit* and *unit + live* coverage per area in
+the `e2e` job summary.
+
 Expectations for new code (from [AGENTS.md](AGENTS.md)):
 
 - Unit tests for domain logic; keep coverage at or above the gate.
@@ -96,13 +110,13 @@ is a required check on `main`.
 
 | Check | What it does |
 |---|---|
-| `verify` | Prettier check, affected ESLint, the Vitest coverage gate, the dependency-license check, affected builds, and a report-only whole-codebase coverage table |
+| `verify` | Prettier check, affected ESLint, the Vitest coverage gate, the per-area coverage ratchet, the dependency-license check, and affected builds |
 | `sca` | `npm audit` (high+) and Trivy filesystem scan, compared with the base so only new findings fail |
 | `secrets` | Gitleaks |
 | `workflows` | actionlint and zizmor on the GitHub Actions workflows |
 | `analyze` | CodeQL for JavaScript/TypeScript |
 | `images (api)`, `images (web)` | hadolint, image build, and Trivy image scan (fixable HIGH/CRITICAL fail); skipped for documentation-only changes |
-| `e2e` | Live HTTP, then Playwright (2 workers, no retries) against a seeded API and web app |
+| `e2e` | Live HTTP, then Playwright (2 workers, no retries) against a seeded API (run from the same bundle the Docker image ships) and web app; reports unit + live coverage |
 
 The `e2e` job passes without running browsers when a pull request only changes
 documentation, editor or formatter config, the lockfile, development

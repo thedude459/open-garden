@@ -18,7 +18,7 @@ export default defineConfig({
       provider: 'v8',
       include: ['apps/*/src/**/*.ts', 'libs/*/src/**/*.ts'],
       exclude: ['**/*.spec.ts', '**/test-memory.ts', 'apps/*-e2e/**'],
-      reporter: ['text-summary', 'json-summary', 'html'],
+      reporter: ['text-summary', 'json', 'html'],
       reportsDirectory: 'coverage/all',
     },
   },

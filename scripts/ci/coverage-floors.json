@@ -1,0 +1,18 @@
+{
+  "apps/api": 12,
+  "apps/web": 1,
+  "libs/auth": 80,
+  "libs/care-reminders": 91,
+  "libs/catalog-pipeline": 89,
+  "libs/garden-layout": 97,
+  "libs/garden-place": 97,
+  "libs/gardens": 94,
+  "libs/plant-catalog": 97,
+  "libs/plant-catalog-data": 14,
+  "libs/plant-favorites": 93,
+  "libs/plant-provider": 90,
+  "libs/planting-calendar": 98,
+  "libs/seasonal-plantings": 66,
+  "libs/shared-types": 89,
+  "libs/web-ui": 93
+}
