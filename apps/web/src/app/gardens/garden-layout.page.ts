@@ -105,7 +105,7 @@ import { EmptyState } from '../ui/empty-state';
               } @else if (flag.kind === 'spacing') {
                 Too close
               } @else if (flag.kind === 'fit') {
-                Does not fit
+                Past the bed edge
               } @else {
                 Spacing unavailable
               }

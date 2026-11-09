@@ -34,6 +34,15 @@ export function remainingGridCount(
   return count;
 }
 
+/** Whether a plant needing this spacing fits anywhere in a bed of this size. */
+export function fitsInBed(
+  lengthInches: number,
+  widthInches: number,
+  spacingInches: number | null,
+): boolean {
+  return spacingInches === null || (lengthInches >= spacingInches && widthInches >= spacingInches);
+}
+
 export function placementFits(
   xInches: number,
   yInches: number,
@@ -42,7 +51,7 @@ export function placementFits(
   spacingInches: number | null,
 ): boolean {
   if (spacingInches === null) return true;
-  if (lengthInches < spacingInches || widthInches < spacingInches) return false;
+  if (!fitsInBed(lengthInches, widthInches, spacingInches)) return false;
   const c = fitClearance(spacingInches);
   return xInches >= c && xInches <= lengthInches - c && yInches >= c && yInches <= widthInches - c;
 }

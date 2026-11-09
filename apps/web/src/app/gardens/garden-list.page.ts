@@ -141,8 +141,8 @@ import { EmptyState } from '../ui/empty-state';
             <span class="garden-facts">
               <span>{{ g.bedCount }} {{ g.bedCount === 1 ? 'bed' : 'beds' }}</span>
               <span
-                >{{ g.placementCount }}
-                {{ g.placementCount === 1 ? 'placement' : 'placements' }}</span
+                >{{ g.placementCount }} {{ g.placementCount === 1 ? 'plant' : 'plants' }} in
+                beds</span
               >
               <span>
                 @if (g.hardinessZone != null) {

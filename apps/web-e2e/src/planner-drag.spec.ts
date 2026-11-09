@@ -25,7 +25,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await openOverview(owner);
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);
-  await expect(owner.getByLabel('Planting tray')).toHaveCount(0);
+  await expect(owner.getByLabel('Waiting transplants')).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Cherry Tomato');
@@ -33,7 +33,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
 
-  const tray = owner.getByLabel('Planting tray');
+  const tray = owner.getByLabel('Waiting transplants');
   await tray
     .getByRole('button', { name: 'Cherry Tomato' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
@@ -78,15 +78,15 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await viewer.getByRole('link', { name: /Planner drag/ }).click();
   await openOverview(viewer);
   await viewer.getByRole('button', { name: 'Open bed North' }).click();
-  await expect(viewer.getByLabel('Planting tray')).toBeVisible();
+  await expect(viewer.getByLabel('Waiting transplants')).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Direct seed' })).toHaveCount(0);
-  const before = await viewer.getByLabel('Planting tray').locator('button').count();
+  const before = await viewer.getByLabel('Waiting transplants').locator('button').count();
   if (before > 0) {
     await viewer
-      .getByLabel('Planting tray')
+      .getByLabel('Waiting transplants')
       .locator('button')
       .first()
       .dragTo(viewer.locator('[data-bed-name="North"]'));
-    await expect(viewer.getByLabel('Planting tray').locator('button')).toHaveCount(before);
+    await expect(viewer.getByLabel('Waiting transplants').locator('button')).toHaveCount(before);
   }
 });

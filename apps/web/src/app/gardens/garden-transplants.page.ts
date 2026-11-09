@@ -19,7 +19,7 @@ import { PlaceMarker } from '../ui/place-marker';
   imports: [FormsModule, PlaceMarker, PlantPicker],
   template: `
     <og-place-marker [gardenId]="gardenId" [gardenName]="gardenName()" current="Transplants" />
-    <h2>Transplant View</h2>
+    <h2>Transplants</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }

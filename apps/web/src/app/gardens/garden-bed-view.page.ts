@@ -11,6 +11,8 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   catalogDropOutcome,
+  fitsInBed,
+  formatFeet,
   plantingDropOutcome,
   remainingGridCount,
 } from '@open-garden/garden-layout';
@@ -102,7 +104,7 @@ import { EmptyState } from '../ui/empty-state';
               } @else if (flag.kind === 'spacing') {
                 Too close
               } @else if (flag.kind === 'fit') {
-                Does not fit
+                Past the bed edge
               } @else {
                 Spacing unavailable
               }
@@ -348,7 +350,7 @@ export class GardenBedViewPage implements OnInit {
       const d = this.draft();
       if (!d) return;
       const el = document.elementFromPoint(ev.clientX, ev.clientY);
-      if (el?.closest('[aria-label="Planting tray"]')) {
+      if (el?.closest('.unplaced-tray')) {
         this.applyDrop(drag.plantingId, drag.before, { kind: 'tray' });
         return;
       }
@@ -538,7 +540,7 @@ export class GardenBedViewPage implements OnInit {
   private tryCatalogPlace(clientX: number, clientY: number, plant: PlantSummaryDto) {
     const canvas = this.canvas();
     if (!canvas?.containsPoint(clientX, clientY)) {
-      this.rejectCatalog('miss');
+      this.rejectCatalog('miss', plant.spacingInches);
       return;
     }
     const plan = canvas.clientToPlan(clientX, clientY);
@@ -551,7 +553,7 @@ export class GardenBedViewPage implements OnInit {
     if (!d || !bed?.geometry || !this.guardMutate()) return;
     const outcome = catalogDropOutcome(bed, d.plantings, planX, planY, plant.spacingInches);
     if (outcome !== 'ok') {
-      this.rejectCatalog(outcome);
+      this.rejectCatalog(outcome, plant.spacingInches);
       return;
     }
     const local = planToLocal(bed.geometry, planX, planY);
@@ -581,11 +583,24 @@ export class GardenBedViewPage implements OnInit {
     this.refreshFlags();
   }
 
-  private rejectCatalog(outcome: 'miss' | 'spacing' | 'fit') {
+  private rejectCatalog(outcome: 'miss' | 'spacing' | 'fit', spacingInches: number | null) {
     this.armedPlant.set(null);
-    if (outcome === 'miss') this.notices.miss('Drop missed a bed');
+    if (outcome === 'miss') this.notices.miss('Place it inside the bed');
     else if (outcome === 'spacing') this.notices.error('Too close to another plant');
-    else this.notices.error('Does not fit in this bed');
+    else this.notices.error(this.fitMessage(spacingInches));
+  }
+
+  /** A plant too big for the whole bed, or one placed too near its edge. */
+  private fitMessage(spacingInches: number | null): string {
+    const geo = this.bed()?.geometry;
+    if (
+      geo &&
+      spacingInches !== null &&
+      !fitsInBed(geo.lengthInches, geo.widthInches, spacingInches)
+    ) {
+      return `Too big for this bed: needs ${formatFeet(spacingInches)} ft of space`;
+    }
+    return 'Too close to the bed edge. Move it further in';
   }
 
   removeFromBed(planting: LayoutPlantingDto) {
@@ -661,7 +676,7 @@ export class GardenBedViewPage implements OnInit {
     if (target.kind === 'bed') {
       const outcome = plantingDropOutcome(d.beds, plantings, plantingId);
       if (outcome !== 'ok') {
-        this.rejectCatalog(outcome);
+        this.rejectCatalog(outcome, before.spacingInches);
         return;
       }
     }

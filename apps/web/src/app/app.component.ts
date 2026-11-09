@@ -25,14 +25,17 @@ import { SOURCE_CODE_URL } from './source-link';
     <div class="app">
       @if (signedIn()) {
         <div class="app-frame">
-          <button
-            type="button"
-            class="sidebar-toggle"
-            (click)="menuOpen.set(!menuOpen())"
-            [attr.aria-expanded]="menuOpen()"
-          >
-            Menu
-          </button>
+          <header class="mobile-bar">
+            <button
+              type="button"
+              class="sidebar-toggle"
+              (click)="menuOpen.set(!menuOpen())"
+              [attr.aria-expanded]="menuOpen()"
+            >
+              Menu
+            </button>
+            <span class="mobile-bar-title">{{ gardenId() ? gardenName() : 'Open Garden' }}</span>
+          </header>
           @if (menuOpen()) {
             <button
               type="button"

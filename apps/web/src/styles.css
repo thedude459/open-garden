@@ -217,7 +217,7 @@ a.source-link {
   color: inherit;
 }
 
-.sidebar-toggle,
+.mobile-bar,
 .sidebar-backdrop {
   display: none;
 }
@@ -1104,14 +1104,30 @@ legend {
 }
 
 @media (max-width: 720px) {
+  /* In the page flow, so it never covers a heading. */
+  .mobile-bar {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .mobile-bar-title {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .sidebar-toggle {
     display: inline-flex;
-    position: fixed;
-    top: 0.75rem;
-    left: 0.75rem;
-    z-index: 30;
+    flex: none;
     margin: 0;
-    align-self: flex-start;
     padding: 0.4rem 0.7rem;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -1119,12 +1135,6 @@ legend {
     color: var(--ink);
     font-weight: 600;
     cursor: pointer;
-  }
-
-  .shell > h2,
-  .back-link,
-  .page-head > :first-child {
-    padding-left: 4.75rem;
   }
 
   .plan-viewport {

@@ -176,6 +176,22 @@ behind — the smallest test that fails if the logic breaks.
 The visual design system (brand, palette, type, components) is in
 `docs/design-system.md`.
 
+## Glossary
+
+Use one word per concept, in the UI and in code comments:
+
+- **Property** — a household's garden record (the `gardens` table).
+- **Area** — a typed part of a property: vegetable garden, orchard, bramble
+  patch, or greenhouse.
+- **Bed** — a plot inside an area, raised or in-ground. An orchard is one bed
+  per tree.
+- **Tray** — a named seed-starting tray in a greenhouse. Nothing else is a tray.
+- **Planting** — one plant grown in a property, for a season or across seasons.
+- **Direct seed** — a planting sown where it grows.
+- **Transplant** — a planting started elsewhere and moved into a bed.
+  **Waiting transplants** are ones not yet in a bed.
+- **Plants in beds** — plantings placed on the plan (not "placements").
+
 ## Working in this repo
 
 - Plan a change in the pull request description: problem, approach, and how

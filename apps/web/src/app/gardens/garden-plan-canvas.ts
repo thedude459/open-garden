@@ -874,7 +874,7 @@ export class GardenPlanCanvas {
         return;
       }
       const overTray = Boolean(
-        document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[aria-label="Planting tray"]'),
+        document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.unplaced-tray'),
       );
       const hit = hitTestPlan(this.drawnBeds(), this.plantings(), plan.x, plan.y, HANDLE_INCHES);
       const target: DropTarget = overTray ? { kind: 'tray' } : this.dropTarget(hit, plan);
