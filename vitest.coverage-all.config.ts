@@ -17,7 +17,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['apps/*/src/**/*.ts', 'libs/*/src/**/*.ts'],
-      exclude: ['**/*.spec.ts', '**/test-memory.ts', 'apps/*-e2e/**'],
+      exclude: ['**/*.spec.ts', '**/test-memory.ts', '**/test-db.ts', 'apps/*-e2e/**'],
       reporter: ['text-summary', 'json', 'html'],
       reportsDirectory: 'coverage/all',
     },

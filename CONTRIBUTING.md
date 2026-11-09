@@ -83,6 +83,11 @@ the `e2e` job summary.
 Expectations for new code (from [AGENTS.md](AGENTS.md)):
 
 - Unit tests for domain logic; keep coverage at or above the gate.
+- Repository (SQL) changes get a `*.db.spec.ts` next to the repository. Use
+  `createTestDb()` from `libs/plant-catalog-data/src/lib/test-db.ts`: an
+  in-process PostgreSQL (PGlite) with every migration applied, no Docker.
+- Logic with a clear invariant (geometry, dates, ranges) gets a
+  `*.property.spec.ts` with [fast-check](https://fast-check.dev/).
 - Once a feature has UI and API, add live HTTP (`apps/api-e2e`) and Playwright
   (`apps/web-e2e`) tests. See [apps/web-e2e/CONVENTION.md](apps/web-e2e/CONVENTION.md).
 - Prefer role-based Playwright locators, and never fixed sleeps.

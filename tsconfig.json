@@ -7,5 +7,5 @@
     "types": ["node"]
   },
   "include": ["apps/api/**/*.ts", "libs/**/*.ts"],
-  "exclude": ["**/*.spec.ts", "apps/web/**", "apps/web-e2e/**"]
+  "exclude": ["**/*.spec.ts", "**/test-db.ts", "apps/web/**", "apps/web-e2e/**"]
 }
