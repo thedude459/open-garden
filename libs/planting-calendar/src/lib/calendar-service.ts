@@ -2,7 +2,6 @@ import type {
   CalendarDto,
   CalendarEntryDto,
   CalendarWindowsDto,
-  FrostAnchor,
   FrostRelativeWeeksDto,
   GardenRole,
   GrowingGuidanceDto,
@@ -154,7 +153,7 @@ function triplet(
 ): FrostRelativeWeeksDto | null {
   if (anchor !== 'last' && anchor !== 'first') return null;
   if (earliest == null || latest == null) return null;
-  return { frostAnchor: anchor as FrostAnchor, weeksEarliest: earliest, weeksLatest: latest };
+  return { frostAnchor: anchor, weeksEarliest: earliest, weeksLatest: latest };
 }
 
 function zoneMismatch(gardenZone: number | null, zoneMin: number, zoneMax: number): boolean | null {

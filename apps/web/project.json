@@ -70,7 +70,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint \"apps/web/**/*.ts\"",
+        "command": "eslint \"apps/web/**/*.ts\" \"apps/web/**/*.html\"",
         "cwd": "{workspaceRoot}"
       }
     }

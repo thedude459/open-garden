@@ -25,7 +25,7 @@ describe('CatalogService', () => {
       upsertManyByVarietyKey: vi.fn(),
     };
     const provider = { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() };
-    const service = new CatalogService(plants as never, provider as never);
+    const service = new CatalogService(plants as never, provider);
     const page = await service.list({ page: 1, pageSize: 20 });
     expect(page.totalCount).toBe(1);
     expect(page.items[0]?.spacingInches).toBe(12);
@@ -36,7 +36,7 @@ describe('CatalogService', () => {
   it('rejects invalid zone', async () => {
     const service = new CatalogService(
       { list: vi.fn(), upsertByVarietyKey: vi.fn(), upsertManyByVarietyKey: vi.fn() } as never,
-      { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() } as never,
+      { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() },
     );
     await expect(service.list({ zone: 99 })).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
@@ -85,7 +85,7 @@ describe('CatalogService', () => {
       ]),
       listPage: vi.fn(),
     };
-    const service = new CatalogService(plants as never, provider as never);
+    const service = new CatalogService(plants as never, provider);
     const page = await service.list({ q: 'tomato' });
     expect(provider.searchByName).toHaveBeenCalled();
     expect(plants.upsertManyByVarietyKey).toHaveBeenCalledTimes(1);
@@ -116,10 +116,11 @@ describe('CatalogService', () => {
       upsertByVarietyKey: vi.fn(),
       upsertManyByVarietyKey: vi.fn(),
     };
-    const service = new CatalogService(
-      plants as never,
-      { id: 'fixture', searchByName: vi.fn(), listPage: vi.fn() } as never,
-    );
+    const service = new CatalogService(plants as never, {
+      id: 'fixture',
+      searchByName: vi.fn(),
+      listPage: vi.fn(),
+    });
     const page = await service.list({});
     expect(page.items).toEqual([]);
   });
@@ -149,7 +150,7 @@ describe('CatalogService', () => {
       ]),
       listPage: vi.fn(),
     };
-    const service = new CatalogService(plants as never, provider as never);
+    const service = new CatalogService(plants as never, provider);
     await service.list({ q: 'gap' });
     expect(plants.upsertByVarietyKey).not.toHaveBeenCalled();
     expect(plants.upsertManyByVarietyKey).toHaveBeenCalledTimes(1);

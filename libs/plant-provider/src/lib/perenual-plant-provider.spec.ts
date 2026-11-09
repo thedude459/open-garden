@@ -17,7 +17,7 @@ describe('PerenualPlantProvider', () => {
         ],
       }),
     });
-    const provider = new PerenualPlantProvider('test-key', fetchImpl as unknown as typeof fetch);
+    const provider = new PerenualPlantProvider('test-key', fetchImpl);
     const results = await provider.searchByName('lavender');
     expect(results[0]?.commonName).toBe('Lavender');
     expect(results[0]?.species).toBe('Lavandula');
@@ -37,7 +37,7 @@ describe('PerenualPlantProvider', () => {
         last_page: 2,
       }),
     });
-    const provider = new PerenualPlantProvider('test-key', fetchImpl as unknown as typeof fetch);
+    const provider = new PerenualPlantProvider('test-key', fetchImpl);
     const page = await provider.listPage({ cursor: '1', limit: 10 });
     expect(page.items[0]?.plantType).toBe('tree');
     expect(page.nextCursor).toBe('2');
@@ -45,7 +45,7 @@ describe('PerenualPlantProvider', () => {
 
   it('throws when list request fails', async () => {
     const fetchImpl = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    const provider = new PerenualPlantProvider('test-key', fetchImpl as unknown as typeof fetch);
+    const provider = new PerenualPlantProvider('test-key', fetchImpl);
     await expect(provider.listPage()).rejects.toThrow(/list failed/);
   });
 });

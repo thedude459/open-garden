@@ -76,9 +76,7 @@ describe('GardenMembershipGuard', () => {
   const membership = (role: string) =>
     vi
       .spyOn(GardenMembershipRepository.prototype, 'get')
-      .mockResolvedValue(
-        role ? ({ gardenId: 'g1', userId: 'u1', role } as never) : (null as never),
-      );
+      .mockResolvedValue(role ? ({ gardenId: 'g1', userId: 'u1', role } as never) : null);
 
   it('records the member’s role for the route handler', async () => {
     const get = membership('viewer');

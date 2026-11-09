@@ -3,6 +3,7 @@ import {
   type BedGeometryDto,
   type BedOrientation,
   type GardenLayoutDto,
+  type LayoutBedDto,
   type GardenRole,
   type LayoutAreaDto,
   type LayoutPutDto,
@@ -168,16 +169,14 @@ export class LayoutService {
       this.areas.listByGarden(gardenId),
     ]);
     const advice = this.years ? await this.years.layoutAdvice(gardenId) : { prior: [], pairs: [] };
-    const beds = bedRows.map((row) => ({
+    const beds = bedRows.map((row): LayoutBedDto => ({
       id: row.id,
       name: row.name,
       geometry: toGeometry(row),
-      sun: (row.sun === 'full' || row.sun === 'part' || row.sun === 'shade' ? row.sun : null) as
-        'full' | 'part' | 'shade' | null,
-      kind: row.kind === 'orchard' ? ('orchard' as const) : ('bed' as const),
-      site: row.site === 'raised' ? ('raised' as const) : ('in_ground' as const),
-      station: (row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null) as
-        'tree' | 'berry' | null,
+      sun: row.sun === 'full' || row.sun === 'part' || row.sun === 'shade' ? row.sun : null,
+      kind: row.kind === 'orchard' ? 'orchard' : 'bed',
+      site: row.site === 'raised' ? 'raised' : 'in_ground',
+      station: row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null,
       mulch: mulchOrNone(row.mulch),
     }));
     const plantings = plantingRows.map((row) => {

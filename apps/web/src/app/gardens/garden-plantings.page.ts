@@ -641,7 +641,7 @@ export class GardenPlantingsPage implements OnInit {
     }
     const reader = new FileReader();
     reader.onload = () => {
-      this.photos[plantingId] = String(reader.result ?? '');
+      this.photos[plantingId] = typeof reader.result === 'string' ? reader.result : '';
     };
     reader.readAsDataURL(file);
   }
@@ -731,12 +731,12 @@ export class GardenPlantingsPage implements OnInit {
     // until the turn after loading flips. A microtask still runs before that.
     setTimeout(() => {
       for (const planting of this.list()?.plantings ?? []) {
-        const planted = document.querySelector(
+        const planted = document.querySelector<HTMLInputElement>(
           `input[name="planted-${planting.id}"]`,
-        ) as HTMLInputElement | null;
-        const harvested = document.querySelector(
+        );
+        const harvested = document.querySelector<HTMLInputElement>(
           `input[name="harvested-${planting.id}"]`,
-        ) as HTMLInputElement | null;
+        );
         // A late reload must not wipe a date typed before the model has it.
         if (planted && shouldSyncDate(planted, planting.plantedOn)) {
           planted.value = planting.plantedOn ?? '';

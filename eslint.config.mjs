@@ -1,8 +1,8 @@
-import tseslint from '@typescript-eslint/eslint-plugin';
-import parser from '@typescript-eslint/parser';
+import angular from 'angular-eslint';
 import nxPlugin from '@nx/eslint-plugin';
+import tseslint from 'typescript-eslint';
 
-export default [
+export default tseslint.config(
   {
     ignores: [
       'dist/**',
@@ -16,16 +16,20 @@ export default [
   },
   {
     files: ['**/*.ts'],
+    extends: [...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
-      parser,
-      parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+      parserOptions: { project: './tsconfig.eslint.json', tsconfigRootDir: import.meta.dirname },
     },
-    plugins: {
-      '@typescript-eslint': tseslint,
-      '@nx': nxPlugin,
-    },
+    plugins: { '@nx': nxPlugin },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      // Fakes and fixtures implement Promise-returning interfaces without awaiting.
+      '@typescript-eslint/require-await': 'off',
+      // Angular's HttpErrorResponse is the error HttpClient throws; it does not extend Error.
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        { allow: [{ from: 'package', package: '@angular/common', name: 'HttpErrorResponse' }] },
+      ],
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@nx/enforce-module-boundaries': [
         'error',
@@ -84,4 +88,29 @@ export default [
       ],
     },
   },
-];
+  {
+    // Vitest's asymmetric matchers and mock.calls are typed any.
+    files: ['**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-base-to-string': 'off',
+    },
+  },
+  {
+    files: ['apps/web/src/**/*.ts', 'libs/web-ui/src/**/*.ts'],
+    extends: [...angular.configs.tsRecommended],
+    processor: angular.processInlineTemplates,
+  },
+  {
+    files: ['**/*.html'],
+    extends: [...angular.configs.templateRecommended, ...angular.configs.templateAccessibility],
+    rules: {
+      // `x != null` deliberately matches both null and undefined.
+      '@angular-eslint/template/eqeqeq': ['error', { allowNullOrUndefined: true }],
+    },
+  },
+);

@@ -112,7 +112,7 @@ export class PlantingsOfflineQueue {
           continue;
         }
         if (item.op === 'create' && item.body && 'plantId' in item.body) {
-          const body = item.body as PlantingCreateDto;
+          const body = item.body;
           const existing = plantings.get(id);
           plantings.set(id, {
             id,
@@ -136,7 +136,7 @@ export class PlantingsOfflineQueue {
         }
         const current = plantings.get(id);
         if (current && item.body && !('plantId' in item.body) && !('name' in item.body)) {
-          const patch = item.body as PlantingPatchDto;
+          const patch = item.body;
           plantings.set(id, {
             ...current,
             plantedOn: patch.plantedOn !== undefined ? patch.plantedOn : current.plantedOn,
@@ -158,8 +158,7 @@ export class PlantingsOfflineQueue {
           }
           continue;
         }
-        const name =
-          item.body && 'name' in item.body ? String((item.body as { name: string }).name) : 'Bed';
+        const name = item.body && 'name' in item.body ? String(item.body.name) : 'Bed';
         const existing = beds.get(id);
         beds.set(id, {
           id,

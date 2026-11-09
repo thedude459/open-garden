@@ -156,7 +156,7 @@ export function createGardenMemory(opts?: { climate?: ClimateLookup | null }) {
     opts?.climate ?? null,
   );
   const rawCreate = service.create.bind(service);
-  service.create = (async (actorId: string, dto: GardenCreateDto) => {
+  service.create = async (actorId: string, dto: GardenCreateDto) => {
     const name = dto.name?.trim() ?? '';
     if (
       !Object.prototype.hasOwnProperty.call(dto, 'place') &&
@@ -166,7 +166,7 @@ export function createGardenMemory(opts?: { climate?: ClimateLookup | null }) {
       return rawCreate(actorId, { ...dto, place: WASHINGTON_PLACE });
     }
     return rawCreate(actorId, dto);
-  }) as typeof service.create;
+  };
   const membershipService = new MembershipService(gardenRepo as never, membershipRepo as never);
   return {
     service,
