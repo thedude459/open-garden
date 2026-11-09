@@ -98,7 +98,7 @@ export class PlantingService {
         return { created: false, list: await this.list(userId, gardenId) };
       }
     }
-    let bedId = dto.bedId ?? null;
+    const bedId = dto.bedId ?? null;
     let trayId = dto.trayId ?? null;
     if (bedId) {
       await this.requireBedInGarden(gardenId, bedId);

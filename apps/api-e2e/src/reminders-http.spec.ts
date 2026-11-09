@@ -47,7 +47,7 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
   }
 
   async function json(res: LiveResponse) {
-    return res.json() as Promise<unknown>;
+    return res.json();
   }
 
   function todayIso() {
@@ -183,9 +183,9 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
       ).json()) as ReminderList;
       expect(afterDelete.items.every((i) => i.plantingId !== herbId)).toBe(true);
     } finally {
-      await owner.dispose();
-      await viewer.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      viewer.dispose();
+      stranger.dispose();
     }
   });
 });

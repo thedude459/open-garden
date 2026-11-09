@@ -130,7 +130,7 @@ describe.skipIf(!liveEnabled)('layout http', () => {
   }
 
   async function json(res: LiveResponse) {
-    return res.json() as Promise<unknown>;
+    return res.json();
   }
 
   function bedPut(
@@ -338,9 +338,9 @@ describe.skipIf(!liveEnabled)('layout http', () => {
       expect(viewerPut.status()).toBe(403);
       expect(errorMessage(await json(viewerPut))).toBe('Viewers cannot update layout');
     } finally {
-      await owner.dispose();
-      await friend.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      friend.dispose();
+      stranger.dispose();
     }
   });
 
@@ -398,7 +398,7 @@ describe.skipIf(!liveEnabled)('layout http', () => {
       await register(stranger, `layout-area-stranger-${stamp}@example.com`);
       const strangerDel = await stranger.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
       expect(strangerDel.status()).toBe(404);
-      await stranger.dispose();
+      stranger.dispose();
 
       await owner.post(`/api/gardens/${garden.id}/members`, {
         data: { email: friendUser.email, role: 'viewer' },
@@ -409,9 +409,9 @@ describe.skipIf(!liveEnabled)('layout http', () => {
       const missingDel = await owner.delete(`/api/gardens/${garden.id}/areas/${missing}`);
       expect(missingDel.status()).toBe(404);
     } finally {
-      await owner.dispose();
-      await friend.dispose();
-      await anon.dispose();
+      owner.dispose();
+      friend.dispose();
+      anon.dispose();
     }
   });
 });

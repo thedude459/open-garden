@@ -26,9 +26,7 @@ export class PlacesController {
   @HttpCode(200)
   async lookupPlace(@Body() body: unknown): Promise<PlaceLookupDto> {
     const query =
-      body !== null && typeof body === 'object' && 'query' in body
-        ? (body as { query: unknown }).query
-        : undefined;
+      body !== null && typeof body === 'object' && 'query' in body ? body.query : undefined;
     if (typeof query !== 'string' || query.trim() === '') {
       throw domainError('VALIDATION_ERROR', 'A garden address is required');
     }

@@ -198,7 +198,7 @@ export class GardenRemindersPage implements OnInit {
 
 function readError(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
-    const body = err.error;
+    const body: unknown = err.error;
     if (body && typeof body === 'object' && 'error' in body) {
       return (body as { error?: { message?: string } }).error?.message ?? 'Request failed';
     }

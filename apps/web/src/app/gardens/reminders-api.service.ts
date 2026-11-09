@@ -224,7 +224,7 @@ function isOfflineFetch(err: unknown): boolean {
 
 function errorMessage(err: unknown): string | undefined {
   if (err instanceof HttpErrorResponse) {
-    const body = err.error;
+    const body: unknown = err.error;
     if (body && typeof body === 'object' && 'error' in body) {
       return (body as { error?: { message?: string } }).error?.message;
     }

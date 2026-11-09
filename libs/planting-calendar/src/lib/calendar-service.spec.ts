@@ -1,6 +1,25 @@
 import { describe, expect, it } from 'vitest';
 import { CalendarService } from './calendar-service';
-import type { GardenRole } from '@open-garden/shared-types';
+import type { FrostAnchor, GardenRole, PlantStatus, PlantType } from '@open-garden/shared-types';
+
+const plantDefaults = {
+  species: 'Species',
+  cultivar: null as string | null,
+  plantType: 'vegetable' as PlantType,
+  zoneMin: 1,
+  zoneMax: 13,
+  daysToMaturity: null as number | null,
+  status: 'active' as PlantStatus,
+  indoorFrostAnchor: null as FrostAnchor | null,
+  indoorWeeksEarliest: null as number | null,
+  indoorWeeksLatest: null as number | null,
+  sowFrostAnchor: null as FrostAnchor | null,
+  sowWeeksEarliest: null as number | null,
+  sowWeeksLatest: null as number | null,
+  transplantFrostAnchor: null as FrostAnchor | null,
+  transplantWeeksEarliest: null as number | null,
+  transplantWeeksLatest: null as number | null,
+};
 
 const tomato = plantRow({
   id: 'plant-tomato',
@@ -116,29 +135,8 @@ describe('CalendarService', () => {
   });
 });
 
-function plantRow(
-  partial: Partial<ReturnType<typeof plantRow>> & { id: string; commonName: string },
-) {
-  return {
-    id: partial.id,
-    commonName: partial.commonName,
-    species: partial.species ?? 'Species',
-    cultivar: partial.cultivar ?? null,
-    plantType: partial.plantType ?? 'vegetable',
-    zoneMin: partial.zoneMin ?? 1,
-    zoneMax: partial.zoneMax ?? 13,
-    daysToMaturity: partial.daysToMaturity ?? null,
-    status: partial.status ?? 'active',
-    indoorFrostAnchor: partial.indoorFrostAnchor ?? null,
-    indoorWeeksEarliest: partial.indoorWeeksEarliest ?? null,
-    indoorWeeksLatest: partial.indoorWeeksLatest ?? null,
-    sowFrostAnchor: partial.sowFrostAnchor ?? null,
-    sowWeeksEarliest: partial.sowWeeksEarliest ?? null,
-    sowWeeksLatest: partial.sowWeeksLatest ?? null,
-    transplantFrostAnchor: partial.transplantFrostAnchor ?? null,
-    transplantWeeksEarliest: partial.transplantWeeksEarliest ?? null,
-    transplantWeeksLatest: partial.transplantWeeksLatest ?? null,
-  };
+function plantRow(partial: Partial<typeof plantDefaults> & { id: string; commonName: string }) {
+  return { ...plantDefaults, ...partial };
 }
 
 function createMemory(hasOrchard?: boolean) {

@@ -54,7 +54,7 @@ describe.skipIf(!liveEnabled)('plantings http', () => {
   }
 
   async function json(res: LiveResponse) {
-    return res.json() as Promise<unknown>;
+    return res.json();
   }
 
   test('unauthenticated planting routes return 401', async () => {
@@ -204,9 +204,9 @@ describe.skipIf(!liveEnabled)('plantings http', () => {
       const del1 = await owner.delete(`/api/gardens/${garden.id}/plantings/${plantingId}`);
       expect(del1.status()).toBe(404);
     } finally {
-      await owner.dispose();
-      await friend.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      friend.dispose();
+      stranger.dispose();
     }
   });
 });

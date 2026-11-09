@@ -115,8 +115,8 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
       expect(strangerGet.status()).toBe(404);
       expect(errorCode(await strangerGet.json())).toBe('NOT_FOUND');
     } finally {
-      await owner.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      stranger.dispose();
     }
   });
 
@@ -139,7 +139,7 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
       expect(a.entries[0]?.windows.outdoorSow).toBeNull();
       expect(b.entries[0]?.windows.outdoorSow).toBeNull();
     } finally {
-      await owner.dispose();
+      owner.dispose();
     }
   });
 
@@ -192,9 +192,9 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
       const del2 = await owner.delete(`/api/gardens/${garden.id}/calendar/${tomato.id}`);
       expect(del2.status()).toBe(204);
     } finally {
-      await owner.dispose();
-      await friend.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      friend.dispose();
+      stranger.dispose();
     }
   });
 });

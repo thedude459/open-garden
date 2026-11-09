@@ -87,8 +87,8 @@ describe.skipIf(!liveEnabled)('garden http', () => {
       const missing = await owner.get(`/api/gardens/${garden.id}`);
       expect(missing.status()).toBe(404);
     } finally {
-      await owner.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      stranger.dispose();
     }
   });
 
@@ -135,7 +135,7 @@ describe.skipIf(!liveEnabled)('garden http', () => {
       });
       expect(badZone.status()).toBe(400);
     } finally {
-      await owner.dispose();
+      owner.dispose();
     }
   });
 
@@ -229,9 +229,9 @@ describe.skipIf(!liveEnabled)('garden http', () => {
       const gone = await owner.get(`/api/gardens/${garden.id}`);
       expect(gone.status()).toBe(404);
     } finally {
-      await owner.dispose();
-      await friend.dispose();
-      await stranger.dispose();
+      owner.dispose();
+      friend.dispose();
+      stranger.dispose();
     }
   });
 });

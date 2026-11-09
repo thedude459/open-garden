@@ -36,7 +36,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const rawCode =
       exception && typeof exception === 'object' && 'code' in exception
-        ? String((exception as { code: unknown }).code)
+        ? String(exception.code)
         : 'INTERNAL';
     const isDomain = rawCode in DOMAIN_STATUS;
     if (!isDomain) {
