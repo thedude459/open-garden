@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Plant data correction or missing crop
+    url: https://github.com/thedude459/open-garden-data/issues/new/choose
+    about: Sowing windows, spacing, and other plant details live in the open-garden-data repository.
   - name: Questions and ideas
     url: https://github.com/thedude459/open-garden/discussions
     about: Ask how to do something or float an idea before filing an issue.
