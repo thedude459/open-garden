@@ -79,12 +79,16 @@ jobs:
           labels: |
             org.opencontainers.image.title=open-garden-${{ matrix.image }}
             org.opencontainers.image.licenses=AGPL-3.0-or-later
+      - name: Date for OS package updates
+        id: today
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - name: Build and push
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: Dockerfile.${{ matrix.image }}
+          build-args: OS_PACKAGES_DATE=${{ steps.today.outputs.date }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

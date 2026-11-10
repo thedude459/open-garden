@@ -12,8 +12,9 @@ describe('fetchAllFromProvider', () => {
       }),
     );
     const provider = new MemoryProvider('a', plants);
-    const all = await fetchAllFromProvider(provider);
+    const { plants: all, skipped } = await fetchAllFromProvider(provider);
     expect(all).toHaveLength(620);
+    expect(skipped).toBe(0);
   });
 
   it('ends the source on an empty page', async () => {
@@ -23,7 +24,21 @@ describe('fetchAllFromProvider', () => {
       searchByName: async () => [],
       listPage: async () => ({ items: [], nextCursor: '1' }),
     };
-    const all = await fetchAllFromProvider(provider);
+    const { plants: all } = await fetchAllFromProvider(provider);
     expect(all).toHaveLength(0);
+  });
+
+  it('adds up the records each page skipped', async () => {
+    const pages = [
+      { items: [samplePlant({ externalId: 'x' })], nextCursor: '1', skipped: 2 },
+      { items: [samplePlant({ externalId: 'y' })], skipped: 1 },
+    ];
+    const provider: MemoryProvider = {
+      id: 'partial',
+      plants: [],
+      searchByName: async () => [],
+      listPage: async ({ cursor } = {}) => pages[cursor ? 1 : 0]!,
+    };
+    expect(await fetchAllFromProvider(provider)).toMatchObject({ skipped: 3 });
   });
 });
