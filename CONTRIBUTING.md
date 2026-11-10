@@ -43,7 +43,10 @@ for the admin pages.
 Migrations run automatically through `npm run api:sync-plants` and on every API
 container start. They are tracked, so each one runs once per database. To add
 one, change `libs/plant-catalog-data/src/lib/schema.ts` and run
-`npm run migrate:generate`.
+`npm run migrate:generate`; add any CHECK constraints to the generated SQL by
+hand (`schema.ts` does not declare them). Never edit a migration that has
+shipped in a release, including `0000_baseline.sql`
+([ADR 0018](docs/adr/0018-baseline-migration.md)).
 
 To run the same containers people install, use
 `docker compose --profile app up -d --build` (see the README).
