@@ -29,5 +29,7 @@ export interface PlantDataProvider {
   listPage(options?: { cursor?: string; limit?: number }): Promise<{
     items: ProviderPlant[];
     nextCursor?: string;
+    /** Records on this page the source could not read and left out. */
+    skipped?: number;
   }>;
 }

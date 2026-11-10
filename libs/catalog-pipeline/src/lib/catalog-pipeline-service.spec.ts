@@ -20,6 +20,28 @@ describe('CatalogPipelineService', () => {
     expect(mem.plants.size).toBe(12);
   });
 
+  it('counts records a source skipped as rejected, and imports the rest', async () => {
+    const mem = new MemoryPipeline();
+    mem.settings.sourceOrder = ['a'];
+    const plant = samplePlant({
+      externalId: 'ok',
+      commonName: 'Readable',
+      species: 'Readable species',
+    });
+    const svc = mem.service([
+      {
+        id: 'a',
+        searchByName: async () => [],
+        listPage: async () => ({ items: [plant], skipped: 2 }),
+      },
+    ]);
+    const run = await svc.runAndWait();
+    expect(run.status).toBe('succeeded');
+    expect(run.plantsUpserted).toBe(1);
+    expect(run.recordsRejected).toBe(2);
+    expect(run.sources[0]).toMatchObject({ recordsAccepted: 1, recordsRejected: 2 });
+  });
+
   it('leaves the catalog unchanged when every source fails', async () => {
     const mem = new MemoryPipeline();
     mem.settings.sourceOrder = ['a'];
