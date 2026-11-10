@@ -251,9 +251,9 @@ guidance. Status from the OpenSSF Scorecard run of November 2026 (overall
 
 ### Decision: separate repository `open-garden-data`
 
-Decided (November 2026): a separate, public repository
-`thedude459/open-garden-data`, created when implementation reaches step 3
-of the [implementation order](#implementation-order). Reasons:
+Decided (November 2026): a separate, public repository,
+[`thedude459/open-garden-data`](https://github.com/thedude459/open-garden-data)
+(created November 2026). Reasons:
 
 - **Different license.** Data is CC0; code has its own license. Separate repos
   keep that boundary obvious to contributors and downstream users.
@@ -269,48 +269,33 @@ multi-source pipeline (scheduler, source order, merge decisions,
 `/admin/pipeline`) shrinks to "import dataset version X and show what
 changed."
 
-### Data repo layout
+### Dataset
 
-```
-open-garden-data/
-  LICENSE                  # CC0-1.0
-  schema/catalog.schema.json
-  crops/tomato.yaml        # one file per crop, varieties nested
-  families.yaml            # Solanaceae, Brassicaceae, …
-  companions.yaml          # pairs with kind, reason, source
-  sources.yaml             # every source with license + URL
-  scripts/                 # validate, build, import helpers
-  .github/workflows/       # validate on PR, build release on tag
-```
+The data side (schema, which crops come first, sources and their licenses,
+how contributions are reviewed, and the release plan) lives in the data
+repository's [ROADMAP.md](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md).
+This roadmap sets the order of work across both repositories; each app step
+names the dataset version it needs:
 
-Release artifact: `open-garden-catalog-<version>.json` (+ SHA-256) attached
-to a GitHub Release. The app's Docker image bundles a pinned version so a
+| App work | Needs dataset | Because |
+|---|---|---|
+| Catalog importer, `crops` table, sowing windows from data | v0.1 | Schema v1 and the first 50 crops |
+| Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
+| Crop rotation advice by family | v0.1 | Every crop has a family |
+| Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
+| Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
+| Worldwide sowing (Phase 2) | Later | Frost-free windows |
+
+Each release attaches `open-garden-catalog-<version>.json` with a SHA-256 and
+a provenance attestation. The app's Docker image bundles a pinned version so a
 fresh install works offline; operators can import a newer one from the admin
 page.
 
-### Data model (v1)
-
-- **Crop** (species level): id, common names (by locale), scientific name,
-  family, plant type, **growth habit** (tree, shrub, cane, vine,
-  herbaceous), **use** (fruit, nut, vegetable, herb, flower), life cycle
-  (annual/biennial/perennial), frost
-  tolerance (tender/half-hardy/hardy), min/opt/max growing temperature,
-  sun, water, spacing (in-row, between-row), depth, germination days,
-  sowing windows relative to frost (indoor start, direct sow, transplant),
-  and a fallback window by soil/air temperature for frost-free climates.
-- **Variety**: id, crop id, name, days to maturity, notes, optional
-  overrides of crop fields.
-- **Companion pair**: crop A, crop B, kind (helps/hinders/attracts
-  pollinators), reason, source.
-- **Provenance**: every value may carry `source` and `confidence`; the
-  importer stores the source id so the UI can show "where does this come
-  from?"
-
-The app database gains a `crops` table and `plants` becomes varieties
-pointing at it. Companion pairs move from per-garden to catalog data; a
-household can still add or override its own pairs. This needs a principle
-VIII change in `AGENTS.md`, since that principle says companion pairs stay
-household data until a real source exists.
+**App database.** A `crops` table, and `plants` becomes varieties pointing at
+it. Companion pairs move from per-garden to catalog data; a household can
+still add or override its own pairs. That needs a principle VIII change in
+`AGENTS.md`, which today says companion pairs stay household data until a real
+source exists. The dataset stores metric units; the app converts for display.
 
 ### Area types
 
@@ -337,24 +322,6 @@ habit and use, mismatches are **blocked**, and bramble is its own type.
 - Needs the dataset's habit and use fields, so it ships with or after the
   first dataset import.
 
-### Sources (all compatible with CC0 output)
-
-| Source | License | Use |
-|---|---|---|
-| OpenFarm rescue (`thefullnacho/openfarm-crops-rescue`) | CC0 (claimed — verify per record) | Bootstrap growing guides, spacing, companions for ~340 crops |
-| USDA PLANTS | Public domain | Scientific names, US native status |
-| Wikidata | CC0 | Taxonomy, family, common names in many languages, links |
-| Hand curation | CC0 (contributors agree via PR template) | Sowing windows and temperatures for the top 150 home-garden crops |
-| Your own seed packets / extension-service reading | Facts are not copyrightable; write in your own words | Cross-checking windows |
-
-Not used: Growstuff, Permapeople, Practical Plants (CC BY-SA share-alike
-would force the dataset to BY-SA), PFAF (restrictive), Perenual (no key,
-thin fields — it hard-codes zones 3–9 and sowing data is empty).
-
-Images: start with a consistent set of crop icons made for the project
-(CC0). Photos only from Wikimedia Commons with per-image license and
-attribution stored alongside.
-
 ### Plant-data issues
 
 **Done:** [`open-garden-data`](https://github.com/thedude459/open-garden-data)
@@ -362,15 +329,15 @@ exists (schema, validator, release workflow, one example crop). The
 `plant-data` issue form moved there; this repository's issue chooser links to
 it. There were no open `plant-data` issues to transfer.
 
-### Curation workflow
+### Curation in the app
 
-1. Contributors edit YAML in a PR; CI validates against the schema and runs
-   sanity checks (window ordering, spacing ranges, duplicate names, every
-   companion references a real crop).
-2. In the app, any user can **suggest a correction** on a plant page. Admins
-   see suggestions in the admin area and export them as a ready-to-file
-   issue or patch for the data repo.
-3. Households can add **custom varieties** that live only in their property
+Contributors change the data through pull requests in the data repository.
+In the app:
+
+1. Any user can **suggest a correction** on a plant page. Admins see
+   suggestions in the admin area and export them as a ready-to-file issue or
+   patch for the data repo.
+2. Households can add **custom varieties** that live only in their property
    (e.g. a family heirloom), optionally offered upstream.
 
 ### App changes
@@ -467,10 +434,10 @@ In rough priority order:
 | 1c | [Coverage plan](#coverage-plan) steps 1–4: measure live tests, ratchet, database integration tests, API controller tests | The real numbers and a floor that only rises come first; the database and authorization tests protect the data before Phase 1 changes the schema. |
 | 1d | [OpenSSF](#openssf): token permissions, vulnerabilities, signed releases (done in this pass); `SCORECARD_TOKEN` and the Best Practices badge (maintainer); fast-check property tests (with coverage steps 3–4) | Raise the Scorecard score and close the code-scanning alerts before inviting contributors. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | **Done.** Cheap, visible wins; no dependency on data. |
-| 3 | Phase 1 data repo (**created**) + schema + first 50 crops + importer | Today, Calendar, and rotation all need real sowing windows and families. New repositories ship with integration tests (coverage step 3). |
+| 3 | Phase 1: importer, `crops` table, and typed areas, against dataset **v0.1** (first 50 crops, built in parallel in the data repo) | Today, Calendar, and rotation all need real sowing windows and families. The data repo and baseline migration are done. New repositories ship with integration tests (coverage step 3). |
 | 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
 | 5 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector | Builds on 3–4. Split pages and new screens ship with component tests (coverage step 5). |
-| 6 | Grow dataset to ~150 crops; companions from data | Runs in parallel in the data repo once the schema is stable. |
+| 6 | Dataset v0.2 (companions) and v0.3 (~150 crops); companion advice from data | Runs in parallel in the data repo; see its [roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md). |
 | 7 | Phase 3 remaining + onboarding | |
 | 8 | Phase 4 features, in the order listed | |
 
