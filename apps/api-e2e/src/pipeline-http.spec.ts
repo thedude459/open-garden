@@ -133,6 +133,7 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
       sources: Array<{ sourceId: string }>;
       merges: Array<{ varietyKey: string; fieldWinners: Record<string, string> }>;
       status: string;
+      errorMessage: string | null;
     } | null = null;
     await waitUntil(
       async () => {
@@ -146,8 +147,14 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
     );
     expect(detail?.status).not.toBe('running');
     expect(detail?.sources.length).toBeGreaterThan(0);
-    expect(detail?.merges.length).toBeGreaterThan(0);
-    expect(detail?.merges[0]?.fieldWinners).toBeTruthy();
+    // An earlier run may already have published this catalog: then the run is
+    // recorded with a note and writes no merge decisions.
+    if (/Catalog unchanged since the last run/.test(detail?.errorMessage ?? '')) {
+      expect(detail?.merges).toEqual([]);
+    } else {
+      expect(detail?.merges.length).toBeGreaterThan(0);
+      expect(detail?.merges[0]?.fieldWinners).toBeTruthy();
+    }
 
     const bad = await request.patch('/api/admin/pipeline/settings', { data: { sourceOrder: [] } });
     expect(bad.status()).toBe(400);

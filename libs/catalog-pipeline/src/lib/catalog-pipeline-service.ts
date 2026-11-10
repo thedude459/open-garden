@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { PlantDataProvider } from '@open-garden/plant-provider';
 import type {
   PipelineCadence,
@@ -23,6 +24,8 @@ export interface PipelineRunPort {
   failStaleRunning(message: string): Promise<number>;
   hasRunning(): Promise<boolean>;
   latestScheduledStartedAt(): Promise<Date | null>;
+  /** Hash of the catalog the last successful run published. */
+  latestPublishedHash(): Promise<string | null>;
   markTerminal(
     id: string,
     patch: {
@@ -46,6 +49,7 @@ export interface PipelineRunPort {
     recordsRejected: number;
     sources: PipelineRunSourceDto[];
     merges: PipelineMergeDecisionDto[];
+    catalogHash: string | null;
   }): Promise<void>;
 }
 
@@ -237,20 +241,38 @@ export class CatalogPipelineService {
             ].join('. ')
           : null;
 
+      const plants = merge.merged.map(toUpsert);
+      const recordsRejected = merge.rejected + batches.reduce((n, b) => n + b.skipped, 0);
+      const catalogHash = overall === 'succeeded' ? hashCatalog(plants) : null;
+      // The catalog matches the last successful run and nothing needs
+      // deprecating or reactivating: record the run, write no plants.
+      const unchanged =
+        catalogHash !== null &&
+        deprecateKeys.length === 0 &&
+        reactivated === 0 &&
+        catalogHash === (await this.runs.latestPublishedHash());
+
       await this.runs.publish({
         runId,
         status: overall,
-        errorMessage,
-        plants: merge.merged.map(toUpsert),
+        errorMessage: unchanged
+          ? [errorMessage, 'Catalog unchanged since the last run; nothing written']
+              .filter(Boolean)
+              .join('. ')
+          : errorMessage,
+        plants: unchanged ? [] : plants,
         deprecateKeys,
         plantsReactivated: reactivated,
-        recordsRejected: merge.rejected + batches.reduce((n, b) => n + b.skipped, 0),
+        recordsRejected,
         sources: sourceRows,
-        merges: merge.merged.map((plant) => ({
-          varietyKey: plant.varietyKey,
-          contributingSources: plant.contributingSources,
-          fieldWinners: plant.fieldWinners,
-        })),
+        merges: unchanged
+          ? []
+          : merge.merged.map((plant) => ({
+              varietyKey: plant.varietyKey,
+              contributingSources: plant.contributingSources,
+              fieldWinners: plant.fieldWinners,
+            })),
+        catalogHash,
       });
 
       return (await this.runs.getById(runId)) ?? existing;
@@ -262,6 +284,12 @@ export class CatalogPipelineService {
       throw err;
     }
   }
+}
+
+/** A stable SHA-256 of the plants a run would publish, independent of source order. */
+export function hashCatalog(plants: Array<{ varietyKey: string }>): string {
+  const sorted = [...plants].sort((a, b) => a.varietyKey.localeCompare(b.varietyKey));
+  return createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
 }
 
 function toUpsert(

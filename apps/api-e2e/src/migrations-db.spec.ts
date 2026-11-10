@@ -90,8 +90,11 @@ async function recorded(url: string): Promise<number> {
 }
 
 /** The schema every release since v0.1.0 has, without migration records. */
+/** Migrations added after the baseline; a v0.1.0 database has none of them yet. */
+const laterMigrations = sqlFiles.filter((f) => f !== '0000_baseline.sql').length;
+
 async function applyBaselineSql(url: string): Promise<void> {
-  for (const file of sqlFiles) await query(url, readFileSync(resolve(folder, file), 'utf8'));
+  await query(url, readFileSync(resolve(folder, '0000_baseline.sql'), 'utf8'));
 }
 
 /** Record migrations 0001..`upTo` the way Drizzle did on a v0.1.0 install. */
@@ -159,11 +162,12 @@ describe.skipIf(!databaseUrl)('migrations run once per database', () => {
     await insertOrchardBed(url);
 
     await migrate(url);
-    expect(await recorded(url)).toBe(12);
+    // The baseline is skipped; every migration added since v0.1.0 applies.
+    expect(await recorded(url)).toBe(12 + laterMigrations);
     expect(await orchardBeds(url)).toBe(1);
 
     await migrate(url, foldersWithNextMigration());
-    expect(await recorded(url)).toBe(13);
+    expect(await recorded(url)).toBe(12 + laterMigrations + 1);
     expect(await query(url, 'select * from next_release_probe')).toEqual([]);
   });
 

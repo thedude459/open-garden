@@ -26,6 +26,7 @@ export default defineConfig({
         'libs/plant-catalog/src/lib/**/*.ts',
         'libs/plant-favorites/src/lib/**/*.ts',
         'libs/plant-provider/src/lib/**/*.ts',
+        'libs/plant-catalog-data/src/lib/**/*.ts',
         'libs/auth/src/lib/**/*.ts',
         'libs/gardens/src/lib/**/*.ts',
         'libs/planting-calendar/src/lib/**/*.ts',
@@ -49,8 +50,6 @@ export default defineConfig({
         '**/pipeline.ts',
         '**/test-memory.ts',
         '**/test-db.ts',
-        // DB-backed modules need integration fixtures; covered separately later
-        'libs/plant-catalog-data/**',
       ],
     },
   },

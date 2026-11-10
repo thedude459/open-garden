@@ -8,6 +8,13 @@
       "when": 1720000000012,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794352220798,
+      "tag": "0001_pipeline_run_catalog_hash",
+      "breakpoints": true
     }
   ]
 }

@@ -73,9 +73,19 @@ deprecation/reactivation, miss-fill absence). Catalog list tests must assert
 4. Set cadence `daily` and `runAtHourUtc`. Confirm the settings GET round
    trip. (Firing the clock is a unit test of `tryStartScheduled`, not a
    24-hour wait.)
+5. Start a second run with nothing changed. It succeeds with 0 plants
+   upserted and the note "Catalog unchanged since the last run; nothing
+   written", and records no merge decisions. Change a source (or deprecate a
+   plant by hand) and the next run writes again.
 
 ## Performance / scale notes
 
 - Fixture full load (≥50 plants) completes well under SC-006’s 2 minutes.
 - Live Perenual full paging is operator-initiated; gardeners keep using the
   last published catalog while it runs.
+- A run whose catalog matches the last successful run writes nothing, so the
+  daily schedule costs little when nothing changed.
+- Run history keeps the latest 50 runs and anything from the last 90 days;
+  older runs, with their sources and merge decisions, are deleted on publish.
+- A dataset catalog file is read on every run, so a replaced file is picked up
+  without restarting the API.
