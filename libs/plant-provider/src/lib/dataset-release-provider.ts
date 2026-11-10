@@ -12,36 +12,43 @@ import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
  */
 export class DatasetReleaseProvider implements PlantDataProvider {
   readonly id = 'dataset';
-  private plants: Promise<ProviderPlant[]> | null = null;
+  private catalog: Promise<Catalog> | null = null;
 
   /** `file` is the catalog JSON; `${file}.sha256` must sit beside it. */
   constructor(private readonly file: string) {}
 
   async searchByName(query: string, options?: { limit?: number }): Promise<ProviderPlant[]> {
     const q = query.trim().toLowerCase();
-    const hits = (await this.load()).filter(
+    const hits = (await this.load()).plants.filter(
       (p) => p.commonName.toLowerCase().includes(q) || p.cultivar?.toLowerCase().includes(q),
     );
     return hits.slice(0, options?.limit ?? 20);
   }
 
   /** The whole catalog in one page: a release is a few hundred records at most. */
-  async listPage(): Promise<{ items: ProviderPlant[]; nextCursor?: string }> {
-    return { items: await this.load() };
+  async listPage(): Promise<{ items: ProviderPlant[]; nextCursor?: string; skipped: number }> {
+    const { plants, skipped } = await this.load();
+    return { items: plants, skipped };
   }
 
-  private load(): Promise<ProviderPlant[]> {
+  private load(): Promise<Catalog> {
     // Load on first use, not at boot, so a bad file fails one pipeline run
     // (recorded on the run) instead of stopping the API. Retry after a failure.
-    this.plants ??= readCatalog(this.file).catch((err: unknown) => {
-      this.plants = null;
+    this.catalog ??= readCatalog(this.file).catch((err: unknown) => {
+      this.catalog = null;
       throw err;
     });
-    return this.plants;
+    return this.catalog;
   }
 }
 
-export async function readCatalog(file: string): Promise<ProviderPlant[]> {
+export interface Catalog {
+  plants: ProviderPlant[];
+  /** Crops this app cannot read (a newer release may add values it does not know). */
+  skipped: number;
+}
+
+export async function readCatalog(file: string): Promise<Catalog> {
   const [json, checksum] = await Promise.all([
     readFile(file),
     readFile(`${file}.sha256`, 'utf8').catch(() => {
@@ -57,7 +64,16 @@ export async function readCatalog(file: string): Promise<ProviderPlant[]> {
     const issue = parsed.error.issues[0];
     throw new Error(`Catalog file is not valid: ${issue?.path.join('.')} ${issue?.message}`);
   }
-  return parsed.data.crops.flatMap(cropPlants);
+  // Each crop is checked on its own: a crop using a value from a newer minor
+  // release is skipped and counted, and the rest still import.
+  const plants: ProviderPlant[] = [];
+  let skipped = 0;
+  for (const raw of parsed.data.crops) {
+    const crop = cropSchema.safeParse(raw);
+    if (crop.success) plants.push(...cropPlants(crop.data));
+    else skipped += 1;
+  }
+  return { plants, skipped };
 }
 
 // Only the fields the app uses. Unknown fields are ignored, so a newer minor
@@ -107,7 +123,8 @@ const cropSchema = z.object({
 const catalogSchema = z.object({
   version: z.string(),
   units: z.object({ length: z.literal('cm'), temperature: z.literal('C') }),
-  crops: z.array(cropSchema),
+  // Crops are checked one by one in readCatalog.
+  crops: z.array(z.unknown()),
 });
 
 type Crop = z.infer<typeof cropSchema>;

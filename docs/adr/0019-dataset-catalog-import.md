@@ -31,9 +31,14 @@ The dataset differs from the existing sources in four ways:
    history. It is registered when `PLANT_CATALOG_FILE` is set; operators add
    `dataset` to the pipeline's source order.
 2. **Treat the file as untrusted input.** It is read only when the `.sha256`
-   beside it matches, then validated with zod. Fields the app does not use are
-   ignored, so newer minor releases import. A bad file fails that pipeline run
-   (recorded on the run, nothing imported); it does not stop the API.
+   beside it matches, then validated with zod. A wrong checksum or a bad
+   header (version, units, no crop list) fails that pipeline run (recorded on
+   the run, nothing imported); it does not stop the API. Each crop is then
+   validated on its own: one the app cannot read, such as a crop using a
+   `habit` or `use` value from a newer minor release, is skipped and counted
+   as rejected on the run, and the rest import. Fields the app does not use
+   are ignored. This follows the dataset's compatibility rule: adding values
+   to a list is a minor release, so apps must tolerate it.
 3. **Dataset ids are the catalog key.** `ProviderPlant` gains an optional
    `varietyKey`; the dataset sets `dataset:<crop id>` and
    `dataset:<variety id>`. Other sources keep species and cultivar.
