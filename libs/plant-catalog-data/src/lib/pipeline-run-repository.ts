@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, ne, notInArray, sql } from 'drizzle-orm';
 import type {
   PipelineMergeDecisionDto,
   PipelineRunDetailDto,
@@ -31,7 +31,12 @@ export interface PublishCatalogInput {
   recordsRejected: number;
   sources: PipelineRunSourceDto[];
   merges: PipelineMergeDecisionDto[];
+  /** Hash of what this run published, when it succeeded; null otherwise. */
+  catalogHash: string | null;
 }
+
+/** Run history kept: the latest runs, and anything newer than this many days. */
+export const RUN_HISTORY = { keepLatest: 50, keepDays: 90 } as const;
 
 function toSummary(row: {
   id: string;
@@ -152,6 +157,42 @@ export class PipelineRunRepository {
     return Boolean(row);
   }
 
+  /** The catalog hash of the last successful run, so an identical run can skip writing. */
+  async latestPublishedHash(): Promise<string | null> {
+    const [row] = await this.db
+      .select({ hash: catalogPipelineRuns.catalogHash })
+      .from(catalogPipelineRuns)
+      .where(eq(catalogPipelineRuns.status, 'succeeded'))
+      .orderBy(desc(catalogPipelineRuns.finishedAt))
+      .limit(1);
+    return row?.hash ?? null;
+  }
+
+  /**
+   * Delete finished runs that are both older than RUN_HISTORY.keepDays and
+   * outside the latest RUN_HISTORY.keepLatest. Their sources and merge
+   * decisions go with them (ON DELETE CASCADE). Returns how many runs went.
+   */
+  async pruneHistory(now = new Date(), db: AppDatabase = this.db): Promise<number> {
+    const cutoff = new Date(now.getTime() - RUN_HISTORY.keepDays * 86_400_000);
+    const latest = db
+      .select({ id: catalogPipelineRuns.id })
+      .from(catalogPipelineRuns)
+      .orderBy(desc(catalogPipelineRuns.startedAt))
+      .limit(RUN_HISTORY.keepLatest);
+    const deleted = await db
+      .delete(catalogPipelineRuns)
+      .where(
+        and(
+          lt(catalogPipelineRuns.startedAt, cutoff),
+          ne(catalogPipelineRuns.status, 'running'),
+          notInArray(catalogPipelineRuns.id, latest),
+        ),
+      )
+      .returning({ id: catalogPipelineRuns.id });
+    return deleted.length;
+  }
+
   async latestScheduledStartedAt(): Promise<Date | null> {
     const [row] = await this.db
       .select({ startedAt: catalogPipelineRuns.startedAt })
@@ -242,10 +283,12 @@ export class PipelineRunRepository {
           plantsReactivated: input.plantsReactivated,
           recordsRejected: input.recordsRejected,
           errorMessage: input.errorMessage,
+          catalogHash: input.catalogHash,
         })
         .where(
           and(eq(catalogPipelineRuns.id, input.runId), eq(catalogPipelineRuns.status, 'running')),
         );
+      await this.pruneHistory(new Date(), tx);
     });
   }
 }

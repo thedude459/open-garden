@@ -47,6 +47,7 @@ type MemoryPlant = PlantUpsertInput & {
 type MemoryRun = PipelineRunSummaryDto & {
   sources: PipelineRunSourceDto[];
   merges: PipelineMergeDecisionDto[];
+  catalogHash?: string | null;
 };
 
 export class MemoryPipeline {
@@ -103,6 +104,10 @@ export class MemoryPipeline {
       return count;
     },
     hasRunning: async () => this.runs.some((run) => run.status === 'running'),
+    latestPublishedHash: async () => {
+      const done = this.runs.filter((run) => run.status === 'succeeded' && run.catalogHash);
+      return done[done.length - 1]?.catalogHash ?? null;
+    },
     latestScheduledStartedAt: async () => {
       const scheduled = this.runs.filter((run) => run.triggeredBy === 'schedule');
       const last = scheduled[scheduled.length - 1];
@@ -147,6 +152,7 @@ export class MemoryPipeline {
       run.recordsRejected = input.recordsRejected;
       run.sources = input.sources;
       run.merges = input.merges;
+      run.catalogHash = input.catalogHash;
     },
   };
 

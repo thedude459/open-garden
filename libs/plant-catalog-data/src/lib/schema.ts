@@ -313,6 +313,8 @@ export const catalogPipelineRuns = pgTable(
     plantsReactivated: integer('plants_reactivated').notNull().default(0),
     recordsRejected: integer('records_rejected').notNull().default(0),
     errorMessage: text('error_message'),
+    /** SHA-256 of what a successful run published; an identical next run writes nothing. */
+    catalogHash: text('catalog_hash'),
   },
   (t) => [
     uniqueIndex('catalog_pipeline_runs_one_running_uidx')

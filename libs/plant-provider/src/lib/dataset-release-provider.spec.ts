@@ -124,13 +124,24 @@ describe('DatasetReleaseProvider', () => {
       habit: 'cane',
       varieties: [],
     };
+    const blueberry = {
+      ...tomato,
+      id: 'blueberry',
+      names: { en: 'Blueberry' },
+      use: 'fruit',
+      habit: 'shrub',
+      lifeCycle: 'perennial',
+      varieties: [],
+      hardinessZones: { min: 4, max: 7 },
+    };
     const { items } = await new DatasetReleaseProvider(
-      write(catalog([apple, rhubarb, raspberry])),
+      write(catalog([apple, rhubarb, raspberry, blueberry])),
     ).listPage();
     expect(items.map((p) => [p.externalId, p.plantType, p.zoneMin, p.zoneMax])).toEqual([
       ['apple', 'tree', 3, 8],
       ['rhubarb', 'vegetable', null, null],
       ['raspberry', 'fruit', 1, 13],
+      ['blueberry', 'shrub', 4, 7],
     ]);
   });
 
@@ -171,6 +182,17 @@ describe('DatasetReleaseProvider', () => {
     const page = await new DatasetReleaseProvider(write(catalog([shrubby, tomato]))).listPage();
     expect(page.skipped).toBe(1);
     expect(page.items.map((p) => p.externalId)).toEqual(['tomato', 'tomato-cherry']);
+  });
+
+  it('picks up a replaced catalog file without a restart', async () => {
+    const file = write(catalog([tomato]));
+    const provider = new DatasetReleaseProvider(file);
+    expect((await provider.listPage()).items).toHaveLength(2);
+    const lettuce = { ...tomato, id: 'lettuce', names: { en: 'Lettuce' }, varieties: [] };
+    const json = JSON.stringify(catalog([tomato, lettuce]));
+    writeFileSync(file, json);
+    writeFileSync(`${file}.sha256`, createHash('sha256').update(json).digest('hex'));
+    expect((await provider.listPage()).items.map((p) => p.externalId)).toContain('lettuce');
   });
 
   it('tries the file again after a failed read', async () => {

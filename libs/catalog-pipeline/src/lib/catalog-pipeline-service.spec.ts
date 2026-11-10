@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hashCatalog } from './catalog-pipeline-service';
 import { PIPELINE_ERRORS } from './domain-error';
 import { MemoryPipeline, MemoryProvider, samplePlant } from './test-memory';
 
@@ -40,6 +41,72 @@ describe('CatalogPipelineService', () => {
     expect(run.plantsUpserted).toBe(1);
     expect(run.recordsRejected).toBe(2);
     expect(run.sources[0]).toMatchObject({ recordsAccepted: 1, recordsRejected: 2 });
+  });
+
+  describe('an unchanged catalog', () => {
+    const plants = () =>
+      [1, 2, 3].map((i) =>
+        samplePlant({
+          externalId: `u-${i}`,
+          commonName: `Same ${i}`,
+          species: `Same species ${i}`,
+        }),
+      );
+
+    it('writes nothing on a second identical run and says so', async () => {
+      const mem = new MemoryPipeline();
+      mem.settings.sourceOrder = ['a'];
+      const svc = mem.service([new MemoryProvider('a', plants())]);
+      expect((await svc.runAndWait()).plantsUpserted).toBe(3);
+      const second = await svc.runAndWait();
+      expect(second).toMatchObject({ status: 'succeeded', plantsUpserted: 0 });
+      expect(second.errorMessage).toMatch(/Catalog unchanged since the last run/);
+      expect(mem.plants.size).toBe(3);
+    });
+
+    it('writes again when the catalog changes', async () => {
+      const mem = new MemoryPipeline();
+      mem.settings.sourceOrder = ['a'];
+      const provider = new MemoryProvider('a', plants());
+      const svc = mem.service([provider]);
+      await svc.runAndWait();
+      provider.plants[0] = { ...provider.plants[0]!, daysToMaturity: 99 };
+      expect((await svc.runAndWait()).plantsUpserted).toBe(3);
+    });
+
+    it('still reactivates a plant deprecated since the last run', async () => {
+      const mem = new MemoryPipeline();
+      mem.settings.sourceOrder = ['a'];
+      const svc = mem.service([new MemoryProvider('a', plants())]);
+      await svc.runAndWait();
+      const first = [...mem.plants.values()][0]!;
+      first.status = 'deprecated';
+      const again = await svc.runAndWait();
+      expect(again).toMatchObject({ plantsReactivated: 1, plantsUpserted: 3 });
+      expect(mem.plants.get(first.varietyKey)?.status).toBe('active');
+    });
+
+    it('does not compare against a run that was incomplete', async () => {
+      const mem = new MemoryPipeline();
+      mem.settings.sourceOrder = ['a', 'broken'];
+      const broken = {
+        id: 'broken',
+        searchByName: async () => [],
+        listPage: async (): Promise<never> => {
+          throw new Error('down');
+        },
+      };
+      const svc = mem.service([new MemoryProvider('a', plants()), broken]);
+      expect((await svc.runAndWait()).status).toBe('incomplete');
+      expect((await svc.runAndWait()).plantsUpserted).toBe(3);
+    });
+  });
+
+  it('hashes a catalog the same way whatever order the plants arrive in', () => {
+    const a = { varietyKey: 'a' };
+    const b = { varietyKey: 'b' };
+    expect(hashCatalog([a, b])).toBe(hashCatalog([b, a]));
+    expect(hashCatalog([a])).not.toBe(hashCatalog([b]));
   });
 
   it('leaves the catalog unchanged when every source fails', async () => {
