@@ -323,6 +323,16 @@ habit and use, mismatches are **blocked**, and bramble is its own type.
   berry stations in orchards move to a bramble area in a migration.
 - Remove the legacy `garden_beds.kind` (`bed`/`orchard`) column and its API
   field. It predates areas; nothing writes `kind = 'orchard'` any more.
+- **Block by habit, not by use.** Melons, watermelons, and strawberries are
+  `use: fruit` but belong in vegetable areas, so a vegetable area blocks trees
+  and canes outright and blocks shrubs unless they are herbs (thyme is a woody
+  subshrub). The table above lists what each type is for; the code rule
+  checks habit first.
+- **Tree beds sized by rootstock.** Trees in the dataset carry spacing for
+  dwarf, semi-dwarf, and standard rootstocks. A tree planting records its
+  rootstock, and its one-tree orchard bed is created at that rootstock's
+  spacing (a new tree bed is 8 × 8 ft today, smaller than any dataset tree).
+  An unknown rootstock uses the semi-dwarf default.
 - Needs the dataset's habit and use fields, so it ships with or after the
   first dataset import.
 
@@ -362,6 +372,32 @@ In the app:
   plants already carry dataset ids ([ADR 0019](adr/0019-dataset-catalog-import.md)).
 - Admin page becomes "Catalog version": current version, available
   version, import, and the diff (added/changed/deprecated).
+
+### Before the dataset becomes the default
+
+1. **Tamper protection, not just integrity.** The `.sha256` beside a catalog
+   file catches corruption, but anyone who can replace the file can replace
+   its checksum. Pin the bundled release's SHA-256 in the app's code, and
+   verify the data repo's provenance attestation for any newer catalog an
+   operator imports (`gh attestation verify` or Sigstore verification in the
+   importer). Refuse a file that fails either.
+2. **Catalog updates never block a saved garden.** A new release may widen a
+   crop's spacing or change its habit. Existing plantings are then *flagged*
+   ("closer than recommended", "this area no longer accepts it"), never
+   blocked from saving and never removed; new placements follow the new
+   values. Applies to the spacing gate and to typed areas.
+3. **Map existing plantings from fixture plants to dataset plants.** A table
+   from fixture variety keys to dataset ids (for example `solanum
+   lycopersicum|cherry` → `dataset:tomato-cherry`), applied in a migration
+   with a test. Plants with no dataset equivalent stay as deprecated rows that
+   still display, so no planting loses its plant.
+4. **Compatibility check across repositories.** A scheduled app CI job
+   downloads the latest open-garden-data release and runs the importer
+   against it, so an incompatible data release is caught in days, not when a
+   household upgrades.
+5. **Follow dataset deprecations.** When a crop is marked `deprecated` with
+   `replacedBy` (the data repo never deletes or renames an id), the importer
+   deprecates the plant and offers to move plantings to the replacement.
 
 ---
 
