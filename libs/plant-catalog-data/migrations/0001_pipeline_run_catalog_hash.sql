@@ -1,0 +1,1 @@
+ALTER TABLE "catalog_pipeline_runs" ADD COLUMN "catalog_hash" text;

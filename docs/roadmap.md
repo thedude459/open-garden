@@ -103,7 +103,7 @@ planner load, plant search) are tested.
 |---|---|---|
 | 1 | The 80% gate measures only domain libraries. | **Done (report):** `npm run test:coverage:all` measures apps and libs without thresholds; CI posts a per-area table to the `verify` job summary and uploads the HTML report. A separate threshold for `apps/web` waits for component tests (item 2). |
 | 2 | Only 2 Angular spec files exist; no component tests. UI behaviour is tested only through slow browser runs. | Add component tests (Angular Testing Library on Vitest) for the large pages as they are split in Phase 3: planner inspector, plantings list, configuration sections. |
-| 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | **Done:** `*.db.spec.ts` run every repository against PGlite (real PostgreSQL in WebAssembly, migrations applied) inside the unit run — no Docker — and count in the per-area report (14% → 81%). The lib stays outside the 80% gate until the pipeline-run repository is covered too. |
+| 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | **Done:** `*.db.spec.ts` run every repository against PGlite (real PostgreSQL in WebAssembly, migrations applied) inside the unit run — no Docker — and count in the per-area report (14% → 81%). With the pipeline-run repository covered too, the lib is at 92% and inside the 80% gate. |
 | 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | **Done:** `scripts/ci/e2e.sh` uses its own `open_garden_e2e` database, created by the script, so test data never reaches the app database. |
 | 5 | Some "contract" tests assert values they constructed themselves. | **Done:** 19 self-checking tests removed from `apps/api-e2e` (3 files emptied and deleted). Each behaviour they named is covered by a live HTTP, domain unit, or Playwright test. |
 | 6 | API controllers, guards, and session handling were only exercised by live HTTP specs, which coverage did not count. | **Done:** live-test coverage is measured and reported (`apps/api` 76% unit + live). Guard tests landed with coverage step 4; controller validation edge cases follow. |
@@ -190,8 +190,8 @@ measures the domain libraries only.
    favorites, plantings (property scoping, placement, bed clean-up, season
    visibility, harvest history), catalog search and deprecation, calendar,
    care events, season close, companion pairs, and pipeline settings.
-   `libs/plant-catalog-data` 14% → 81%. Still to cover: the pipeline-run
-   repository. New repositories from Phase 1 (crops, varieties, dataset
+   `libs/plant-catalog-data` 14% → 92% with the pipeline-run repository, and
+   the lib is now inside the 80% gate. New repositories from Phase 1 (crops, varieties, dataset
    import) ship with these tests from the start.
 4. **API guards and controllers. Guards done:** `apps/api/src/auth/guards.spec.ts`
    covers sign-in, admin, and property membership (a non-member gets 404).
@@ -400,20 +400,23 @@ In the app:
 5. **Follow dataset deprecations.** When a crop is marked `deprecated` with
    `replacedBy` (the data repo never deletes or renames an id), the importer
    deprecates the plant and offers to move plantings to the replacement.
-6. **Skip unchanged runs.** The schedule defaults to daily, but a dataset
+6. **Done: skip unchanged runs.** The schedule defaults to daily, but a dataset
    catalog changes only when a new file is imported, and every run rewrites
    every plant, its source links, and a merge decision per plant. Skip the run
-   when the catalog's SHA-256 matches the last successful run; otherwise write
-   only rows that changed (the unused `upsertManyByVarietyKey` batch upsert
-   becomes that change-only write). The changed rows are the
-   added/changed/deprecated diff the "Catalog version" page shows.
-7. **Reload a replaced catalog file.** `DatasetReleaseProvider` caches the
+   when the catalog's SHA-256 matches the last successful run. Done as: a
+   successful run records the hash of what it published; an identical next run
+   with nothing to deprecate or reactivate is recorded with the note "Catalog
+   unchanged since the last run" and writes no plants or merge decisions.
+   Per-row change-only writes, and the added/changed/deprecated diff, come with
+   the "Catalog version" page.
+7. **Done: reload a replaced catalog file.** `DatasetReleaseProvider` caches the
    parsed catalog for the life of the process, so a newer file is ignored
    until the API restarts. Reload when the file's checksum changes; the admin
    "import a newer version" action depends on it.
-8. **Prune run history.** Nothing deletes old runs; each adds a merge decision
+8. **Done: prune run history.** Nothing deletes old runs; each adds a merge decision
    per plant (about 100,000 rows a year at 150 crops on the daily default).
-   Keep the last 50 runs or 90 days, whichever is more.
+   Keep the last 50 runs or 90 days, whichever is more. Done: each publish
+   prunes runs outside both; their sources and merge decisions cascade.
 
 ---
 

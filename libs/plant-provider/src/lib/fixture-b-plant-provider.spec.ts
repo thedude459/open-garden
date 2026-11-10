@@ -14,4 +14,12 @@ describe('FixtureBPlantProvider', () => {
     expect(overlap[0]?.waterNeeds).toBe('High');
     expect(overlap[0]?.species).toBe('Brassica pipeline 01');
   });
+
+  it('searches by name, species, or cultivar, and lists the first page when empty', async () => {
+    expect((await provider.searchByName('bravo 03')).map((p) => p.commonName)).toEqual([
+      'Pipeline Bravo 03',
+    ]);
+    expect(await provider.searchByName('brassica pipeline', { limit: 3 })).toHaveLength(3);
+    expect(await provider.searchByName('  ', { limit: 5 })).toHaveLength(5);
+  });
 });

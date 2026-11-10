@@ -12,8 +12,6 @@ import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
  */
 export class DatasetReleaseProvider implements PlantDataProvider {
   readonly id = 'dataset';
-  private catalog: Promise<Catalog> | null = null;
-
   /** `file` is the catalog JSON; `${file}.sha256` must sit beside it. */
   constructor(private readonly file: string) {}
 
@@ -31,14 +29,13 @@ export class DatasetReleaseProvider implements PlantDataProvider {
     return { items: plants, skipped };
   }
 
+  /**
+   * Read the file on every use, not at boot and not cached: a bad file fails
+   * one pipeline run (recorded on the run) instead of stopping the API, and a
+   * replaced file is picked up on the next run. A release is under 100 KB.
+   */
   private load(): Promise<Catalog> {
-    // Load on first use, not at boot, so a bad file fails one pipeline run
-    // (recorded on the run) instead of stopping the API. Retry after a failure.
-    this.catalog ??= readCatalog(this.file).catch((err: unknown) => {
-      this.catalog = null;
-      throw err;
-    });
-    return this.catalog;
+    return readCatalog(this.file);
   }
 }
 
