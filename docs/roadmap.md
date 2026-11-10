@@ -283,6 +283,7 @@ names the dataset version it needs:
 | Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
 | Crop rotation advice by family | v0.1 | Every crop has a family |
 | Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
+| Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
 | `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties: the first feature that needs crop-level rows |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
 | Worldwide sowing (Phase 2) | Later | Frost-free windows |
@@ -435,7 +436,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 6 | The bed is a small rectangle in a large empty canvas. | Fit-to-content on open; remember zoom per property. |
 | 7 | Explicit Save layout with an "Unsaved changes" badge and a leave guard. | Autosave with undo (keeps the offline queue). |
 | 8 | Configuration mixes season close, companions, name, size, address, zone, frost (month numbers 1–12), members, delete. | Sections or tabs: Property · Location & climate · Members · Seasons · Danger zone. **Month names done.** Climate auto-filled from location with "override" toggle. |
-| 9 | Companions are entered by hand per garden. | Shown automatically from the catalog in the planner and plant page; household overrides stay possible. |
+| 9 | Companions are entered by hand per garden. | Shown automatically from the catalog in the planner and plant page, with each pair's benefits (deters pests, attracts beneficials, fixes nitrogen, …) and evidence level (research, extension, traditional) so lore is labelled as lore; household overrides stay possible. |
 | 10 | Catalog shows letter-in-a-square avatars, no images, thin detail page (type, zones, sun, water, maturity, spacing), only action is favorite. | Crop icons, filters (season, family, "can sow now"), detail page with sowing timeline for **your** location, companions, varieties, and "Add to a bed / plan". |
 | 11 | Property cards say "0 placements" and show only zone. | Small map or layout thumbnail, plant count, next task. Plain words ("plants", not "placements"). |
 | 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | **Header done:** on mobile a sticky top bar holds Menu and the property name, in the page flow, so it never covers a heading. Phase 3: the canvas becomes view-first with a bottom sheet for actions. |
@@ -465,13 +466,24 @@ In rough priority order:
    "what can I sow this week from what I have?"
 4. **Weather alerts** — frost and heat warnings from the Open-Meteo forecast
    against tender plantings.
-5. **Harvest totals** — yields per crop per year from
+5. **Mulch-aware care** — beds already record mulch (none, wood chips, straw,
+   leaves, compost, paper, plastic), but nothing uses it. Watering reminders
+   stretch the crop's interval by mulch (organic mulch holds moisture, plastic
+   stops evaporation, bare soil dries fastest), together with the existing
+   rain check; a simple multiplier marked `ponytail:` until real data says
+   otherwise. Sowing advice notes that black plastic warms soil (melons and
+   peppers can start earlier) and straw keeps it cool.
+6. **Pests and diseases** — from dataset v0.3: plant pages list the pests a
+   crop is prone to, with signs and organic controls, and companion advice
+   names the pest a companion deters or traps. Pest sightings can be logged
+   in the journal.
+7. **Harvest totals** — yields per crop per year from
    `garden_planting_harvests`.
-6. **Journal** — dated notes with photos on a planting, bed, or property.
-7. **Household tasks** — assign a reminder to a member; done-by history.
-8. **Export** — iCal feed per property, CSV export of plantings and
+8. **Journal** — dated notes with photos on a planting, bed, or property.
+9. **Household tasks** — assign a reminder to a member; done-by history.
+10. **Export** — iCal feed per property, CSV export of plantings and
    harvests, full JSON backup/restore.
-9. **Custom varieties + suggest corrections** (from Phase 1 curation).
+11. **Custom varieties + suggest corrections** (from Phase 1 curation).
 
 ---
 
