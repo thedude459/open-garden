@@ -284,6 +284,7 @@ names the dataset version it needs:
 | Crop rotation advice by family | v0.1 | Every crop has a family |
 | Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
 | Soil-test advice (pH against each crop's range) | v0.2 | `soilPh` per crop |
+| Watering by water balance | v0.2 | Crop coefficients (Kc) per growth stage |
 | Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
 | `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties: the first feature that needs crop-level rows |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
@@ -426,13 +427,13 @@ year than first frost — which is every Southern Hemisphere garden.
 
 | Item | Approach |
 |---|---|
-| Frost dates anywhere | Compute from Open-Meteo historical daily minimum temperature (already used for rain outlook; no key). Median last spring / first fall day ≤ 0 °C over the last 30 years, plus a 10%-risk date. Cache per rounded lat/long. |
-| Hardiness zone anywhere | Derive from mean annual extreme minimum over the same 30 years using the USDA temperature bands (the bands are just numbers and work globally). Keep the zone label, show °C/°F. |
+| Frost dates anywhere | Compute from Open-Meteo historical daily minimum temperature (already used for rain outlook; no key). Median last spring / first fall day ≤ 0 °C over the last 30 years, plus a 10%-risk date. Cache per rounded lat/long. **Fallback source:** [NASA POWER](https://power.larc.nasa.gov/) (worldwide daily data, free and unrestricted) or NOAA [GSOD](https://www.ncei.noaa.gov/) station data (public domain), behind the same climate port, for operators whose use does not fit Open-Meteo's non-commercial terms or when it is unreachable. |
+| Hardiness zone anywhere | Derive from mean annual extreme minimum over the same 30 years using the USDA temperature bands (the bands are just numbers and work globally). Keep the zone label, show °C/°F. **US offline:** bundle the ZIP-to-zone table from [frostline](https://github.com/waldoj/frostline) (MIT; the data behind phzmapi.org) so US installs get zones with no outbound call while computed zones arrive. |
 | Southern Hemisphere | Treat the growing season as a range that may wrap the year end. Fix `keepFrostPair` and calendar math. `planting-calendar`'s `addDays` works in a fixed leap year (2024) and drops the year, so windows that cross the year end can be a day off around 29 February (found by a fast-check property; see `month-day.property.spec.ts`). Carry the year through. |
 | Frost-free climates | Use the crop's temperature window and wet/dry season instead of frost anchors. |
 | Units | Per-user metric/imperial setting; store metric internally, display either. |
 | Locale | Month names instead of numbers, locale date formats, crop common names by locale from Wikidata. |
-| Drop | `phzmapi.org`, FarmSense. Keep Nominatim (respect its 1 req/s and User-Agent policy) and Open-Meteo (note its non-commercial terms in the deploy docs). |
+| Drop | `phzmapi.org` (replaced by bundled frostline data, then computed zones) and FarmSense. Keep Nominatim (respect its 1 req/s and User-Agent policy) and Open-Meteo (note its non-commercial terms in the deploy docs; the fallback source above covers operators it does not suit). |
 
 ---
 
@@ -484,13 +485,19 @@ each against the other phases):
    time.
 3. **Weather alerts** — frost and heat warnings from the Open-Meteo forecast
    against tender plantings. Delivered through item 2.
-4. **Mulch-aware care** — beds already record mulch (none, wood chips, straw,
-   leaves, compost, paper, plastic), but nothing uses it. Watering reminders
-   stretch the crop's interval by mulch (organic mulch holds moisture, plastic
-   stops evaporation, bare soil dries fastest), together with the existing
-   rain check; a simple multiplier marked `ponytail:` until real data says
-   otherwise. Sowing advice notes that black plastic warms soil (melons and
-   peppers can start earlier) and straw keeps it cool.
+4. **Watering by water balance** — replaces fixed watering intervals (and the
+   mulch multiplier planned before). Each day a planting uses reference
+   evapotranspiration (ET₀) × the crop's coefficient for its growth stage,
+   minus rain; a reminder fires when the deficit passes a threshold for the
+   crop and soil. ET₀ comes from Open-Meteo's `et0_fao_evapotranspiration`,
+   in the same request the rain outlook already makes (it asks only for
+   `rain_sum` today), so no new provider. Mulch lowers evaporation from the
+   soil (beds already record it: none, wood chips, straw, leaves, compost,
+   paper, plastic), and a moisture sensor reading (item 6) overrides the
+   estimate. Sowing advice notes that black plastic warms soil (melons and
+   peppers can start earlier) and straw keeps it cool. Needs crop
+   coefficients in the dataset (FAO-56 publishes them for common crops);
+   until then the importer's water-class intervals stay.
 5. **Soil tests per bed** — record a test (date, lab, pH, organic matter %, N,
    P, and K as the level the lab reported, the lab's own recommendations, and
    optionally the report PDF). Advice, never a block: compare pH with the
@@ -500,23 +507,34 @@ each against the other phases):
    to the lab's recommendation, suggest compost for low organic matter, and
    remind to retest every 2–3 years. No application rates at first: labs
    report on different extraction methods and units, and rates depend on
-   buffer pH and texture; follow the lab where it gives them.
-6. **Succession planting** — "every 2 weeks until <date>" creates a series.
-7. **Seed inventory** — packets, quantity, year; viability by crop;
-   "what can I sow this week from what I have?"
-8. **Pests and diseases** — from dataset v0.3: plant pages list the pests a
+   buffer pH and texture; follow the lab where it gives them. **Soil by
+   location:** before there is a test, pre-fill a bed's likely texture,
+   typical pH, and drainage from USDA's Soil Data Access (US, public domain)
+   or ISRIC SoilGrids (worldwide, CC BY 4.0, credited in the UI), through a
+   provider port like the climate lookups. These are used at runtime and
+   never copied into the CC0 dataset; a soil test always overrides them.
+6. **Sensor input** — many self-hosters run Home Assistant and soil-moisture
+   sensors. A small authenticated API accepts moisture readings per bed (or
+   per planting), with Home Assistant as the first integration. A recent
+   reading confirms or skips a watering reminder (item 4). Readings are
+   property data, under the same membership rules as everything else.
+7. **Succession planting** — "every 2 weeks until <date>" creates a series.
+8. **Seed inventory** — packets, quantity, year; viability by crop;
+   "what can I sow this week from what I have?", and a seeds-needed
+   calculator from bed size, spacing, and the dataset's seeding data (v0.3).
+9. **Pests and diseases** — from dataset v0.3: plant pages list the pests a
    crop is prone to, with signs and organic controls, and companion advice
    names the pest a companion deters or traps. Pest sightings can be logged
    in the journal.
-9. **Harvest totals** — yields per crop per year from
+10. **Harvest totals** — yields per crop per year from
    `garden_planting_harvests`.
-10. **Journal** — dated notes with photos on a planting, bed, or property.
-11. **Household tasks** — assign a reminder to a member; done-by history.
-12. **Export** — iCal feed per property, CSV export of plantings and
+11. **Journal** — dated notes with photos on a planting, bed, or property.
+12. **Household tasks** — assign a reminder to a member; done-by history.
+13. **Export** — iCal feed per property, CSV export of plantings and
     harvests, full JSON backup/restore.
-13. **Printable plan** — the layout and a season's sowing calendar as a print
+14. **Printable plan** — the layout and a season's sowing calendar as a print
     view or PDF.
-14. **Custom varieties + suggest corrections** (from Phase 1 curation).
+15. **Custom varieties + suggest corrections** (from Phase 1 curation).
 
 ---
 
@@ -542,12 +560,12 @@ dataset v0.1.
 | 3 | Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
 | 4 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
 | 5p *(parallel, data repo)* | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
-| 6 | Phase 2 climate: frost and zones anywhere, Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
+| 6 | Phase 2 climate: frost and zones anywhere (with a NASA POWER or NOAA fallback, and bundled frostline zones for the US first), Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
 | 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |
-| 8 | Phase 4 items 3–5: weather alerts, mulch-aware care, soil tests per bed | Care features that build on reminders (step 4) and data from step 5p. |
+| 8 | Phase 4 items 3–6: weather alerts, watering by water balance, soil tests per bed (with soil by location), sensor input | Care features that build on reminders (step 4) and data from step 5p. Water balance needs the dataset's crop coefficients. |
 | 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops and pests and diseases | Broadens the catalog; unblocks pest advice. |
 | 10 | Phase 3 remaining and onboarding; mobile browser tests (test item 8) | Polishes what steps 2–8 added. |
-| 11 | Phase 4 items 6–14, in the order listed | Useful, but none unblocks other work. |
+| 11 | Phase 4 items 7–15, in the order listed | Useful, but none unblocks other work. |
 | *Ongoing* | Coverage plan steps 4 (controller edge cases), 5, 6; test items 9–12 and the web half of 15 (Playwright against the Compose web image); OpenSSF Best Practices badge (maintainer); hygiene item 17 when the repo moves to an organization | Fit around the steps above; none blocks them. |
 
 ---|---|---|
