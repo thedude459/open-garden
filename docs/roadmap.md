@@ -61,7 +61,7 @@ scanning with push protection; Dependabot security updates.
 | 13 | Dependency licenses | **Done:** `scripts/ci/license-check.js` (in `verify`) fails when a production dependency's license is outside an AGPL-compatible allow-list. | — |
 | 14 | `legacy-peer-deps` | **Done:** the only conflict was `@nx/nest` (a project generator nothing used) declaring NestJS <12. It is removed, `.npmrc` is gone, and `npm ci` resolves with strict peer dependencies. | — |
 | 15 | Personal tool config | **Done:** `.cursor/` and `.superdesign/` removed; design system moved to `docs/design-system.md`. | — |
-| 16 | Coverage gate scope | The 80% gate covers domain libs only. | Keep, but publish the coverage report as a CI artifact or PR comment so contributors see it. |
+| 16 | Coverage gate scope | The 80% gate covers domain libs only. | **Done:** kept; the whole-codebase report is posted to the `verify` job summary and uploaded as an artifact (test item 1). |
 | 17 | Gitleaks action | `gitleaks-action` needs a license key for organization-owned repos. | No action while the repo is personal; switch to the `gitleaks` CLI if it moves to an org. |
 
 ### Tests
@@ -104,7 +104,7 @@ planner load, plant search) are tested.
 | 1 | The 80% gate measures only domain libraries. | **Done (report):** `npm run test:coverage:all` measures apps and libs without thresholds; CI posts a per-area table to the `verify` job summary and uploads the HTML report. A separate threshold for `apps/web` waits for component tests (item 2). |
 | 2 | Only 2 Angular spec files exist; no component tests. UI behaviour is tested only through slow browser runs. | Add component tests (Angular Testing Library on Vitest) for the large pages as they are split in Phase 3: planner inspector, plantings list, configuration sections. |
 | 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | **Done:** `*.db.spec.ts` run every repository against PGlite (real PostgreSQL in WebAssembly, migrations applied) inside the unit run — no Docker — and count in the per-area report (14% → 81%). The lib stays outside the 80% gate until the pipeline-run repository is covered too. |
-| 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | Use a separate database for e2e (e.g. `open_garden_e2e`, created by the script) or a separate Compose project. |
+| 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | **Done:** `scripts/ci/e2e.sh` uses its own `open_garden_e2e` database, created by the script, so test data never reaches the app database. |
 | 5 | Some "contract" tests assert values they constructed themselves. | **Done:** 19 self-checking tests removed from `apps/api-e2e` (3 files emptied and deleted). Each behaviour they named is covered by a live HTTP, domain unit, or Playwright test. |
 | 6 | API controllers, guards, and session handling were only exercised by live HTTP specs, which coverage did not count. | **Done:** live-test coverage is measured and reported (`apps/api` 76% unit + live). Guard tests landed with coverage step 4; controller validation edge cases follow. |
 | 7 | No accessibility tests. | `@axe-core/playwright` checks on each main page; fail on serious/critical issues. Pairs with the Phase 3 accessibility pass. |
@@ -283,6 +283,8 @@ names the dataset version it needs:
 | Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
 | Crop rotation advice by family | v0.1 | Every crop has a family |
 | Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
+| Soil-test advice (pH against each crop's range) | v0.2 | `soilPh` per crop |
+| Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
 | `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties: the first feature that needs crop-level rows |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
 | Worldwide sowing (Phase 2) | Later | Frost-free windows |
@@ -323,6 +325,16 @@ habit and use, mismatches are **blocked**, and bramble is its own type.
   berry stations in orchards move to a bramble area in a migration.
 - Remove the legacy `garden_beds.kind` (`bed`/`orchard`) column and its API
   field. It predates areas; nothing writes `kind = 'orchard'` any more.
+- **Block by habit, not by use.** Melons, watermelons, and strawberries are
+  `use: fruit` but belong in vegetable areas, so a vegetable area blocks trees
+  and canes outright and blocks shrubs unless they are herbs (thyme is a woody
+  subshrub). The table above lists what each type is for; the code rule
+  checks habit first.
+- **Tree beds sized by rootstock.** Trees in the dataset carry spacing for
+  dwarf, semi-dwarf, and standard rootstocks. A tree planting records its
+  rootstock, and its one-tree orchard bed is created at that rootstock's
+  spacing (a new tree bed is 8 × 8 ft today, smaller than any dataset tree).
+  An unknown rootstock uses the semi-dwarf default.
 - Needs the dataset's habit and use fields, so it ships with or after the
   first dataset import.
 
@@ -363,6 +375,46 @@ In the app:
 - Admin page becomes "Catalog version": current version, available
   version, import, and the diff (added/changed/deprecated).
 
+### Before the dataset becomes the default
+
+1. **Tamper protection, not just integrity.** The `.sha256` beside a catalog
+   file catches corruption, but anyone who can replace the file can replace
+   its checksum. Pin the bundled release's SHA-256 in the app's code, and
+   verify the data repo's provenance attestation for any newer catalog an
+   operator imports (`gh attestation verify` or Sigstore verification in the
+   importer). Refuse a file that fails either.
+2. **Catalog updates never block a saved garden.** A new release may widen a
+   crop's spacing or change its habit. Existing plantings are then *flagged*
+   ("closer than recommended", "this area no longer accepts it"), never
+   blocked from saving and never removed; new placements follow the new
+   values. Applies to the spacing gate and to typed areas.
+3. **Map existing plantings from fixture plants to dataset plants.** A table
+   from fixture variety keys to dataset ids (for example `solanum
+   lycopersicum|cherry` → `dataset:tomato-cherry`), applied in a migration
+   with a test. Plants with no dataset equivalent stay as deprecated rows that
+   still display, so no planting loses its plant.
+4. **Compatibility check across repositories.** A scheduled app CI job
+   downloads the latest open-garden-data release and runs the importer
+   against it, so an incompatible data release is caught in days, not when a
+   household upgrades.
+5. **Follow dataset deprecations.** When a crop is marked `deprecated` with
+   `replacedBy` (the data repo never deletes or renames an id), the importer
+   deprecates the plant and offers to move plantings to the replacement.
+6. **Skip unchanged runs.** The schedule defaults to daily, but a dataset
+   catalog changes only when a new file is imported, and every run rewrites
+   every plant, its source links, and a merge decision per plant. Skip the run
+   when the catalog's SHA-256 matches the last successful run; otherwise write
+   only rows that changed (the unused `upsertManyByVarietyKey` batch upsert
+   becomes that change-only write). The changed rows are the
+   added/changed/deprecated diff the "Catalog version" page shows.
+7. **Reload a replaced catalog file.** `DatasetReleaseProvider` caches the
+   parsed catalog for the life of the process, so a newer file is ignored
+   until the API restarts. Reload when the file's checksum changes; the admin
+   "import a newer version" action depends on it.
+8. **Prune run history.** Nothing deletes old runs; each adds a merge decision
+   per plant (about 100,000 rows a year at 150 crops on the daily default).
+   Keep the last 50 runs or 90 days, whichever is more.
+
 ---
 
 ## Phase 2 — Worldwide climate
@@ -399,7 +451,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 6 | The bed is a small rectangle in a large empty canvas. | Fit-to-content on open; remember zoom per property. |
 | 7 | Explicit Save layout with an "Unsaved changes" badge and a leave guard. | Autosave with undo (keeps the offline queue). |
 | 8 | Configuration mixes season close, companions, name, size, address, zone, frost (month numbers 1–12), members, delete. | Sections or tabs: Property · Location & climate · Members · Seasons · Danger zone. **Month names done.** Climate auto-filled from location with "override" toggle. |
-| 9 | Companions are entered by hand per garden. | Shown automatically from the catalog in the planner and plant page; household overrides stay possible. |
+| 9 | Companions are entered by hand per garden. | Shown automatically from the catalog in the planner and plant page, with each pair's benefits (deters pests, attracts beneficials, fixes nitrogen, …) and evidence level (research, extension, traditional) so lore is labelled as lore; household overrides stay possible. |
 | 10 | Catalog shows letter-in-a-square avatars, no images, thin detail page (type, zones, sun, water, maturity, spacing), only action is favorite. | Crop icons, filters (season, family, "can sow now"), detail page with sowing timeline for **your** location, companions, varieties, and "Add to a bed / plan". |
 | 11 | Property cards say "0 placements" and show only zone. | Small map or layout thumbnail, plant count, next task. Plain words ("plants", not "placements"). |
 | 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | **Header done:** on mobile a sticky top bar holds Menu and the property name, in the page flow, so it never covers a heading. Phase 3: the canvas becomes view-first with a bottom sheet for actions. |
@@ -420,29 +472,85 @@ Large page components to split before or during this phase:
 
 ## Phase 4 — Features
 
-In rough priority order:
+In priority order (the [implementation order](#implementation-order) places
+each against the other phases):
 
 1. **Crop rotation hints** — family per crop + year records → "Brassicas
-   were in North last year." Advice only.
-2. **Succession planting** — "every 2 weeks until <date>" creates a series.
-3. **Seed inventory** — packets, quantity, year; viability by crop;
+   were in North last year." Advice only. Needs only the dataset's families,
+   so it follows typed areas.
+2. **Reminders that reach people** — care reminders and the Today home only
+   work inside the app. Web push for the PWA (opt-in per member) and an
+   optional daily email digest, so watering and harvest reminders arrive on
+   time.
+3. **Weather alerts** — frost and heat warnings from the Open-Meteo forecast
+   against tender plantings. Delivered through item 2.
+4. **Mulch-aware care** — beds already record mulch (none, wood chips, straw,
+   leaves, compost, paper, plastic), but nothing uses it. Watering reminders
+   stretch the crop's interval by mulch (organic mulch holds moisture, plastic
+   stops evaporation, bare soil dries fastest), together with the existing
+   rain check; a simple multiplier marked `ponytail:` until real data says
+   otherwise. Sowing advice notes that black plastic warms soil (melons and
+   peppers can start earlier) and straw keeps it cool.
+5. **Soil tests per bed** — record a test (date, lab, pH, organic matter %, N,
+   P, and K as the level the lab reported, the lab's own recommendations, and
+   optionally the report PDF). Advice, never a block: compare pH with the
+   crop's `soilPh` range from the dataset ("North is pH 7.2; blueberries need
+   4.5–5.5: lower it with sulfur over a season, or grow them in a container of
+   acid mix"), note low nutrients against the crop's feeding class and point
+   to the lab's recommendation, suggest compost for low organic matter, and
+   remind to retest every 2–3 years. No application rates at first: labs
+   report on different extraction methods and units, and rates depend on
+   buffer pH and texture; follow the lab where it gives them.
+6. **Succession planting** — "every 2 weeks until <date>" creates a series.
+7. **Seed inventory** — packets, quantity, year; viability by crop;
    "what can I sow this week from what I have?"
-4. **Weather alerts** — frost and heat warnings from the Open-Meteo forecast
-   against tender plantings.
-5. **Harvest totals** — yields per crop per year from
+8. **Pests and diseases** — from dataset v0.3: plant pages list the pests a
+   crop is prone to, with signs and organic controls, and companion advice
+   names the pest a companion deters or traps. Pest sightings can be logged
+   in the journal.
+9. **Harvest totals** — yields per crop per year from
    `garden_planting_harvests`.
-6. **Journal** — dated notes with photos on a planting, bed, or property.
-7. **Household tasks** — assign a reminder to a member; done-by history.
-8. **Export** — iCal feed per property, CSV export of plantings and
-   harvests, full JSON backup/restore.
-9. **Custom varieties + suggest corrections** (from Phase 1 curation).
+10. **Journal** — dated notes with photos on a planting, bed, or property.
+11. **Household tasks** — assign a reminder to a member; done-by history.
+12. **Export** — iCal feed per property, CSV export of plantings and
+    harvests, full JSON backup/restore.
+13. **Printable plan** — the layout and a season's sowing calendar as a print
+    view or PDF.
+14. **Custom varieties + suggest corrections** (from Phase 1 curation).
 
 ---
 
 ## Implementation order
 
+The one order of work across this repository and
+[open-garden-data](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md)
+(re-prioritized November 2026). Work on the lowest open step first; steps
+marked *parallel* can run alongside the one above.
+
+**Done:** Phase 0 housekeeping and hygiene items 1–16; test items 1, 3–6,
+13, 14, and the API half of 15; coverage plan steps 1–3 and the guard half of
+step 4; OpenSSF token permissions, vulnerabilities, signed releases, and
+fast-check property tests; quick UX fixes (#5, #8 month names, #12, #13); the
+data repository, baseline migration, dataset importer, and the 50 crops of
+dataset v0.1.
+
 | Order | Work | Why this order |
 |---|---|---|
+| **1 (next)** | **Tag dataset v0.1.0** (maintainer, in the data repo), then make the dataset the default: the [checklist](#before-the-dataset-becomes-the-default) items 1–4 and 6–8 (tamper protection, saved gardens never blocked, fixture → dataset planting mapping, cross-repo import check, skip unchanged runs, reload a replaced file, prune history), bundle the pinned release in the API image, move e2e to dataset crops, and delete the Perenual provider, second fixture, scheduler, and source ordering | Everything after this needs real catalog data. Items 6–8 are defects that show up as soon as the dataset is the default; tamper protection and never blocking saved gardens are cheaper to build in now than to retrofit. |
+| 1p *(parallel, data repo)* | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before outside contributions start; no app dependency. |
+| 2 | Phase 1 typed areas: habit rules (herbs of any habit), bramble area, tree beds sized by rootstock, remove `garden_beds.kind` | The dataset's habit, use, and rootstocks are only useful once areas enforce them, and the 8 × 8 ft tree bed is wrong for every dataset tree. |
+| 3 | Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
+| 4 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
+| 5p *(parallel, data repo)* | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
+| 6 | Phase 2 climate: frost and zones anywhere, Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
+| 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |
+| 8 | Phase 4 items 3–5: weather alerts, mulch-aware care, soil tests per bed | Care features that build on reminders (step 4) and data from step 5p. |
+| 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops and pests and diseases | Broadens the catalog; unblocks pest advice. |
+| 10 | Phase 3 remaining and onboarding; mobile browser tests (test item 8) | Polishes what steps 2–8 added. |
+| 11 | Phase 4 items 6–14, in the order listed | Useful, but none unblocks other work. |
+| *Ongoing* | Coverage plan steps 4 (controller edge cases), 5, 6; test items 9–12 and the web half of 15 (Playwright against the Compose web image); OpenSSF Best Practices badge (maintainer); hygiene item 17 when the repo moves to an organization | Fit around the steps above; none blocks them. |
+
+---|---|---|
 | 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) and hygiene items 1–5 | Small, unblocks everything; licensing must be settled before data contributions start, and the auto-merge and image fixes reduce real risk now. |
 | 1a | Test items 13, 14, 1, 4, 5 (pool crash fix, flaky helper, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 6 are scheduled by the [coverage plan](#coverage-plan); 7, 8 land alongside Phase 3; item 10 with Phase 2. |
 | 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
