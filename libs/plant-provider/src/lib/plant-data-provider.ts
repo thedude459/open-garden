@@ -3,6 +3,11 @@ import type { GrowingGuidanceDto } from '@open-garden/shared-types';
 
 export interface ProviderPlant {
   externalId: string;
+  /**
+   * Catalog key for a source with its own stable ids (the dataset). Without
+   * it, records are keyed and merged by species and cultivar.
+   */
+  varietyKey?: string;
   commonName: string;
   species: string;
   cultivar: string | null;

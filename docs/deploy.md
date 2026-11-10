@@ -55,6 +55,7 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `WEB_PORT` | `8080` | Host port for the web container. |
 | `COOKIE_SECURE` | `false` | Set `true` when people reach the app over HTTPS, so the session cookie is only sent over TLS. |
 | `PLANT_PROVIDER`, `PERENUAL_API_KEY` | `fixture`, unset | Optional extra plant source for the catalog pipeline. Not needed. |
+| `PLANT_CATALOG_FILE` | unset | Optional: path, inside the API container, to an [open-garden-data](https://github.com/thedude459/open-garden-data/releases) release (`open-garden-catalog-<version>.json`), with its `.sha256` beside it. Mount both into the container, then add `dataset` to the source order on the admin Pipeline page. A file that fails its checksum or schema fails that run and is not imported. |
 
 The API's `DATABASE_URL`, `PORT`, and `NODE_ENV` are set by
 `docker-compose.yml`; you do not need them in `.env`. `CORS_ORIGIN` only

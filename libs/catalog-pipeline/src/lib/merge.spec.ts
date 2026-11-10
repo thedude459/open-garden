@@ -9,6 +9,35 @@ function plant(overrides: Partial<ProviderPlant>): ProviderPlant {
 }
 
 describe('mergeCatalogRecords', () => {
+  it('keys a record by its own varietyKey, so two crops of one species stay apart', () => {
+    const { merged } = mergeCatalogRecords(
+      [
+        {
+          sourceId: 'dataset',
+          plants: [
+            plant({
+              externalId: 'bush-bean',
+              varietyKey: 'dataset:bush-bean',
+              species: 'Phaseolus vulgaris',
+              cultivar: null,
+            }),
+            plant({
+              externalId: 'pole-bean',
+              varietyKey: 'dataset:pole-bean',
+              species: 'Phaseolus vulgaris',
+              cultivar: null,
+            }),
+          ],
+        },
+      ],
+      ['dataset'],
+    );
+    expect(merged.map((p) => p.varietyKey).sort()).toEqual([
+      'dataset:bush-bean',
+      'dataset:pole-bean',
+    ]);
+  });
+
   it('merges a controlled pair into exactly 30 keys (10 overlap + 10 unique each)', () => {
     const aOverlap = Array.from({ length: 10 }, (_, i) =>
       plant({
