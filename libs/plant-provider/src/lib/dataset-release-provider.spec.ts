@@ -161,10 +161,16 @@ describe('DatasetReleaseProvider', () => {
     await expect(new DatasetReleaseProvider(write(inches)).listPage()).rejects.toThrow(
       /units.length/,
     );
-    const badHabit = catalog([{ ...tomato, habit: 'bush' }]);
-    await expect(new DatasetReleaseProvider(write(badHabit)).listPage()).rejects.toThrow(
-      /crops.0.habit/,
-    );
+    const noCrops = catalog([], { crops: 'none' });
+    await expect(new DatasetReleaseProvider(write(noCrops)).listPage()).rejects.toThrow(/crops/);
+  });
+
+  it('skips and counts crops it cannot read, and imports the rest', async () => {
+    // A newer minor release may add a habit this app does not know yet.
+    const shrubby = { ...tomato, id: 'shrubby', habit: 'subshrub' };
+    const page = await new DatasetReleaseProvider(write(catalog([shrubby, tomato]))).listPage();
+    expect(page.skipped).toBe(1);
+    expect(page.items.map((p) => p.externalId)).toEqual(['tomato', 'tomato-cherry']);
   });
 
   it('tries the file again after a failed read', async () => {

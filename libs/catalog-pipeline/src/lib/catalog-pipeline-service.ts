@@ -150,13 +150,14 @@ export class CatalogPipelineService {
       const batches: Array<{
         sourceId: string;
         plants: import('@open-garden/plant-provider').ProviderPlant[];
+        skipped: number;
       }> = [];
 
       for (const sourceId of enabled) {
         const provider = registry.get(sourceId);
         if (!provider) continue;
         try {
-          const plants = await fetchAllFromProvider(provider);
+          const { plants, skipped } = await fetchAllFromProvider(provider);
           sourceRows.push({
             sourceId,
             status: 'succeeded',
@@ -164,7 +165,7 @@ export class CatalogPipelineService {
             recordsRejected: 0,
             errorMessage: null,
           });
-          batches.push({ sourceId, plants });
+          batches.push({ sourceId, plants, skipped });
         } catch (err) {
           sourceRows.push({
             sourceId,
@@ -221,7 +222,8 @@ export class CatalogPipelineService {
         const invalid = batch.plants.filter(
           (p) => !p.commonName?.trim() || !p.species?.trim(),
         ).length;
-        row.recordsRejected = invalid;
+        // Unreadable records the source left out count as rejected too.
+        row.recordsRejected = invalid + batch.skipped;
         row.recordsAccepted = batch.plants.length - invalid;
       }
 
@@ -242,7 +244,7 @@ export class CatalogPipelineService {
         plants: merge.merged.map(toUpsert),
         deprecateKeys,
         plantsReactivated: reactivated,
-        recordsRejected: merge.rejected,
+        recordsRejected: merge.rejected + batches.reduce((n, b) => n + b.skipped, 0),
         sources: sourceRows,
         merges: merge.merged.map((plant) => ({
           varietyKey: plant.varietyKey,
