@@ -242,12 +242,17 @@ jobs:
           dockerfile: Dockerfile.${{ matrix.image }}
       - if: steps.gate.outputs.run == 'run'
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Date for OS package updates
+        if: steps.gate.outputs.run == 'run'
+        id: today
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
       - name: Build image
         if: steps.gate.outputs.run == 'run'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: Dockerfile.${{ matrix.image }}
+          build-args: OS_PACKAGES_DATE=${{ steps.today.outputs.date }}
           load: true
           push: false
           tags: open-garden-${{ matrix.image }}:ci
