@@ -29,7 +29,9 @@ async function record(db: AppDatabase, createdAt: number): Promise<void> {
   );
 }
 
-describe('assertUpgradeable', () => {
+// Each test starts its own PGlite (PostgreSQL in WebAssembly). A cold start can
+// pass Vitest's 5 s default on a busy CI runner, so allow more.
+describe('assertUpgradeable', { timeout: 30_000 }, () => {
   it('accepts an empty database', async () => {
     const client = new PGlite();
     open.push(client);
