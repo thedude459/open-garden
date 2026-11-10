@@ -84,7 +84,7 @@ export function mergeCatalogRecords(
         rejected += 1;
         continue;
       }
-      const varietyKey = buildVarietyKey(plant.species, plant.cultivar);
+      const varietyKey = plant.varietyKey ?? buildVarietyKey(plant.species, plant.cultivar);
       let row = acc.get(varietyKey);
       if (!row) {
         row = {

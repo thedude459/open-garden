@@ -279,10 +279,11 @@ names the dataset version it needs:
 
 | App work | Needs dataset | Because |
 |---|---|---|
-| Catalog importer, `crops` table, sowing windows from data | v0.1 | Schema v1 and the first 50 crops |
+| Catalog importer, sowing windows from data | v0.1 | Schema v1 and the first 50 crops |
 | Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
 | Crop rotation advice by family | v0.1 | Every crop has a family |
 | Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
+| `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties: the first feature that needs crop-level rows |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
 | Worldwide sowing (Phase 2) | Later | Frost-free windows |
 
@@ -291,9 +292,12 @@ a provenance attestation. The app's Docker image bundles a pinned version so a
 fresh install works offline; operators can import a newer one from the admin
 page.
 
-**App database.** A `crops` table, and `plants` becomes varieties pointing at
-it. Companion pairs move from per-garden to catalog data; a household can
-still add or override its own pairs. That needs a principle VIII change in
+**App database.** Each crop and each variety is a row in `plants`, keyed by
+dataset id. Crop-level fields (family, habit, use) join `plants` with typed
+areas and rotation; a `crops` table comes when a feature needs crop rows of
+its own, such as companion pairs (ADR 0019). Companion pairs move from
+per-garden to catalog data; a household can still add or override its own
+pairs. That needs a principle VIII change in
 `AGENTS.md`, which today says companion pairs stay household data until a real
 source exists. The dataset stores metric units; the app converts for display.
 
@@ -342,9 +346,20 @@ In the app:
 
 ### App changes
 
-- New `DatasetReleaseProvider` behind the existing provider port; delete
-  `PerenualPlantProvider`, `FixtureBPlantProvider`, scheduler and source
-  ordering. Keep the run history table for import diffs.
+- **Done ([ADR 0019](adr/0019-dataset-catalog-import.md)):**
+  `DatasetReleaseProvider` behind the existing provider port, enabled by
+  `PLANT_CATALOG_FILE`. It checks the release's SHA-256, validates it, and
+  maps each crop and variety to a catalog plant keyed by dataset id.
+- When dataset v0.1 has its 50 crops: bundle a pinned release in the API
+  image, make `dataset` the default source, map existing plantings from
+  fixture plants to dataset plants, and move e2e to dataset crops. Then
+  delete `PerenualPlantProvider`, `FixtureBPlantProvider`, the scheduler, and
+  source ordering. Keep the run history table for import diffs.
+- **Deferred to dataset v0.2: the `crops` table.** Until a feature needs
+  crop-level rows, each crop and variety is a `plants` row keyed by dataset
+  id, and crop fields (family, habit, use) are columns on `plants`. Companion
+  pairs are the first feature that needs it; adding it then is cheap because
+  plants already carry dataset ids ([ADR 0019](adr/0019-dataset-catalog-import.md)).
 - Admin page becomes "Catalog version": current version, available
   version, import, and the diff (added/changed/deprecated).
 
@@ -434,7 +449,7 @@ In rough priority order:
 | 1c | [Coverage plan](#coverage-plan) steps 1–4: measure live tests, ratchet, database integration tests, API controller tests | The real numbers and a floor that only rises come first; the database and authorization tests protect the data before Phase 1 changes the schema. |
 | 1d | [OpenSSF](#openssf): token permissions, vulnerabilities, signed releases (done in this pass); `SCORECARD_TOKEN` and the Best Practices badge (maintainer); fast-check property tests (with coverage steps 3–4) | Raise the Scorecard score and close the code-scanning alerts before inviting contributors. |
 | 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | **Done.** Cheap, visible wins; no dependency on data. |
-| 3 | Phase 1: importer, `crops` table, and typed areas, against dataset **v0.1** (first 50 crops, built in parallel in the data repo) | Today, Calendar, and rotation all need real sowing windows and families. The data repo and baseline migration are done. New repositories ship with integration tests (coverage step 3). |
+| 3 | Phase 1: importer (**done**) and typed areas, against dataset **v0.1** (first 50 crops, built in parallel in the data repo) | Today, Calendar, and rotation all need real sowing windows and families. The data repo and baseline migration are done. New repositories ship with integration tests (coverage step 3). |
 | 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
 | 5 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector | Builds on 3–4. Split pages and new screens ship with component tests (coverage step 5). |
 | 6 | Dataset v0.2 (companions) and v0.3 (~150 crops); companion advice from data | Runs in parallel in the data repo; see its [roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md). |

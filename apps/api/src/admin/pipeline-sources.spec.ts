@@ -18,6 +18,17 @@ describe('createPipelineSources', () => {
     expect(page.items.some((p) => p.commonName === 'Pipeline Extra 01')).toBe(true);
   });
 
+  it('adds the dataset release only when PLANT_CATALOG_FILE is set', () => {
+    expect(createPipelineSources({ PLANT_CATALOG_FILE: ' ' }).map((s) => s.id)).toEqual([
+      'fixture',
+    ]);
+    expect(
+      createPipelineSources({ PLANT_CATALOG_FILE: '/data/open-garden-catalog-0.1.0.json' }).map(
+        (s) => s.id,
+      ),
+    ).toEqual(['fixture', 'dataset']);
+  });
+
   it('adds Perenual only when a key is set', () => {
     expect(createPipelineSources({ PERENUAL_API_KEY: ' k ' }).map((s) => s.id)).toEqual([
       'fixture',
