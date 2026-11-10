@@ -1,8 +1,14 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { Client } from 'pg';
-import { createDb, MIGRATIONS_FOLDER, runMigrations } from '@open-garden/plant-catalog-data';
+import {
+  BASELINE_MILLIS,
+  createDb,
+  MIGRATIONS_FOLDER,
+  runMigrations,
+} from '@open-garden/plant-catalog-data';
 
 const databaseUrl = process.env['DATABASE_URL'];
 const folder = resolve(process.cwd(), MIGRATIONS_FOLDER);
@@ -10,6 +16,7 @@ const sqlFiles = readdirSync(folder)
   .filter((f) => f.endsWith('.sql'))
   .sort();
 const created: string[] = [];
+const tempDirs: string[] = [];
 
 function urlFor(name: string): string {
   const url = new URL(databaseUrl!);
@@ -35,10 +42,10 @@ async function freshDatabase(label: string): Promise<string> {
   return urlFor(name);
 }
 
-async function migrate(url: string): Promise<void> {
+async function migrate(url: string, migrationsFolder = folder): Promise<void> {
   const { db, pool } = createDb(url);
   try {
-    await runMigrations(db);
+    await runMigrations(db, migrationsFolder);
   } finally {
     await pool.end();
   }
@@ -82,14 +89,58 @@ async function recorded(url: string): Promise<number> {
   return Number(rows[0]?.n);
 }
 
+/** The schema every release since v0.1.0 has, without migration records. */
+async function applyBaselineSql(url: string): Promise<void> {
+  for (const file of sqlFiles) await query(url, readFileSync(resolve(folder, file), 'utf8'));
+}
+
+/** Record migrations 0001..`upTo` the way Drizzle did on a v0.1.0 install. */
+async function recordOldMigrations(url: string, upTo: number): Promise<void> {
+  await query(
+    url,
+    `create schema if not exists drizzle;
+     create table if not exists drizzle.__drizzle_migrations
+       (id serial primary key, hash text not null, created_at bigint)`,
+  );
+  for (let i = 1; i <= upTo; i++) {
+    await query(
+      url,
+      `insert into drizzle.__drizzle_migrations (hash, created_at)
+       values ('v0.1.0-${i}', ${BASELINE_MILLIS - 12 + i})`,
+    );
+  }
+}
+
+/** A copy of the migrations folder plus one later migration, as the next release would add. */
+function foldersWithNextMigration(): string {
+  const dir = mkdtempSync(join(tmpdir(), 'og-migrations-'));
+  tempDirs.push(dir);
+  cpSync(folder, dir, { recursive: true });
+  writeFileSync(join(dir, '0001_next.sql'), 'create table next_release_probe (id integer);');
+  const journalPath = join(dir, 'meta', '_journal.json');
+  const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as {
+    entries: { idx: number; version: string; when: number; tag: string; breakpoints: boolean }[];
+  };
+  journal.entries.push({
+    idx: journal.entries.length,
+    version: '7',
+    when: Date.now(),
+    tag: '0001_next',
+    breakpoints: true,
+  });
+  writeFileSync(journalPath, JSON.stringify(journal));
+  return dir;
+}
+
 describe.skipIf(!databaseUrl)('migrations run once per database', () => {
   afterAll(async () => {
+    for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true });
     await admin(async (c) => {
       for (const name of created) await c.query(`drop database if exists "${name}" with (force)`);
     });
   });
 
-  it('records every migration on a fresh database and a second run changes nothing', async () => {
+  it('a fresh database gets the baseline once and a second run changes nothing', async () => {
     const url = await freshDatabase('fresh');
     await migrate(url);
     expect(await recorded(url)).toBe(sqlFiles.length);
@@ -101,18 +152,34 @@ describe.skipIf(!databaseUrl)('migrations run once per database', () => {
     expect(await orchardBeds(url)).toBe(1);
   });
 
-  it('adopts a database built by the old loop: one catch-up run, then nothing re-runs', async () => {
-    const url = await freshDatabase('legacy');
-    // What the old sync-cli did on every boot: run each file, record nothing.
-    for (const file of sqlFiles) {
-      await query(url, readFileSync(resolve(folder, file), 'utf8'));
-    }
-
-    await migrate(url);
-    expect(await recorded(url)).toBe(sqlFiles.length);
-
+  it('a v0.1.0 database skips the baseline, keeps its data, and takes later migrations', async () => {
+    const url = await freshDatabase('v010');
+    await applyBaselineSql(url);
+    await recordOldMigrations(url, 12);
     await insertOrchardBed(url);
+
     await migrate(url);
+    expect(await recorded(url)).toBe(12);
     expect(await orchardBeds(url)).toBe(1);
+
+    await migrate(url, foldersWithNextMigration());
+    expect(await recorded(url)).toBe(13);
+    expect(await query(url, 'select * from next_release_probe')).toEqual([]);
+  });
+
+  it('refuses a database built by the old run-every-file loop, and leaves it alone', async () => {
+    const url = await freshDatabase('legacy');
+    await applyBaselineSql(url);
+    await insertOrchardBed(url);
+    await expect(migrate(url)).rejects.toThrow(/predates Open Garden v0.1.0/);
+    expect(await orchardBeds(url)).toBe(1);
+  });
+
+  it('refuses a database that stopped part-way through the old migrations', async () => {
+    const url = await freshDatabase('partial');
+    await applyBaselineSql(url);
+    await recordOldMigrations(url, 10);
+    await expect(migrate(url)).rejects.toThrow(/part-way/);
+    expect(await recorded(url)).toBe(10);
   });
 });
