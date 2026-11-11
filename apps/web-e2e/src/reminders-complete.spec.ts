@@ -20,10 +20,10 @@ async function setupGardenWithTomato(page: Page, name: string) {
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await page.getByRole('link', { name: 'Plantings', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Cherry Tomato');
+  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
-  await page.getByRole('button', { name: 'Add Cherry Tomato' }).click();
-  const tomato = page.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
+  await page.getByRole('button', { name: 'Add Tomato (Cherry)' }).click();
+  const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await tomato
     .locator('input[type="date"]')
     .first()
@@ -65,7 +65,11 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await expect(friend.getByRole('link', { name: /Complete plot/ })).toBeVisible();
   await friend.getByRole('link', { name: /Complete plot/ }).click();
   await friend.getByRole('link', { name: 'Reminders' }).click();
-  await friend.getByRole('button', { name: 'Complete' }).click();
+  await friend
+    .locator('li')
+    .filter({ hasText: 'Harvest' })
+    .getByRole('button', { name: 'Complete' })
+    .click();
   await expect(friend.getByText('Harvest')).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Reminders' }).click();
@@ -73,6 +77,6 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.getByRole('link', { name: 'Plantings', exact: true }).click();
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   await expect(owner.locator('input[name^="harvested-"]').first()).not.toHaveValue('');
 });

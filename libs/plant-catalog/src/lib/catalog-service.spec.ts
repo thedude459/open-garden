@@ -36,6 +36,14 @@ describe('CatalogService', () => {
     await expect(service.list({ zone: 99 })).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
   });
 
+  it('rejects an unknown plant type', async () => {
+    const service = new CatalogService({ list: vi.fn() } as never);
+    await expect(service.list({ plantType: 'cactus' as never })).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+      message: 'invalid plantType',
+    });
+  });
+
   it('omits null-spacing rows from summaries', async () => {
     const plants = {
       list: vi.fn().mockResolvedValue({

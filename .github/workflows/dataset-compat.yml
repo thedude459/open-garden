@@ -1,0 +1,39 @@
+name: Dataset compatibility
+
+# Imports the latest open-garden-data release with this app's importer, so a
+# release the app cannot read is caught within a day (ADR 0020).
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NX_DAEMON: false
+
+jobs:
+  latest-release:
+    name: latest dataset release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-node
+      - name: Download the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/catalog"
+          gh release download --repo thedude459/open-garden-data \
+            --pattern 'open-garden-catalog-*.json' \
+            --pattern 'open-garden-catalog-*.json.sigstore.json' \
+            --dir "${RUNNER_TEMP}/catalog"
+          ls "${RUNNER_TEMP}/catalog"
+      - name: Import it
+        run: |
+          file="$(ls "${RUNNER_TEMP}"/catalog/open-garden-catalog-*.json | grep -v sigstore)"
+          LATEST_CATALOG_FILE="${file}" npx vitest run libs/plant-provider/src/lib/latest-release.spec.ts

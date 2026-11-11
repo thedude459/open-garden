@@ -62,13 +62,13 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   await createSizedBed(owner, 'North');
   expect((await saveLayout(owner)).status()).toBe(200);
   await owner.getByRole('link', { name: 'Transplants' }).click();
-  await addTransplant(owner, 'Cherry Tomato');
+  await addTransplant(owner, 'Tomato (Cherry)');
   await expect(owner.getByLabel('Notification')).toContainText('Transplant added');
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   const tray = owner.getByLabel('Waiting transplants');
   await tray
-    .getByRole('button', { name: 'Cherry Tomato' })
+    .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.getByRole('heading', { name: 'Bed View' }));
   const miss = owner.getByLabel('Notification');
   await expect(miss).toContainText('Drop missed a bed');
@@ -77,7 +77,7 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   await expect(miss).toHaveCount(0);
 
   await tray
-    .getByRole('button', { name: 'Cherry Tomato' })
+    .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByText('Unsaved changes')).toBeVisible();
   await expect(owner.getByLabel('Notification')).toHaveCount(0);

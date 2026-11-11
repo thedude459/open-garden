@@ -107,13 +107,18 @@ npx nx graph
 npx nx test plant-catalog
 npx nx run-many -t lint --all
 npm run migrate                 # apply migrations with drizzle-kit
-npm run api:sync-plants         # migrate, seed, and run the full fixture catalog load
+npm run api:sync-plants         # migrate, seed, and import the bundled plant catalog
 ```
 
-The catalog pipeline also runs from the admin page (`/admin/pipeline`) or
-`POST /api/admin/pipeline/runs`. For the optional Perenual source, set
-`PERENUAL_API_KEY` and add `"perenual"` to the pipeline's `sourceOrder`.
-See [docs/catalog-pipeline-checks.md](docs/catalog-pipeline-checks.md).
+The plant catalog is the open-garden-data release in
+`libs/plant-provider/catalog/`, pinned by SHA-256 in
+`libs/plant-provider/src/lib/dataset-release-provider.ts`. To move to a newer
+release, replace both files there (the JSON and its `.sigstore.json`), run
+`gh attestation verify <file> --owner thedude459`, update `BUNDLED_CATALOG`,
+and update the e2e specs if crops they use changed. The import also runs from
+the admin page (`/admin/pipeline`) or `POST /api/admin/pipeline/runs`. See
+[docs/catalog-pipeline-checks.md](docs/catalog-pipeline-checks.md) and
+[ADR 0020](docs/adr/0020-dataset-as-the-catalog.md).
 
 ## Continuous integration
 
@@ -135,7 +140,7 @@ documentation, editor or formatter config, the lockfile, development
 dependencies, or workflow pins (`scripts/ci/e2e-needed.js`). A failed run
 uploads the Playwright report and traces.
 
-Outside pull requests, [Scorecard](.github/workflows/scorecard.yml) checks supply-chain practices on every push to `main` and weekly, and [Image scan](.github/workflows/image-scan.yml) scans the latest published images every week.
+Outside pull requests, [Scorecard](.github/workflows/scorecard.yml) checks supply-chain practices on every push to `main` and weekly, [Image scan](.github/workflows/image-scan.yml) scans the latest published images every week, and [Dataset compatibility](.github/workflows/dataset-compat.yml) imports the latest open-garden-data release every day, so a release this app cannot read is caught before anyone upgrades to it.
 
 Actions are pinned by commit SHA. Dependabot opens weekly updates for npm,
 GitHub Actions, and the Docker images; patch and minor updates merge on their

@@ -54,14 +54,17 @@ export async function saveGarden(page: Page) {
 }
 
 export async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name }).first()).toBeVisible();
 }
 
 export async function applyPlantSearch(page: Page, name: string) {
-  await page.getByLabel('Search plants').fill(name);
+  await page.getByLabel('Search plants').fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Apply' }).click();
 }
 
@@ -131,11 +134,11 @@ export async function addTransplant(page: Page, name: string, date = '2026-03-01
   await expect(page.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
   const search = page.locator('input[name="transplantSearch"]');
   await expect(search).toBeVisible();
-  await search.fill(name);
+  await search.fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   const add = page.getByRole('button', { name: `Add transplant ${name}` });
   await expect(add).toBeVisible();
   await page.locator('li').filter({ hasText: name }).locator('input[type="date"]').fill(date);
   await add.click();
-  await expect(page.getByText(new RegExp(`${name} · started`))).toBeVisible();
+  await expect(page.getByText(`${name} · started`, { exact: false })).toBeVisible();
 }

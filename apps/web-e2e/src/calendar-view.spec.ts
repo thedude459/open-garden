@@ -27,7 +27,10 @@ async function createFrostGarden(page: Page, name: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.getByText(name).first()).toBeVisible();
@@ -42,22 +45,23 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   const friend = await newUser(browser, `cal-view-friend-${stamp}@example.com`);
 
   await createFrostGarden(owner, 'Season bed');
-  await addFromCatalog(owner, 'Cherry Tomato');
-  await addFromCatalog(owner, 'Spinach');
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+  // Garlic is sown relative to the first fall frost.
+  await addFromCatalog(owner, 'Garlic (Music)');
   await openOverview(owner);
   await owner.getByRole('button', { name: 'Add tree' }).click();
   expect((await saveLayout(owner)).ok()).toBeTruthy();
   await owner.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
-  await addFromCatalog(owner, 'Red Maple');
-  await addFromCatalog(owner, 'French Marigold');
+  await addFromCatalog(owner, 'Apple (Honeycrisp)');
+  await addFromCatalog(owner, 'Radish (Cherry Belle)');
 
   await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
-  await expect(owner.getByText(/Sow Aug 25 – Sep 8/)).toBeVisible();
+  await expect(owner.getByText(/Sow Oct 6 – Nov 17/)).toBeVisible();
   await expect(
     owner
       .locator('article')
-      .filter({ hasText: 'Red Maple' })
+      .filter({ hasText: 'Apple (Honeycrisp)' })
       .getByText(/Indoor unavailable/),
   ).toBeVisible();
 
@@ -67,7 +71,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByText(/Indoor Mar 4 – Mar 18/)).toBeVisible();
-  await expect(owner.getByText(/Sow Aug 25 – Sep 8/)).toBeVisible();
+  await expect(owner.getByText(/Sow Oct 6 – Nov 17/)).toBeVisible();
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');
@@ -77,7 +81,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
-  await expect(owner.getByText(/Sow Sep 8 – Sep 22/)).toBeVisible();
+  await expect(owner.getByText(/Sow Oct 20 – Dec 1/)).toBeVisible();
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`cal-view-friend-${stamp}@example.com`);
@@ -88,7 +92,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Season bed/ }).click();
   await openCalendar(friend);
-  await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(friend.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Search catalog' })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: /Remove / })).toHaveCount(0);
 
@@ -97,17 +101,18 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByText(/Windows cannot be produced/)).toBeVisible();
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
 });
 
 test('this-week emphasis uses start windows only', async ({ browser }) => {
   const page = await newUser(browser, `cal-week-${Date.now()}@example.com`);
   await page.clock.install({ time: new Date('2026-04-15T15:00:00') });
   await createFrostGarden(page, 'Week bed');
-  await addFromCatalog(page, 'French Marigold');
-  await addFromCatalog(page, 'Cherry Tomato');
-  const marigold = page.locator('article').filter({ hasText: 'French Marigold' });
-  const tomato = page.locator('article').filter({ hasText: 'Cherry Tomato' });
-  await expect(marigold.getByText('This week')).toBeVisible();
+  // Radish is sown from five weeks before to two weeks after the last frost (Apr 15).
+  await addFromCatalog(page, 'Radish (Cherry Belle)');
+  await addFromCatalog(page, 'Tomato (Cherry)');
+  const radish = page.locator('article').filter({ hasText: 'Radish (Cherry Belle)' });
+  const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' });
+  await expect(radish.getByText('This week')).toBeVisible();
   await expect(tomato.getByText('This week')).toHaveCount(0);
 });

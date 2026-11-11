@@ -33,8 +33,11 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
   async function findPlant(request: LiveClient, name: string) {
     const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
     expect(res.ok()).toBeTruthy();
-    const body = (await res.json()) as { items: Array<{ id: string; commonName: string }> };
-    const plant = body.items.find((p) => p.commonName === name) ?? body.items[0];
+    const body = (await res.json()) as {
+      items: Array<{ id: string; commonName: string; cultivar: string | null }>;
+    };
+    // The crop's own row, not one of its varieties (they share the name).
+    const plant = body.items.find((p) => p.commonName === name && !p.cultivar);
     expect(plant, `missing plant ${name}`).toBeTruthy();
     return plant!;
   }
@@ -111,8 +114,8 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
       expect(badAsOf.status()).toBe(400);
       expect(errorMessage(await json(badAsOf))).toBe('Date must be YYYY-MM-DD');
 
-      const tomato = await findPlant(owner, 'Cherry Tomato');
-      const herb = await findPlant(owner, 'Interval Herb');
+      const tomato = await findPlant(owner, 'Tomato');
+      const herb = await findPlant(owner, 'Basil');
       const tomatoId = await addPlanting(owner, garden.id, tomato.id, '2026-01-01');
       const herbId = await addPlanting(owner, garden.id, herb.id, '2026-01-01');
 
@@ -120,9 +123,10 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
         await owner.get(`/api/gardens/${garden.id}/reminders?asOf=${asOf}`)
       ).json()) as ReminderList;
       expect(list.items.some((i) => i.kind === 'harvest' && i.plantingId === tomatoId)).toBe(true);
-      expect(list.items.some((i) => i.kind === 'water' && i.commonName === 'Cherry Tomato')).toBe(
-        false,
-      );
+      // One reminder per kind per planting, not one per missed interval.
+      expect(
+        list.items.filter((i) => i.plantingId === tomatoId && i.kind === 'water').length,
+      ).toBeLessThanOrEqual(1);
       const herbWater = list.items.filter((i) => i.plantingId === herbId && i.kind === 'water');
       const herbFertilize = list.items.filter(
         (i) => i.plantingId === herbId && i.kind === 'fertilize',

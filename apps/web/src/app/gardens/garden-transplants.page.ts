@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { plantName } from '@open-garden/shared-types';
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -42,7 +43,7 @@ import { PlaceMarker } from '../ui/place-marker';
         <ul class="card-list">
           @for (p of catalogHits(); track p.id) {
             <li class="stack">
-              <span>{{ p.commonName }}</span>
+              <span>{{ plantName(p) }}</span>
               <form class="filters" (ngSubmit)="addTransplant(p)">
                 <input
                   type="date"
@@ -53,7 +54,7 @@ import { PlaceMarker } from '../ui/place-marker';
                 <button
                   type="submit"
                   class="btn btn-primary"
-                  [attr.aria-label]="'Add transplant ' + p.commonName"
+                  [attr.aria-label]="'Add transplant ' + plantName(p)"
                   [attr.aria-busy]="notices.busyMap().has('add-transplant') || null"
                   [disabled]="notices.busyMap().has('add-transplant')"
                 >
@@ -76,7 +77,7 @@ import { PlaceMarker } from '../ui/place-marker';
                   <button
                     type="button"
                     class="btn btn-secondary"
-                    [attr.aria-label]="'Delete transplant ' + p.commonName"
+                    [attr.aria-label]="'Delete transplant ' + plantName(p)"
                     (click)="confirmDeleteId.set(p.id)"
                   >
                     Delete
@@ -85,7 +86,7 @@ import { PlaceMarker } from '../ui/place-marker';
                   <button
                     type="button"
                     class="btn btn-destructive"
-                    [attr.aria-label]="'Confirm delete ' + p.commonName"
+                    [attr.aria-label]="'Confirm delete ' + plantName(p)"
                     (click)="deleteTransplant(p.id)"
                     [attr.aria-busy]="notices.busyMap().has('delete-transplant') || null"
                     [disabled]="notices.busyMap().has('delete-transplant')"
@@ -110,7 +111,7 @@ import { PlaceMarker } from '../ui/place-marker';
         <ul class="card-list">
           @for (item of list()!.indoorReminders; track item.plantingId + item.kind + item.dueOn) {
             <li class="row">
-              <span>{{ item.commonName }} · {{ item.kind }} · {{ item.dueOn }}</span>
+              <span>{{ plantName(item) }} · {{ item.kind }} · {{ item.dueOn }}</span>
               @if (canEdit()) {
                 <button type="button" class="btn btn-secondary" (click)="complete(item)">
                   Complete
@@ -127,6 +128,7 @@ import { PlaceMarker } from '../ui/place-marker';
   `,
 })
 export class GardenTransplantsPage implements OnInit {
+  readonly plantName = plantName;
   private readonly layoutApi = inject(LayoutApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
   private readonly remindersApi = inject(RemindersApiService);
@@ -165,7 +167,7 @@ export class GardenTransplantsPage implements OnInit {
   }
 
   plantingLabel(p: TransplantListDto['plantings'][0]) {
-    return p.status === 'active' ? p.commonName : `${p.commonName} (removed from catalog)`;
+    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
   }
 
   async load() {

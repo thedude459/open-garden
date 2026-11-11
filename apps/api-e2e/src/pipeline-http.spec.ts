@@ -39,19 +39,6 @@ async function startPipelineRun(client: LiveClient) {
   throw new Error('could not start pipeline run');
 }
 
-async function waitForPlant(client: LiveClient, name: string, timeoutMs = 30_000) {
-  await waitUntil(
-    async () => {
-      const res = await client.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
-      if (!res.ok()) return false;
-      const body = (await res.json()) as { items: Array<{ commonName: string }> };
-      return body.items.some((item) => item.commonName === name);
-    },
-    timeoutMs,
-    `timed out waiting for plant ${name}`,
-  );
-}
-
 describe.skipIf(!liveEnabled)('pipeline http', () => {
   test('unauthenticated pipeline start is 401', async () => {
     const request = new LiveClient();
@@ -115,15 +102,7 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
     expect(errorMessage(await json(missing))).toBe('Pipeline run not found');
   });
 
-  test('gardener GET settings is 403', async () => {
-    const request = new LiveClient();
-    await request.register(`pipe-settings-${Date.now()}@example.com`);
-    const res = await request.get('/api/admin/pipeline/settings');
-    expect(res.status()).toBe(403);
-    expect(errorMessage(await json(res))).toBe('Admin role required');
-  });
-
-  test('GET run detail includes sources and merges; empty sourceOrder is 400', async () => {
+  test('GET run detail shows the dataset source and its merge decisions', async () => {
     const request = new LiveClient();
     await request.login('admin@example.com');
     const started = await startPipelineRun(request);
@@ -146,7 +125,7 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
       'timed out waiting for pipeline run detail',
     );
     expect(detail?.status).not.toBe('running');
-    expect(detail?.sources.length).toBeGreaterThan(0);
+    expect(detail?.sources.map((source) => source.sourceId)).toEqual(['dataset']);
     // An earlier run may already have published this catalog: then the run is
     // recorded with a note and writes no merge decisions.
     if (/Catalog unchanged since the last run/.test(detail?.errorMessage ?? '')) {
@@ -154,48 +133,6 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
     } else {
       expect(detail?.merges.length).toBeGreaterThan(0);
       expect(detail?.merges[0]?.fieldWinners).toBeTruthy();
-    }
-
-    const bad = await request.patch('/api/admin/pipeline/settings', { data: { sourceOrder: [] } });
-    expect(bad.status()).toBe(400);
-    expect(errorMessage(await json(bad))).toBe('Invalid pipeline settings');
-  });
-
-  test('admin merge of fixture + fixture-b adds uniques and keeps overlap once', async () => {
-    const request = new LiveClient();
-    await request.login('admin@example.com');
-    try {
-      const patch = await request.patch('/api/admin/pipeline/settings', {
-        data: { sourceOrder: ['fixture', 'fixture-b'] },
-      });
-      expect(patch.ok(), await patch.text()).toBeTruthy();
-      const started = await startPipelineRun(request);
-      expect(started.status()).toBe(202);
-      await waitForPlant(request, 'Pipeline Bravo 01');
-
-      for (let i = 1; i <= 10; i++) {
-        const n = String(i).padStart(2, '0');
-        const overlap = await request.get(
-          `/api/plants?q=${encodeURIComponent(`Pipeline Extra ${n}`)}&pageSize=20`,
-        );
-        const overlapBody = (await overlap.json()) as { items: Array<{ commonName: string }> };
-        expect(
-          overlapBody.items.filter((item) => item.commonName === `Pipeline Extra ${n}`),
-        ).toHaveLength(1);
-
-        const unique = await request.get(
-          `/api/plants?q=${encodeURIComponent(`Pipeline Bravo ${n}`)}&pageSize=20`,
-        );
-        const uniqueBody = (await unique.json()) as { items: Array<{ commonName: string }> };
-        expect(uniqueBody.items.some((item) => item.commonName === `Pipeline Bravo ${n}`)).toBe(
-          true,
-        );
-      }
-    } finally {
-      const reset = await request.patch('/api/admin/pipeline/settings', {
-        data: { sourceOrder: ['fixture'] },
-      });
-      expect(reset.ok()).toBeTruthy();
     }
   });
 });

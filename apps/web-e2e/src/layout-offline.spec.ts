@@ -94,27 +94,27 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   expect((await saveLayout(page)).status()).toBe(200);
 
   await page.getByRole('link', { name: 'Transplants' }).click();
-  await addTransplant(page, 'Cherry Tomato');
+  await addTransplant(page, 'Tomato (Cherry)');
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
   await page
     .getByLabel('Waiting transplants')
-    .getByRole('button', { name: 'Cherry Tomato' })
+    .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(page.locator('[data-bed-name="East"]'));
   expect((await saveLayout(page)).status()).toBe(200);
 
   await page.getByRole('link', { name: 'Back to overview' }).click();
   await page.getByRole('link', { name: 'Transplants' }).click();
-  await addTransplant(page, 'Sweet Basil');
+  await addTransplant(page, 'Basil (Genovese)');
   await page.getByRole('link', { name: 'Garden Overview' }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
   await page
     .getByLabel('Waiting transplants')
-    .getByRole('button', { name: 'Sweet Basil' })
+    .getByRole('button', { name: 'Basil (Genovese)' })
     .dragTo(page.locator('[data-bed-name="East"]'));
   await expect(page.getByLabel('Notification')).toContainText('Too close to another plant');
   await expect(
-    page.getByLabel('Waiting transplants').getByRole('button', { name: 'Sweet Basil' }),
+    page.getByLabel('Waiting transplants').getByRole('button', { name: 'Basil (Genovese)' }),
   ).toBeVisible();
 
   await page.route('**/api/gardens/**/layout**', async (route) => {
@@ -129,7 +129,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
     }
     return route.continue();
   });
-  const tomato = page.getByRole('img', { name: 'Cherry Tomato' });
+  const tomato = page.getByRole('img', { name: 'Tomato (Cherry)' });
   const box = await tomato.boundingBox();
   expect(box).toBeTruthy();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
@@ -183,7 +183,7 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   await page.getByRole('link', { name: 'Transplants' }).click();
   await expect(page.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
   await page.context().setOffline(true);
-  await page.locator('input[name="transplantSearch"]').fill('Cherry Tomato');
+  await page.locator('input[name="transplantSearch"]').fill('Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await page.context().setOffline(false);

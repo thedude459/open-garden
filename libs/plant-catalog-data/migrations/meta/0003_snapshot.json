@@ -67,13 +67,9 @@
         "catalog_pipeline_merge_decisions_run_id_catalog_pipeline_runs_id_fk": {
           "name": "catalog_pipeline_merge_decisions_run_id_catalog_pipeline_runs_id_fk",
           "tableFrom": "catalog_pipeline_merge_decisions",
-          "columnsFrom": [
-            "run_id"
-          ],
+          "columnsFrom": ["run_id"],
           "tableTo": "catalog_pipeline_runs",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -161,13 +157,9 @@
         "catalog_pipeline_run_sources_run_id_catalog_pipeline_runs_id_fk": {
           "name": "catalog_pipeline_run_sources_run_id_catalog_pipeline_runs_id_fk",
           "tableFrom": "catalog_pipeline_run_sources",
-          "columnsFrom": [
-            "run_id"
-          ],
+          "columnsFrom": ["run_id"],
           "tableTo": "catalog_pipeline_runs",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -368,13 +360,9 @@
         "catalog_plant_sources_plant_id_plants_id_fk": {
           "name": "catalog_plant_sources_plant_id_plants_id_fk",
           "tableFrom": "catalog_plant_sources",
-          "columnsFrom": [
-            "plant_id"
-          ],
+          "columnsFrom": ["plant_id"],
           "tableTo": "plants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -553,39 +541,27 @@
         "companion_pairs_garden_id_gardens_id_fk": {
           "name": "companion_pairs_garden_id_gardens_id_fk",
           "tableFrom": "companion_pairs",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "companion_pairs_plant_id_plants_id_fk": {
           "name": "companion_pairs_plant_id_plants_id_fk",
           "tableFrom": "companion_pairs",
-          "columnsFrom": [
-            "plant_id"
-          ],
+          "columnsFrom": ["plant_id"],
           "tableTo": "plants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "companion_pairs_other_plant_id_plants_id_fk": {
           "name": "companion_pairs_other_plant_id_plants_id_fk",
           "tableFrom": "companion_pairs",
-          "columnsFrom": [
-            "other_plant_id"
-          ],
+          "columnsFrom": ["other_plant_id"],
           "tableTo": "plants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -660,26 +636,18 @@
         "favorites_user_id_users_id_fk": {
           "name": "favorites_user_id_users_id_fk",
           "tableFrom": "favorites",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "favorites_plant_id_plants_id_fk": {
           "name": "favorites_plant_id_plants_id_fk",
           "tableFrom": "favorites",
-          "columnsFrom": [
-            "plant_id"
-          ],
+          "columnsFrom": ["plant_id"],
           "tableTo": "plants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -782,13 +750,9 @@
         "garden_areas_garden_id_gardens_id_fk": {
           "name": "garden_areas_garden_id_gardens_id_fk",
           "tableFrom": "garden_areas",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -955,26 +919,18 @@
         "garden_beds_garden_id_gardens_id_fk": {
           "name": "garden_beds_garden_id_gardens_id_fk",
           "tableFrom": "garden_beds",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "garden_beds_area_id_garden_areas_id_fk": {
           "name": "garden_beds_area_id_garden_areas_id_fk",
           "tableFrom": "garden_beds",
-          "columnsFrom": [
-            "area_id"
-          ],
+          "columnsFrom": ["area_id"],
           "tableTo": "garden_areas",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1058,26 +1014,18 @@
         "garden_calendar_entries_garden_id_gardens_id_fk": {
           "name": "garden_calendar_entries_garden_id_gardens_id_fk",
           "tableFrom": "garden_calendar_entries",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "garden_calendar_entries_plant_id_plants_id_fk": {
           "name": "garden_calendar_entries_plant_id_plants_id_fk",
           "tableFrom": "garden_calendar_entries",
-          "columnsFrom": [
-            "plant_id"
-          ],
+          "columnsFrom": ["plant_id"],
           "tableTo": "plants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "restrict"
         }
@@ -1186,13 +1134,9 @@
         "garden_care_events_planting_id_garden_plantings_id_fk": {
           "name": "garden_care_events_planting_id_garden_plantings_id_fk",
           "tableFrom": "garden_care_events",
-          "columnsFrom": [
-            "planting_id"
-          ],
+          "columnsFrom": ["planting_id"],
           "tableTo": "garden_plantings",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1298,26 +1242,18 @@
         "garden_memberships_garden_id_gardens_id_fk": {
           "name": "garden_memberships_garden_id_gardens_id_fk",
           "tableFrom": "garden_memberships",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "garden_memberships_user_id_users_id_fk": {
           "name": "garden_memberships_user_id_users_id_fk",
           "tableFrom": "garden_memberships",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1438,13 +1374,9 @@
         "garden_non_planting_areas_garden_id_gardens_id_fk": {
           "name": "garden_non_planting_areas_garden_id_gardens_id_fk",
           "tableFrom": "garden_non_planting_areas",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1528,13 +1460,9 @@
         "garden_planting_harvests_planting_id_garden_plantings_id_fk": {
           "name": "garden_planting_harvests_planting_id_garden_plantings_id_fk",
           "tableFrom": "garden_planting_harvests",
-          "columnsFrom": [
-            "planting_id"
-          ],
+          "columnsFrom": ["planting_id"],
           "tableTo": "garden_plantings",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1760,52 +1688,36 @@
         "garden_plantings_garden_id_gardens_id_fk": {
           "name": "garden_plantings_garden_id_gardens_id_fk",
           "tableFrom": "garden_plantings",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "garden_plantings_plant_id_plants_id_fk": {
           "name": "garden_plantings_plant_id_plants_id_fk",
           "tableFrom": "garden_plantings",
-          "columnsFrom": [
-            "plant_id"
-          ],
+          "columnsFrom": ["plant_id"],
           "tableTo": "plants",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "restrict"
         },
         "garden_plantings_bed_id_garden_beds_id_fk": {
           "name": "garden_plantings_bed_id_garden_beds_id_fk",
           "tableFrom": "garden_plantings",
-          "columnsFrom": [
-            "bed_id"
-          ],
+          "columnsFrom": ["bed_id"],
           "tableTo": "garden_beds",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         },
         "garden_plantings_tray_id_garden_trays_id_fk": {
           "name": "garden_plantings_tray_id_garden_trays_id_fk",
           "tableFrom": "garden_plantings",
-          "columnsFrom": [
-            "tray_id"
-          ],
+          "columnsFrom": ["tray_id"],
           "tableTo": "garden_trays",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -1880,13 +1792,9 @@
         "garden_seasons_garden_id_gardens_id_fk": {
           "name": "garden_seasons_garden_id_gardens_id_fk",
           "tableFrom": "garden_seasons",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1989,26 +1897,18 @@
         "garden_trays_garden_id_gardens_id_fk": {
           "name": "garden_trays_garden_id_gardens_id_fk",
           "tableFrom": "garden_trays",
-          "columnsFrom": [
-            "garden_id"
-          ],
+          "columnsFrom": ["garden_id"],
           "tableTo": "gardens",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "garden_trays_area_id_garden_areas_id_fk": {
           "name": "garden_trays_area_id_garden_areas_id_fk",
           "tableFrom": "garden_trays",
-          "columnsFrom": [
-            "area_id"
-          ],
+          "columnsFrom": ["area_id"],
           "tableTo": "garden_areas",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2179,13 +2079,9 @@
         "gardens_owner_id_users_id_fk": {
           "name": "gardens_owner_id_users_id_fk",
           "tableFrom": "gardens",
-          "columnsFrom": [
-            "owner_id"
-          ],
+          "columnsFrom": ["owner_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2481,13 +2377,9 @@
         "sessions_user_id_users_id_fk": {
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -2496,9 +2388,7 @@
       "uniqueConstraints": {
         "sessions_token_hash_unique": {
           "name": "sessions_token_hash_unique",
-          "columns": [
-            "token_hash"
-          ],
+          "columns": ["token_hash"],
           "nullsNotDistinct": false
         }
       },
@@ -2556,9 +2446,7 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "nullsNotDistinct": false
         }
       },

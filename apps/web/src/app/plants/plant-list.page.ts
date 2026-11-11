@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { plantName } from '@open-garden/shared-types';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { PlantSummaryDto, PlantType } from '@open-garden/shared-types';
@@ -57,13 +58,8 @@ import { EmptyState } from '../ui/empty-state';
               }}</span>
             }
             <span>
-              <strong>{{ p.commonName }}</strong>
-              <span class="muted">
-                — {{ p.species }}
-                @if (p.cultivar) {
-                  ({{ p.cultivar }})
-                }
-              </span>
+              <strong>{{ plantName(p) }}</strong>
+              <span class="muted"> — {{ p.species }} </span>
             </span>
             <span class="muted">{{ p.plantType }} · z{{ p.zoneMin }}–{{ p.zoneMax }}</span>
           </a>
@@ -73,6 +69,7 @@ import { EmptyState } from '../ui/empty-state';
   `,
 })
 export class PlantListPage implements OnInit, OnDestroy {
+  readonly plantName = plantName;
   private readonly api = inject(PlantsApiService);
   q = '';
   zone: number | undefined;

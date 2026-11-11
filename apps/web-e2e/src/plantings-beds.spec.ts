@@ -21,7 +21,10 @@ async function openPlantings(page: Page, name: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name }).first()).toBeVisible();
@@ -41,9 +44,9 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(owner.getByRole('heading', { name: 'Raised bed 1' })).toBeVisible();
   await expect(owner.getByRole('heading', { name: 'Unassigned' })).toHaveCount(0);
 
-  await addFromCatalog(owner, 'Cherry Tomato');
-  await addFromCatalog(owner, 'Sweet Basil');
-  const tomato = owner.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+  await addFromCatalog(owner, 'Basil (Genovese)');
+  const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await tomato.locator('select[name^="bed-"]').selectOption({ label: 'Raised bed 1' });
   await tomato.getByRole('button', { name: 'Save planting' }).click();
 
@@ -70,7 +73,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
       .getByText('No plantings in this bed.'),
   ).toBeVisible();
 
-  const basil = owner.locator('article').filter({ hasText: 'Sweet Basil' });
+  const basil = owner.locator('article').filter({ hasText: 'Basil (Genovese)' });
   await basil.locator('select[name^="bed-"]').selectOption({ label: 'Patio pots' });
   await basil.getByRole('button', { name: 'Save planting' }).click();
   await expect(owner.getByRole('heading', { name: 'Unassigned' })).toHaveCount(0);
@@ -97,12 +100,12 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
       .locator('section')
       .filter({ has: owner.getByRole('heading', { name: 'North bed' }) })
       .locator('article')
-      .filter({ hasText: 'Cherry Tomato' }),
+      .filter({ hasText: 'Tomato (Cherry)' }),
   ).toBeVisible();
 
   await owner.getByRole('button', { name: 'Delete bed North bed' }).click();
   await expect(owner.getByRole('heading', { name: 'North bed' })).toHaveCount(0);
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
   await expect(owner.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
 
   await owner.getByRole('link', { name: 'Configuration' }).click();

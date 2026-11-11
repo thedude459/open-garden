@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { plantName } from '@open-garden/shared-types';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -58,11 +59,11 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
           <ul class="card-list">
             @for (p of catalogHits(); track p.id) {
               <li class="row">
-                <span>{{ p.commonName }}</span>
+                <span>{{ plantName(p) }}</span>
                 <button
                   type="button"
                   class="btn btn-secondary"
-                  [attr.aria-label]="'Add ' + p.commonName"
+                  [attr.aria-label]="'Add ' + plantName(p)"
                   (click)="add(p)"
                 >
                   Add
@@ -71,7 +72,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                   <button
                     type="button"
                     class="btn btn-secondary"
-                    [attr.aria-label]="'Start ' + p.commonName + ' in a tray'"
+                    [attr.aria-label]="'Start ' + plantName(p) + ' in a tray'"
                     (click)="startInTray(p)"
                   >
                     Start in tray
@@ -86,11 +87,11 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
           <ul class="card-list">
             @for (f of favorites(); track f.favoriteId) {
               <li class="row">
-                <span>{{ f.plant.commonName }}</span>
+                <span>{{ plantName(f.plant) }}</span>
                 <button
                   type="button"
                   class="btn btn-secondary"
-                  [attr.aria-label]="'Add favorite ' + f.plant.commonName"
+                  [attr.aria-label]="'Add favorite ' + plantName(f.plant)"
                   (click)="add(f.plant)"
                 >
                   Add
@@ -210,13 +211,8 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                   [class.needs-attention-row]="p.sync === 'failed'"
                 >
                   <div>
-                    <strong>{{ p.commonName }}</strong>
-                    <span class="muted">
-                      · {{ p.species }}
-                      @if (p.cultivar) {
-                        · {{ p.cultivar }}
-                      }
-                    </span>
+                    <strong>{{ plantName(p) }}</strong>
+                    <span class="muted"> · {{ p.species }} </span>
                     @if (p.status !== 'active') {
                       <span class="badge">Unavailable variety</span>
                     }
@@ -349,7 +345,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       <button
                         type="button"
                         class="btn btn-secondary"
-                        [attr.aria-label]="'Remove ' + p.commonName"
+                        [attr.aria-label]="'Remove ' + plantName(p)"
                         (click)="confirmRemoveId.set(p.id)"
                       >
                         Remove
@@ -384,6 +380,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
   `,
 })
 export class GardenPlantingsPage implements OnInit {
+  readonly plantName = plantName;
   private readonly api = inject(PlantingsApiService);
   readonly notices = inject(NoticeService);
   private readonly favoritesApi = inject(FavoritesApiService);

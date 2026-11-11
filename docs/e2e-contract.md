@@ -38,8 +38,8 @@ Extra person: another context, same helper. UI `register` / `login` only for che
 
 ## Catalog isolation
 
-- Gardener checks: query fixture names (`Cherry Tomato`, etc.). Do not assert global `totalCount`.
-- Pipeline mutating checks: unique names (`Pipeline Bravo *`); `PATCH` `sourceOrder` restored to `['fixture']` in `finally`.
+- Gardener checks use crops from the bundled open-garden-data release. A variety reads `Tomato (Cherry)` in the UI; search by the common name (`Tomato`), then pick the variety. In API checks, pick the crop's own row (`cultivar` null) or name the variety. Do not assert global `totalCount`.
+- A plant without spacing (the `unavailable` flag) is not in the dataset; `layout-http` inserts one with SQL.
 - Playwright: one Chromium project; **no** `pipeline` project and **no** `dependencies: ['chromium']`.
 
 ## Convention file

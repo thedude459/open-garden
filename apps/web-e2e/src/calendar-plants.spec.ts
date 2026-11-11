@@ -14,7 +14,7 @@ async function createFrostGarden(page: Page, name: string) {
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await openConfiguration(page);
-  await page.locator('select[name="zone"]').selectOption({ label: 'Zone 7' });
+  await page.locator('select[name="zone"]').selectOption({ label: 'Zone 9' });
   await page.locator('select[name="lastMonth"]').selectOption('4');
   await page.locator('input[name="lastDay"]').fill('15');
   await page.locator('select[name="firstMonth"]').selectOption('10');
@@ -24,7 +24,10 @@ async function createFrostGarden(page: Page, name: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name })).toBeVisible();
@@ -41,47 +44,48 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   const friend = await newUser(browser, friendEmail);
 
   await owner.goto('/plants');
-  await owner.getByPlaceholder('Search name / species / variety').fill('Sweet Basil');
+  await owner.getByPlaceholder('Search name / species / variety').fill('Basil');
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await owner.getByRole('link', { name: /Sweet Basil/ }).click();
+  await owner.getByRole('link', { name: /Basil \(Genovese\)/ }).click();
   await owner.getByRole('button', { name: 'Save favorite' }).click();
   await expect(owner.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
 
   await createFrostGarden(owner, 'Picker bed');
   await owner.getByRole('button', { name: 'Show favorites' }).click();
   await expect(owner.getByRole('heading', { name: 'Your favorites' })).toBeVisible();
-  await owner.getByRole('button', { name: 'Add favorite Sweet Basil' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
+  await owner.getByRole('button', { name: 'Add favorite Basil (Genovese)' }).click();
+  await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
 
-  await addFromCatalog(owner, 'Cherry Tomato');
-  await addFromCatalog(owner, 'French Marigold');
-  await addFromCatalog(owner, 'Papaya');
-  await addFromCatalog(owner, 'Honeycrisp Apple');
-  await addFromCatalog(owner, 'Cherry Tomato');
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(1);
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+  await addFromCatalog(owner, 'Dill (Bouquet)');
+  // Zone 9: rhubarb is hardy to 8, strawberry to 9.
+  await addFromCatalog(owner, 'Rhubarb (Victoria)');
+  await addFromCatalog(owner, 'Strawberry (Albion)');
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(1);
 
   await expect(
-    owner.locator('article').filter({ hasText: 'Papaya' }).getByText('Zone mismatch'),
+    owner.locator('article').filter({ hasText: 'Rhubarb (Victoria)' }).getByText('Zone mismatch'),
   ).toBeVisible();
   await expect(
-    owner.locator('article').filter({ hasText: 'Honeycrisp Apple' }).getByText('Zone mismatch'),
+    owner.locator('article').filter({ hasText: 'Strawberry (Albion)' }).getByText('Zone mismatch'),
   ).toHaveCount(0);
 
   await owner.locator('select[name="plantTypeFilter"]').selectOption('vegetable');
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
-  await expect(owner.locator('article').filter({ hasText: 'French Marigold' })).toHaveCount(0);
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Dill (Bouquet)' })).toHaveCount(0);
 
   await owner.locator('select[name="plantTypeFilter"]').selectOption('tree');
   await expect(owner.getByText(/No plants match this type/)).toBeVisible();
   await owner.getByRole('button', { name: 'Clear filter' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'French Marigold' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Dill (Bouquet)' })).toBeVisible();
 
-  await owner.getByRole('button', { name: 'Remove French Marigold' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'French Marigold' })).toHaveCount(0);
+  await owner.getByRole('button', { name: 'Remove Dill (Bouquet)' }).click();
+  await expect(owner.locator('article').filter({ hasText: 'Dill (Bouquet)' })).toHaveCount(0);
   await owner.goto('/plants');
-  await owner.getByPlaceholder('Search name / species / variety').fill('French Marigold');
+  await owner.getByPlaceholder('Search name / species / variety').fill('Dill');
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await expect(owner.getByRole('link', { name: /French Marigold/ })).toBeVisible();
+  await expect(owner.getByRole('link', { name: /Dill \(Bouquet\)/ })).toBeVisible();
 
   await owner.getByRole('link', { name: 'Properties' }).click();
   await owner.getByRole('link', { name: /Picker bed/ }).click();
@@ -95,7 +99,7 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await expect(friend.getByRole('link', { name: /Picker bed/ })).toBeVisible();
   await friend.getByRole('link', { name: /Picker bed/ }).click();
   await openCalendar(friend);
-  await expect(friend.getByText('Sweet Basil')).toBeVisible();
+  await expect(friend.getByText('Basil (Genovese)')).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Show favorites' })).toHaveCount(0);
   await expect(friend.getByText('Your favorites')).toHaveCount(0);
 });

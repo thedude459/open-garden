@@ -54,8 +54,7 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `WEB_HOST` | `127.0.0.1` | Address the web port binds to on the host. `0.0.0.0` makes it reachable from other devices. |
 | `WEB_PORT` | `8080` | Host port for the web container. |
 | `COOKIE_SECURE` | `false` | Set `true` when people reach the app over HTTPS, so the session cookie is only sent over TLS. |
-| `PLANT_PROVIDER`, `PERENUAL_API_KEY` | `fixture`, unset | Optional extra plant source for the catalog pipeline. Not needed. |
-| `PLANT_CATALOG_FILE` | unset | Optional: path, inside the API container, to an [open-garden-data](https://github.com/thedude459/open-garden-data/releases) release (`open-garden-catalog-<version>.json`), with its `.sha256` beside it. Mount both into the container, then add `dataset` to the source order on the admin Pipeline page. A file that fails its checksum or schema fails that run and is not imported. |
+| `PLANT_CATALOG_FILE` | unset | Not needed: the image bundles the [open-garden-data](https://github.com/thedude459/open-garden-data/releases) release it was tested with and imports it when the API starts. To use a newer release before the app ships it, mount `open-garden-catalog-<version>.json` and its `open-garden-catalog-<version>.json.sigstore.json` (both from the release) into the API container and set this to the JSON file's path. A file whose provenance attestation does not verify, or that does not match the schema, fails that import and nothing changes. |
 
 The API's `DATABASE_URL`, `PORT`, and `NODE_ENV` are set by
 `docker-compose.yml`; you do not need them in `.env`. `CORS_ORIGIN` only

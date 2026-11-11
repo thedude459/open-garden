@@ -33,8 +33,11 @@ describe.skipIf(!liveEnabled)('plantings http', () => {
   async function findPlant(request: LiveClient, name: string) {
     const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
     expect(res.ok()).toBeTruthy();
-    const body = (await res.json()) as { items: Array<{ id: string; commonName: string }> };
-    const plant = body.items.find((p) => p.commonName === name) ?? body.items[0];
+    const body = (await res.json()) as {
+      items: Array<{ id: string; commonName: string; cultivar: string | null }>;
+    };
+    // The crop's own row, not one of its varieties (they share the name).
+    const plant = body.items.find((p) => p.commonName === name && !p.cultivar);
     expect(plant, `missing plant ${name}`).toBeTruthy();
     return plant!;
   }
@@ -86,7 +89,7 @@ describe.skipIf(!liveEnabled)('plantings http', () => {
       const otherGarden = (await (
         await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Other plot' } })
       ).json()) as GardenDetail;
-      const tomato = await findPlant(owner, 'Cherry Tomato');
+      const tomato = await findPlant(owner, 'Tomato');
 
       const strangerGet = await stranger.get(`/api/gardens/${garden.id}/plantings`);
       expect(strangerGet.status()).toBe(404);

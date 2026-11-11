@@ -24,7 +24,10 @@ async function createFrostGarden(page: Page, name: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name })).toBeVisible();
@@ -33,17 +36,17 @@ async function addFromCatalog(page: Page, name: string) {
 test('cached calendar stays readable when calendar API is aborted', async ({ browser }) => {
   const page = await newUser(browser, `cal-off-${Date.now()}@example.com`);
   await createFrostGarden(page, 'Cached calendar');
-  await addFromCatalog(page, 'Cherry Tomato');
+  await addFromCatalog(page, 'Tomato (Cherry)');
   await expect(page.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
 
   await page.route('**/api/gardens/**/calendar**', (route) => route.abort());
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(page.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   await expect(page.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
 
   await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Spinach');
   await page.getByRole('button', { name: 'Search catalog' }).click();
-  await page.getByRole('button', { name: 'Add Spinach' }).click();
+  await page.getByRole('button', { name: 'Add Spinach (Bloomsdale)' }).click();
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.locator('article').filter({ hasText: 'Spinach' })).toHaveCount(0);
 
@@ -59,15 +62,15 @@ test('this-week emphasis follows view-time date on a cached calendar', async ({ 
   const page = await newUser(browser, `cal-clock-${Date.now()}@example.com`);
   await page.clock.install({ time: new Date('2026-02-20T15:00:00') });
   await createFrostGarden(page, 'Clock bed');
-  await addFromCatalog(page, 'Cherry Tomato');
+  await addFromCatalog(page, 'Tomato (Cherry)');
   await expect(
-    page.locator('article').filter({ hasText: 'Cherry Tomato' }).getByText('This week'),
+    page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).getByText('This week'),
   ).toBeVisible();
 
   await page.route('**/api/gardens/**/calendar**', (route) => route.abort());
   await page.clock.setFixedTime(new Date('2026-06-28T15:00:00'));
   await page.reload({ waitUntil: 'domcontentloaded' });
-  const tomato = page.locator('article').filter({ hasText: 'Cherry Tomato' });
+  const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' });
   await expect(tomato).toBeVisible();
   await expect(tomato.getByText('This week')).toHaveCount(0);
 });
@@ -78,7 +81,7 @@ test('removed member drops stale calendar cache after reconnect', async ({ brows
   const friend = await newUser(browser, `cal-stale-friend-${stamp}@example.com`);
 
   await createFrostGarden(owner, 'Stale calendar');
-  await addFromCatalog(owner, 'Cherry Tomato');
+  await addFromCatalog(owner, 'Tomato (Cherry)');
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`cal-stale-friend-${stamp}@example.com`);
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -87,7 +90,7 @@ test('removed member drops stale calendar cache after reconnect', async ({ brows
   await friend.goto('/gardens');
   await friend.getByRole('link', { name: /Stale calendar/ }).click();
   await openCalendar(friend);
-  await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(friend.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   const calendarUrl = friend.url();
 
   await friend.route('**/api/gardens/**/calendar**', (route) => route.abort());

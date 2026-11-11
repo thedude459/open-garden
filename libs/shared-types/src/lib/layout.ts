@@ -54,13 +54,7 @@ export interface LayoutPlantingDto {
 }
 
 export type LayoutFlagKind =
-  | 'spacing'
-  | 'fit'
-  | 'unavailable'
-  | 'sun'
-  | 'repeat'
-  | 'companion'
-  | 'area';
+  'spacing' | 'fit' | 'unavailable' | 'sun' | 'repeat' | 'companion' | 'area';
 
 export interface LayoutFlagDto {
   kind: LayoutFlagKind;

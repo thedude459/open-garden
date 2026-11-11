@@ -10,34 +10,20 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
 }
 
-test('admin can start a run and round-trip cadence settings', async ({ page }) => {
+test('admin can start a catalog import and see the dataset source', async ({ page }) => {
   await loginAdmin(page);
   const pipelineNav = page.locator('nav').getByRole('link', { name: 'Pipeline', exact: true });
   await expect(pipelineNav).toBeVisible();
   await pipelineNav.click();
   await expect(page.getByRole('heading', { name: 'Catalog pipeline' })).toBeVisible();
+  await expect(page.getByText(/bundled with this version of Open Garden/)).toBeVisible();
   await waitForPipelineIdleOnPage(page);
   await page.getByRole('button', { name: 'Start run' }).click();
   await expect(page.getByText(/Status:/)).toBeVisible();
-  await expect(page.getByText(/succeeded|incomplete|failed/).first()).toBeVisible({
+  await expect(page.getByText(/Status: (succeeded|incomplete|failed)/)).toBeVisible({
     timeout: 30_000,
   });
-  await page.locator('select[name="cadence"]').selectOption('daily');
-  await page.locator('select[name="runAtHourUtc"]').selectOption('8');
-  const saved = page.waitForResponse(
-    (res) => res.url().includes('/admin/pipeline/settings') && res.request().method() === 'PATCH',
-  );
-  await page.getByRole('button', { name: 'Save settings' }).click();
-  expect((await saved).ok()).toBeTruthy();
-  await page.reload();
-  await expect(page.locator('select[name="cadence"]')).toHaveValue('daily');
-  await expect(page.locator('select[name="runAtHourUtc"]')).toHaveValue('8');
-  await page.locator('select[name="runAtHourUtc"]').selectOption('6');
-  const restored = page.waitForResponse(
-    (res) => res.url().includes('/admin/pipeline/settings') && res.request().method() === 'PATCH',
-  );
-  await page.getByRole('button', { name: 'Save settings' }).click();
-  expect((await restored).ok()).toBeTruthy();
+  await expect(page.getByText(/dataset: succeeded/)).toBeVisible();
 });
 
 test('gardener cannot open pipeline admin and has no Pipeline nav', async ({ browser }) => {

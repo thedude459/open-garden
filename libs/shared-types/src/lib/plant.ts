@@ -78,3 +78,11 @@ export const PLANT_TYPES: readonly PlantType[] = [
   'shrub',
   'tree',
 ] as const;
+
+/**
+ * How a plant is named to people: a dataset crop and its varieties share a
+ * common name ("Tomato"), so a variety carries its name ("Tomato (Cherry)").
+ */
+export function plantName(plant: { commonName: string; cultivar: string | null }): string {
+  return plant.cultivar ? `${plant.commonName} (${plant.cultivar})` : plant.commonName;
+}

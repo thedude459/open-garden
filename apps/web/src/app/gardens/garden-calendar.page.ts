@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { plantName } from '@open-garden/shared-types';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -55,11 +56,11 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
             <ul class="card-list">
               @for (p of catalogHits(); track p.id) {
                 <li class="row">
-                  <span>{{ p.commonName }}</span>
+                  <span>{{ plantName(p) }}</span>
                   <button
                     type="button"
                     class="btn btn-secondary"
-                    [attr.aria-label]="'Add ' + p.commonName"
+                    [attr.aria-label]="'Add ' + plantName(p)"
                     (click)="add(p.id)"
                   >
                     Add
@@ -73,11 +74,11 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
             <ul class="card-list">
               @for (f of favorites(); track f.favoriteId) {
                 <li class="row">
-                  <span>{{ f.plant.commonName }}</span>
+                  <span>{{ plantName(f.plant) }}</span>
                   <button
                     type="button"
                     class="btn btn-secondary"
-                    [attr.aria-label]="'Add favorite ' + f.plant.commonName"
+                    [attr.aria-label]="'Add favorite ' + plantName(f.plant)"
                     (click)="add(f.plant.id)"
                   >
                     Add
@@ -113,7 +114,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                   @if (isThisWeek(e)) {
                     <span class="this-week">This week</span>
                   }
-                  <strong>{{ e.commonName }}</strong>
+                  <strong>{{ plantName(e) }}</strong>
                   <span class="muted"> · {{ e.plantType }}</span>
                   @if (e.status !== 'active') {
                     <span class="badge">Unavailable variety</span>
@@ -145,7 +146,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                   <button
                     type="button"
                     class="btn btn-secondary"
-                    [attr.aria-label]="'Remove ' + e.commonName"
+                    [attr.aria-label]="'Remove ' + plantName(e)"
                     (click)="remove(e.plantId)"
                   >
                     Remove
@@ -160,6 +161,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
   `,
 })
 export class GardenCalendarPage implements OnInit {
+  readonly plantName = plantName;
   private readonly api = inject(CalendarApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
   private readonly gardensApi = inject(GardensApiService);

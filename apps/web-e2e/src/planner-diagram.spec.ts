@@ -34,18 +34,18 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   await expect(owner.locator('.layout-plant')).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
-  await addTransplant(owner, 'Cherry Tomato');
+  await addTransplant(owner, 'Tomato (Cherry)');
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
     .getByLabel('Waiting transplants')
-    .getByRole('button', { name: 'Cherry Tomato' })
+    .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
   expect((await saveLayout(owner)).status()).toBe(200);
-  await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.getByRole('img', { name: 'Tomato (Cherry)' })).toBeVisible();
   await expect(owner.getByLabel('Bed plan').locator('.layout-plant-label')).toBeVisible();
   await expect(owner.locator('.layout-grid')).not.toHaveCount(0);
   await owner.getByRole('link', { name: 'Back to overview' }).click();
-  await expect(owner.getByLabel('Garden plan')).toContainText('Cherry Tomato');
+  await expect(owner.getByLabel('Garden plan')).toContainText('Tomato'); // the overview names crops, not varieties
   await expect(owner.locator('.layout-plant')).toHaveCount(0);
 });

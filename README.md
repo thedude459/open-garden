@@ -112,4 +112,4 @@ Open Garden is licensed under the [GNU Affero General Public License v3.0 or lat
 (`AGPL-3.0-or-later`). You may use, modify, and self-host it. If you run a modified
 version for other people over a network, you must offer them its source code
 (section 13); the app's **Source code** link does this — point
-`apps/web/src/app/source-link.ts` at your modified source. The plant dataset will be published separately under CC0.
+`apps/web/src/app/source-link.ts` at your modified source. The plant catalog comes from [open-garden-data](https://github.com/thedude459/open-garden-data), dedicated to the public domain under CC0; the API image bundles a release of it.

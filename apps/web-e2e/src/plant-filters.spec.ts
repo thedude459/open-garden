@@ -13,5 +13,5 @@ test('filters narrow list', async ({ browser }) => {
   ).toBeVisible({ timeout: 15_000 });
   await page.locator('select[name="plantType"]').selectOption('herb');
   await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(page.getByText(/Sweet Basil/i)).toBeVisible();
+  await expect(page.getByText(/Basil \(Genovese\)/i)).toBeVisible();
 });
