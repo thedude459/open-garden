@@ -1,5 +1,6 @@
 import {
   allowsPlant,
+  areaKindFor,
   type BedStation,
   type CompanionPairDto,
   type LayoutFlagDto,
@@ -73,7 +74,10 @@ export function placementNotes(input: {
     }
     // Placing it there now would be refused (a catalog update changed the
     // plant's type); a saved planting is flagged, never blocked or removed.
-    if (planting.plantType && !allowsPlant(bedStation.get(bedId), planting.plantType)) {
+    if (
+      planting.plantType &&
+      !allowsPlant(areaKindFor(bedStation.get(bedId)), planting.plantType)
+    ) {
       flags.push({
         kind: 'area',
         plantingIds: [planting.id],

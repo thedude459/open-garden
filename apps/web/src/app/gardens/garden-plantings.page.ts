@@ -490,7 +490,7 @@ export class GardenPlantingsPage implements OnInit {
 
   onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
-    this.catalogHits.set(items.filter((plant) => allowsPlant(null, plant.plantType)));
+    this.catalogHits.set(items.filter((plant) => allowsPlant('vegetable', plant.plantType)));
   }
 
   onSearchFailed(err: unknown) {

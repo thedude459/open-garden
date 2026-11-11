@@ -213,7 +213,6 @@ export const gardenBeds = pgTable(
     widthInches: integer('width_inches'),
     orientation: smallint('orientation').notNull().default(0),
     sun: text('sun'),
-    kind: text('kind').notNull().default('bed'),
     areaId: uuid('area_id').references(() => gardenAreas.id, { onDelete: 'cascade' }),
     site: text('site').notNull().default('in_ground'),
     station: text('station'),

@@ -22,7 +22,6 @@ export interface LayoutBedDto {
   name: string;
   geometry: BedGeometryDto | null;
   sun?: 'full' | 'part' | 'shade' | null;
-  kind?: 'bed' | 'orchard';
   site?: BedSite;
   station?: BedStation | null;
   mulch?: Mulch;

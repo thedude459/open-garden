@@ -13,7 +13,7 @@ import type {
   PlantingDto,
   SeasonalWindowDto,
 } from '@open-garden/shared-types';
-import { allowsPlant, PLANT_TYPES } from '@open-garden/shared-types';
+import { allowsPlant, PLANT_TYPES, type AreaKind } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
@@ -174,7 +174,7 @@ export class GardenCalendarPage implements OnInit {
   error = signal('');
   typeFilter = '';
   types = PLANT_TYPES;
-  readonly hasOrchard = signal(false);
+  readonly areaKinds = signal<AreaKind[]>(['vegetable']);
   catalogHits = signal<PlantSummaryDto[]>([]);
   favorites = signal<FavoriteListItemDto[]>([]);
 
@@ -255,14 +255,15 @@ export class GardenCalendarPage implements OnInit {
     ]);
     this.calendar.set(calendar);
     this.recorded.set(plantings?.plantings ?? []);
-    this.hasOrchard.set(areas.some((area) => area.kind === 'orchard'));
+    this.areaKinds.set(['vegetable', ...areas.map((area) => area.kind)]);
     this.loading.set(false);
   }
 
   onCatalog(items: PlantSummaryDto[]) {
     this.error.set('');
+    // A property takes a plant when one of its areas does.
     this.catalogHits.set(
-      this.hasOrchard() ? items : items.filter((plant) => allowsPlant(null, plant.plantType)),
+      items.filter((plant) => this.areaKinds().some((area) => allowsPlant(area, plant.plantType))),
     );
   }
 

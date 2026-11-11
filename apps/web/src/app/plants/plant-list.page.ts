@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { plantName } from '@open-garden/shared-types';
+import { PLANT_TYPES, plantName } from '@open-garden/shared-types';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import type { PlantSummaryDto, PlantType } from '@open-garden/shared-types';
@@ -75,7 +75,7 @@ export class PlantListPage implements OnInit, OnDestroy {
   zone: number | undefined;
   plantType: PlantType | undefined;
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-  types: PlantType[] = ['vegetable', 'herb', 'flower', 'fruit', 'shrub', 'tree'];
+  types = PLANT_TYPES;
   items = signal<PlantSummaryDto[]>([]);
   loading = signal(false);
   searching = signal(false);

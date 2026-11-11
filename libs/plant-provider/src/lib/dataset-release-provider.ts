@@ -205,13 +205,11 @@ function cropPlants(crop: Crop): ProviderPlant[] {
   ];
 }
 
+/** Habit first, except that an herb of any habit (thyme is a subshrub) is an herb. */
 function plantType(crop: Crop): PlantType {
-  if (crop.use === 'fruit' || crop.use === 'nut') {
-    if (crop.habit === 'tree') return 'tree';
-    if (crop.habit === 'shrub') return 'shrub';
-    return 'fruit';
-  }
-  return crop.use;
+  if (crop.use === 'herb') return 'herb';
+  if (crop.habit === 'tree' || crop.habit === 'shrub' || crop.habit === 'cane') return crop.habit;
+  return crop.use === 'nut' ? 'fruit' : crop.use;
 }
 
 function guidance(w: Crop['windows']['indoorStart']): FrostRelativeWeeksDto | null {

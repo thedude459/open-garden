@@ -9,7 +9,6 @@ export type StartMethod = 'direct_seed' | 'transplant';
 
 export type PlantingLife = 'annual' | 'perennial' | 'tree';
 export type BedSun = 'full' | 'part' | 'shade';
-export type BedKind = 'bed' | 'orchard';
 
 export interface NamedBedDto {
   id: string;
@@ -17,7 +16,6 @@ export interface NamedBedDto {
   createdAt: string;
   updatedAt: string;
   sun?: BedSun | null;
-  kind?: BedKind;
   site?: BedSite;
   station?: BedStation | null;
   mulch?: Mulch;
@@ -116,7 +114,6 @@ export interface BedCreateDto {
   widthInches: number;
   originXInches?: number;
   originYInches?: number;
-  kind?: BedKind;
   site?: BedSite;
   station?: BedStation;
   mulch?: Mulch;
@@ -126,7 +123,6 @@ export interface BedCreateDto {
 export interface BedPatchDto {
   name: string;
   sun?: BedSun | null;
-  kind?: BedKind;
   site?: BedSite;
   mulch?: Mulch;
 }

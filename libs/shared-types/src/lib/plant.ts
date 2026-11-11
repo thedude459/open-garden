@@ -1,4 +1,4 @@
-export type PlantType = 'vegetable' | 'herb' | 'flower' | 'fruit' | 'shrub' | 'tree';
+export type PlantType = 'vegetable' | 'herb' | 'flower' | 'fruit' | 'cane' | 'shrub' | 'tree';
 
 export type PlantStatus = 'active' | 'deprecated';
 
@@ -75,6 +75,7 @@ export const PLANT_TYPES: readonly PlantType[] = [
   'herb',
   'flower',
   'fruit',
+  'cane',
   'shrub',
   'tree',
 ] as const;

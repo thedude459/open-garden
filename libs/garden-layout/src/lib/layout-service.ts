@@ -185,7 +185,6 @@ export class LayoutService {
       name: row.name,
       geometry: toGeometry(row),
       sun: row.sun === 'full' || row.sun === 'part' || row.sun === 'shade' ? row.sun : null,
-      kind: row.kind === 'orchard' ? 'orchard' : 'bed',
       site: row.site === 'raised' ? 'raised' : 'in_ground',
       station: row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null,
       mulch: mulchOrNone(row.mulch),
