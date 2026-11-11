@@ -466,3 +466,51 @@ function createMemory() {
   );
   return { service, ownerId, viewerId, strangerId, gardenId, otherGardenId };
 }
+
+describe('PlantingService area check after a catalog update', () => {
+  // Saved in a vegetable bed as a fruit; the catalog now calls it a tree.
+  const apple = {
+    id: 'planting-apple',
+    gardenId: 'g',
+    plantId: 'plant-apple',
+    commonName: 'Apple',
+    species: 'Malus domestica',
+    cultivar: null,
+    plantType: 'tree',
+    status: 'active',
+    plantedOn: null,
+    harvestedOn: null,
+    bedId: 'veg',
+    trayId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  const beds = {
+    veg: { id: 'veg', station: null, areaId: null },
+    veg2: { id: 'veg2', station: null, areaId: null },
+  };
+  const service = new PlantingService(
+    { get: async () => ({ role: 'owner' }) } as never,
+    {} as never,
+    {
+      getInGarden: async () => apple,
+      update: async () => apple,
+      clearLayoutCoords: async () => undefined,
+      occupants: async () => [],
+    } as never,
+    { getInGarden: async (_g: string, id: 'veg' | 'veg2') => beds[id] ?? null } as never,
+    { getById: async () => null } as never,
+  );
+
+  it('saves edits to a planting its bed would no longer accept', async () => {
+    await expect(
+      service.update('u', 'g', apple.id, { bedId: 'veg', note: 'pruned' }),
+    ).resolves.toMatchObject({ id: apple.id });
+  });
+
+  it('still refuses moving it to another bed that does not accept it', async () => {
+    await expect(service.update('u', 'g', apple.id, { bedId: 'veg2' })).rejects.toMatchObject({
+      message: 'Trees and shrubs belong in an orchard bed',
+    });
+  });
+});

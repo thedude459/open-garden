@@ -35,37 +35,37 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByLabel('Bed plan')).not.toContainText('Bed ·');
   await owner.getByRole('button', { name: 'Direct seed' }).click();
-  await applyPlantSearch(owner, 'Sweet Basil');
+  await applyPlantSearch(owner, 'Basil (Genovese)');
   const bed = owner.locator('[data-bed-name="North"]');
-  const arm = owner.getByRole('button', { name: 'Place Sweet Basil' });
+  const arm = owner.getByRole('button', { name: 'Place Basil (Genovese)' });
   await expect(arm).toBeVisible();
   const bedBox = await bed.boundingBox();
   expect(bedBox).toBeTruthy();
   await arm.dragTo(bed, {
     targetPosition: { x: Math.round(bedBox!.width * 0.3), y: Math.round(bedBox!.height * 0.5) },
   });
-  await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toHaveCount(1);
+  await expect(owner.getByRole('img', { name: 'Basil (Genovese)' })).toHaveCount(1);
   await arm.dragTo(bed, {
     targetPosition: { x: Math.round(bedBox!.width * 0.7), y: Math.round(bedBox!.height * 0.5) },
   });
-  await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toHaveCount(2);
+  await expect(owner.getByRole('img', { name: 'Basil (Genovese)' })).toHaveCount(2);
   const labels = owner.getByLabel('Bed plan').locator('.layout-plant-label');
   await expect(labels).toHaveCount(2);
   const markText = ((await labels.first().textContent()) ?? '').trim();
   expect(markText.length).toBeGreaterThan(0);
-  expect(markText.length).toBeLessThan('Sweet Basil'.length);
-  expect('Sweet Basil'.startsWith(markText)).toBe(true);
+  expect(markText.length).toBeLessThan('Basil (Genovese)'.length);
+  expect('Basil (Genovese)'.startsWith(markText)).toBe(true);
 
-  const first = owner.getByRole('img', { name: 'Sweet Basil' }).first();
+  const first = owner.getByRole('img', { name: 'Basil (Genovese)' }).first();
   const box = await first.boundingBox();
   expect(box).toBeTruthy();
   await owner.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
-  await expect(owner.getByRole('status').filter({ hasText: 'Sweet Basil' })).toBeVisible();
+  await expect(owner.getByRole('status').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
 
   const planBox = await owner.getByLabel('Bed plan').boundingBox();
   expect(planBox).toBeTruthy();
   await owner.mouse.click(planBox!.x + 8, planBox!.y + 8);
-  await expect(owner.getByRole('status').filter({ hasText: 'Sweet Basil' })).toHaveCount(0);
+  await expect(owner.getByRole('status').filter({ hasText: 'Basil (Genovese)' })).toHaveCount(0);
 
   expect((await saveLayout(owner)).status()).toBe(200);
   await inviteViewer(owner, `bed-labels-viewer-${stamp}@example.com`);
@@ -73,8 +73,8 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
   await viewer.getByRole('link', { name: /Quiet bed/ }).click();
   await openOverview(viewer);
   await viewer.getByRole('button', { name: 'Open bed North' }).click();
-  await expect(viewer.getByRole('img', { name: 'Sweet Basil' })).toHaveCount(2);
-  const mark = viewer.getByRole('img', { name: 'Sweet Basil' }).first();
+  await expect(viewer.getByRole('img', { name: 'Basil (Genovese)' })).toHaveCount(2);
+  const mark = viewer.getByRole('img', { name: 'Basil (Genovese)' }).first();
   const markBox = await mark.boundingBox();
   expect(markBox).toBeTruthy();
   await viewer.mouse.move(markBox!.x + markBox!.width / 2, markBox!.y + markBox!.height / 2);

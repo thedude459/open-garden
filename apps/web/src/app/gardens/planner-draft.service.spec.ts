@@ -157,4 +157,20 @@ describe('savePlannerDraft', () => {
     expect(d.createBed).not.toHaveBeenCalled();
     expect(d.putLayout).not.toHaveBeenCalled();
   });
+
+  it('saves a layout whose problems were already saved (a catalog update widened spacing)', async () => {
+    const crowded = layout({
+      plantings: [
+        layout().plantings[0]!,
+        {
+          ...layout().plantings[0]!,
+          id: 'seed-2',
+          placement: { plantingId: 'seed-2', bedId: 'bed-new', xInches: 26, yInches: 24 },
+        },
+      ],
+    });
+    const d = deps();
+    await savePlannerDraft(crowded, tracking(), d, crowded);
+    expect(d.putLayout).toHaveBeenCalledTimes(1);
+  });
 });

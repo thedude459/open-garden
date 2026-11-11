@@ -34,27 +34,28 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
 
   await expect(owner.getByLabel('Plant panel')).toBeVisible();
   await expect(owner.locator('select[name="plantZone"] option:checked')).toHaveText('Zone 6');
-  await expect(owner.getByRole('button', { name: /Add Sweet Basil/ })).toHaveCount(0);
+  await expect(owner.getByRole('button', { name: /Add Basil \(Genovese\)/ })).toHaveCount(0);
 
-  await owner.getByLabel('Search plants').fill('Sweet Basil');
+  await owner.getByLabel('Search plants').fill('Basil');
   await owner.locator('select[name="plantType"]').selectOption('vegetable');
-  await applyPlantSearch(owner, 'Sweet Basil');
-  await expect(owner.getByRole('button', { name: 'Place Sweet Basil' })).toHaveCount(0);
+  await applyPlantSearch(owner, 'Basil (Genovese)');
+  await expect(owner.getByRole('button', { name: 'Place Basil (Genovese)' })).toHaveCount(0);
 
   await owner.locator('select[name="plantType"]').selectOption({ label: 'Any type' });
-  await applyPlantSearch(owner, 'Sweet Basil');
-  const arm = owner.getByRole('button', { name: 'Place Sweet Basil' });
+  await applyPlantSearch(owner, 'Basil (Genovese)');
+  const arm = owner.getByRole('button', { name: 'Place Basil (Genovese)' });
   await expect(arm).toBeVisible();
-  await expect(owner.getByText(/Fits zone 6/)).toBeVisible();
+  // Basil and Basil (Genovese) both list it.
+  await expect(owner.getByText(/Fits zone 6/).first()).toBeVisible();
 
   await applyPlantSearch(owner, 'zzzznotaplantxyz');
   await expect(owner.getByText('No plants match')).toBeVisible();
-  await applyPlantSearch(owner, 'Sweet Basil');
+  await applyPlantSearch(owner, 'Basil (Genovese)');
   await expect(arm).toBeVisible();
 
   await arm.dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByText('Unsaved changes')).toBeVisible();
-  await expect(owner.getByRole('img', { name: 'Sweet Basil' })).toBeVisible();
+  await expect(owner.getByRole('img', { name: 'Basil (Genovese)' })).toBeVisible();
   expect((await saveLayout(owner)).status()).toBe(200);
 
   const gardenId = owner.url().match(/gardens\/([^/]+)/)?.[1];
@@ -62,11 +63,12 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
   const layout = (await layoutRes.json()) as {
     plantings: Array<{
       commonName: string;
+      cultivar: string | null;
       startMethod: string;
       placement: { bedId: string } | null;
     }>;
   };
-  const seeded = layout.plantings.find((p) => p.commonName === 'Sweet Basil');
+  const seeded = layout.plantings.find((p) => p.cultivar === 'Genovese');
   expect(seeded?.startMethod).toBe('direct_seed');
   expect(seeded?.placement).toBeTruthy();
 
@@ -75,9 +77,9 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
   await expect(owner.locator('.layout-plant')).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Open bed North' }).click();
-  await applyPlantSearch(owner, 'Cherry Tomato');
-  await owner.getByRole('button', { name: 'Place Cherry Tomato' }).click();
-  await expect(owner.getByRole('button', { name: 'Place Cherry Tomato' })).toHaveAttribute(
+  await applyPlantSearch(owner, 'Tomato (Cherry)');
+  await owner.getByRole('button', { name: 'Place Tomato (Cherry)' }).click();
+  await expect(owner.getByRole('button', { name: 'Place Tomato (Cherry)' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -86,7 +88,7 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
   await owner.locator('[data-bed-name="North"]').click({
     position: { x: Math.round(bedBox!.width * 0.25), y: Math.round(bedBox!.height * 0.5) },
   });
-  await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.getByRole('img', { name: 'Tomato (Cherry)' })).toBeVisible();
   expect((await saveLayout(owner)).status()).toBe(200);
 
   await inviteViewer(owner, `planner-cat-viewer-${stamp}@example.com`);

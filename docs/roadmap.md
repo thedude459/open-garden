@@ -371,11 +371,11 @@ In the app:
   `DatasetReleaseProvider` behind the existing provider port, enabled by
   `PLANT_CATALOG_FILE`. It checks the release's SHA-256, validates it, and
   maps each crop and variety to a catalog plant keyed by dataset id.
-- When dataset v0.1 has its 50 crops: bundle a pinned release in the API
-  image, make `dataset` the default source, map existing plantings from
-  fixture plants to dataset plants, and move e2e to dataset crops. Then
-  delete `PerenualPlantProvider`, `FixtureBPlantProvider`, the scheduler, and
-  source ordering. Keep the run history table for import diffs.
+- **Done ([ADR 0020](adr/0020-dataset-as-the-catalog.md)):** the API image
+  bundles a pinned release and imports it on start as the only source;
+  existing plantings map to dataset plants (migration 0003); e2e uses dataset
+  crops. `PerenualPlantProvider`, the fixture providers, the scheduler, and
+  source ordering are gone; the run history table stays for import diffs.
 - **Deferred to dataset v0.2: the `crops` table.** Until a feature needs
   crop-level rows, each crop and variety is a `plants` row keyed by dataset
   id, and crop fields (family, habit, use) are columns on `plants`. Companion
@@ -386,26 +386,32 @@ In the app:
 
 ### Before the dataset becomes the default
 
-1. **Tamper protection, not just integrity.** The `.sha256` beside a catalog
+1. **Done: tamper protection, not just integrity.** The `.sha256` beside a catalog
    file catches corruption, but anyone who can replace the file can replace
    its checksum. Pin the bundled release's SHA-256 in the app's code, and
    verify the data repo's provenance attestation for any newer catalog an
    operator imports (`gh attestation verify` or Sigstore verification in the
-   importer). Refuse a file that fails either.
-2. **Catalog updates never block a saved garden.** A new release may widen a
+   importer). Refuse a file that fails either. Done as: `BUNDLED_CATALOG`
+   pins the bundled release's SHA-256; any other file needs a
+   `.sigstore.json` attestation from the data repo's release workflow,
+   verified offline with `@sigstore/verify`.
+2. **Done: catalog updates never block a saved garden.** A new release may widen a
    crop's spacing or change its habit. Existing plantings are then *flagged*
    ("closer than recommended", "this area no longer accepts it"), never
    blocked from saving and never removed; new placements follow the new
-   values. Applies to the spacing gate and to typed areas.
-3. **Map existing plantings from fixture plants to dataset plants.** A table
+   values. Applies to the spacing gate and to typed areas. Done as: a
+   problem the saved layout already had is flagged "Closer than recommended"
+   until a planting moves or its bed is resized; the bed check runs only on
+   a move, and the plan flags a planting its bed no longer accepts.
+3. **Done: map existing plantings from fixture plants to dataset plants.** A table
    from fixture variety keys to dataset ids (for example `solanum
    lycopersicum|cherry` → `dataset:tomato-cherry`), applied in a migration
    with a test. Plants with no dataset equivalent stay as deprecated rows that
-   still display, so no planting loses its plant.
-4. **Compatibility check across repositories.** A scheduled app CI job
+   still display, so no planting loses its plant. Done as migration 0003.
+4. **Done: compatibility check across repositories.** A scheduled app CI job
    downloads the latest open-garden-data release and runs the importer
    against it, so an incompatible data release is caught in days, not when a
-   household upgrades.
+   household upgrades. Done as the daily `Dataset compatibility` workflow.
 5. **Follow dataset deprecations.** When a crop is marked `deprecated` with
    `replacedBy` (the data repo never deletes or renames an id), the importer
    deprecates the plant and offers to move plantings to the replacement.
@@ -580,13 +586,14 @@ marked *parallel* can run alongside the one above.
 step 4; OpenSSF token permissions, vulnerabilities, signed releases, and
 fast-check property tests; quick UX fixes (#5, #8 month names, #12, #13); the
 data repository, baseline migration, dataset importer, and the 50 crops of
-dataset v0.1.
+dataset v0.1; step 1, the dataset as the catalog
+([ADR 0020](adr/0020-dataset-as-the-catalog.md)).
 
 | Order | Work | Why this order |
 |---|---|---|
-| **1 (next)** | **Tag dataset v0.1.0** (maintainer, in the data repo), then make the dataset the default: the [checklist](#before-the-dataset-becomes-the-default) items 1–4 and 6–8 (tamper protection, saved gardens never blocked, fixture → dataset planting mapping, cross-repo import check, skip unchanged runs, reload a replaced file, prune history), bundle the pinned release in the API image, move e2e to dataset crops, and delete the Perenual provider, second fixture, scheduler, and source ordering | Everything after this needs real catalog data. Items 6–8 are defects that show up as soon as the dataset is the default; tamper protection and never blocking saved gardens are cheaper to build in now than to retrofit. |
+| 1 | **Done ([ADR 0020](adr/0020-dataset-as-the-catalog.md)).** Dataset v0.1.0 tagged and bundled in the API image as the catalog's only source: the [checklist](#before-the-dataset-becomes-the-default) items 1–4 and 6–8, e2e on dataset crops, and the Perenual provider, second fixture, scheduler, and source ordering deleted | Everything after this needs real catalog data. |
 | 1p *(parallel, data repo)* | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before outside contributions start; no app dependency. |
-| 2 | Phase 1 typed areas: habit rules (herbs of any habit), bramble area, tree beds sized by rootstock, remove `garden_beds.kind` | The dataset's habit, use, and rootstocks are only useful once areas enforce them, and the 8 × 8 ft tree bed is wrong for every dataset tree. |
+| **2 (next)** | Phase 1 typed areas: habit rules (herbs of any habit), bramble area, tree beds sized by rootstock, remove `garden_beds.kind` | The dataset's habit, use, and rootstocks are only useful once areas enforce them, and the 8 × 8 ft tree bed is wrong for every dataset tree. |
 | 3 | Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
 | 4 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
 | 5p *(parallel, data repo)* | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
@@ -598,19 +605,6 @@ dataset v0.1.
 | 11 | Phase 4 items 7–15, in the order listed | Useful, but none unblocks other work. |
 | *Ongoing* | Coverage plan steps 4 (controller edge cases), 5, 6; test items 9–12 and the web half of 15 (Playwright against the Compose web image); OpenSSF Best Practices badge (maintainer); hygiene item 17 when the repo moves to an organization | Fit around the steps above; none blocks them. |
 
----|---|---|
-| 1 | Phase 0 (licensing, Docker docs, e2e isolation, filler removal) and hygiene items 1–5 | Small, unblocks everything; licensing must be settled before data contributions start, and the auto-merge and image fixes reduce real risk now. |
-| 1a | Test items 13, 14, 1, 4, 5 (pool crash fix, flaky helper, honest coverage report, separate e2e database, remove tautological tests) | Cheap, and they make every later change measurable. Items 2, 3, 6 are scheduled by the [coverage plan](#coverage-plan); 7, 8 land alongside Phase 3; item 10 with Phase 2. |
-| 1b | Hygiene items 6–17 | Release pipeline before publishing images to GHCR; community files before inviting contributors to the data repo. |
-| 1c | [Coverage plan](#coverage-plan) steps 1–4: measure live tests, ratchet, database integration tests, API controller tests | The real numbers and a floor that only rises come first; the database and authorization tests protect the data before Phase 1 changes the schema. |
-| 1d | [OpenSSF](#openssf): token permissions, vulnerabilities, signed releases (done in this pass); `SCORECARD_TOKEN` and the Best Practices badge (maintainer); fast-check property tests (with coverage steps 3–4) | Raise the Scorecard score and close the code-scanning alerts before inviting contributors. |
-| 2 | Quick UX fixes: #5, #8 month names, #12 header overlap, #13 vocabulary | **Done.** Cheap, visible wins; no dependency on data. |
-| 3 | Phase 1: importer (**done**) and typed areas, against dataset **v0.1** (first 50 crops, built in parallel in the data repo) | Today, Calendar, and rotation all need real sowing windows and families. The data repo and baseline migration are done. New repositories ship with integration tests (coverage step 3). |
-| 4 | Phase 2 climate | Frost/zone everywhere makes the dataset's windows usable outside the US. |
-| 5 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector | Builds on 3–4. Split pages and new screens ship with component tests (coverage step 5). |
-| 6 | Dataset v0.2 (companions) and v0.3 (~150 crops); companion advice from data | Runs in parallel in the data repo; see its [roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md). |
-| 7 | Phase 3 remaining + onboarding | |
-| 8 | Phase 4 features, in the order listed | |
 
 ---
 

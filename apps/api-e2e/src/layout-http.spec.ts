@@ -48,9 +48,15 @@ describe.skipIf(!liveEnabled)('layout http', () => {
     const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as {
-      items: Array<{ id: string; commonName: string; spacingInches: number | null }>;
+      items: Array<{
+        id: string;
+        commonName: string;
+        cultivar: string | null;
+        spacingInches: number | null;
+      }>;
     };
-    const plant = body.items.find((p) => p.commonName === name) ?? body.items[0];
+    // The crop's own row, not one of its varieties (they share the name).
+    const plant = body.items.find((p) => p.commonName === name && !p.cultivar);
     if (plant) return plant;
     if (name === 'Unknown Herb') {
       const leftover = await findOrSeedUnknownHerb();
@@ -198,8 +204,8 @@ describe.skipIf(!liveEnabled)('layout http', () => {
       const east = await addBed(owner, garden.id, 'East');
       const west = await addBed(owner, garden.id, 'West');
       const otherBed = await addBed(owner, otherGarden.id, 'Other east');
-      const tomato = await findPlant(owner, 'Cherry Tomato');
-      const basil = await findPlant(owner, 'Sweet Basil');
+      const tomato = await findPlant(owner, 'Tomato');
+      const basil = await findPlant(owner, 'Basil');
       const unknown = await findPlant(owner, 'Unknown Herb');
       const a = await addPlanting(owner, garden.id, tomato.id);
       const b = await addPlanting(owner, garden.id, tomato.id);

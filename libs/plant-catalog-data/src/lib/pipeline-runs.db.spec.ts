@@ -67,11 +67,9 @@ async function publish(over: Partial<Parameters<PipelineRunRepository['publish']
 describe('PipelineRunRepository', () => {
   it('allows one running run at a time and sweeps stale ones', async () => {
     const run = await runs.insertRunning('operator');
-    expect(await runs.hasRunning()).toBe(true);
-    await expect(runs.insertRunning('schedule')).rejects.toMatchObject({ code: 'CONFLICT' });
+    await expect(runs.insertRunning('operator')).rejects.toMatchObject({ code: 'CONFLICT' });
     expect(await runs.failStaleRunning('restart')).toBe(1);
     expect(await runs.getById(run.id)).toMatchObject({ status: 'failed', errorMessage: 'restart' });
-    expect(await runs.hasRunning()).toBe(false);
   });
 
   it('publishes plants, sources, and merge decisions, and records the catalog hash', async () => {
@@ -108,14 +106,13 @@ describe('PipelineRunRepository', () => {
   });
 
   it('marks a run terminal only while it is running', async () => {
-    const run = await runs.insertRunning('schedule');
+    const run = await runs.insertRunning('operator');
     await runs.markTerminal(run.id, { status: 'failed', errorMessage: 'No sources' });
     await runs.markTerminal(run.id, { status: 'succeeded', errorMessage: null });
     expect(await runs.getById(run.id)).toMatchObject({
       status: 'failed',
       errorMessage: 'No sources',
     });
-    expect(await runs.latestScheduledStartedAt()).toBeInstanceOf(Date);
     expect((await runs.list(1, 5)).items.length).toBeGreaterThan(0);
   });
 

@@ -148,15 +148,6 @@ export class PipelineRunRepository {
     };
   }
 
-  async hasRunning(): Promise<boolean> {
-    const [row] = await this.db
-      .select({ id: catalogPipelineRuns.id })
-      .from(catalogPipelineRuns)
-      .where(eq(catalogPipelineRuns.status, 'running'))
-      .limit(1);
-    return Boolean(row);
-  }
-
   /** The catalog hash of the last successful run, so an identical run can skip writing. */
   async latestPublishedHash(): Promise<string | null> {
     const [row] = await this.db
@@ -191,16 +182,6 @@ export class PipelineRunRepository {
       )
       .returning({ id: catalogPipelineRuns.id });
     return deleted.length;
-  }
-
-  async latestScheduledStartedAt(): Promise<Date | null> {
-    const [row] = await this.db
-      .select({ startedAt: catalogPipelineRuns.startedAt })
-      .from(catalogPipelineRuns)
-      .where(eq(catalogPipelineRuns.triggeredBy, 'schedule'))
-      .orderBy(desc(catalogPipelineRuns.startedAt))
-      .limit(1);
-    return row?.startedAt ?? null;
   }
 
   async failStaleRunning(message: string): Promise<number> {

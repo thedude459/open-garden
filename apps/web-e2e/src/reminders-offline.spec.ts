@@ -28,10 +28,10 @@ async function openRemindersWithPlant(page: Page, gardenName: string) {
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(gardenName) }).click();
   await page.getByRole('link', { name: 'Plantings', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Cherry Tomato');
+  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
-  await page.getByRole('button', { name: 'Add Cherry Tomato' }).click();
-  const tomato = page.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
+  await page.getByRole('button', { name: 'Add Tomato (Cherry)' }).click();
+  const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await tomato
     .locator('input[type="date"]')
     .first()
@@ -66,7 +66,11 @@ test('offline cache readable; pending complete syncs for another member', async 
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByText('Harvest')).toBeVisible();
 
-  await owner.getByRole('button', { name: 'Complete' }).click();
+  await owner
+    .locator('li')
+    .filter({ hasText: 'Harvest' })
+    .getByRole('button', { name: 'Complete' })
+    .click();
   await expect(owner.getByText('pending')).toBeVisible();
 
   await restoreReminders(owner);
@@ -108,7 +112,9 @@ test('viewer offline reads cache; membership loss drops cache', async ({ browser
   await abortReminders(collab);
   await collab.reload({ waitUntil: 'domcontentloaded' });
   await expect(collab.getByText('Harvest')).toBeVisible();
-  await expect(collab.getByRole('button', { name: 'Complete' })).toBeVisible();
+  await expect(
+    collab.locator('li').filter({ hasText: 'Harvest' }).getByRole('button', { name: 'Complete' }),
+  ).toBeVisible();
 
   await owner.goto('/gardens');
   await owner.getByRole('link', { name: /Membership loss/ }).click();

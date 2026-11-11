@@ -12,7 +12,6 @@ import {
 import { CatalogPipelineService, PIPELINE_ERRORS } from '@open-garden/catalog-pipeline';
 import {
   PipelineRunRepository,
-  PipelineSettingsRepository,
   PlantRepository,
   PlantSourceRepository,
   type AppDatabase,
@@ -34,10 +33,8 @@ export class PipelineRunsController {
     const plants = new PlantRepository(bundle.db);
     const plantSources = new PlantSourceRepository(bundle.db);
     this.runs = new PipelineRunRepository(bundle.db);
-    const settings = new PipelineSettingsRepository(bundle.db);
     this.pipeline = new CatalogPipelineService(
       this.runs,
-      settings,
       {
         listSnapshots: () => plants.listSnapshots(),
         listSourceLinks: () => plantSources.listAll(),

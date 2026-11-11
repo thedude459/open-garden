@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { plantName } from '@open-garden/shared-types';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -87,9 +88,9 @@ import { EmptyState } from '../ui/empty-state';
           @if (armedPlant(); as picked) {
             <p class="place-hint" role="status">
               @if (slotsLeft(picked) === 0) {
-                No room left for {{ picked.commonName }} ({{ picked.spacingInches }} in).
+                No room left for {{ plantName(picked) }} ({{ picked.spacingInches }} in).
               } @else {
-                Click the bed to place {{ picked.commonName }}. About {{ slotsLeft(picked) }} more
+                Click the bed to place {{ plantName(picked) }}. About {{ slotsLeft(picked) }} more
                 fit at {{ picked.spacingInches }} in.
               }
             </p>
@@ -160,13 +161,13 @@ import { EmptyState } from '../ui/empty-state';
                         @if (catalogPlant(f.plant); as p) {
                           <li class="row">
                             <span>
-                              <strong>{{ p.commonName }}</strong>
+                              <strong>{{ plantName(p) }}</strong>
                               <span class="muted"> · {{ p.plantType }}</span>
                             </span>
                             <button
                               type="button"
                               class="btn btn-primary"
-                              [attr.aria-label]="'Place ' + p.commonName"
+                              [attr.aria-label]="'Place ' + plantName(p)"
                               [attr.aria-pressed]="armedPlant()?.id === p.id"
                               (pointerdown)="onArmPointerDown($event, p)"
                             >
@@ -211,7 +212,7 @@ import { EmptyState } from '../ui/empty-state';
                         }}</span>
                       }
                       <span>
-                        <strong>{{ p.commonName }}</strong>
+                        <strong>{{ plantName(p) }}</strong>
                         <span class="muted"> · {{ p.plantType }}</span>
                         @if (activeZone() !== undefined) {
                           <span class="muted"> · Fits zone {{ activeZone() }}</span>
@@ -221,7 +222,7 @@ import { EmptyState } from '../ui/empty-state';
                         <button
                           type="button"
                           class="btn btn-primary"
-                          [attr.aria-label]="'Place ' + p.commonName"
+                          [attr.aria-label]="'Place ' + plantName(p)"
                           [attr.aria-pressed]="armedPlant()?.id === p.id"
                           (pointerdown)="onArmPointerDown($event, p)"
                         >
@@ -244,7 +245,7 @@ import { EmptyState } from '../ui/empty-state';
                         <button
                           type="button"
                           class="btn btn-secondary"
-                          [attr.aria-label]="'Remove from bed ' + p.commonName"
+                          [attr.aria-label]="'Remove from bed ' + plantName(p)"
                           (click)="confirmRemoveId.set(p.id)"
                         >
                           Remove
@@ -254,7 +255,7 @@ import { EmptyState } from '../ui/empty-state';
                           <button
                             type="button"
                             class="btn btn-primary"
-                            [attr.aria-label]="'Confirm remove ' + p.commonName"
+                            [attr.aria-label]="'Confirm remove ' + plantName(p)"
                             (click)="removeFromBed(p)"
                           >
                             Confirm
@@ -287,6 +288,7 @@ import { EmptyState } from '../ui/empty-state';
   `,
 })
 export class GardenBedViewPage implements OnInit {
+  readonly plantName = plantName;
   private readonly planner = inject(PlannerDraftService);
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly gardensApi = inject(GardensApiService);
@@ -427,13 +429,14 @@ export class GardenBedViewPage implements OnInit {
   }
 
   plantingLabel(p: LayoutPlantingDto) {
-    return p.status === 'active' ? p.commonName : `${p.commonName} (removed from catalog)`;
+    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
   }
 
   selectedPlantingName() {
     const id = this.selectedPlantingId();
     if (!id) return '';
-    return this.draft()?.plantings.find((p) => p.id === id)?.commonName ?? '';
+    const planting = this.draft()?.plantings.find((p) => p.id === id);
+    return planting ? plantName(planting) : '';
   }
 
   onSelectPlanting(id: string | null) {

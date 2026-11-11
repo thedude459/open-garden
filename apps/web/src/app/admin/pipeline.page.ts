@@ -1,45 +1,19 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import type {
-  PipelineCadence,
-  PipelineRunSourceDto,
-  PipelineRunSummaryDto,
-  PipelineSettingsDto,
-} from '@open-garden/shared-types';
+import type { PipelineRunSourceDto, PipelineRunSummaryDto } from '@open-garden/shared-types';
 import { PipelineApiService } from './pipeline-api.service';
 
 @Component({
   standalone: true,
-  imports: [FormsModule],
   template: `
     <h2>Catalog pipeline</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
-    <section class="stack">
-      <h3>Settings</h3>
-      <label>
-        Cadence
-        <select name="cadence" [(ngModel)]="cadence">
-          <option value="daily">Daily</option>
-          <option value="disabled">Disabled</option>
-        </select>
-      </label>
-      <label>
-        Run at hour (UTC)
-        <select name="runAtHourUtc" [(ngModel)]="runAtHourUtc">
-          @for (hour of hours; track hour) {
-            <option [value]="hour">{{ hour }}</option>
-          }
-        </select>
-      </label>
-      <label>
-        Source order (comma-separated)
-        <input name="sourceOrder" [(ngModel)]="sourceOrderText" />
-      </label>
-      <p class="muted">Registered sources: {{ registeredSources().join(', ') || 'none' }}</p>
-      <button type="button" class="btn btn-primary" (click)="saveSettings()">Save settings</button>
-    </section>
+    <p class="muted">
+      Imports the open-garden-data plant catalog bundled with this version of Open Garden, or the
+      file set in <code>PLANT_CATALOG_FILE</code>. The API also imports it when it starts; an
+      unchanged catalog writes nothing.
+    </p>
     <section class="stack">
       <h3>Run</h3>
       <button type="button" class="btn btn-primary" (click)="startRun()">Start run</button>
@@ -79,50 +53,17 @@ import { PipelineApiService } from './pipeline-api.service';
 })
 export class PipelinePage implements OnInit, OnDestroy {
   private readonly api = inject(PipelineApiService);
-  cadence: PipelineCadence = 'daily';
-  runAtHourUtc = '6';
-  sourceOrderText = 'fixture';
-  hours = Array.from({ length: 24 }, (_, i) => String(i));
-  registeredSources = signal<string[]>([]);
   current = signal<(PipelineRunSummaryDto & { sources?: PipelineRunSourceDto[] }) | null>(null);
   runs = signal<PipelineRunSummaryDto[]>([]);
   error = signal('');
   private pollTimer: ReturnType<typeof setInterval> | undefined;
 
   ngOnInit() {
-    void this.loadSettings();
     void this.loadRuns();
   }
 
   ngOnDestroy() {
     if (this.pollTimer) clearInterval(this.pollTimer);
-  }
-
-  async loadSettings() {
-    const settings: PipelineSettingsDto = await this.api.getSettings();
-    this.cadence = settings.cadence;
-    this.runAtHourUtc = String(settings.runAtHourUtc);
-    this.sourceOrderText = settings.sourceOrder.join(', ');
-    this.registeredSources.set(settings.registeredSources);
-  }
-
-  async saveSettings() {
-    this.error.set('');
-    try {
-      const settings = await this.api.patchSettings({
-        cadence: this.cadence,
-        runAtHourUtc: Number(this.runAtHourUtc),
-        sourceOrder: this.sourceOrderText
-          .split(',')
-          .map((id) => id.trim())
-          .filter(Boolean),
-      });
-      this.cadence = settings.cadence;
-      this.runAtHourUtc = String(settings.runAtHourUtc);
-      this.sourceOrderText = settings.sourceOrder.join(', ');
-    } catch {
-      this.error.set('Invalid pipeline settings');
-    }
   }
 
   async startRun() {

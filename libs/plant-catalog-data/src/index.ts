@@ -13,6 +13,5 @@ export * from './lib/planting-repository';
 export * from './lib/year-record-repository';
 export * from './lib/care-event-repository';
 export * from './lib/pipeline-run-repository';
-export * from './lib/pipeline-settings-repository';
 export * from './lib/plant-source-repository';
 export * from './lib/migrate';

@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { plantName } from '@open-garden/shared-types';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RemindersApiService, RemindersColdOfflineError } from './reminders-api.service';
@@ -35,7 +36,7 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
             @for (item of group.items; track trackItem(item)) {
               <li class="row">
                 <div>
-                  <strong>{{ item.commonName }}</strong>
+                  <strong>{{ plantName(item) }}</strong>
                   @if (item.status !== 'active') {
                     <span class="badge">Unavailable variety</span>
                   }
@@ -79,6 +80,7 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
   `,
 })
 export class GardenRemindersPage implements OnInit {
+  readonly plantName = plantName;
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(RemindersApiService);
   private readonly plantingsApi = inject(PlantingsApiService);

@@ -1,10 +1,9 @@
 export type PipelineRunStatus = 'running' | 'succeeded' | 'failed' | 'incomplete';
 
+/** `schedule`: runs from the daily scheduler, since removed (ADR 0020); kept for their history. */
 export type PipelineTriggeredBy = 'operator' | 'schedule';
 
 export type PipelineSourceStatus = 'succeeded' | 'failed';
-
-export type PipelineCadence = 'daily' | 'disabled';
 
 export interface PipelineRunSourceDto {
   sourceId: string;
@@ -43,17 +42,4 @@ export interface PipelineRunListDto {
   page: number;
   pageSize: number;
   totalCount: number;
-}
-
-export interface PipelineSettingsDto {
-  cadence: PipelineCadence;
-  runAtHourUtc: number;
-  sourceOrder: string[];
-  registeredSources: string[];
-}
-
-export interface PipelineSettingsPatchDto {
-  cadence?: PipelineCadence;
-  runAtHourUtc?: number;
-  sourceOrder?: string[];
 }

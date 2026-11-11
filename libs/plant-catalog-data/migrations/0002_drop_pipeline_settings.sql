@@ -1,0 +1,1 @@
+DROP TABLE "catalog_pipeline_settings" CASCADE;

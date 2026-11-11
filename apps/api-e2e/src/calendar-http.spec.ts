@@ -60,8 +60,11 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
   async function findPlant(request: LiveClient, name: string) {
     const res = await request.get(`/api/plants?q=${encodeURIComponent(name)}&pageSize=20`);
     expect(res.ok()).toBeTruthy();
-    const body = (await res.json()) as { items: Array<{ id: string; commonName: string }> };
-    const plant = body.items.find((p) => p.commonName === name) ?? body.items[0];
+    const body = (await res.json()) as {
+      items: Array<{ id: string; commonName: string; cultivar: string | null }>;
+    };
+    // The crop's own row, not one of its varieties (they share the name).
+    const plant = body.items.find((p) => p.commonName === name && !p.cultivar);
     expect(plant, `missing plant ${name}`).toBeTruthy();
     return plant!;
   }
@@ -101,7 +104,7 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
         data: { hardinessZone: null, lastFrost: null, firstFrost: null },
       });
       expect(cleared.ok(), await cleared.text()).toBeTruthy();
-      const tomato = await findPlant(owner, 'Cherry Tomato');
+      const tomato = await findPlant(owner, 'Tomato');
       const added = await owner.post(`/api/gardens/${garden.id}/calendar`, {
         data: { plantId: tomato.id },
       });
@@ -126,7 +129,7 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
       await register(owner, `cal-sc003-${Date.now()}@example.com`);
       const early = await createGarden(owner, 'Early frost', { lastDay: 1 });
       const late = await createGarden(owner, 'Late frost', { lastDay: 30 });
-      const tomato = await findPlant(owner, 'Cherry Tomato');
+      const tomato = await findPlant(owner, 'Tomato');
       await owner.post(`/api/gardens/${early.id}/calendar`, { data: { plantId: tomato.id } });
       await owner.post(`/api/gardens/${late.id}/calendar`, { data: { plantId: tomato.id } });
       const a = (await (
@@ -153,7 +156,7 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
       const friendUser = await register(friend, `cal-mut-friend-${stamp}@example.com`);
       await register(stranger, `cal-mut-stranger-${stamp}@example.com`);
       const garden = await createGarden(owner, 'Mutate bed');
-      const tomato = await findPlant(owner, 'Cherry Tomato');
+      const tomato = await findPlant(owner, 'Tomato');
 
       const first = await owner.post(`/api/gardens/${garden.id}/calendar`, {
         data: { plantId: tomato.id },

@@ -6,12 +6,12 @@ test.describe('plant catalog', () => {
     const page = await signedInPage(browser, `catalog-${Date.now()}@example.com`);
     await page.goto('/plants');
     await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Cherry Tomato/i })).toBeVisible({
+    await expect(page.getByRole('link', { name: /Tomato \(Cherry\)/i })).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByRole('button', { name: /sync|refresh from api/i })).toHaveCount(0);
     await expect(page.getByText(/sync from api/i)).toHaveCount(0);
-    await page.getByRole('link', { name: /Cherry Tomato/i }).click();
+    await page.getByRole('link', { name: /Tomato \(Cherry\)/i }).click();
     await expect(page.getByText(/Zones|Sun|Water/i).first()).toBeVisible();
     await expect(page.getByRole('button', { name: /sync|refresh from api/i })).toHaveCount(0);
   });

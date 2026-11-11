@@ -370,17 +370,6 @@ export const catalogPlantSources = pgTable(
   ],
 );
 
-export const catalogPipelineSettings = pgTable('catalog_pipeline_settings', {
-  id: integer('id').primaryKey(),
-  cadence: text('cadence').notNull().default('daily'),
-  runAtHourUtc: integer('run_at_hour_utc').notNull().default(6),
-  sourceOrder: text('source_order').array().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedByUserId: uuid('updated_by_user_id').references(() => users.id, {
-    onDelete: 'set null',
-  }),
-});
-
 export const gardenSeasons = pgTable(
   'garden_seasons',
   {

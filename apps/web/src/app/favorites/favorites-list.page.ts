@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
+import { plantName } from '@open-garden/shared-types';
 import { RouterLink } from '@angular/router';
 import type { FavoriteListItemDto } from '@open-garden/shared-types';
 import { FavoritesApiService } from './favorites-api.service';
@@ -17,7 +18,7 @@ import { FavoritesApiService } from './favorites-api.service';
         @for (f of items(); track f.favoriteId) {
           <div class="row">
             <a [routerLink]="['/plants', f.plant.id]">
-              {{ f.plant.commonName }}
+              {{ plantName(f.plant) }}
               @if (f.unavailable) {
                 <span class="badge">Unavailable</span>
               }
@@ -32,6 +33,7 @@ import { FavoritesApiService } from './favorites-api.service';
   `,
 })
 export class FavoritesListPage implements OnInit {
+  readonly plantName = plantName;
   private readonly api = inject(FavoritesApiService);
   items = signal<FavoriteListItemDto[]>([]);
   loading = signal(true);

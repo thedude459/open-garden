@@ -26,7 +26,10 @@ async function openPlantings(page: Page, name: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name }).first()).toBeVisible();
@@ -60,23 +63,23 @@ test('offline cache stays readable and queued add syncs for another member', asy
   const friend = await newUser(browser, `plant-off-friend-${stamp}@example.com`);
 
   await openPlantings(owner, 'Offline plot');
-  await addFromCatalog(owner, 'Cherry Tomato');
+  await addFromCatalog(owner, 'Tomato (Cherry)');
   await expect(owner.getByRole('heading', { name: 'Raised bed 1' })).toBeVisible();
 
   await abortPlantingApis(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
 
-  await addFromCatalog(owner, 'Sweet Basil');
+  await addFromCatalog(owner, 'Basil (Genovese)');
   await expect(
-    owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending'),
+    owner.locator('article').filter({ hasText: 'Basil (Genovese)' }).getByText('pending'),
   ).toBeVisible();
 
   await restorePlantingApis(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
   await expect(
-    owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending'),
+    owner.locator('article').filter({ hasText: 'Basil (Genovese)' }).getByText('pending'),
   ).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
@@ -86,7 +89,7 @@ test('offline cache stays readable and queued add syncs for another member', asy
 
   await friend.goto('/gardens');
   await openGardenPlantings(friend, /Offline plot/);
-  await expect(friend.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
+  await expect(friend.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
 });
 
 test('pending patch of a remotely deleted planting fails visibly and does not recreate', async ({
@@ -98,7 +101,7 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
   const friend = await newUser(browser, `plant-nr-b-${stamp}@example.com`);
 
   await openPlantings(owner, 'No resurrect');
-  await addFromCatalog(owner, 'Cherry Tomato');
+  await addFromCatalog(owner, 'Tomato (Cherry)');
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`plant-nr-b-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
@@ -108,32 +111,32 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
 
   await friend.goto('/gardens');
   await openGardenPlantings(friend, /No resurrect/);
-  await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(friend.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
 
   await abortPlantingApis(owner);
-  const tomato = owner.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
+  const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await fillDate(tomato.locator('input[type="date"]').first(), '2026-05-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
   await expect(tomato.getByText('pending')).toBeVisible();
-  await addFromCatalog(owner, 'Sweet Basil');
+  await addFromCatalog(owner, 'Basil (Genovese)');
   await expect(
-    owner.locator('article').filter({ hasText: 'Sweet Basil' }).getByText('pending'),
+    owner.locator('article').filter({ hasText: 'Basil (Genovese)' }).getByText('pending'),
   ).toBeVisible();
 
-  const friendTomato = friend.locator('article').filter({ hasText: 'Cherry Tomato' });
-  await friendTomato.getByRole('button', { name: 'Remove Cherry Tomato' }).click();
+  const friendTomato = friend.locator('article').filter({ hasText: 'Tomato (Cherry)' });
+  await friendTomato.getByRole('button', { name: 'Remove Tomato (Cherry)' }).click();
   await friendTomato.getByRole('button', { name: 'Confirm remove' }).click();
-  await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
+  await expect(friend.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
 
   await restorePlantingApis(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByText(/needs-attention/)).toBeVisible();
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
+  await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
 
   await friend.reload();
-  await expect(friend.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
-  await expect(friend.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
+  await expect(friend.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
+  await expect(friend.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
 });
 
 test('viewer offline reads cache; removed collaborator drops cache after reconnect', async ({
@@ -146,7 +149,7 @@ test('viewer offline reads cache; removed collaborator drops cache after reconne
   const collab = await newUser(browser, `plant-stale-collab-${stamp}@example.com`);
 
   await openPlantings(owner, 'Stale plantings');
-  await addFromCatalog(owner, 'Cherry Tomato');
+  await addFromCatalog(owner, 'Tomato (Cherry)');
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`plant-stale-viewer-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
@@ -159,17 +162,17 @@ test('viewer offline reads cache; removed collaborator drops cache after reconne
 
   await viewer.goto('/gardens');
   await openGardenPlantings(viewer, /Stale plantings/);
-  await expect(viewer.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(viewer.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   await abortPlantingApis(viewer);
   await viewer.reload({ waitUntil: 'domcontentloaded' });
-  await expect(viewer.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(viewer.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Search catalog' })).toHaveCount(0);
   await expect(viewer.getByRole('button', { name: /Remove/ })).toHaveCount(0);
   await restorePlantingApis(viewer);
 
   await collab.goto('/gardens');
   await openGardenPlantings(collab, /Stale plantings/);
-  await expect(collab.locator('article').filter({ hasText: 'Cherry Tomato' })).toBeVisible();
+  await expect(collab.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   const plantingsUrl = collab.url();
   await abortPlantingApis(collab);
 

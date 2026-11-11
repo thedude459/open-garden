@@ -25,10 +25,10 @@ test('a tree gets its own mulched bed and stays out of a vegetable bed search', 
   await page.getByRole('button', { name: 'Open bed Veg' }).click();
   await expect(page.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await page.getByLabel('Zone').selectOption({ label: 'Any zone' });
-  await page.getByLabel('Search plants').fill('Cherry Tomato');
+  await page.getByLabel('Search plants').fill('Tomato');
   await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(page.getByRole('button', { name: 'Place Cherry Tomato' })).toBeVisible();
-  await page.getByLabel('Search plants').fill('Red Maple');
+  await expect(page.getByRole('button', { name: 'Place Tomato (Cherry)' })).toBeVisible();
+  await page.getByLabel('Search plants').fill('Apple');
   await page.getByRole('button', { name: 'Apply' }).click();
-  await expect(page.getByRole('button', { name: 'Place Red Maple' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Place Apple (Honeycrisp)' })).toHaveCount(0);
 });

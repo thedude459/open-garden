@@ -2,18 +2,38 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type { FrostRelativeWeeksDto, PlantType } from '@open-garden/shared-types';
 import { z } from 'zod';
+import { verifyCatalogAttestation } from './catalog-attestation';
 import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
+
+/**
+ * The open-garden-data release this app ships with and was tested against.
+ * Its SHA-256 is pinned here, not read from beside the file: anyone who can
+ * replace the file can replace a checksum next to it. The release's
+ * provenance attestation was checked when it was added (`gh attestation
+ * verify`); bump all three together.
+ */
+export const BUNDLED_CATALOG = {
+  version: '0.1.0',
+  /** Relative to the working directory: the repository root, or /app in the API image. */
+  file: 'libs/plant-provider/catalog/open-garden-catalog-0.1.0.json',
+  sha256: '88c4ab45ee5e2074b67add9fc2962318cb5fd57292f4b403b9b7294455350ef2',
+} as const;
 
 /**
  * Reads a release of the open-garden-data catalog
  * (open-garden-catalog-<version>.json) from disk. The file is outside input:
- * it is used only when the SHA-256 in the `.sha256` file beside it matches,
- * and only after it passes the schema below. See ADR 0019.
+ * it is used only when its SHA-256 is pinned in this app or its provenance
+ * attestation (`<file>.sigstore.json`) shows the data repository's release
+ * workflow built it, and only after it passes the schema below. See ADR 0019
+ * and ADR 0020.
  */
 export class DatasetReleaseProvider implements PlantDataProvider {
   readonly id = 'dataset';
-  /** `file` is the catalog JSON; `${file}.sha256` must sit beside it. */
-  constructor(private readonly file: string) {}
+  /** `pinned`: SHA-256 hashes trusted without an attestation. */
+  constructor(
+    private readonly file: string = BUNDLED_CATALOG.file,
+    private readonly pinned: readonly string[] = [BUNDLED_CATALOG.sha256],
+  ) {}
 
   async searchByName(query: string, options?: { limit?: number }): Promise<ProviderPlant[]> {
     const q = query.trim().toLowerCase();
@@ -35,7 +55,7 @@ export class DatasetReleaseProvider implements PlantDataProvider {
    * replaced file is picked up on the next run. A release is under 100 KB.
    */
   private load(): Promise<Catalog> {
-    return readCatalog(this.file);
+    return readCatalog(this.file, this.pinned);
   }
 }
 
@@ -45,16 +65,25 @@ export interface Catalog {
   skipped: number;
 }
 
-export async function readCatalog(file: string): Promise<Catalog> {
-  const [json, checksum] = await Promise.all([
-    readFile(file),
-    readFile(`${file}.sha256`, 'utf8').catch(() => {
-      throw new Error(`Catalog checksum file ${file}.sha256 is missing`);
-    }),
-  ]);
-  const expected = checksum.trim().split(/\s+/)[0]?.toLowerCase();
-  const actual = createHash('sha256').update(json).digest('hex');
-  if (expected !== actual) throw new Error('Catalog file does not match its SHA-256 checksum');
+export async function readCatalog(
+  file: string,
+  pinned: readonly string[] = [BUNDLED_CATALOG.sha256],
+): Promise<Catalog> {
+  const json = await readFile(file);
+  const sha256 = createHash('sha256').update(json).digest('hex');
+  if (!pinned.includes(sha256)) {
+    const bundle = await readFile(`${file}.sigstore.json`, 'utf8').catch(() => {
+      throw new Error(
+        `Catalog file is not the bundled release and has no attestation (${file}.sigstore.json)`,
+      );
+    });
+    try {
+      verifyCatalogAttestation(JSON.parse(bundle), sha256);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : 'verification failed';
+      throw new Error(`Catalog attestation does not verify: ${reason}`);
+    }
+  }
 
   const parsed = catalogSchema.safeParse(JSON.parse(json.toString('utf8')));
   if (!parsed.success) {

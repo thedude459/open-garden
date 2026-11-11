@@ -22,7 +22,10 @@ async function fillDate(input: ReturnType<Page['locator']>, value: string) {
 }
 
 async function addFromCatalog(page: Page, name: string) {
-  await page.getByRole('textbox', { name: 'Search catalog to add' }).fill(name);
+  await page
+    .getByRole('textbox', { name: 'Search catalog to add' })
+    // Search by common name; a variety reads "Tomato (Cherry)".
+    .fill(name.replace(/ \(.*\)$/, ''));
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: `Add ${name}` }).click();
   await expect(page.locator('article').filter({ hasText: name }).first()).toBeVisible();
@@ -39,15 +42,15 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   const friend = await newUser(browser, friendEmail);
 
   await owner.goto('/plants');
-  await owner.getByPlaceholder('Search name / species / variety').fill('Sweet Basil');
+  await owner.getByPlaceholder('Search name / species / variety').fill('Basil');
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await owner.getByRole('link', { name: /Sweet Basil/ }).click();
+  await owner.getByRole('link', { name: /Basil \(Genovese\)/ }).click();
   await owner.getByRole('button', { name: 'Save favorite' }).click();
   await expect(owner.getByRole('button', { name: 'Remove favorite' })).toBeVisible();
 
   await openPlantings(owner, 'Record bed');
-  await addFromCatalog(owner, 'Cherry Tomato');
-  const tomato = owner.locator('article').filter({ hasText: 'Cherry Tomato' }).first();
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+  const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await expect(tomato.getByText('Not set').first()).toBeVisible();
   const planted = tomato.locator('input[type="date"]').first();
   await expect(planted).toHaveValue('');
@@ -72,31 +75,31 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await expect(tomato.locator('input[type="date"]').first()).toHaveValue('2026-12-01');
   await expect(tomato.locator('input[type="date"]').nth(1)).toHaveValue('2026-12-15');
 
-  await addFromCatalog(owner, 'Cherry Tomato');
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(2);
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(2);
 
   await owner.getByRole('button', { name: 'Show favorites' }).click();
-  await owner.getByRole('button', { name: 'Add favorite Sweet Basil' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
+  await owner.getByRole('button', { name: 'Add favorite Basil (Genovese)' }).click();
+  await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
 
-  const basil = owner.locator('article').filter({ hasText: 'Sweet Basil' });
-  await basil.getByRole('button', { name: 'Remove Sweet Basil' }).click();
+  const basil = owner.locator('article').filter({ hasText: 'Basil (Genovese)' });
+  await basil.getByRole('button', { name: 'Remove Basil (Genovese)' }).click();
   await basil.getByRole('button', { name: 'Cancel' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toBeVisible();
-  await basil.getByRole('button', { name: 'Remove Sweet Basil' }).click();
+  await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
+  await basil.getByRole('button', { name: 'Remove Basil (Genovese)' }).click();
   await basil.getByRole('button', { name: 'Confirm remove' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'Sweet Basil' })).toHaveCount(0);
+  await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toHaveCount(0);
 
   await owner.goto('/plants');
-  await owner.getByPlaceholder('Search name / species / variety').fill('Cherry Tomato');
+  await owner.getByPlaceholder('Search name / species / variety').fill('Tomato');
   await owner.getByRole('button', { name: 'Apply' }).click();
-  await expect(owner.getByRole('link', { name: /Cherry Tomato/ })).toBeVisible();
+  await expect(owner.getByRole('link', { name: /Tomato \(Cherry\)/ })).toBeVisible();
   await owner.goto('/favorites');
-  await expect(owner.getByText('Sweet Basil')).toBeVisible();
+  await expect(owner.getByText('Basil (Genovese)')).toBeVisible();
   await owner.getByRole('link', { name: 'Properties' }).click();
   await owner.getByRole('link', { name: /Record bed/ }).click();
   await owner.getByRole('link', { name: 'Calendar' }).click();
-  await expect(owner.locator('article').filter({ hasText: 'Cherry Tomato' })).toHaveCount(0);
+  await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
   await owner.locator('input[name="inviteEmail"]').fill(friendEmail);
@@ -108,7 +111,7 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await friend.getByRole('link', { name: /Record bed/ }).click();
   await openPlantingsFromGarden(friend);
   await expect(
-    friend.locator('article').filter({ hasText: 'Cherry Tomato' }).first(),
+    friend.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first(),
   ).toBeVisible();
   await expect(friend.getByRole('button', { name: 'Show favorites' })).toHaveCount(0);
   await expect(friend.getByText('Your favorites')).toHaveCount(0);

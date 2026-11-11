@@ -1,91 +1,39 @@
-# Quickstart: Catalog Data Pipeline
+# Catalog import checks
 
-**Feature**: `007-data-pipeline` | **Date**: 2026-08-18
-
-## Prerequisites
-
-- Node.js LTS / npm
-- Docker Compose Postgres (same stack as 001–006)
-- Demo users from 001 seed: `gardener@example.com` / `password123` and
-  `admin@example.com` / `password123`
+The plant catalog is one source: the open-garden-data release bundled in
+`libs/plant-provider/catalog/`, or the file `PLANT_CATALOG_FILE` names. See
+[ADR 0019](adr/0019-dataset-catalog-import.md) and
+[ADR 0020](adr/0020-dataset-as-the-catalog.md).
 
 ## Local stack
 
 ```bash
 docker compose up -d postgres
-npm run migrate          # includes 0007_catalog_pipeline.sql
-npm run api:sync-plants  # blocking full fixture pipeline load (no 500 cap)
-# terminal 1
-npm run api:serve
-# terminal 2
-npm run web:serve
+npm run api:sync-plants  # migrate, seed, import the bundled release
+npm run api:serve        # terminal 1
+npm run web:serve        # terminal 2
 ```
 
-Web is at `http://localhost:4200`. Browser calls go to `/api` and are proxied
-to the Nest API on port 3000 (session cookies).
+## What to check by hand
 
-Optional live source: set `PERENUAL_API_KEY` and PATCH settings
-`sourceOrder` to `["fixture", "perenual"]`. Local/CI default is fixture only.
+1. As a gardener, open the catalog: dataset crops and their varieties
+   ("Tomato", "Tomato (Cherry)"). There is no sync control.
+2. As a gardener, `POST /api/admin/pipeline/runs` is 403 `Admin role required`.
+3. As admin, start a run on `/admin/pipeline`. The run shows one source,
+   `dataset`. A second run with nothing changed succeeds with the note
+   "Catalog unchanged since the last run; nothing written".
+4. Point `PLANT_CATALOG_FILE` at a copy of the release with one byte changed:
+   the run fails with "Catalog attestation does not verify" and the catalog
+   is unchanged.
 
-## Automated tests (same as CI)
+Automated coverage: `libs/plant-provider` (pinning, attestation, schema),
+`libs/catalog-pipeline` (merge, unchanged runs, deprecation), the
+`pipeline-http` live suite, and the daily
+[Dataset compatibility](../.github/workflows/dataset-compat.yml) workflow.
 
-```bash
-npm test          # Vitest (affected-or-all) + coverage ≥80%
-npm run e2e       # Playwright Chromium; starts Docker Postgres if needed
-npm run test:all  # both
-```
+## Notes
 
-Pipeline unit coverage lives in `libs/catalog-pipeline` (merge, lock reject,
-deprecation/reactivation, miss-fill absence). Catalog list tests must assert
-**no** provider call on empty name search.
-
-## Verify populate without in-app API sync (P1)
-
-1. After `api:sync-plants`, sign in as gardener. Open Plants. First page
-   shows fixture plants (including Cherry Tomato). Search and open detail
-   in under 1 minute. There is **no** sync/refresh-from-API control on
-   gardener screens.
-2. Search for a name that is not in the catalog: empty state. The API must
-   not call Perenual/fixture search to fill the miss (network abort of
-   provider hosts still returns empty, not new rows).
-3. As gardener, `POST /api/admin/pipeline/runs` is 403 `Admin role required`.
-4. Catalog first paint after the garden/catalog is open remains a **manual**
-   local-network check (<2s), not a Playwright timing gate.
-
-## Verify multi-source merge (P2)
-
-1. Sign in as admin. PATCH settings `sourceOrder` to `["fixture", "fixture-b"]`
-   (admin form is P3). Start a run. Poll the **catalog** until a fixture-b unique
-   plant appears (do not require run-detail GET until P3).
-2. Overlapping varieties appear **once**. Unique varieties from `fixture-b` appear. Do not expect the whole catalog to contain only 30 rows (the 30-key pair is a unit-test contract). Conflicting fields follow last-in-order wins; blanks fill from earlier sources. Run detail (after US3) shows `fieldWinners`.
-3. Reset `sourceOrder` to `["fixture"]` for the rest of the product e2e
-   (003–006 named plants).
-
-## Verify operator monitor and recover (P3)
-
-1. As admin, start a run. Status becomes `running` then terminal. Detail
-   lists each source. Gardeners still cannot open `/admin/pipeline`.
-2. Start a second run while the first is forced `running`: 409
-   `A pipeline run is already running`. The first run is unchanged.
-3. Disable or break one source (e.g. enable `perenual` without a usable key)
-   and keep fixture: run ends `incomplete` or fixture-only `succeeded` with
-   the failed source recorded; previously loaded plants remain searchable.
-4. Set cadence `daily` and `runAtHourUtc`. Confirm the settings GET round
-   trip. (Firing the clock is a unit test of `tryStartScheduled`, not a
-   24-hour wait.)
-5. Start a second run with nothing changed. It succeeds with 0 plants
-   upserted and the note "Catalog unchanged since the last run; nothing
-   written", and records no merge decisions. Change a source (or deprecate a
-   plant by hand) and the next run writes again.
-
-## Performance / scale notes
-
-- Fixture full load (≥50 plants) completes well under SC-006’s 2 minutes.
-- Live Perenual full paging is operator-initiated; gardeners keep using the
-  last published catalog while it runs.
-- A run whose catalog matches the last successful run writes nothing, so the
-  daily schedule costs little when nothing changed.
 - Run history keeps the latest 50 runs and anything from the last 90 days;
   older runs, with their sources and merge decisions, are deleted on publish.
-- A dataset catalog file is read on every run, so a replaced file is picked up
+- The catalog file is read on every run, so a replaced file is picked up
   without restarting the API.

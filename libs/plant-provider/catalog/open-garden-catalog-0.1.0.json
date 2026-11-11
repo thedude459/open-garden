@@ -1,0 +1,3474 @@
+{
+  "version": "0.1.0",
+  "license": "CC0-1.0",
+  "units": {
+    "length": "cm",
+    "temperature": "C"
+  },
+  "families": [
+    {
+      "id": "amaranthaceae",
+      "name": "Amaranthaceae",
+      "commonName": "Amaranth family (beet, chard, spinach)"
+    },
+    {
+      "id": "amaryllidaceae",
+      "name": "Amaryllidaceae",
+      "commonName": "Onion family (onion, garlic, leek)"
+    },
+    {
+      "id": "apiaceae",
+      "name": "Apiaceae",
+      "commonName": "Carrot family (carrot, parsnip, celery, dill)"
+    },
+    {
+      "id": "asparagaceae",
+      "name": "Asparagaceae",
+      "commonName": "Asparagus family (asparagus)"
+    },
+    {
+      "id": "asteraceae",
+      "name": "Asteraceae",
+      "commonName": "Daisy family (lettuce, sunflower, endive)"
+    },
+    {
+      "id": "brassicaceae",
+      "name": "Brassicaceae",
+      "commonName": "Cabbage family (cabbage, kale, broccoli, radish)"
+    },
+    {
+      "id": "convolvulaceae",
+      "name": "Convolvulaceae",
+      "commonName": "Morning glory family (sweet potato)"
+    },
+    {
+      "id": "cucurbitaceae",
+      "name": "Cucurbitaceae",
+      "commonName": "Gourd family (cucumber, squash, melon)"
+    },
+    {
+      "id": "ericaceae",
+      "name": "Ericaceae",
+      "commonName": "Heath family (blueberry)"
+    },
+    {
+      "id": "fabaceae",
+      "name": "Fabaceae",
+      "commonName": "Legume family (bean, pea)"
+    },
+    {
+      "id": "lamiaceae",
+      "name": "Lamiaceae",
+      "commonName": "Mint family (basil, mint, oregano)"
+    },
+    {
+      "id": "malvaceae",
+      "name": "Malvaceae",
+      "commonName": "Mallow family (okra)"
+    },
+    {
+      "id": "poaceae",
+      "name": "Poaceae",
+      "commonName": "Grass family (corn)"
+    },
+    {
+      "id": "polygonaceae",
+      "name": "Polygonaceae",
+      "commonName": "Knotweed family (rhubarb)"
+    },
+    {
+      "id": "rosaceae",
+      "name": "Rosaceae",
+      "commonName": "Rose family (apple, pear, strawberry, raspberry)"
+    },
+    {
+      "id": "solanaceae",
+      "name": "Solanaceae",
+      "commonName": "Nightshade family (tomato, pepper, potato, eggplant)"
+    }
+  ],
+  "sources": [
+    {
+      "id": "hand-curation",
+      "name": "Contributor curation",
+      "kind": "curation",
+      "license": "CC0-1.0",
+      "url": "https://github.com/thedude459/open-garden-data",
+      "note": "Values written by contributors in their own words, cross-checked against extension-service guides and seed packets. Facts are not copyrightable; prose is."
+    },
+    {
+      "id": "usda-plants",
+      "name": "USDA PLANTS Database",
+      "kind": "reference",
+      "license": "Public domain",
+      "url": "https://plants.usda.gov/"
+    },
+    {
+      "id": "wikidata",
+      "name": "Wikidata",
+      "kind": "reference",
+      "license": "CC0-1.0",
+      "url": "https://www.wikidata.org/"
+    },
+    {
+      "id": "openfarm-rescue",
+      "name": "OpenFarm crops rescue",
+      "kind": "bootstrap",
+      "license": "CC0-1.0",
+      "url": "https://github.com/thefullnacho/openfarm-crops-rescue",
+      "note": "CC0 is claimed for the archive; check each record before use."
+    }
+  ],
+  "crops": [
+    {
+      "id": "apple",
+      "names": {
+        "en": "Apple"
+      },
+      "scientificName": "Malus domestica",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 420,
+        "betweenRows": 540
+      },
+      "rootstocks": {
+        "dwarf": {
+          "spacingCm": {
+            "inRow": 240,
+            "betweenRows": 360
+          },
+          "heightM": {
+            "min": 2.5,
+            "max": 3.5
+          },
+          "yearsToFruit": {
+            "min": 2,
+            "max": 3
+          }
+        },
+        "semiDwarf": {
+          "spacingCm": {
+            "inRow": 420,
+            "betweenRows": 540
+          },
+          "heightM": {
+            "min": 3.5,
+            "max": 5
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 5
+          }
+        },
+        "standard": {
+          "spacingCm": {
+            "inRow": 750,
+            "betweenRows": 900
+          },
+          "heightM": {
+            "min": 6,
+            "max": 9
+          },
+          "yearsToFruit": {
+            "min": 5,
+            "max": 8
+          }
+        }
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "apple-honeycrisp",
+          "name": "Honeycrisp"
+        }
+      ],
+      "notes": "The rootstock sets the final size, so check it when buying; the default spacing is for a semi-dwarf tree. Most apples need a second, different variety nearby that blooms at the same time. Trees start fruiting in two to five years.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "asparagus",
+      "names": {
+        "en": "Asparagus"
+      },
+      "scientificName": "Asparagus officinalis",
+      "family": "asparagaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 120
+      },
+      "sowingDepthCm": 15,
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "asparagus-mary-washington",
+          "name": "Mary Washington"
+        }
+      ],
+      "notes": "Planted as dormant crowns in a trench, which is what transplant means here. A bed crops for 15 years or more. Do not harvest in the first year, and only briefly in the second, so the roots build up.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "basil",
+      "names": {
+        "en": "Basil"
+      },
+      "scientificName": "Ocimum basilicum",
+      "family": "lamiaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 18,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -4
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 30,
+        "max": 60
+      },
+      "varieties": [
+        {
+          "id": "basil-genovese",
+          "name": "Genovese"
+        }
+      ],
+      "notes": "Leaves are ready to pick a few weeks after planting out. Pinch off flower buds to keep it leafy. Blackens at the first frost and sulks below about 10 °C.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "beet",
+      "names": {
+        "en": "Beet"
+      },
+      "scientificName": "Beta vulgaris",
+      "family": "amaranthaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 8,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 1.3,
+      "germinationDays": {
+        "min": 5,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 70
+      },
+      "varieties": [
+        {
+          "id": "beet-detroit-dark-red",
+          "name": "Detroit Dark Red",
+          "daysToMaturity": {
+            "min": 55,
+            "max": 65
+          }
+        }
+      ],
+      "notes": "Each seed is a cluster that sends up several seedlings; thin to one. The young leaves are good to eat too.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "blackberry",
+      "names": {
+        "en": "Blackberry"
+      },
+      "scientificName": "Rubus fruticosus",
+      "family": "rosaceae",
+      "habit": "cane",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 90,
+        "betweenRows": 300
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "blackberry-triple-crown",
+          "name": "Triple Crown"
+        }
+      ],
+      "notes": "Canes fruit in their second year, then die back; cut them out after harvest. Thornless trailing types such as Triple Crown need a trellis. Rubus fruticosus names the wider blackberry group; garden blackberries are hybrids within it.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "blueberry",
+      "names": {
+        "en": "Blueberry"
+      },
+      "scientificName": "Vaccinium corymbosum",
+      "family": "ericaceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 7
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 120,
+        "betweenRows": 240
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "blueberry-bluecrop",
+          "name": "Bluecrop"
+        }
+      ],
+      "notes": "Needs acid soil, around pH 4.5 to 5.5; most garden soil must be amended or the plants grown in raised beds of acid mix. Shallow roots like mulch and steady moisture. Two different varieties crop better than one. Values are for northern highbush; rabbiteye and southern highbush suit warmer zones.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "broccoli",
+      "names": {
+        "en": "Broccoli"
+      },
+      "scientificName": "Brassica oleracea var. italica",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 55,
+        "max": 80
+      },
+      "varieties": [
+        {
+          "id": "broccoli-waltham-29",
+          "name": "Waltham 29",
+          "daysToMaturity": {
+            "min": 70,
+            "max": 80
+          }
+        }
+      ],
+      "notes": "Cut the main head while the buds are tight, before they show yellow; side shoots follow for weeks. Hot weather makes heads loose and quick to flower.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "brussels-sprouts",
+      "names": {
+        "en": "Brussels sprouts"
+      },
+      "scientificName": "Brassica oleracea var. gemmifera",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 60,
+        "betweenRows": 90
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -4
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 90,
+        "max": 110
+      },
+      "varieties": [
+        {
+          "id": "brussels-sprouts-long-island-improved",
+          "name": "Long Island Improved",
+          "daysToMaturity": {
+            "min": 90,
+            "max": 100
+          }
+        }
+      ],
+      "notes": "A long-season crop for a fall harvest; frost improves the flavor. Pick sprouts from the bottom of the stem up as they firm.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "bush-bean",
+      "names": {
+        "en": "Bush bean"
+      },
+      "scientificName": "Phaseolus vulgaris",
+      "family": "fabaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 10,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 6,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 60
+      },
+      "varieties": [
+        {
+          "id": "bush-bean-provider",
+          "name": "Provider",
+          "daysToMaturity": {
+            "min": 50,
+            "max": 55
+          }
+        }
+      ],
+      "notes": "Compact plants that need no support and crop over a few weeks. Seed rots in cold, wet soil, so wait for it to warm.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "cabbage",
+      "names": {
+        "en": "Cabbage"
+      },
+      "scientificName": "Brassica oleracea var. capitata",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 0
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "cabbage-golden-acre",
+          "name": "Golden Acre",
+          "daysToMaturity": {
+            "min": 60,
+            "max": 65
+          }
+        }
+      ],
+      "notes": "Water evenly; heads split after a dry spell followed by heavy rain. Harvest when heads feel firm.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "carrot",
+      "names": {
+        "en": "Carrot"
+      },
+      "scientificName": "Daucus carota subsp. sativus",
+      "family": "apiaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 5,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 10,
+        "max": 21
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 80
+      },
+      "varieties": [
+        {
+          "id": "carrot-danvers",
+          "name": "Danvers",
+          "daysToMaturity": {
+            "min": 65,
+            "max": 75
+          }
+        }
+      ],
+      "notes": "Sow where it will grow; carrots do not transplant. Keep the seedbed moist until seedlings appear, and thin to the in-row spacing. Grown as an annual; it flowers in its second year.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "cauliflower",
+      "names": {
+        "en": "Cauliflower"
+      },
+      "scientificName": "Brassica oleracea var. botrytis",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 55,
+        "max": 80
+      },
+      "varieties": [
+        {
+          "id": "cauliflower-snowball",
+          "name": "Snowball",
+          "daysToMaturity": {
+            "min": 60,
+            "max": 70
+          }
+        }
+      ],
+      "notes": "The fussiest of the cabbage family. Heat, drought, or a check in growth gives small, early heads. Fold the inner leaves over the head once it shows to keep it white.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "celery",
+      "names": {
+        "en": "Celery"
+      },
+      "scientificName": "Apium graveolens var. dulce",
+      "family": "apiaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "high",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 60
+      },
+      "sowingDepthCm": 0.3,
+      "germinationDays": {
+        "min": 14,
+        "max": 21
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 10,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -12,
+          "weeksLatest": -10
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 90,
+        "max": 120
+      },
+      "varieties": [
+        {
+          "id": "celery-tall-utah",
+          "name": "Tall Utah",
+          "daysToMaturity": {
+            "min": 100,
+            "max": 120
+          }
+        }
+      ],
+      "notes": "Needs steady moisture and rich soil. Seed needs light to germinate, so press it onto the surface. Plant out after nights warm up; a long cold spell can make it bolt.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "chives",
+      "names": {
+        "en": "Chives"
+      },
+      "scientificName": "Allium schoenoprasum",
+      "family": "amaryllidaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 20,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 10,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 90
+      },
+      "notes": "Cut leaves to a few centimetres above the soil and they regrow all season. Divide clumps every few years. The flowers are edible too.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "cilantro",
+      "names": {
+        "en": "Cilantro"
+      },
+      "scientificName": "Coriandrum sativum",
+      "family": "apiaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 15,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 10,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 45,
+        "max": 70
+      },
+      "varieties": [
+        {
+          "id": "cilantro-santo",
+          "name": "Santo"
+        }
+      ],
+      "notes": "Bolts quickly in heat, so sow small batches every few weeks in spring and again in fall. The seeds are coriander. Does not like being transplanted.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "cucumber",
+      "names": {
+        "en": "Cucumber"
+      },
+      "scientificName": "Cucumis sativus",
+      "family": "cucurbitaceae",
+      "habit": "vine",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "high",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 90
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 3,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 70
+      },
+      "varieties": [
+        {
+          "id": "cucumber-marketmore-76",
+          "name": "Marketmore 76",
+          "daysToMaturity": {
+            "min": 60,
+            "max": 70
+          }
+        }
+      ],
+      "notes": "Spacing assumes plants grown up a trellis; allow about twice as much in-row space when they sprawl. Dislikes root disturbance, so start indoors in individual pots.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "dill",
+      "names": {
+        "en": "Dill"
+      },
+      "scientificName": "Anethum graveolens",
+      "family": "apiaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 20,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 7,
+        "max": 21
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 10,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 40,
+        "max": 60
+      },
+      "varieties": [
+        {
+          "id": "dill-bouquet",
+          "name": "Bouquet"
+        }
+      ],
+      "notes": "Sow where it will grow; it dislikes transplanting. Leaves are ready in about six weeks and seed heads later in summer. Left to flower, it self-seeds.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "eggplant",
+      "names": {
+        "en": "Eggplant"
+      },
+      "scientificName": "Solanum melongena",
+      "family": "solanaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 26,
+        "max": 35
+      },
+      "minSoilTemperatureC": 18,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -10,
+          "weeksLatest": -8
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 65,
+        "max": 85
+      },
+      "varieties": [
+        {
+          "id": "eggplant-black-beauty",
+          "name": "Black Beauty",
+          "daysToMaturity": {
+            "min": 75,
+            "max": 85
+          }
+        }
+      ],
+      "notes": "Needs more heat than tomatoes or peppers. Plant out only once nights stay warm; a cold spell stunts plants for weeks.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "garlic",
+      "names": {
+        "en": "Garlic"
+      },
+      "scientificName": "Allium sativum",
+      "family": "amaryllidaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 15,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 5,
+      "windows": {
+        "directSow": {
+          "frost": "first",
+          "weeksEarliest": -2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 240,
+        "max": 270
+      },
+      "varieties": [
+        {
+          "id": "garlic-music",
+          "name": "Music"
+        }
+      ],
+      "notes": "Grown from cloves planted in fall, pointed end up, and harvested the next summer when the lower leaves turn brown. Grown as an annual crop. Hardneck types such as Music suit cold winters; softneck types suit mild ones.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "kale",
+      "names": {
+        "en": "Kale"
+      },
+      "scientificName": "Brassica oleracea var. sabellica",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 60
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -4
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -1
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 0
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 65
+      },
+      "varieties": [
+        {
+          "id": "kale-lacinato",
+          "name": "Lacinato",
+          "daysToMaturity": {
+            "min": 55,
+            "max": 65
+          }
+        }
+      ],
+      "notes": "Pick the outer leaves and let the centre keep growing. Light frost sweetens the leaves, and plants often crop into winter.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "leek",
+      "names": {
+        "en": "Leek"
+      },
+      "scientificName": "Allium ampeloprasum",
+      "family": "amaryllidaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 15,
+        "betweenRows": 40
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -12,
+          "weeksLatest": -10
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "daysToMaturity": {
+        "min": 90,
+        "max": 120
+      },
+      "varieties": [
+        {
+          "id": "leek-american-flag",
+          "name": "American Flag",
+          "daysToMaturity": {
+            "min": 100,
+            "max": 120
+          }
+        }
+      ],
+      "notes": "Plant seedlings deep, or mound soil around the stems as they grow, to get long white shanks. Stands in the ground through frost for a late harvest.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "lettuce",
+      "names": {
+        "en": "Lettuce"
+      },
+      "scientificName": "Lactuca sativa",
+      "family": "asteraceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 40
+      },
+      "sowingDepthCm": 0.3,
+      "germinationDays": {
+        "min": 4,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 4,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -4
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": 0
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 45,
+        "max": 75
+      },
+      "varieties": [
+        {
+          "id": "lettuce-buttercrunch",
+          "name": "Buttercrunch",
+          "daysToMaturity": {
+            "min": 55,
+            "max": 65
+          }
+        }
+      ],
+      "notes": "A cool-season crop that bolts in summer heat. Sow small batches every two to three weeks; part shade helps in hot climates. Seed needs light to germinate, so cover it only lightly.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "melon",
+      "names": {
+        "en": "Melon"
+      },
+      "scientificName": "Cucumis melo",
+      "family": "cucurbitaceae",
+      "habit": "vine",
+      "use": "fruit",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 150
+      },
+      "sowingDepthCm": 1.5,
+      "germinationDays": {
+        "min": 4,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 18,
+        "optimal": 27,
+        "max": 35
+      },
+      "minSoilTemperatureC": 21,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 70,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "melon-hales-best-jumbo",
+          "name": "Hale's Best Jumbo",
+          "daysToMaturity": {
+            "min": 80,
+            "max": 90
+          }
+        }
+      ],
+      "notes": "Includes cantaloupe and honeydew. Needs a long, hot season; black plastic mulch helps in cool areas. Water less as fruit ripens for sweeter melons; cantaloupes are ripe when they slip from the vine.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "mint",
+      "names": {
+        "en": "Mint"
+      },
+      "scientificName": "Mentha spicata",
+      "family": "lamiaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "high",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 60
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 1
+        }
+      },
+      "varieties": [
+        {
+          "id": "mint-spearmint",
+          "name": "Spearmint"
+        }
+      ],
+      "notes": "Spreads fast by underground runners; grow it in a container or a pot sunk in the bed. Usually planted from divisions or nursery plants, since it does not come true from seed. Tolerates part shade.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "okra",
+      "names": {
+        "en": "Okra"
+      },
+      "scientificName": "Abelmoschus esculentus",
+      "family": "malvaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 90
+      },
+      "sowingDepthCm": 1.5,
+      "germinationDays": {
+        "min": 5,
+        "max": 12
+      },
+      "temperatureC": {
+        "min": 18,
+        "optimal": 29,
+        "max": 35
+      },
+      "minSoilTemperatureC": 21,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 65
+      },
+      "varieties": [
+        {
+          "id": "okra-clemson-spineless",
+          "name": "Clemson Spineless",
+          "daysToMaturity": {
+            "min": 55,
+            "max": 60
+          }
+        }
+      ],
+      "notes": "A hot-weather crop. Soak seed overnight before sowing. Pick pods small and every day or two; they toughen quickly.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "onion",
+      "names": {
+        "en": "Onion"
+      },
+      "scientificName": "Allium cepa",
+      "family": "amaryllidaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 10,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -12,
+          "weeksLatest": -8
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "daysToMaturity": {
+        "min": 90,
+        "max": 120
+      },
+      "notes": "Bulbs form in response to day length, so choose a type for your latitude. Short-day onions suit mild-winter regions; long-day onions suit the north. Direct sowing here means planting sets (small bulbs), 2–3 cm deep.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "oregano",
+      "names": {
+        "en": "Oregano"
+      },
+      "scientificName": "Origanum vulgare",
+      "family": "lamiaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "low",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 0.3,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 21,
+        "max": 29
+      },
+      "minSoilTemperatureC": 13,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "oregano-greek",
+          "name": "Greek"
+        }
+      ],
+      "notes": "Flavor is strongest in lean, well-drained soil and full sun. Seed needs light to germinate, so press it onto the surface. Cut back after flowering.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "parsley",
+      "names": {
+        "en": "Parsley"
+      },
+      "scientificName": "Petroselinum crispum",
+      "family": "apiaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 20,
+        "betweenRows": 40
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 14,
+        "max": 28
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 10,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -10,
+          "weeksLatest": -8
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 0
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "parsley-giant-of-italy",
+          "name": "Giant of Italy"
+        }
+      ],
+      "notes": "Very slow to germinate; soaking seed overnight helps. Grows in part shade. It flowers and turns bitter in its second year, so most gardeners sow it fresh each year.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "parsnip",
+      "names": {
+        "en": "Parsnip"
+      },
+      "scientificName": "Pastinaca sativa",
+      "family": "apiaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 10,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 1.3,
+      "germinationDays": {
+        "min": 14,
+        "max": 28
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 24
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 100,
+        "max": 130
+      },
+      "varieties": [
+        {
+          "id": "parsnip-hollow-crown",
+          "name": "Hollow Crown",
+          "daysToMaturity": {
+            "min": 100,
+            "max": 120
+          }
+        }
+      ],
+      "notes": "Use fresh seed each year; it loses vigour fast and is slow to come up. Leave roots in the ground until after a few frosts for the sweetest flavor. The sap can irritate skin in sunlight, so wear gloves when handling the leaves.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "pea",
+      "names": {
+        "en": "Pea"
+      },
+      "scientificName": "Pisum sativum",
+      "family": "fabaceae",
+      "habit": "vine",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 5,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 16,
+        "max": 24
+      },
+      "minSoilTemperatureC": 4,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -2
+        }
+      },
+      "daysToMaturity": {
+        "min": 55,
+        "max": 70
+      },
+      "varieties": [
+        {
+          "id": "pea-sugar-snap",
+          "name": "Sugar Snap",
+          "daysToMaturity": {
+            "min": 60,
+            "max": 70
+          }
+        }
+      ],
+      "notes": "A cool-season crop sown as soon as the soil can be worked in spring; it stops cropping in summer heat. Most types climb and need netting or twiggy supports.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "peach",
+      "names": {
+        "en": "Peach"
+      },
+      "scientificName": "Prunus persica",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 450,
+        "betweenRows": 550
+      },
+      "rootstocks": {
+        "dwarf": {
+          "spacingCm": {
+            "inRow": 300,
+            "betweenRows": 450
+          },
+          "heightM": {
+            "min": 2,
+            "max": 3.5
+          },
+          "yearsToFruit": {
+            "min": 2,
+            "max": 3
+          }
+        },
+        "semiDwarf": {
+          "spacingCm": {
+            "inRow": 450,
+            "betweenRows": 550
+          },
+          "heightM": {
+            "min": 3.5,
+            "max": 5
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 4
+          }
+        },
+        "standard": {
+          "spacingCm": {
+            "inRow": 600,
+            "betweenRows": 750
+          },
+          "heightM": {
+            "min": 5,
+            "max": 7
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 5
+          }
+        }
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "peach-redhaven",
+          "name": "Redhaven"
+        }
+      ],
+      "notes": "Self-fertile, so one tree is enough. It blooms early, and a late spring frost can take the crop even where the tree itself is hardy; plant on a slope rather than in a frost pocket. Fruits on last year's wood, so prune every year to an open centre.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "pear",
+      "names": {
+        "en": "Pear"
+      },
+      "scientificName": "Pyrus communis",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 450,
+        "betweenRows": 600
+      },
+      "rootstocks": {
+        "dwarf": {
+          "spacingCm": {
+            "inRow": 300,
+            "betweenRows": 450
+          },
+          "heightM": {
+            "min": 3,
+            "max": 4.5
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 4
+          }
+        },
+        "semiDwarf": {
+          "spacingCm": {
+            "inRow": 450,
+            "betweenRows": 600
+          },
+          "heightM": {
+            "min": 4.5,
+            "max": 6
+          },
+          "yearsToFruit": {
+            "min": 4,
+            "max": 6
+          }
+        },
+        "standard": {
+          "spacingCm": {
+            "inRow": 750,
+            "betweenRows": 900
+          },
+          "heightM": {
+            "min": 7,
+            "max": 12
+          },
+          "yearsToFruit": {
+            "min": 5,
+            "max": 8
+          }
+        }
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "pear-bartlett",
+          "name": "Bartlett"
+        }
+      ],
+      "notes": "Needs a second variety nearby for pollination. Pick European pears mature but still firm and let them ripen indoors; tree-ripened pears turn gritty at the core. Starts fruiting in three to six years.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "pole-bean",
+      "names": {
+        "en": "Pole bean"
+      },
+      "scientificName": "Phaseolus vulgaris",
+      "family": "fabaceae",
+      "habit": "vine",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 15,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 6,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 70
+      },
+      "varieties": [
+        {
+          "id": "pole-bean-kentucky-wonder",
+          "name": "Kentucky Wonder",
+          "daysToMaturity": {
+            "min": 60,
+            "max": 70
+          }
+        }
+      ],
+      "notes": "Climbing vines that need a pole, trellis, or teepee about 2 m tall. Slower to start than bush beans but keep cropping until frost if picked often.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "potato",
+      "names": {
+        "en": "Potato"
+      },
+      "scientificName": "Solanum tuberosum",
+      "family": "solanaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 10,
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -3,
+          "weeksLatest": 0
+        }
+      },
+      "daysToMaturity": {
+        "min": 70,
+        "max": 120
+      },
+      "varieties": [
+        {
+          "id": "potato-yukon-gold",
+          "name": "Yukon Gold",
+          "daysToMaturity": {
+            "min": 70,
+            "max": 90
+          }
+        }
+      ],
+      "notes": "Grown from seed potatoes (tubers or pieces with eyes), not seed. Mound soil over the stems as they grow so tubers stay covered and green-free. Frost kills the leaves, but the tubers underground survive a light frost.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "pumpkin",
+      "names": {
+        "en": "Pumpkin"
+      },
+      "scientificName": "Cucurbita pepo",
+      "family": "cucurbitaceae",
+      "habit": "vine",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 120,
+        "betweenRows": 240
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 90,
+        "max": 120
+      },
+      "varieties": [
+        {
+          "id": "pumpkin-connecticut-field",
+          "name": "Connecticut Field",
+          "daysToMaturity": {
+            "min": 110,
+            "max": 120
+          }
+        }
+      ],
+      "notes": "Needs a lot of room. Count back from your first frost so fruit ripens in time; harvest when the skin is hard and the stem starts to dry.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "radish",
+      "names": {
+        "en": "Radish"
+      },
+      "scientificName": "Raphanus sativus",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 3,
+        "betweenRows": 20
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 3,
+        "max": 7
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 16,
+        "max": 24
+      },
+      "minSoilTemperatureC": 4,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -5,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 22,
+        "max": 30
+      },
+      "varieties": [
+        {
+          "id": "radish-cherry-belle",
+          "name": "Cherry Belle",
+          "daysToMaturity": {
+            "min": 22,
+            "max": 25
+          }
+        }
+      ],
+      "notes": "Fast and easy. Sow a short row every week or two; roots turn woody and hot if left in the ground or grown in summer heat.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "raspberry",
+      "names": {
+        "en": "Raspberry"
+      },
+      "scientificName": "Rubus idaeus",
+      "family": "rosaceae",
+      "habit": "cane",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 60,
+        "betweenRows": 240
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "raspberry-heritage",
+          "name": "Heritage"
+        }
+      ],
+      "notes": "Planted as dormant canes. Summer-bearing types fruit on last year's canes; fall-bearing types such as Heritage fruit on this year's and can be cut to the ground each winter. A wire or trellis keeps rows upright. Suckers spread, so keep a mown path around the row.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "rhubarb",
+      "names": {
+        "en": "Rhubarb"
+      },
+      "scientificName": "Rheum rhabarbarum",
+      "family": "polygonaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 90,
+        "betweenRows": 120
+      },
+      "sowingDepthCm": 5,
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "rhubarb-victoria",
+          "name": "Victoria"
+        }
+      ],
+      "notes": "Planted as crowns, with the buds just below the surface. Eat only the stalks; the leaves are poisonous. Skip harvest the first year, then pull stalks in spring and early summer. Needs a cold winter to do well.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "spinach",
+      "names": {
+        "en": "Spinach"
+      },
+      "scientificName": "Spinacia oleracea",
+      "family": "amaranthaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 10,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 7,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 2,
+        "optimal": 16,
+        "max": 24
+      },
+      "minSoilTemperatureC": 4,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -2
+        }
+      },
+      "daysToMaturity": {
+        "min": 40,
+        "max": 50
+      },
+      "varieties": [
+        {
+          "id": "spinach-bloomsdale",
+          "name": "Bloomsdale",
+          "daysToMaturity": {
+            "min": 45,
+            "max": 50
+          }
+        }
+      ],
+      "notes": "A cool-season crop that bolts as days lengthen and warm. Sow again in late summer for a fall crop.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "strawberry",
+      "names": {
+        "en": "Strawberry"
+      },
+      "scientificName": "Fragaria × ananassa",
+      "family": "rosaceae",
+      "habit": "herbaceous",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 90
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "strawberry-albion",
+          "name": "Albion"
+        }
+      ],
+      "notes": "Planted as bare-root crowns, with the crown level with the soil. June-bearing types fruit once a year from the second season; remove their first-year flowers. Day-neutral types such as Albion fruit through summer from the first year. Replant every three or four years as yields fall.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "summer-squash",
+      "names": {
+        "en": "Summer squash"
+      },
+      "scientificName": "Cucurbita pepo",
+      "family": "cucurbitaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 90,
+        "betweenRows": 120
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 45,
+        "max": 60
+      },
+      "varieties": [
+        {
+          "id": "summer-squash-black-beauty",
+          "name": "Black Beauty",
+          "daysToMaturity": {
+            "min": 50,
+            "max": 60
+          }
+        }
+      ],
+      "notes": "Bush-type plants, including zucchini. Pick fruit young and often; one or two plants feed most households.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "sweet-cherry",
+      "names": {
+        "en": "Sweet cherry"
+      },
+      "scientificName": "Prunus avium",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 7
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 450,
+        "betweenRows": 600
+      },
+      "rootstocks": {
+        "dwarf": {
+          "spacingCm": {
+            "inRow": 300,
+            "betweenRows": 450
+          },
+          "heightM": {
+            "min": 2.5,
+            "max": 3.5
+          },
+          "yearsToFruit": {
+            "min": 2,
+            "max": 4
+          }
+        },
+        "semiDwarf": {
+          "spacingCm": {
+            "inRow": 450,
+            "betweenRows": 600
+          },
+          "heightM": {
+            "min": 4,
+            "max": 6
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 5
+          }
+        },
+        "standard": {
+          "spacingCm": {
+            "inRow": 750,
+            "betweenRows": 900
+          },
+          "heightM": {
+            "min": 8,
+            "max": 12
+          },
+          "yearsToFruit": {
+            "min": 5,
+            "max": 7
+          }
+        }
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "sweet-cherry-stella",
+          "name": "Stella"
+        }
+      ],
+      "notes": "Most sweet cherries need a pollination partner; Stella is self-fertile. Net trees as fruit colours, or birds take the crop. Sour cherries (Prunus cerasus) are hardier and self-fertile, and are a separate crop.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "sweet-corn",
+      "names": {
+        "en": "Sweet corn"
+      },
+      "scientificName": "Zea mays",
+      "family": "poaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 3,
+      "germinationDays": {
+        "min": 4,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 24,
+        "max": 35
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 65,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "sweet-corn-golden-bantam",
+          "name": "Golden Bantam",
+          "daysToMaturity": {
+            "min": 75,
+            "max": 85
+          }
+        }
+      ],
+      "notes": "Wind-pollinated, so plant a block of several short rows rather than one long row. Keep supersweet types apart from other corn, and give them warmer soil.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "sweet-pepper",
+      "names": {
+        "en": "Sweet pepper"
+      },
+      "scientificName": "Capsicum annuum",
+      "family": "solanaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 75
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 7,
+        "max": 21
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 18,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -10,
+          "weeksLatest": -8
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "sweet-pepper-california-wonder",
+          "name": "California Wonder",
+          "daysToMaturity": {
+            "min": 70,
+            "max": 75
+          }
+        }
+      ],
+      "notes": "Slow to germinate and needs warm soil. Plant out once nights stay above about 13 °C; cold nights stall growth.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "sweet-potato",
+      "names": {
+        "en": "Sweet potato"
+      },
+      "scientificName": "Ipomoea batatas",
+      "family": "convolvulaceae",
+      "habit": "vine",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 90
+      },
+      "temperatureC": {
+        "min": 18,
+        "optimal": 27,
+        "max": 35
+      },
+      "minSoilTemperatureC": 18,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 90,
+        "max": 120
+      },
+      "varieties": [
+        {
+          "id": "sweet-potato-beauregard",
+          "name": "Beauregard",
+          "daysToMaturity": {
+            "min": 90,
+            "max": 100
+          }
+        }
+      ],
+      "notes": "Grown from slips (rooted sprouts) rather than seed; indoor start here means sprouting slips from a stored root. Needs warm soil and a long season. Too much nitrogen gives leaves instead of roots. Cure the roots somewhere warm for a week or two before storing.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "swiss-chard",
+      "names": {
+        "en": "Swiss chard"
+      },
+      "scientificName": "Beta vulgaris subsp. vulgaris",
+      "family": "amaranthaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "biennial",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 1.3,
+      "germinationDays": {
+        "min": 5,
+        "max": 14
+      },
+      "temperatureC": {
+        "min": 4,
+        "optimal": 18,
+        "max": 27
+      },
+      "minSoilTemperatureC": 7,
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 60
+      },
+      "varieties": [
+        {
+          "id": "swiss-chard-bright-lights",
+          "name": "Bright Lights",
+          "daysToMaturity": {
+            "min": 55,
+            "max": 60
+          }
+        }
+      ],
+      "notes": "Leafy beet relative grown for its leaves and stems. Pick outer leaves and it keeps producing from spring into fall; it tolerates more heat than spinach.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "thyme",
+      "names": {
+        "en": "Thyme"
+      },
+      "scientificName": "Thymus vulgaris",
+      "family": "lamiaceae",
+      "habit": "shrub",
+      "use": "herb",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "low",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 0.3,
+      "germinationDays": {
+        "min": 7,
+        "max": 21
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 21,
+        "max": 29
+      },
+      "minSoilTemperatureC": 13,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 60,
+        "max": 90
+      },
+      "notes": "A small woody subshrub. Needs sharp drainage and dislikes wet winters more than cold ones. Trim after flowering to keep it bushy; replace plants that turn woody after a few years.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "tomato",
+      "names": {
+        "en": "Tomato"
+      },
+      "scientificName": "Solanum lycopersicum",
+      "family": "solanaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 50,
+        "betweenRows": 90
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 24,
+        "max": 35
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 55,
+        "max": 85
+      },
+      "varieties": [
+        {
+          "id": "tomato-cherry",
+          "name": "Cherry",
+          "daysToMaturity": {
+            "min": 55,
+            "max": 65
+          },
+          "spacingCm": {
+            "inRow": 45
+          }
+        }
+      ],
+      "notes": "Frost kills it. Wait until nights stay above 10 °C before planting out.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "watermelon",
+      "names": {
+        "en": "Watermelon"
+      },
+      "scientificName": "Citrullus lanatus",
+      "family": "cucurbitaceae",
+      "habit": "vine",
+      "use": "fruit",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 60,
+        "betweenRows": 180
+      },
+      "sowingDepthCm": 2,
+      "germinationDays": {
+        "min": 4,
+        "max": 12
+      },
+      "temperatureC": {
+        "min": 18,
+        "optimal": 27,
+        "max": 35
+      },
+      "minSoilTemperatureC": 21,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 70,
+        "max": 100
+      },
+      "varieties": [
+        {
+          "id": "watermelon-sugar-baby",
+          "name": "Sugar Baby",
+          "daysToMaturity": {
+            "min": 75,
+            "max": 80
+          }
+        }
+      ],
+      "notes": "Needs heat and space; small \"icebox\" types such as Sugar Baby suit shorter seasons. Ripe when the spot resting on the ground turns creamy yellow and the nearest tendril dries.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "winter-squash",
+      "names": {
+        "en": "Winter squash"
+      },
+      "scientificName": "Cucurbita moschata",
+      "family": "cucurbitaceae",
+      "habit": "vine",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "heavy",
+      "spacingCm": {
+        "inRow": 90,
+        "betweenRows": 180
+      },
+      "sowingDepthCm": 2.5,
+      "germinationDays": {
+        "min": 5,
+        "max": 10
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 24,
+        "max": 32
+      },
+      "minSoilTemperatureC": 16,
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -3
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 1,
+          "weeksLatest": 3
+        }
+      },
+      "daysToMaturity": {
+        "min": 80,
+        "max": 110
+      },
+      "varieties": [
+        {
+          "id": "winter-squash-waltham-butternut",
+          "name": "Waltham Butternut",
+          "daysToMaturity": {
+            "min": 100,
+            "max": 110
+          }
+        }
+      ],
+      "notes": "Sprawling vines grown for storage. Winter squash covers several Cucurbita species; these values suit butternut types and are close for acorn and buttercup. Harvest when the rind resists a fingernail, before frost, and cure in the sun for storage.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    }
+  ],
+  "companions": []
+}

@@ -28,6 +28,30 @@ describe('placement notes', () => {
     ]);
   });
 
+  it('flags a planting its bed would no longer accept, without blocking', () => {
+    const flags = placementNotes({
+      beds: [{ id: 'veg', station: null }],
+      plantings: [
+        {
+          id: 'p1',
+          plantId: 'apple',
+          commonName: 'Apple',
+          plantType: 'tree',
+          spacingInches: 165,
+          placement: { bedId: 'veg' },
+        },
+      ],
+    });
+    expect(flags).toEqual([
+      {
+        kind: 'area',
+        plantingIds: ['p1'],
+        blocking: false,
+        message: 'Apple no longer suits this bed',
+      },
+    ]);
+  });
+
   it('notes a repeat and a companion without blocking save', () => {
     const flags = placementNotes({
       beds: [{ id: 'bed', sun: 'full' }],

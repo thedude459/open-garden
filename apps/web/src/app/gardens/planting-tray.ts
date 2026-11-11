@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { plantName } from '@open-garden/shared-types';
 import type { LayoutPlantingDto } from '@open-garden/shared-types';
 
 @Component({
@@ -40,7 +41,7 @@ export class PlantingTray {
   readonly offlineRequired = output<void>();
 
   label(p: LayoutPlantingDto) {
-    return p.status === 'active' ? p.commonName : `${p.commonName} (removed from catalog)`;
+    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
   }
 
   onPointerDown(ev: PointerEvent, planting: LayoutPlantingDto) {

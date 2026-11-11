@@ -24,6 +24,8 @@ export class PlannerDraftService {
   newDirectSeedIds = new Set<string>();
   pendingDirectSeedDeletes = new Set<string>();
   savedPutJson = '';
+  /** The layout as last loaded or saved: problems it already had do not block. */
+  private saved: GardenLayoutDto | null = null;
 
   tracking(): PlannerSaveTracking {
     return {
@@ -40,7 +42,8 @@ export class PlannerDraftService {
     this.newDirectSeedIds.clear();
     this.pendingDirectSeedDeletes.clear();
     this.savedPutJson = JSON.stringify(putBodyFromDraft(next));
-    this.flags.set(layoutFlags(next));
+    this.saved = next;
+    this.flags.set(layoutFlags(next, next));
   }
 
   async load(gardenId: string, opts?: { reuseDirty?: boolean }): Promise<GardenLayoutDto | null> {
@@ -77,7 +80,7 @@ export class PlannerDraftService {
 
   refreshFlags() {
     const d = this.draft();
-    this.flags.set(d ? layoutFlags(d) : []);
+    this.flags.set(d ? layoutFlags(d, this.saved) : []);
   }
 
   setDraft(next: GardenLayoutDto) {
@@ -91,24 +94,34 @@ export class PlannerDraftService {
     this.newDirectSeedIds.clear();
     this.pendingDirectSeedDeletes.clear();
     this.savedPutJson = '';
+    this.saved = null;
     this.flags.set([]);
   }
 
   async save(): Promise<GardenLayoutDto> {
     const d = this.draft();
     if (!d) throw new Error('No draft');
-    const saved = await savePlannerDraft(d, this.tracking(), {
-      createBed: (body) => this.api.createBed(this.gardenId, body),
-      deleteBed: (id) => this.api.deleteBed(this.gardenId, id),
-      createPlanting: (body) => this.plantingsApi.create(this.gardenId, body).then(() => undefined),
-      deletePlanting: (id) => this.plantingsApi.remove(this.gardenId, id),
-      putLayout: (body) => this.api.put(this.gardenId, body),
-    });
+    const saved = await savePlannerDraft(
+      d,
+      this.tracking(),
+      {
+        createBed: (body) => this.api.createBed(this.gardenId, body),
+        deleteBed: (id) => this.api.deleteBed(this.gardenId, id),
+        createPlanting: (body) =>
+          this.plantingsApi.create(this.gardenId, body).then(() => undefined),
+        deletePlanting: (id) => this.plantingsApi.remove(this.gardenId, id),
+        putLayout: (body) => this.api.put(this.gardenId, body),
+      },
+      this.saved,
+    );
     this.hydrate(saved);
     return saved;
   }
 }
 
-function layoutFlags(layout: GardenLayoutDto) {
-  return [...evaluateLayout(layout.beds, layout.plantings), ...placementNotes(layout)];
+function layoutFlags(layout: GardenLayoutDto, saved: GardenLayoutDto | null) {
+  return [
+    ...evaluateLayout(layout.beds, layout.plantings, saved ?? undefined),
+    ...placementNotes(layout),
+  ];
 }

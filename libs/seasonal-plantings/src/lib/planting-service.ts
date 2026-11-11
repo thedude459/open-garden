@@ -164,7 +164,11 @@ export class PlantingService {
       await this.requireTray(gardenId, dto.trayId);
       bedId = null;
     }
-    if (dto.bedId || dto.trayId) {
+    // Only a move is checked: a catalog update may change what a bed accepts,
+    // and a planting already there is flagged on the plan, never blocked.
+    const moving =
+      (dto.bedId && dto.bedId !== current.bedId) || (dto.trayId && dto.trayId !== current.trayId);
+    if (moving) {
       await this.assertFits(
         gardenId,
         { id: current.plantId, plantType: current.plantType },

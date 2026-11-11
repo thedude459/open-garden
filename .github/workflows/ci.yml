@@ -294,8 +294,6 @@ jobs:
     env:
       DATABASE_URL: postgresql://open_garden:open_garden@localhost:5432/open_garden
       CORS_ORIGIN: http://localhost:4200
-      PLANT_PROVIDER: fixture
-      PLANT_TEST_FIXTURES: 'true'
       CI: true
       # Measure which API code the live HTTP and Playwright suites exercise.
       E2E_COVERAGE: '1'

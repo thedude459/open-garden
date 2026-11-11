@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The source order, the `.sha256` check, and the other sources are superseded by [ADR 0020](0020-dataset-as-the-catalog.md).
 
 ## Context
 

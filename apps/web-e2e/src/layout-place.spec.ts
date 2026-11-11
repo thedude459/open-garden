@@ -35,7 +35,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByRole('link', { name: 'Calendar' }).click();
   await owner.getByRole('textbox', { name: 'Search catalog to add' }).fill('Spinach');
   await owner.getByRole('button', { name: 'Search catalog' }).click();
-  await owner.getByRole('button', { name: 'Add Spinach' }).click();
+  await owner.getByRole('button', { name: 'Add Spinach (Bloomsdale)' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Spinach' })).toBeVisible();
 
   await owner.getByRole('link', { name: 'Configuration' }).click();
@@ -45,35 +45,35 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   expect((await saveLayout(owner)).status()).toBe(200);
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
-  await addTransplant(owner, 'Cherry Tomato');
+  await addTransplant(owner, 'Tomato (Cherry)');
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
     .getByLabel('Waiting transplants')
-    .getByRole('button', { name: 'Cherry Tomato' })
+    .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
   expect((await saveLayout(owner)).status()).toBe(200);
 
-  await owner.getByLabel('Search plants').fill('Cherry Tomato');
+  await owner.getByLabel('Search plants').fill('Tomato');
   await owner.getByRole('button', { name: 'Apply' }).click();
   await owner
-    .getByRole('button', { name: 'Place Cherry Tomato' })
+    .getByRole('button', { name: 'Place Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
   await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
-  await expect(owner.getByRole('img', { name: 'Cherry Tomato' })).toHaveCount(1);
+  await expect(owner.getByRole('img', { name: 'Tomato (Cherry)' })).toHaveCount(1);
 
   await owner.getByRole('link', { name: 'Back to overview' }).click();
   await owner.getByRole('link', { name: 'Transplants' }).click();
-  await addTransplant(owner, 'Sweet Basil');
+  await addTransplant(owner, 'Basil (Genovese)');
   await owner.getByRole('link', { name: 'Garden Overview' }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
     .getByLabel('Waiting transplants')
-    .getByRole('button', { name: 'Sweet Basil' })
+    .getByRole('button', { name: 'Basil (Genovese)' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
   await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
   await expect(
-    owner.getByLabel('Waiting transplants').getByRole('button', { name: 'Sweet Basil' }),
+    owner.getByLabel('Waiting transplants').getByRole('button', { name: 'Basil (Genovese)' }),
   ).toBeVisible();
   expect((await saveLayout(owner)).status()).toBe(200);
 

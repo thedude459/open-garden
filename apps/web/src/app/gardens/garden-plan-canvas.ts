@@ -10,6 +10,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { plantName } from '@open-garden/shared-types';
 import {
   originFromGrabOffset,
   shortenPlantingMarkName,
@@ -598,7 +599,7 @@ export class GardenPlanCanvas {
   }
 
   plantingLabel(p: LayoutPlantingDto) {
-    return p.status === 'active' ? p.commonName : `${p.commonName} (removed from catalog)`;
+    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
   }
 
   onPointerDown(ev: PointerEvent) {

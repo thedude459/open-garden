@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { plantingFootprintRadius } from './footprint';
 import { createLayoutMemory } from './test-memory';
 
@@ -125,6 +125,52 @@ describe('LayoutService placements', () => {
     const after = await mem.service.get(mem.ownerId, mem.gardenId);
     expect(after.plantings.find((p) => p.id === a.id)?.placement?.xInches).toBe(24);
     expect(after.plantings.find((p) => p.id === b.id)?.placement?.xInches).toBe(60);
+  });
+
+  it('never blocks a saved layout that a catalog update made too close', async () => {
+    const mem = createLayoutMemory();
+    const bed = mem.addBed('East');
+    const a = mem.addPlanting(mem.tomato.id);
+    const b = mem.addPlanting(mem.tomato.id);
+    const layout = {
+      beds: [
+        {
+          id: bed.id,
+          originXInches: 0,
+          originYInches: 0,
+          lengthInches: 96,
+          widthInches: 48,
+          orientation: 0 as const,
+        },
+      ],
+      areas: [],
+      placements: [
+        { plantingId: a.id, bedId: bed.id, xInches: 24, yInches: 24 },
+        { plantingId: b.id, bedId: bed.id, xInches: 60, yInches: 24 },
+      ],
+    };
+    await mem.service.put(mem.ownerId, mem.gardenId, layout);
+    // A new catalog release widens tomato spacing from 24 to 40 inches.
+    mem.tomato.spacingInches = 40;
+    onTestFinished(() => {
+      mem.tomato.spacingInches = 24;
+    });
+
+    const flags = (await mem.service.get(mem.ownerId, mem.gardenId)).flags;
+    expect(flags).toContainEqual({
+      kind: 'spacing',
+      plantingIds: [a.id, b.id],
+      blocking: false,
+      message: 'Closer than recommended',
+    });
+    await expect(mem.service.put(mem.ownerId, mem.gardenId, layout)).resolves.toBeTruthy();
+    // Moving one of them is a new placement: it follows the new spacing.
+    await expect(
+      mem.service.put(mem.ownerId, mem.gardenId, {
+        ...layout,
+        placements: [layout.placements[0]!, { ...layout.placements[1]!, xInches: 62 }],
+      }),
+    ).rejects.toMatchObject({ httpStatus: 422 });
   });
 
   it('sets bedId on place, keeps bedId when omitted (unplace coords only), and treats same variety as two placements', async () => {

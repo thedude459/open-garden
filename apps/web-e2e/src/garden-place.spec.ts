@@ -115,11 +115,13 @@ test('rain covers Washington watering and leaves other gardens required', async 
   const stranger = await signedInPage(browser, `rain-stranger-${stamp}@example.com`);
   const asOf = today();
 
-  const plants = await owner.request.get('/api/plants?q=Interval%20Herb&pageSize=20');
+  const plants = await owner.request.get('/api/plants?q=Basil&pageSize=20');
   expect(plants.ok()).toBeTruthy();
   const herb = (
-    (await plants.json()) as { items: Array<{ id: string; commonName: string }> }
-  ).items.find((item) => item.commonName === 'Interval Herb');
+    (await plants.json()) as {
+      items: Array<{ id: string; commonName: string; cultivar: string | null }>;
+    }
+  ).items.find((item) => item.commonName === 'Basil' && !item.cultivar);
   expect(herb).toBeTruthy();
 
   async function garden(name: string, place: typeof fixturePlace) {

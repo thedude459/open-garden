@@ -53,7 +53,8 @@ export interface LayoutPlantingDto {
   spacingFeet?: number | null;
 }
 
-export type LayoutFlagKind = 'spacing' | 'fit' | 'unavailable' | 'sun' | 'repeat' | 'companion';
+export type LayoutFlagKind =
+  'spacing' | 'fit' | 'unavailable' | 'sun' | 'repeat' | 'companion' | 'area';
 
 export interface LayoutFlagDto {
   kind: LayoutFlagKind;
