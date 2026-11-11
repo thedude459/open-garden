@@ -52,6 +52,9 @@ export function draftIsDirty(
 }
 
 /**
+ * `saved`: the layout as last loaded or saved; problems it already had (a
+ * catalog update widened spacing) do not block. See evaluateLayout.
+ *
  * evaluate → POST beds → POST direct seeds → PUT layout → DELETE pending direct seeds.
  * Creates in a phase run together. Beds finish before plantings, and both finish before PUT.
  * On PUT failure, compensating DELETE of new direct-seed plantings, then new beds.
@@ -60,8 +63,9 @@ export async function savePlannerDraft(
   draft: GardenLayoutDto,
   tracking: PlannerSaveTracking,
   deps: PlannerSaveDeps,
+  saved?: GardenLayoutDto | null,
 ): Promise<GardenLayoutDto> {
-  const flags = evaluateLayout(draft.beds, draft.plantings);
+  const flags = evaluateLayout(draft.beds, draft.plantings, saved ?? undefined);
   if (flags.some((f) => f.blocking)) {
     const err = new Error('Layout has spacing or fit problems') as Error & { code: string };
     err.code = 'SPACING';

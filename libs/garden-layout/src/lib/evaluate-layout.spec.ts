@@ -126,4 +126,69 @@ describe('evaluateLayout', () => {
     );
     expect(flags.some((f) => f.kind === 'fit' && f.blocking)).toBe(true);
   });
+
+  describe('against the saved layout', () => {
+    // Saved 18 in apart when both needed 12; the catalog now says 24 for b.
+    const a = {
+      id: 'a',
+      spacingInches: 12,
+      placement: { bedId: 'bed-1', xInches: 20, yInches: 20 },
+    };
+    const b = {
+      id: 'b',
+      spacingInches: 24,
+      placement: { bedId: 'bed-1', xInches: 38, yInches: 20 },
+    };
+    const saved = { beds: [bed], plantings: [a, b] };
+
+    it('flags a problem the saved layout already had without blocking', () => {
+      expect(evaluateLayout([bed], [a, b], saved)).toEqual([
+        {
+          kind: 'spacing',
+          plantingIds: ['a', 'b'],
+          blocking: false,
+          message: 'Closer than recommended',
+        },
+      ]);
+    });
+
+    it('blocks once one of the plantings moves', () => {
+      const moved = { ...b, placement: { ...b.placement, xInches: 36 } };
+      expect(evaluateLayout([bed], [a, moved], saved)[0]?.blocking).toBe(true);
+    });
+
+    it('blocks once the bed changes size', () => {
+      const smaller = { ...bed, geometry: { lengthInches: 40, widthInches: 48 } };
+      expect(evaluateLayout([smaller], [a, b], saved).every((f) => f.blocking)).toBe(true);
+    });
+
+    it('blocks a new problem next to an old one', () => {
+      const c = {
+        id: 'c',
+        spacingInches: 12,
+        placement: { bedId: 'bed-1', xInches: 20, yInches: 26 },
+      };
+      const flags = evaluateLayout([bed], [a, b, c], saved);
+      expect(flags.filter((f) => f.blocking).map((f) => f.plantingIds)).toEqual([
+        ['a', 'c'],
+        ['b', 'c'],
+      ]);
+    });
+
+    it('keeps a saved planting past the bed edge without blocking', () => {
+      const edge = {
+        id: 'e',
+        spacingInches: 24,
+        placement: { bedId: 'bed-1', xInches: 6, yInches: 24 },
+      };
+      expect(evaluateLayout([bed], [edge], { beds: [bed], plantings: [edge] })).toEqual([
+        {
+          kind: 'fit',
+          plantingIds: ['e'],
+          blocking: false,
+          message: 'Closer to the bed edge than recommended',
+        },
+      ]);
+    });
+  });
 });

@@ -106,7 +106,18 @@ export class LayoutService {
         placement: put ? { bedId: put.bedId, xInches: put.xInches, yInches: put.yInches } : null,
       };
     });
-    const flags = evaluateLayout(proposedBeds, proposedPlantings);
+    const saved = {
+      beds: bedRows.map((row) => ({ id: row.id, geometry: toGeometry(row) })),
+      plantings: plantingRows.map((row) => ({
+        id: row.id,
+        spacingInches: row.spacingInches,
+        placement:
+          row.bedId !== null && row.layoutXInches !== null && row.layoutYInches !== null
+            ? { bedId: row.bedId, xInches: row.layoutXInches, yInches: row.layoutYInches }
+            : null,
+      })),
+    };
+    const flags = evaluateLayout(proposedBeds, proposedPlantings, saved);
     if (flags.some((f) => f.blocking)) throw LAYOUT_ERRORS.spacingProblems();
 
     await Promise.all(
@@ -224,7 +235,8 @@ export class LayoutService {
       beds,
       areas,
       plantings,
-      flags: evaluateLayout(beds, plantings),
+      // Stored layout: anything flagged here was saved, so nothing blocks.
+      flags: evaluateLayout(beds, plantings, { beds, plantings }),
       priorCrops: advice.prior,
       pairs: advice.pairs,
     };

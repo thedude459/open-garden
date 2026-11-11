@@ -1,10 +1,17 @@
-import type { CompanionPairDto, LayoutFlagDto, PriorCropDto } from '@open-garden/shared-types';
+import {
+  allowsPlant,
+  type BedStation,
+  type CompanionPairDto,
+  type LayoutFlagDto,
+  type PriorCropDto,
+} from '@open-garden/shared-types';
 
-export type NoteBed = { id: string; sun?: string | null };
+export type NoteBed = { id: string; sun?: string | null; station?: BedStation | null };
 export type NotePlanting = {
   id: string;
   plantId?: string;
   commonName?: string;
+  plantType?: string;
   sunRequirements?: string | null;
   spacingInches: number | null;
   spacingFeet?: number | null;
@@ -47,6 +54,7 @@ export function placementNotes(input: {
 }): LayoutFlagDto[] {
   const flags: LayoutFlagDto[] = [];
   const bedSun = new Map(input.beds.map((bed) => [bed.id, bed.sun ?? null]));
+  const bedStation = new Map(input.beds.map((bed) => [bed.id, bed.station ?? null]));
   const names = new Map(
     input.plantings.filter((p) => p.plantId).map((p) => [p.plantId!, p.commonName ?? 'Plant']),
   );
@@ -61,6 +69,16 @@ export function placementNotes(input: {
         plantingIds: [planting.id],
         blocking: false,
         message: `${planting.commonName ?? 'Plant'} wants different sun than this bed`,
+      });
+    }
+    // Placing it there now would be refused (a catalog update changed the
+    // plant's type); a saved planting is flagged, never blocked or removed.
+    if (planting.plantType && !allowsPlant(bedStation.get(bedId), planting.plantType)) {
+      flags.push({
+        kind: 'area',
+        plantingIds: [planting.id],
+        blocking: false,
+        message: `${planting.commonName ?? 'Plant'} no longer suits this bed`,
       });
     }
     const repeated = (input.priorCrops ?? []).some(
