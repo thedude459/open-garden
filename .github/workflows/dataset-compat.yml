@@ -35,5 +35,7 @@ jobs:
           ls "${RUNNER_TEMP}/catalog"
       - name: Import it
         run: |
-          file="$(ls "${RUNNER_TEMP}"/catalog/open-garden-catalog-*.json | grep -v sigstore)"
-          LATEST_CATALOG_FILE="${file}" npx vitest run libs/plant-provider/src/lib/latest-release.spec.ts
+          for f in "${RUNNER_TEMP}"/catalog/open-garden-catalog-*.json; do
+            case "$f" in *.sigstore.json) ;; *) file="$f" ;; esac
+          done
+          LATEST_CATALOG_FILE="${file:?no catalog file downloaded}" npx vitest run libs/plant-provider/src/lib/latest-release.spec.ts
