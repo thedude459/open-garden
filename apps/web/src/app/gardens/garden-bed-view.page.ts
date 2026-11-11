@@ -25,7 +25,7 @@ import type {
   LayoutPlantingDto,
   PlantSummaryDto,
 } from '@open-garden/shared-types';
-import { allowsPlant } from '@open-garden/shared-types';
+import { allowsPlant, areaKindFor } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
 import { PlannerDraftService } from './planner-draft.service';
@@ -483,14 +483,14 @@ export class GardenBedViewPage implements OnInit {
 
   onCatalog(items: PlantSummaryDto[]) {
     this.catalogHits.set(
-      items.filter((plant) => allowsPlant(this.bed()?.station, plant.plantType)),
+      items.filter((plant) => allowsPlant(areaKindFor(this.bed()?.station), plant.plantType)),
     );
   }
 
   shownFavorites() {
     return this.favorites().filter((favorite) => {
       const plant = this.catalogPlant(favorite.plant);
-      return plant ? allowsPlant(this.bed()?.station, plant.plantType) : false;
+      return plant ? allowsPlant(areaKindFor(this.bed()?.station), plant.plantType) : false;
     });
   }
 

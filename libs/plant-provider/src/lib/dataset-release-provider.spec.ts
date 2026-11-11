@@ -142,12 +142,19 @@ describe('DatasetReleaseProvider', () => {
       varieties: [],
       hardinessZones: { min: 4, max: 7 },
     };
-    const { items } = await pinned(catalog([apple, rhubarb, raspberry, blueberry])).listPage();
+    const thyme = { ...tomato, id: 'thyme', use: 'herb', habit: 'shrub', varieties: [] };
+    const melon = { ...tomato, id: 'melon', use: 'fruit', habit: 'vine', varieties: [] };
+    const { items } = await pinned(
+      catalog([apple, rhubarb, raspberry, blueberry, thyme, melon]),
+    ).listPage();
     expect(items.map((p) => [p.externalId, p.plantType, p.zoneMin, p.zoneMax])).toEqual([
       ['apple', 'tree', 3, 8],
       ['rhubarb', 'vegetable', null, null],
-      ['raspberry', 'fruit', 1, 13],
+      ['raspberry', 'cane', 1, 13],
       ['blueberry', 'shrub', 4, 7],
+      // Herbs of any habit are herbs; other fruit goes by habit.
+      ['thyme', 'herb', 1, 13],
+      ['melon', 'fruit', 1, 13],
     ]);
   });
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AREA_KINDS } from './placement';
 
 const isoDate = z
   .string()
@@ -89,7 +90,6 @@ export const bedCreateSchema = z.object({
   widthInches: inch.min(1, 'Bed length and width must be at least 1 inch'),
   originXInches: inch.optional(),
   originYInches: inch.optional(),
-  kind: z.enum(['bed', 'orchard']).optional(),
   site: z.enum(['raised', 'in_ground']).optional(),
   station: z.enum(['tree', 'berry']).optional(),
   mulch: z
@@ -101,7 +101,6 @@ export const bedCreateSchema = z.object({
 export const bedPatchSchema = z.object({
   name: z.string(),
   sun: z.enum(['full', 'part', 'shade']).nullable().optional(),
-  kind: z.enum(['bed', 'orchard']).optional(),
   site: z.enum(['raised', 'in_ground']).optional(),
   mulch: z
     .enum(['none', 'wood_chips', 'straw', 'leaves', 'compost', 'paper', 'plastic'])
@@ -109,7 +108,7 @@ export const bedPatchSchema = z.object({
 });
 
 export const areaCreateSchema = z.object({
-  kind: z.enum(['vegetable', 'orchard', 'greenhouse']),
+  kind: z.enum(AREA_KINDS),
 });
 
 export const trayCreateSchema = z.object({

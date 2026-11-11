@@ -510,7 +510,77 @@ describe('PlantingService area check after a catalog update', () => {
 
   it('still refuses moving it to another bed that does not accept it', async () => {
     await expect(service.update('u', 'g', apple.id, { bedId: 'veg2' })).rejects.toMatchObject({
-      message: 'Trees and shrubs belong in an orchard bed',
+      message: 'A tree belongs in an orchard',
     });
+  });
+});
+
+describe('PlantingService area rules', () => {
+  const planting = (plantType: string) => ({
+    id: `p-${plantType}`,
+    gardenId: 'g',
+    plantId: `plant-${plantType}`,
+    commonName: plantType,
+    species: 'x',
+    cultivar: null,
+    plantType,
+    status: 'active',
+    plantedOn: null,
+    harvestedOn: null,
+    bedId: null,
+    trayId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  const rows = { cane: planting('cane'), tree: planting('tree') };
+  const beds: Record<string, { id: string; station: string | null; areaId: string | null }> = {
+    canes: { id: 'canes', station: null, areaId: 'bramble-area' },
+  };
+  const inserted: Record<string, unknown>[] = [];
+  const service = new PlantingService(
+    { get: async () => ({ role: 'owner' }) } as never,
+    {} as never,
+    {
+      getInGarden: async (_g: string, id: string) =>
+        Object.values(rows).find((row) => row.id === id) ?? null,
+      update: async (_g: string, id: string) =>
+        Object.values(rows).find((row) => row.id === id) ?? null,
+      clearLayoutCoords: async () => undefined,
+      occupants: async () => [],
+    } as never,
+    {
+      getInGarden: async (_g: string, id: string) => beds[id] ?? null,
+      findByNormalizedName: async () => null,
+      getById: async () => null,
+      insert: async (input: Record<string, unknown>) => {
+        inserted.push(input);
+        return { ...input, id: 'new', createdAt: new Date(), updatedAt: new Date() };
+      },
+    } as never,
+    {
+      getById: async (id: string) => (id === 'bramble-area' ? { kind: 'bramble' } : null),
+      getInGarden: async (_g: string, id: string) =>
+        id === 'bramble-area' ? { id, kind: 'bramble' } : null,
+      ensure: async (_g: string, kind: string) => ({ id: `${kind}-area`, kind }),
+    } as never,
+  );
+
+  it('takes cane fruit in a bramble patch and refuses a tree there', async () => {
+    await expect(service.update('u', 'g', rows.cane.id, { bedId: 'canes' })).resolves.toMatchObject(
+      { id: rows.cane.id },
+    );
+    await expect(service.update('u', 'g', rows.tree.id, { bedId: 'canes' })).rejects.toMatchObject({
+      message: 'A tree belongs in an orchard',
+    });
+  });
+
+  it('gives a bed the station of the area it is created in', async () => {
+    const size = { lengthInches: 48, widthInches: 48 };
+    await service.createBed('u', 'g', { name: 'Canes', areaId: 'bramble-area', ...size });
+    await service.createBed('u', 'g', { name: 'Raspberries', station: 'berry', ...size });
+    expect(inserted.map((row) => [row['areaId'], row['station']])).toEqual([
+      ['bramble-area', 'berry'],
+      ['bramble-area', 'berry'],
+    ]);
   });
 });

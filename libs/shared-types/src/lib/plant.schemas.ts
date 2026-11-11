@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
-export const plantTypeSchema = z.enum(['vegetable', 'herb', 'flower', 'fruit', 'shrub', 'tree']);
+export const plantTypeSchema = z.enum([
+  'vegetable',
+  'herb',
+  'flower',
+  'fruit',
+  'cane',
+  'shrub',
+  'tree',
+]);
 
 export const plantListQuerySchema = z.object({
   q: z.string().optional(),

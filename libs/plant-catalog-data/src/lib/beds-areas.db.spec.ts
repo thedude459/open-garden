@@ -50,7 +50,7 @@ describe('BedRepository', () => {
   it('inserts with defaults and finds beds by garden and name', async () => {
     const { mine } = await twoGardens();
     const bed = await beds.insert(bedInput(mine.id, 'North'));
-    expect(bed).toMatchObject({ orientation: 0, kind: 'bed', sun: null, name: 'North' });
+    expect(bed).toMatchObject({ orientation: 0, sun: null, name: 'North' });
     expect((await beds.getById(bed.id))?.id).toBe(bed.id);
     expect((await beds.getInGarden(mine.id, bed.id))?.id).toBe(bed.id);
     expect((await beds.findByNormalizedName(mine.id, 'north'))?.id).toBe(bed.id);
@@ -157,9 +157,11 @@ describe('PlantingAreaRepository and TrayRepository', () => {
     expect(await plantingAreas.findByKind(other.id, 'vegetable')).toBeNull();
   });
 
-  it('the database only accepts known area kinds', async () => {
+  it('names a first bramble patch and numbers the next', async () => {
+    // Kinds are checked against AREA_KINDS at the API, not by a constraint.
     const { mine } = await twoGardens();
-    await expect(plantingAreas.ensure(mine.id, 'bramble' as never)).rejects.toThrow();
+    expect((await plantingAreas.ensure(mine.id, 'bramble')).name).toBe('Bramble patch');
+    expect((await plantingAreas.add(mine.id, 'bramble')).name).toBe('Bramble patch 2');
   });
 
   it('opening a tray by an existing name returns that tray', async () => {

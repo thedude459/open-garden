@@ -16,6 +16,7 @@ import type {
   PlantingAreaRepository,
   PlantRepository,
 } from '@open-garden/plant-catalog-data';
+import { allowsPlant, homeFor } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
 import { computeWindows, frostComplete } from './windows';
 
@@ -63,12 +64,10 @@ export class CalendarService {
     await this.requireEditor(userId, gardenId);
     const plant = await this.plants.getById(plantId);
     if (!plant) throw CALENDAR_ERRORS.plantNotFound();
-    if (
-      (plant.plantType === 'tree' || plant.plantType === 'shrub') &&
-      this.areas &&
-      !(await this.areas.hasKind(gardenId, 'orchard'))
-    ) {
-      throw CALENDAR_ERRORS.orchardRequired();
+    // A property takes a plant when one of its areas does; vegetable is implied.
+    if (this.areas && !allowsPlant('vegetable', plant.plantType)) {
+      const home = homeFor(plant.plantType);
+      if (!(await this.areas.hasKind(gardenId, home))) throw CALENDAR_ERRORS.areaRequired(home);
     }
     const { created } = await this.entries.insert(gardenId, plantId);
     const calendar = await this.list(userId, gardenId);

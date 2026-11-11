@@ -16,6 +16,8 @@ import type {
   TrayDto,
 } from '@open-garden/shared-types';
 import {
+  AREA_KINDS,
+  areaKindFor,
   lifeForPlant,
   mulchOrNone,
   placementRefusal,
@@ -109,8 +111,7 @@ export class PlantingService {
       const greenhouse = await this.areas.findByKind(gardenId, 'greenhouse');
       if (greenhouse) trayId = (await this.trays.open(gardenId, greenhouse.id, 'Tray')).id;
     }
-    const station = await this.stationFor(gardenId, bedId);
-    const life = lifeForPlant(plant.plantType, station, dto.life);
+    const life = lifeForPlant(plant.plantType, dto.life);
     await this.assertFits(gardenId, plant, bedId, trayId, null);
     const plantedYear =
       dto.plantedYear !== undefined
@@ -188,20 +189,13 @@ export class PlantingService {
     ) {
       await this.plantings.deleteHarvest(plantingId, current.harvestedOn);
     }
-    let life = dto.life;
-    if (!life && dto.bedId && current.plantType === 'shrub') {
-      const station = await this.stationFor(gardenId, dto.bedId);
-      if (station === 'berry' && current.life !== 'perennial' && current.life !== 'tree') {
-        life = 'perennial';
-      }
-    }
     const updated = await this.plantings.update(gardenId, plantingId, {
       plantedOn: dto.plantedOn,
       harvestedOn: dto.harvestedOn,
       bedId,
       trayId,
       clientMutationId: dto.clientMutationId,
-      life,
+      life: dto.life,
       note: dto.note,
       photo: dto.photo,
       plantedYear: dto.plantedYear,
@@ -252,14 +246,16 @@ export class PlantingService {
     }
     const taken = await this.beds.findByNormalizedName(gardenId, names.nameNormalized);
     if (taken) throw PLANTING_ERRORS.bedNameTaken();
-    const station: BedStation | null = dto.station ?? (dto.kind === 'orchard' ? 'tree' : null);
+    let station: BedStation | null = dto.station ?? null;
     let areaId = dto.areaId;
     if (this.areas) {
       if (areaId) {
         const area = await this.areas.getInGarden(gardenId, areaId);
         if (!area) throw domainError('NOT_FOUND', 'Area not found');
+        // The station follows the area, so the bed's rules are the area's.
+        station = area.kind === 'orchard' ? 'tree' : area.kind === 'bramble' ? 'berry' : null;
       } else {
-        areaId = (await this.areas.ensure(gardenId, station ? 'orchard' : 'vegetable')).id;
+        areaId = (await this.areas.ensure(gardenId, areaKindFor(station))).id;
       }
     }
     const row = await this.beds.insert({
@@ -271,7 +267,6 @@ export class PlantingService {
       originYInches: dto.originYInches ?? 0,
       lengthInches: dto.lengthInches,
       widthInches: dto.widthInches,
-      kind: 'bed',
       areaId,
       site: dto.site ?? 'in_ground',
       station,
@@ -295,15 +290,11 @@ export class PlantingService {
     let row = await this.beds.rename(gardenId, bedId, names.name, names.nameNormalized);
     if (!row) throw PLANTING_ERRORS.bedNotFound();
     if (
-      (dto.sun !== undefined ||
-        dto.kind !== undefined ||
-        dto.site !== undefined ||
-        dto.mulch !== undefined) &&
+      (dto.sun !== undefined || dto.site !== undefined || dto.mulch !== undefined) &&
       typeof this.beds.setSite === 'function'
     ) {
       const site = await this.beds.setSite(gardenId, bedId, {
         sun: dto.sun,
-        kind: dto.kind,
         site: dto.site,
         mulch: dto.mulch,
       });
@@ -377,12 +368,6 @@ export class PlantingService {
     if (!bed) throw PLANTING_ERRORS.bedNotFound();
   }
 
-  private async stationFor(gardenId: string, bedId: string | null): Promise<BedStation | null> {
-    if (!bedId) return null;
-    const bed = await this.beds.getInGarden(gardenId, bedId);
-    return bed?.station === 'tree' || bed?.station === 'berry' ? bed.station : null;
-  }
-
   private async requireTray(gardenId: string, trayId: string) {
     if (!this.trays) throw domainError('NOT_FOUND', 'Tray not found');
     const tray = await this.trays.getInGarden(gardenId, trayId);
@@ -397,36 +382,24 @@ export class PlantingService {
     plantingId: string | null,
   ) {
     if (!this.areas) return;
+    let area: AreaKind = 'vegetable';
+    let occupants: { id: string; plantType: string }[] = [];
     if (trayId) {
-      const reason = placementRefusal('greenhouse', null, plant.plantType, [], plant.id);
-      if (reason) throw domainError('VALIDATION_ERROR', reason);
-      return;
-    }
-    if (!bedId) {
-      if (plant.plantType === 'tree' || plant.plantType === 'shrub') {
-        throw domainError('VALIDATION_ERROR', 'Trees and shrubs belong in an orchard bed');
+      area = 'greenhouse';
+    } else if (bedId) {
+      const bed = await this.beds.getInGarden(gardenId, bedId);
+      if (!bed) throw PLANTING_ERRORS.bedNotFound();
+      area = areaKindFor(toStation(bed.station));
+      if (bed.areaId) {
+        const row = await this.areas.getById(bed.areaId);
+        if (row && isAreaKind(row.kind)) area = row.kind;
       }
-      return;
-    }
-    const bed = await this.beds.getInGarden(gardenId, bedId);
-    if (!bed) throw PLANTING_ERRORS.bedNotFound();
-    const station = bed.station === 'tree' || bed.station === 'berry' ? bed.station : null;
-    let kind: AreaKind = station ? 'orchard' : 'vegetable';
-    if (bed.areaId) {
-      const area = await this.areas.getById(bed.areaId);
-      if (area?.kind === 'vegetable' || area?.kind === 'orchard' || area?.kind === 'greenhouse') {
-        kind = area.kind;
+      if (typeof this.plantings.occupants === 'function') {
+        occupants = (await this.plantings.occupants(bedId)).filter((row) => row.id !== plantingId);
       }
     }
-    const occupants =
-      typeof this.plantings.occupants === 'function' ? await this.plantings.occupants(bedId) : [];
-    const reason = placementRefusal(
-      kind,
-      station,
-      plant.plantType,
-      occupants.filter((row) => row.id !== plantingId),
-      plant.id,
-    );
+    // With no bed yet, a planting must be one a vegetable garden takes.
+    const reason = placementRefusal(area, plant.plantType, occupants);
     if (reason) throw domainError('VALIDATION_ERROR', reason);
   }
 
@@ -442,9 +415,16 @@ export class PlantingService {
   }
 }
 
+function isAreaKind(kind: string): kind is AreaKind {
+  return (AREA_KINDS as readonly string[]).includes(kind);
+}
+
+function toStation(value: string | null | undefined): BedStation | null {
+  return value === 'tree' || value === 'berry' ? value : null;
+}
+
 function toAreaDto(row: { id: string; name: string; kind: string }): PropertyAreaDto {
-  const kind = row.kind === 'orchard' || row.kind === 'greenhouse' ? row.kind : 'vegetable';
-  return { id: row.id, name: row.name, kind };
+  return { id: row.id, name: row.name, kind: isAreaKind(row.kind) ? row.kind : 'vegetable' };
 }
 
 function toTrayDto(row: { id: string; areaId: string; name: string }): TrayDto {
@@ -457,7 +437,6 @@ function toBedDto(row: {
   createdAt: Date;
   updatedAt: Date;
   sun?: string | null;
-  kind?: string | null;
   site?: string | null;
   station?: string | null;
   mulch?: string | null;
@@ -469,9 +448,8 @@ function toBedDto(row: {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     sun: (row.sun as NamedBedDto['sun']) ?? null,
-    kind: row.kind === 'orchard' ? 'orchard' : 'bed',
     site: row.site === 'raised' ? 'raised' : 'in_ground',
-    station: row.station === 'tree' || row.station === 'berry' ? row.station : null,
+    station: toStation(row.station),
     mulch: mulchOrNone(row.mulch),
     areaId: row.areaId ?? null,
   };

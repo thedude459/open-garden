@@ -61,22 +61,22 @@ async function query<T extends Record<string, unknown>>(url: string, text: strin
   }
 }
 
-/** Insert one bed with kind 'orchard' and full geometry; 0012 deletes such beds. */
+/** Insert one bed; old migration 0012 deleted orchard beds on every boot. */
 async function insertOrchardBed(url: string): Promise<void> {
   await query(
     url,
     `with u as (insert into users (email, password_hash) values ('m@example.com', 'x') returning id),
           g as (insert into gardens (owner_id, name, name_normalized) select id, 'G', 'g' from u returning id)
-     insert into garden_beds (garden_id, name, name_normalized, kind,
+     insert into garden_beds (garden_id, name, name_normalized,
                               origin_x_inches, origin_y_inches, length_inches, width_inches)
-     select id, 'Old orchard bed', 'old orchard bed', 'orchard', 0, 0, 96, 48 from g`,
+     select id, 'Old orchard bed', 'old orchard bed', 0, 0, 96, 48 from g`,
   );
 }
 
 async function orchardBeds(url: string): Promise<number> {
   const rows = await query<{ n: string }>(
     url,
-    `select count(*) as n from garden_beds where kind = 'orchard'`,
+    `select count(*) as n from garden_beds where name = 'Old orchard bed'`,
   );
   return Number(rows[0]?.n);
 }

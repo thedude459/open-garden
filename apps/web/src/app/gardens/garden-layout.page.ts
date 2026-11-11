@@ -389,7 +389,7 @@ import { EmptyState } from '../ui/empty-state';
                   Add tree
                 </button>
                 <button type="button" class="btn btn-secondary" (click)="addStation('berry')">
-                  Add berry patch
+                  Add bramble patch
                 </button>
               </p>
               <form class="filters" (ngSubmit)="addTray()">
@@ -636,9 +636,10 @@ export class GardenLayoutPage implements OnInit {
   }
 
   addStation(station: 'tree' | 'berry') {
-    if (!this.newBedName.trim()) this.newBedName = station === 'tree' ? 'Tree' : 'Berry patch';
-    this.newLength = 8;
-    this.newWidth = 8;
+    if (!this.newBedName.trim()) this.newBedName = station === 'tree' ? 'Tree' : 'Canes';
+    // A tree bed, or a row of canes in a bramble patch.
+    this.newLength = station === 'tree' ? 8 : 10;
+    this.newWidth = station === 'tree' ? 8 : 3;
     this.pendingStation = station;
     void this.createBed();
   }
@@ -690,7 +691,6 @@ export class GardenLayoutPage implements OnInit {
           id,
           name,
           geometry,
-          kind: 'bed' as const,
           site: this.bedSite,
           mulch: this.bedMulch,
           ...(station ? { station } : {}),

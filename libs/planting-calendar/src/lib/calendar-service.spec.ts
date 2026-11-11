@@ -96,7 +96,7 @@ describe('CalendarService', () => {
       blocked.service.add(blocked.ownerId, blocked.gardenId, maple.id),
     ).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
-      message: 'Trees and shrubs belong in an orchard',
+      message: 'Add an orchard for this plant first',
     });
     const open = createMemory(true);
     const added = await open.service.add(open.ownerId, open.gardenId, maple.id);

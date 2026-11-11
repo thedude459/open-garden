@@ -1,3 +1,5 @@
+import { AREA_TYPES, type AreaKind } from '@open-garden/shared-types';
+
 export type DomainErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT' | 'FORBIDDEN';
 
 export function domainError(
@@ -14,5 +16,6 @@ export const CALENDAR_ERRORS = {
   plantNotFound: () => domainError('NOT_FOUND', 'Plant not found'),
   plantRequired: () => domainError('VALIDATION_ERROR', 'Plant is required'),
   viewerForbidden: () => domainError('FORBIDDEN', 'Viewers cannot update this calendar'),
-  orchardRequired: () => domainError('VALIDATION_ERROR', 'Trees and shrubs belong in an orchard'),
+  areaRequired: (area: AreaKind) =>
+    domainError('VALIDATION_ERROR', `Add ${AREA_TYPES[area].name} for this plant first`),
 } as const;
