@@ -13,26 +13,35 @@ import * as schema from './schema';
 
 export interface TestDb {
   db: AppDatabase;
+  /** Runs SQL with several statements, as a migration file does. */
+  exec(sql: string): Promise<void>;
   close(): Promise<void>;
 }
 
 /**
- * A fresh database with every migration applied. Each SQL file runs through
+ * A fresh database with every migration applied, or only those sorting
+ * before `stopBefore` (a migration file name prefix such as '0003'). Each SQL file runs through
  * PGlite's exec, which accepts several statements at once like the production
  * driver does; Drizzle's PGlite migrator prepares one statement at a time.
  */
-export async function createTestDb(): Promise<TestDb> {
+export async function createTestDb(stopBefore?: string): Promise<TestDb> {
   const client = new PGlite({ extensions: { pgcrypto } });
   const folder = resolve(process.cwd(), MIGRATIONS_FOLDER);
   for (const file of readdirSync(folder)
-    .filter((f) => f.endsWith('.sql'))
+    .filter((f) => f.endsWith('.sql') && (!stopBefore || f < stopBefore))
     .sort()) {
     await client.exec(readFileSync(resolve(folder, file), 'utf8'));
   }
   // The PGlite and node-postgres Drizzle databases share the query API the
   // repositories use; the types differ only in driver details.
   const db = drizzle(client, { schema }) as unknown as AppDatabase;
-  return { db, close: () => client.close() };
+  return {
+    db,
+    exec: async (text) => {
+      await client.exec(text);
+    },
+    close: () => client.close(),
+  };
 }
 
 let sequence = 0;
