@@ -31,7 +31,6 @@ services:
       NODE_ENV: production
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       PORT: '3000'
-      PLANT_PROVIDER: ${PLANT_PROVIDER:-fixture}
       # Installs use real place data by default; tests and development set fixture.
       PLACE_PROVIDER: ${PLACE_PROVIDER:-live}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}

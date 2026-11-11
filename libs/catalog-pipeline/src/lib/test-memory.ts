@@ -1,6 +1,5 @@
 import type { PlantDataProvider, ProviderPlant } from '@open-garden/plant-provider';
 import type {
-  PipelineCadence,
   PipelineMergeDecisionDto,
   PipelineRunSourceDto,
   PipelineRunSummaryDto,
@@ -11,7 +10,6 @@ import {
   CatalogPipelineService,
   type PipelineCatalogPort,
   type PipelineRunPort,
-  type PipelineSettingsPort,
 } from './catalog-pipeline-service';
 
 export class MemoryProvider implements PlantDataProvider {
@@ -51,18 +49,9 @@ type MemoryRun = PipelineRunSummaryDto & {
 };
 
 export class MemoryPipeline {
-  settings: { cadence: PipelineCadence; runAtHourUtc: number; sourceOrder: string[] } = {
-    cadence: 'daily',
-    runAtHourUtc: 6,
-    sourceOrder: ['a'],
-  };
   runs: MemoryRun[] = [];
   plants = new Map<string, MemoryPlant>();
   private seq = 0;
-
-  readonly settingsPort: PipelineSettingsPort = {
-    get: async () => ({ ...this.settings }),
-  };
 
   readonly runsPort: PipelineRunPort = {
     insertRunning: async (triggeredBy: PipelineTriggeredBy) => {
@@ -103,15 +92,9 @@ export class MemoryPipeline {
       }
       return count;
     },
-    hasRunning: async () => this.runs.some((run) => run.status === 'running'),
     latestPublishedHash: async () => {
       const done = this.runs.filter((run) => run.status === 'succeeded' && run.catalogHash);
       return done[done.length - 1]?.catalogHash ?? null;
-    },
-    latestScheduledStartedAt: async () => {
-      const scheduled = this.runs.filter((run) => run.triggeredBy === 'schedule');
-      const last = scheduled[scheduled.length - 1];
-      return last ? new Date(last.startedAt) : null;
     },
     markTerminal: async (id, patch) => {
       const run = this.runs.find((row) => row.id === id);
@@ -174,7 +157,7 @@ export class MemoryPipeline {
   };
 
   service(sources: PlantDataProvider[]) {
-    return new CatalogPipelineService(this.runsPort, this.settingsPort, this.catalogPort, sources);
+    return new CatalogPipelineService(this.runsPort, this.catalogPort, sources);
   }
 }
 

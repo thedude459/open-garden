@@ -6,7 +6,6 @@ import { BedRepository } from './bed-repository';
 import { CalendarEntryRepository } from './calendar-entry-repository';
 import { CareEventRepository } from './care-event-repository';
 import { GardenRepository } from './garden-repository';
-import { PipelineSettingsRepository } from './pipeline-settings-repository';
 import { PlantRepository, type PlantUpsertInput } from './plant-repository';
 import { PlantSourceRepository } from './plant-source-repository';
 import { PlantingRepository } from './planting-repository';
@@ -205,31 +204,13 @@ describe('YearRecordRepository', () => {
   });
 });
 
-describe('PipelineSettingsRepository and PlantSourceRepository', () => {
-  it('creates default settings on first read and saves patches', async () => {
-    const settings = new PipelineSettingsRepository(t.db);
-    const first = await settings.get();
-    expect(first.sourceOrder).toEqual(['fixture']);
-    const user = await insertUser(t.db);
-    const patched = await settings.patch(
-      { cadence: 'daily', runAtHourUtc: 5, sourceOrder: ['fixture', ' perenual ', 'fixture'] },
-      user.id,
-    );
-    // Later duplicates win, so 'fixture' moves after 'perenual'.
-    expect(patched).toMatchObject({
-      cadence: 'daily',
-      runAtHourUtc: 5,
-      sourceOrder: ['perenual', 'fixture'],
-    });
-    expect(patched.updatedByUserId).toBe(user.id);
-  });
-
+describe('PlantSourceRepository', () => {
   it('replaces a plant’s source links', async () => {
     const plant = await insertPlant(t.db);
     const sources = new PlantSourceRepository(t.db);
     await sources.replaceForPlant(plant.id, [
       { sourceId: 'fixture', externalId: 'a' },
-      { sourceId: 'perenual', externalId: 'b' },
+      { sourceId: 'other', externalId: 'b' },
     ]);
     await sources.replaceForPlant(plant.id, [{ sourceId: 'fixture', externalId: 'c' }]);
     const mine = (await sources.listAll()).filter((l) => l.plantId === plant.id);

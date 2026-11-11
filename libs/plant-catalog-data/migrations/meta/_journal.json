@@ -15,6 +15,13 @@
       "when": 1794352220798,
       "tag": "0001_pipeline_run_catalog_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794367118121,
+      "tag": "0002_drop_pipeline_settings",
+      "breakpoints": true
     }
   ]
 }

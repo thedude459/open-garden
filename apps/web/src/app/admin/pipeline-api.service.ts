@@ -6,8 +6,6 @@ import type {
   PipelineRunListDto,
   PipelineRunSourceDto,
   PipelineRunSummaryDto,
-  PipelineSettingsDto,
-  PipelineSettingsPatchDto,
 } from '@open-garden/shared-types';
 
 const API = '/api';
@@ -39,22 +37,6 @@ export class PipelineApiService {
   get(id: string) {
     return firstValueFrom(
       this.http.get<PipelineRunDetailDto>(`${API}/admin/pipeline/runs/${id}`, {
-        withCredentials: true,
-      }),
-    );
-  }
-
-  getSettings() {
-    return firstValueFrom(
-      this.http.get<PipelineSettingsDto>(`${API}/admin/pipeline/settings`, {
-        withCredentials: true,
-      }),
-    );
-  }
-
-  patchSettings(body: PipelineSettingsPatchDto) {
-    return firstValueFrom(
-      this.http.patch<PipelineSettingsDto>(`${API}/admin/pipeline/settings`, body, {
         withCredentials: true,
       }),
     );

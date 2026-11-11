@@ -35,7 +35,6 @@ services:
         required: false
     environment:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      PLANT_PROVIDER: ${PLANT_PROVIDER:-fixture}
       PLACE_PROVIDER: ${PLACE_PROVIDER:-live}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       DATABASE_URL: postgresql://${POSTGRES_USER:-open_garden}:${POSTGRES_PASSWORD:-open_garden}@postgres:5432/${POSTGRES_DB:-open_garden}

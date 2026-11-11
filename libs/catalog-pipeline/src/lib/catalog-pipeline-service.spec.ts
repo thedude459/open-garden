@@ -13,7 +13,6 @@ describe('CatalogPipelineService', () => {
       }),
     );
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a'];
     const svc = mem.service([new MemoryProvider('a', plants)]);
     const run = await svc.runAndWait();
     expect(run.status).toBe('succeeded');
@@ -23,7 +22,6 @@ describe('CatalogPipelineService', () => {
 
   it('counts records a source skipped as rejected, and imports the rest', async () => {
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a'];
     const plant = samplePlant({
       externalId: 'ok',
       commonName: 'Readable',
@@ -55,7 +53,6 @@ describe('CatalogPipelineService', () => {
 
     it('writes nothing on a second identical run and says so', async () => {
       const mem = new MemoryPipeline();
-      mem.settings.sourceOrder = ['a'];
       const svc = mem.service([new MemoryProvider('a', plants())]);
       expect((await svc.runAndWait()).plantsUpserted).toBe(3);
       const second = await svc.runAndWait();
@@ -66,7 +63,6 @@ describe('CatalogPipelineService', () => {
 
     it('writes again when the catalog changes', async () => {
       const mem = new MemoryPipeline();
-      mem.settings.sourceOrder = ['a'];
       const provider = new MemoryProvider('a', plants());
       const svc = mem.service([provider]);
       await svc.runAndWait();
@@ -76,7 +72,6 @@ describe('CatalogPipelineService', () => {
 
     it('still reactivates a plant deprecated since the last run', async () => {
       const mem = new MemoryPipeline();
-      mem.settings.sourceOrder = ['a'];
       const svc = mem.service([new MemoryProvider('a', plants())]);
       await svc.runAndWait();
       const first = [...mem.plants.values()][0]!;
@@ -88,7 +83,6 @@ describe('CatalogPipelineService', () => {
 
     it('does not compare against a run that was incomplete', async () => {
       const mem = new MemoryPipeline();
-      mem.settings.sourceOrder = ['a', 'broken'];
       const broken = {
         id: 'broken',
         searchByName: async () => [],
@@ -111,7 +105,6 @@ describe('CatalogPipelineService', () => {
 
   it('leaves the catalog unchanged when every source fails', async () => {
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a'];
     mem.plants.set('keep|', {
       varietyKey: 'keep|',
       commonName: 'Keep',
@@ -142,7 +135,6 @@ describe('CatalogPipelineService', () => {
 
   it('deprecates only when every previously contributing source succeeded and omitted the key', async () => {
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a', 'b'];
     const first = mem.service([
       new MemoryProvider('a', [
         samplePlant({ commonName: 'Stay', species: 'Stay species', externalId: 's' }),
@@ -170,7 +162,6 @@ describe('CatalogPipelineService', () => {
 
   it('does not deprecate plants from a failed source or an empty successful source', async () => {
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a'];
     await mem
       .service([
         new MemoryProvider('a', [
@@ -179,7 +170,6 @@ describe('CatalogPipelineService', () => {
       ])
       .runAndWait();
 
-    mem.settings.sourceOrder = ['a', 'b'];
     const failedB = await mem
       .service([
         new MemoryProvider('a', [
@@ -200,7 +190,6 @@ describe('CatalogPipelineService', () => {
 
   it('reactivates a deprecated variety in place and refreshes attributes', async () => {
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a'];
     const provider = new MemoryProvider('a', [
       samplePlant({
         commonName: 'Cycle',
@@ -253,7 +242,6 @@ describe('CatalogPipelineService', () => {
 
   it('marks incomplete when one source fails and still publishes the successful source', async () => {
     const mem = new MemoryPipeline();
-    mem.settings.sourceOrder = ['a', 'b'];
     const svc = mem.service([
       new MemoryProvider('a', [
         samplePlant({ commonName: 'Kept', species: 'Kept species', externalId: 'k' }),

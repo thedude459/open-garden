@@ -3,7 +3,6 @@ import { CatalogPipelineService } from '@open-garden/catalog-pipeline';
 import {
   createDb,
   PipelineRunRepository,
-  PipelineSettingsRepository,
   PlantRepository,
   PlantSourceRepository,
   runMigrations,
@@ -16,8 +15,6 @@ if (existsSync('.env')) process.loadEnvFile();
 async function main() {
   const url = process.env['DATABASE_URL'];
   if (!url) throw new Error('DATABASE_URL required');
-  // --seed-only: skip the catalog pipeline when plants already exist (Docker boot).
-  const seedOnly = process.argv.includes('--seed-only');
 
   const { db, pool } = createDb(url);
   // Tracked: each migration runs once per database, never again on later boots.
@@ -38,29 +35,25 @@ async function main() {
   }
 
   const plants = new PlantRepository(db);
-  if (seedOnly) {
-    const existing = await plants.listSnapshots();
-    if (existing.length > 0) {
-      console.log('Catalog already present; skipping fixture pipeline');
-      await pool.end();
-      return;
-    }
-  }
 
   const plantSources = new PlantSourceRepository(db);
   const runs = new PipelineRunRepository(db);
-  const settings = new PipelineSettingsRepository(db);
   const pipeline = new CatalogPipelineService(
     runs,
-    settings,
     {
       listSnapshots: () => plants.listSnapshots(),
       listSourceLinks: () => plantSources.listAll(),
     },
     createPipelineSources(),
   );
+  // Every boot: a run whose catalog matches the last one writes nothing, and
+  // an upgraded image imports the release it bundles.
+  await pipeline.failStaleRunning();
   const result = await pipeline.runAndWait('operator');
-  console.log(`Pipeline ${result.status}: upserted ${result.plantsUpserted} plants`);
+  console.log(
+    `Catalog import ${result.status}: upserted ${result.plantsUpserted} plants` +
+      (result.errorMessage ? ` (${result.errorMessage})` : ''),
+  );
   await pool.end();
 }
 

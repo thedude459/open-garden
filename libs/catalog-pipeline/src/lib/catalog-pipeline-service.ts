@@ -1,7 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { PlantDataProvider } from '@open-garden/plant-provider';
 import type {
-  PipelineCadence,
   PipelineMergeDecisionDto,
   PipelineRunSourceDto,
   PipelineRunStatus,
@@ -12,18 +11,11 @@ import type { PlantUpsertInput } from '@open-garden/plant-catalog-data';
 import { PIPELINE_ERRORS } from './domain-error';
 import { fetchAllFromProvider } from './fetch-all';
 import { mergeCatalogRecords, varietiesToDeprecate, type MergedPlant } from './merge';
-import { shouldStartScheduled } from './schedule';
-
-export interface PipelineSettingsPort {
-  get(): Promise<{ cadence: PipelineCadence; runAtHourUtc: number; sourceOrder: string[] }>;
-}
 
 export interface PipelineRunPort {
   insertRunning(triggeredBy: PipelineTriggeredBy): Promise<PipelineRunSummaryDto>;
   getById(id: string): Promise<PipelineRunSummaryDto | null>;
   failStaleRunning(message: string): Promise<number>;
-  hasRunning(): Promise<boolean>;
-  latestScheduledStartedAt(): Promise<Date | null>;
   /** Hash of the catalog the last successful run published. */
   latestPublishedHash(): Promise<string | null>;
   markTerminal(
@@ -64,22 +56,17 @@ export function sanitizeErrorMessage(err: unknown): string {
   let msg = err instanceof Error ? err.message : 'Source failed';
   msg = msg.replace(/api[_-]?key[=:]\s*\S+/gi, 'api_key=[redacted]');
   msg = msg.replace(/Bearer\s+\S+/gi, 'Bearer [redacted]');
-  msg = msg.replace(/PERENUAL_API_KEY\s*=\s*\S+/gi, 'PERENUAL_API_KEY=[redacted]');
   if (msg.length > 500) msg = msg.slice(0, 500);
   return msg;
 }
 
 export class CatalogPipelineService {
+  /** `sources` in merge order: a later source's values win. The app registers one, the dataset. */
   constructor(
     private readonly runs: PipelineRunPort,
-    private readonly settings: PipelineSettingsPort,
     private readonly catalog: PipelineCatalogPort,
     private readonly sources: PlantDataProvider[],
   ) {}
-
-  registeredSourceIds(): string[] {
-    return this.sources.map((source) => source.id);
-  }
 
   async failStaleRunning(): Promise<number> {
     return this.runs.failStaleRunning(STALE_MESSAGE);
@@ -106,47 +93,13 @@ export class CatalogPipelineService {
     return this.executeRun(run.id);
   }
 
-  async tryStartScheduled(now = new Date()): Promise<PipelineRunSummaryDto | null> {
-    const settings = await this.settings.get();
-    const hasRunning = await this.runs.hasRunning();
-    const lastScheduled = await this.runs.latestScheduledStartedAt();
-    if (!shouldStartScheduled(settings, now, hasRunning, lastScheduled)) {
-      return null;
-    }
-    try {
-      return await this.start('schedule');
-    } catch (err) {
-      if (
-        err &&
-        typeof err === 'object' &&
-        'code' in err &&
-        (err as { code: string }).code === 'CONFLICT'
-      ) {
-        return null;
-      }
-      throw err;
-    }
-  }
-
   async executeRun(runId: string): Promise<PipelineRunSummaryDto> {
     const existing = await this.runs.getById(runId);
     if (!existing) throw PIPELINE_ERRORS.runNotFound();
 
     try {
-      const settings = await this.settings.get();
-      const registry = new Map(this.sources.map((source) => [source.id, source]));
-      const unknown = settings.sourceOrder.filter((id) => !registry.has(id));
-      const enabled = settings.sourceOrder.filter((id) => registry.has(id));
-      const notes: string[] = [];
-      if (unknown.length > 0) {
-        notes.push(`Ignored unknown sources: ${unknown.join(', ')}`);
-      }
-
-      if (enabled.length === 0) {
-        await this.runs.markTerminal(runId, {
-          status: 'failed',
-          errorMessage: notes.concat(['No enabled sources in sourceOrder']).join('. '),
-        });
+      if (this.sources.length === 0) {
+        await this.runs.markTerminal(runId, { status: 'failed', errorMessage: 'No plant sources' });
         return (await this.runs.getById(runId)) ?? existing;
       }
 
@@ -157,9 +110,8 @@ export class CatalogPipelineService {
         skipped: number;
       }> = [];
 
-      for (const sourceId of enabled) {
-        const provider = registry.get(sourceId);
-        if (!provider) continue;
+      for (const provider of this.sources) {
+        const sourceId = provider.id;
         try {
           const { plants, skipped } = await fetchAllFromProvider(provider);
           sourceRows.push({
@@ -187,14 +139,18 @@ export class CatalogPipelineService {
         await this.runs.markTerminal(runId, {
           status: 'failed',
           errorMessage:
-            notes
-              .concat(failed.map((row) => row.errorMessage).filter(Boolean) as string[])
+            failed
+              .map((row) => row.errorMessage)
+              .filter(Boolean)
               .join('. ') || 'All sources failed',
         });
         return (await this.runs.getById(runId)) ?? existing;
       }
 
-      const merge = mergeCatalogRecords(batches, enabled);
+      const merge = mergeCatalogRecords(
+        batches,
+        this.sources.map((source) => source.id),
+      );
       const snapshots = await this.catalog.listSnapshots();
       const links = await this.catalog.listSourceLinks();
       const linksByPlant = new Map<string, string[]>();
@@ -234,11 +190,8 @@ export class CatalogPipelineService {
       const overall: Exclude<PipelineRunStatus, 'running'> =
         failed.length === 0 ? 'succeeded' : 'incomplete';
       const errorMessage =
-        notes.length > 0 || failed.length > 0
-          ? [
-              ...notes,
-              ...failed.map((row) => `${row.sourceId}: ${row.errorMessage ?? 'failed'}`),
-            ].join('. ')
+        failed.length > 0
+          ? failed.map((row) => `${row.sourceId}: ${row.errorMessage ?? 'failed'}`).join('. ')
           : null;
 
       const plants = merge.merged.map(toUpsert);

@@ -11,10 +11,7 @@ cd "$ROOT"
 export DATABASE_URL="${DATABASE_URL:-postgresql://open_garden:open_garden@localhost:5432/open_garden_e2e}"
 export SEED_DEMO_USERS="${SEED_DEMO_USERS:-true}"
 export CORS_ORIGIN="${CORS_ORIGIN:-http://localhost:4200}"
-export PLANT_PROVIDER="${PLANT_PROVIDER:-fixture}"
 export PLACE_PROVIDER="${PLACE_PROVIDER:-fixture}"
-# Test-only plants and the second fixture source (pipeline merge tests). Installs never set this.
-export PLANT_TEST_FIXTURES="${PLANT_TEST_FIXTURES:-true}"
 export CI="${CI:-true}"
 
 API_PID=""

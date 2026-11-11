@@ -15,5 +15,4 @@ export const PIPELINE_ERRORS = {
   adminRequired: () => domainError('FORBIDDEN', 'Admin role required'),
   alreadyRunning: () => domainError('CONFLICT', 'A pipeline run is already running'),
   runNotFound: () => domainError('NOT_FOUND', 'Pipeline run not found'),
-  invalidSettings: () => domainError('VALIDATION_ERROR', 'Invalid pipeline settings'),
 } as const;
