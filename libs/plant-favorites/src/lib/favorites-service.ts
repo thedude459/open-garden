@@ -1,3 +1,4 @@
+import { rootstockSpacing } from '@open-garden/shared-types';
 import type { FavoriteRepository, PlantRepository } from '@open-garden/plant-catalog-data';
 import type {
   FavoriteDto,
@@ -34,6 +35,7 @@ export class FavoritesService {
           spacingInches: row.plant.spacingInches,
           status: row.plant.status as PlantStatus,
           illustrationUrl: null,
+          rootstockSpacingInches: rootstockSpacing(row.plant),
         },
       })),
     };

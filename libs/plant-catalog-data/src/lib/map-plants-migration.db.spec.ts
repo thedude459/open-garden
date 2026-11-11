@@ -1,8 +1,8 @@
 // Migration 0003: plants from the fixture and Perenual sources move to
 // open-garden-data ids without any planting losing its plant.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AppDatabase } from './db';
 import { MIGRATIONS_FOLDER } from './migrate';
@@ -20,20 +20,23 @@ afterEach(async () => {
   for (const t of open.splice(0)) await t.close();
 });
 
+// Raw SQL: the schema in code has columns later migrations add.
 async function plant(db: AppDatabase, varietyKey: string, commonName: string) {
-  const [row] = await db
-    .insert(schema.plants)
-    .values({
-      varietyKey,
-      commonName,
-      species: 'Any',
-      plantType: 'vegetable',
-      zoneMin: 3,
-      zoneMax: 9,
-      spacingInches: 12,
-    })
-    .returning();
-  return row!;
+  const result = await db.execute<{ id: string }>(sql`
+    insert into plants (variety_key, common_name, species, plant_type, zone_min, zone_max, spacing_inches)
+    values (${varietyKey}, ${commonName}, 'Any', 'vegetable', 3, 9, 12)
+    returning id`);
+  return { id: (result as unknown as { rows: { id: string }[] }).rows[0]!.id };
+}
+
+/** Migrations after 0003, so the code's schema matches the database again. */
+async function migrateRest(t: TestDb) {
+  const folder = resolve(process.cwd(), MIGRATIONS_FOLDER);
+  for (const file of readdirSync(folder)
+    .filter((f) => f.endsWith('.sql') && f > '0004')
+    .sort()) {
+    await t.exec(readFileSync(resolve(folder, file), 'utf8'));
+  }
 }
 
 async function household(db: AppDatabase) {
@@ -62,6 +65,7 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     await t.db.insert(schema.favorites).values({ userId: user.id, plantId: tomato.id });
 
     await t.exec(MIGRATION);
+    await migrateRest(t);
 
     expect(await plantRow(t.db, tomato.id)).toMatchObject({
       varietyKey: 'dataset:tomato-cherry',
@@ -148,6 +152,7 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     ]);
 
     await t.exec(MIGRATION);
+    await migrateRest(t);
 
     const plantings = await t.db.select().from(schema.gardenPlantings);
     expect(plantings.map((p) => p.plantId)).toEqual([basil.id]);

@@ -40,3 +40,4 @@ export type { PlanFrame, PlanRect } from './lib/plan-frame';
 export { evaluateLayout } from './lib/evaluate-layout';
 export { placementNotes, spacingInchesFor, sunDisagrees } from './lib/placement-notes';
 export { LayoutService } from './lib/layout-service';
+export { sizeTreeBed, treeSpacingInches } from './lib/tree-bed';

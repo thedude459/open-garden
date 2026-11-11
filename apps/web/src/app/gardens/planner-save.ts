@@ -101,6 +101,8 @@ export async function savePlannerDraft(
           plantId: planting.plantId,
           startMethod: 'direct_seed',
           bedId: planting.bedId,
+          ...(planting.spacingFeet ? { spacingFeet: planting.spacingFeet } : {}),
+          ...(planting.rootstock ? { rootstock: planting.rootstock } : {}),
         });
         postedPlantings.push(id);
       }),

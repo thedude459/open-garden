@@ -12,7 +12,7 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import type { GrowingGuidanceDto, PlantType } from '@open-garden/shared-types';
+import type { GrowingGuidanceDto, PlantType, RootstockSpacingDto } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { plants } from './schema';
 
@@ -33,6 +33,7 @@ export interface PlantUpsertInput {
   provider: string | null;
   providerExternalId: string | null;
   growingGuidance?: GrowingGuidanceDto | null;
+  rootstockSpacingInches?: RootstockSpacingDto | null;
 }
 
 export interface PlantListFilters {
@@ -48,7 +49,7 @@ export class PlantRepository {
   constructor(private readonly db: AppDatabase) {}
 
   async upsertByVarietyKey(input: PlantUpsertInput) {
-    const guidance = flattenGuidance(input.growingGuidance);
+    const guidance = { ...flattenGuidance(input.growingGuidance), ...flattenRootstocks(input) };
     const [row] = await this.db
       .insert(plants)
       .values({
@@ -102,7 +103,7 @@ export class PlantRepository {
   async upsertManyByVarietyKey(inputs: PlantUpsertInput[]) {
     if (inputs.length === 0) return [];
     const values = inputs.map((input) => {
-      const guidance = flattenGuidance(input.growingGuidance);
+      const guidance = { ...flattenGuidance(input.growingGuidance), ...flattenRootstocks(input) };
       return {
         varietyKey: input.varietyKey,
         commonName: input.commonName,
@@ -143,6 +144,9 @@ export class PlantRepository {
           spacingInches: sql`excluded.spacing_inches`,
           waterIntervalDays: sql`excluded.water_interval_days`,
           fertilizeIntervalDays: sql`excluded.fertilize_interval_days`,
+          dwarfSpacingInches: sql`excluded.dwarf_spacing_inches`,
+          semiDwarfSpacingInches: sql`excluded.semi_dwarf_spacing_inches`,
+          standardSpacingInches: sql`excluded.standard_spacing_inches`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
           status: sql`excluded.status`,
@@ -264,4 +268,13 @@ function sanitizeWindow(
 
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+function flattenRootstocks(input: { rootstockSpacingInches?: RootstockSpacingDto | null }) {
+  const r = input.rootstockSpacingInches;
+  return {
+    dwarfSpacingInches: r?.dwarf ?? null,
+    semiDwarfSpacingInches: r?.semiDwarf ?? null,
+    standardSpacingInches: r?.standard ?? null,
+  };
 }

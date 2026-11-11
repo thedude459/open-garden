@@ -1,6 +1,10 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import type { FrostRelativeWeeksDto, PlantType } from '@open-garden/shared-types';
+import type {
+  FrostRelativeWeeksDto,
+  PlantType,
+  RootstockSpacingDto,
+} from '@open-garden/shared-types';
 import { z } from 'zod';
 import { verifyCatalogAttestation } from './catalog-attestation';
 import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
@@ -134,6 +138,13 @@ const cropSchema = z.object({
   windows: z.object({ indoorStart: window, directSow: window, transplant: window }),
   daysToMaturity: dayRange.optional(),
   hardinessZones: zones.optional(),
+  rootstocks: z
+    .object({
+      dwarf: z.object({ spacingCm: spacing }).optional(),
+      semiDwarf: z.object({ spacingCm: spacing }).optional(),
+      standard: z.object({ spacingCm: spacing }).optional(),
+    })
+    .optional(),
   varieties: z
     .array(
       z.object({
@@ -186,6 +197,7 @@ function cropPlants(crop: Crop): ProviderPlant[] {
     spacingInches: inches(crop.spacingCm.inRow),
     waterIntervalDays: WATER_INTERVAL_DAYS[crop.water],
     fertilizeIntervalDays: crop.feeding ? FEED_INTERVAL_DAYS[crop.feeding] : null,
+    rootstockSpacingInches: rootstocks(crop.rootstocks),
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),
@@ -210,6 +222,13 @@ function plantType(crop: Crop): PlantType {
   if (crop.use === 'herb') return 'herb';
   if (crop.habit === 'tree' || crop.habit === 'shrub' || crop.habit === 'cane') return crop.habit;
   return crop.use === 'nut' ? 'fruit' : crop.use;
+}
+
+function rootstocks(r: Crop['rootstocks']): RootstockSpacingDto | null {
+  if (!r) return null;
+  const size = (stock: { spacingCm: { inRow: number } } | undefined) =>
+    stock ? inches(stock.spacingCm.inRow) : null;
+  return { dwarf: size(r.dwarf), semiDwarf: size(r.semiDwarf), standard: size(r.standard) };
 }
 
 function guidance(w: Crop['windows']['indoorStart']): FrostRelativeWeeksDto | null {

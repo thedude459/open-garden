@@ -46,6 +46,16 @@ migration, and `garden_beds.kind` (`bed`/`orchard`) predated areas.
    API (which reads areas) apply the same rule. Migration 0004 lines up
    existing beds.
 5. **`garden_beds.kind` is removed**, with its API field.
+6. **Tree beds sized by rootstock.** The importer keeps each tree's spacing on
+   dwarf, semi-dwarf, and standard rootstock (three `plants` columns,
+   `rootstockSpacingInches` on catalog and favorite summaries). In Bed View a
+   tree bed asks for the rootstock (semi-dwarf by default, which matches the
+   catalog spacing). Placing a tree puts it in the middle of the bed and
+   resizes the bed, around its center, to that spacing in whole feet;
+   underplanting keeps its place on the plan. The planting records the
+   rootstock by name and the spacing in feet (existing fields), so the
+   layout checks and the plantings page use them. "Add tree" still starts
+   at 8 × 8 ft, since the tree is chosen after the bed.
 
 ## Consequences
 
@@ -53,5 +63,7 @@ migration, and `garden_beds.kind` (`bed`/`orchard`) predated areas.
   tray; ones already there are flagged, not blocked (ADR 0020).
 + Adding an area type (containers, berry bushes) needs no migration.
 - A blueberry sits in a "bramble patch" until a berry-bush type exists.
-- Tree beds are still created at 8 × 8 ft; sizing them by rootstock is the
-  rest of roadmap step 2.
+- A resized tree bed can overlap a neighbour; nothing stops it, and the
+  household moves one on the plan.
+- A planting's rootstock is free text; only Bed View sets it from the three
+  sizes. A tree placed from the plantings page keeps the catalog spacing.
