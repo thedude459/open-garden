@@ -55,10 +55,28 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `WEB_PORT` | `8080` | Host port for the web container. |
 | `COOKIE_SECURE` | `false` | Set `true` when people reach the app over HTTPS, so the session cookie is only sent over TLS. |
 | `PLANT_CATALOG_FILE` | unset | Not needed: the image bundles the [open-garden-data](https://github.com/thedude459/open-garden-data/releases) release it was tested with and imports it when the API starts. To use a newer release before the app ships it, mount `open-garden-catalog-<version>.json` and its `open-garden-catalog-<version>.json.sigstore.json` (both from the release) into the API container and set this to the JSON file's path. A file whose provenance attestation does not verify, or that does not match the schema, fails that import and nothing changes. |
+| `REMINDER_HOUR` | `7` | Hour of the day (0–23) the daily reminders go out, in the API container's time zone. |
+| `TZ` | `UTC` | The API container's time zone, for example `Europe/Berlin`. Reminders and "today" on the server follow it. |
+| `APP_URL` | unset | The address people open the app at, for example `https://garden.example.com`. Used for the link in reminder emails. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | unset (push off) | Turn on push reminders. Generate a pair once with `docker run --rm node:24-alpine npx -y web-push generate-vapid-keys` and keep it: a new pair makes every device turn push on again. Set both or neither. People reach the app over HTTPS for push to work in browsers. |
+| `VAPID_SUBJECT` | `APP_URL` | A `mailto:` or `https:` contact that push services can use to reach the admin. |
+| `SMTP_HOST`, `SMTP_FROM` | unset (email off) | Turn on the daily email summary: your mail server and the sender address. Set both. |
+| `SMTP_PORT` | `587` | `465` uses TLS from the start; other ports upgrade with STARTTLS when the server offers it. |
+| `SMTP_USER`, `SMTP_PASSWORD` | unset | Mail server login, if it needs one. |
 
 The API's `DATABASE_URL`, `PORT`, and `NODE_ENV` are set by
 `docker-compose.yml`; you do not need them in `.env`. `CORS_ORIGIN` only
 matters for the development setup in [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+### Reminders
+
+With push or email set up, the API sends each member one reminder a day at
+`REMINDER_HOUR`: the watering, feeding, and harvest tasks due or overdue, as
+on the Today page. Each member turns push on per device, and the daily email
+on or off, at the bottom of the Today page. Nothing is sent to members who
+have not turned it on. Push messages go through the browser maker's push
+service (Google, Mozilla, Apple, or Microsoft); they are encrypted, and list
+task names only. See [ADR 0022](adr/0022-reminder-delivery.md).
 
 ### Outside services
 

@@ -509,10 +509,10 @@ each against the other phases):
    ("Cabbage family"), and the plan notes an annual placed where last season
    grew one of its family: "Kale: Broccoli (cabbage family) grew in this bed
    last year." Advice only.
-2. **Reminders that reach people** — care reminders and the Today home only
-   work inside the app. Web push for the PWA (opt-in per member) and an
-   optional daily email digest, so watering and harvest reminders arrive on
-   time.
+2. **Reminders that reach people** — *done
+   ([ADR 0022](adr/0022-reminder-delivery.md)).* Web push for the PWA
+   (opt-in per member and device) and an optional daily email digest, sent
+   once a day at a set hour. Next: per-property time zones.
 3. **Weather alerts** — frost and heat warnings from the Open-Meteo forecast
    against tender plantings. Delivered through item 2.
 4. **Watering by water balance** — replaces fixed watering intervals (and the
@@ -601,7 +601,8 @@ fast-check property tests; quick UX fixes (#5, #8 month names, #12, #13); the
 data repository, baseline migration, dataset importer, and the 50 crops of
 dataset v0.1; step 1, the dataset as the catalog
 ([ADR 0020](adr/0020-dataset-as-the-catalog.md)); step 2, typed areas
-([ADR 0021](adr/0021-area-rules-by-habit.md)); step 3, crop rotation hints.
+([ADR 0021](adr/0021-area-rules-by-habit.md)); step 3, crop rotation hints; step 4, the Phase 3 core and reminder delivery
+([ADR 0022](adr/0022-reminder-delivery.md)).
 
 | Order | Work | Why this order |
 |---|---|---|
@@ -609,9 +610,9 @@ dataset v0.1; step 1, the dataset as the catalog
 | 1p *(parallel, data repo)* | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before outside contributions start; no app dependency. |
 | 2 | **Done ([ADR 0021](adr/0021-area-rules-by-habit.md)).** Phase 1 typed areas: habit rules (herbs of any habit), bramble patch, tree beds sized by rootstock, `garden_beds.kind` removed | The dataset's habit, use, and rootstocks are only useful once areas enforce them, and the 8 × 8 ft tree bed is wrong for every dataset tree. |
 | 3 | **Done.** Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
-| **4 (next)** | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
-| 5p *(parallel, data repo)* | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
-| 6 | Phase 2 climate: frost and zones anywhere (with a NASA POWER or NOAA fallback, and bundled frostline zones for the US first), Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
+| 4 | **Done.** Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
+| **5p (next, data repo)** | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
+| **6 (next)** | Phase 2 climate: frost and zones anywhere (with a NASA POWER or NOAA fallback, and bundled frostline zones for the US first), Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
 | 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |
 | 8 | Phase 4 items 3–6: weather alerts, watering by water balance, soil tests per bed (with soil by location), Home Assistant both ways | Care features that build on reminders (step 4) and data from step 5p. Water balance needs the dataset's crop coefficients. |
 | 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases | Broadens the catalog; unblocks pest advice. |

@@ -40,3 +40,23 @@ export interface ReminderMutationDto {
   kind: CareKind;
   dueOn: string;
 }
+
+/** A member's reminder settings and what this install can send. */
+export interface NotificationSettingsDto {
+  /** Web push is set up on the server (VAPID keys). */
+  pushAvailable: boolean;
+  /** The server's VAPID public key, for the browser to subscribe with. */
+  vapidPublicKey: string | null;
+  /** Email is set up on the server (SMTP). */
+  emailAvailable: boolean;
+  emailDigest: boolean;
+  /** Browsers and phones this member turned push on for. */
+  pushDevices: number;
+  /** The hour reminders go out, in the server's time zone. */
+  reminderHour: number;
+}
+
+export interface PushSubscriptionDto {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}

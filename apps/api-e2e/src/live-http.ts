@@ -86,8 +86,8 @@ export class LiveClient {
     return this.request('GET', path);
   }
 
-  delete(path: string): Promise<LiveResponse> {
-    return this.request('DELETE', path);
+  delete(path: string, init?: { data?: unknown }): Promise<LiveResponse> {
+    return this.request('DELETE', path, init?.data);
   }
 
   post(path: string, init?: { data?: unknown }): Promise<LiveResponse> {
