@@ -109,6 +109,8 @@ test('a recorded planting is on the calendar without adding it there', async ({ 
   const owner = await newUser(browser, `cal-planted-${Date.now()}@example.com`);
   await createFrostGarden(owner, 'Planted calendar');
   await owner.getByRole('link', { name: 'Plantings', exact: true }).click();
+  // The calendar has the same search box; search only once Plantings is open.
+  await expect(owner.getByRole('heading', { name: 'Plantings' })).toBeVisible();
   await addFromCatalog(owner, 'Tomato (Cherry)');
 
   await owner.getByRole('link', { name: 'Calendar', exact: true }).click();
