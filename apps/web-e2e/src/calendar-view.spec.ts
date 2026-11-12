@@ -65,7 +65,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
       .getByText(/Indoor unavailable/),
   ).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');
   await owner.locator('input[name="lastDay"]').fill('29');
   await saveGarden(owner);
@@ -73,7 +73,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await expect(owner.getByText(/Indoor Mar 4 – Mar 18/)).toBeVisible();
   await expect(owner.getByText(/Sow Oct 6 – Nov 17/)).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');
   await owner.locator('input[name="lastDay"]').fill('15');
   await owner.locator('select[name="firstMonth"]').selectOption('11');
@@ -83,7 +83,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
   await expect(owner.getByText(/Sow Oct 20 – Dec 1/)).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`cal-view-friend-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();

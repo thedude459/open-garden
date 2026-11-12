@@ -29,7 +29,7 @@ test('invite collaborator, demote to viewer, member list visible', async ({ brow
   await expect(owner.getByRole('button', { name: 'Delete garden' })).toBeVisible();
   await owner.locator('textarea[name="notes"]').fill('Owner notes');
   await saveGarden(owner);
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await openConfiguration(owner);
   await expect(owner.locator('textarea[name="notes"]')).toHaveValue('Owner notes');

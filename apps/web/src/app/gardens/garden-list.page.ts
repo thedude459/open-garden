@@ -4,11 +4,12 @@ import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { feetToInches, snapHalfFoot } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type { GardenSummaryDto, PlaceCandidateDto, TodayTaskDto } from '@open-garden/shared-types';
+import type { GardenSummaryDto, PlaceCandidateDto } from '@open-garden/shared-types';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { EmptyState } from '../ui/empty-state';
+import { localIso } from '../today/today-groups';
 
 @Component({
   standalone: true,
@@ -17,44 +18,6 @@ import { EmptyState } from '../ui/empty-state';
     <h2>Properties</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
-    }
-    @if (tasks().length) {
-      <section>
-        <h3>Today</h3>
-        <ul class="card-list">
-          @for (task of tasks(); track task.gardenId + task.title + task.kind) {
-            <li class="row">
-              <div>
-                <strong>{{ task.title }}</strong>
-                <p class="muted">
-                  {{ task.gardenName }}
-                  @if (task.bedName) {
-                    · {{ task.bedName }}
-                  }
-                  ·
-                  {{
-                    task.kind === 'thisWeek'
-                      ? 'Start this week'
-                      : task.kind === 'overdue'
-                        ? 'Overdue'
-                        : 'Due today'
-                  }}
-                </p>
-              </div>
-              <a
-                class="btn btn-secondary"
-                [routerLink]="
-                  task.kind === 'thisWeek'
-                    ? ['/gardens', task.gardenId, 'calendar']
-                    : ['/gardens', task.gardenId, 'reminders']
-                "
-              >
-                Open
-              </a>
-            </li>
-          }
-        </ul>
-      </section>
     }
     @if (items().length > 0 && !creating()) {
       <p>
@@ -182,7 +145,6 @@ export class GardenListPage implements OnInit, OnDestroy {
   readonly lookingUp = signal(false);
   readonly lookupError = signal('');
   items = signal<GardenSummaryDto[]>([]);
-  readonly tasks = signal<TodayTaskDto[]>([]);
   readonly creating = signal(false);
   loading = signal(true);
   error = signal('');
@@ -293,10 +255,9 @@ export class GardenListPage implements OnInit, OnDestroy {
     try {
       const today = await this.api.today(localIso());
       if (gen !== this.loadGen) return;
-      this.tasks.set(today.tasks);
       counts = new Map(today.gardens.map((garden) => [garden.id, garden]));
     } catch {
-      this.tasks.set([]);
+      /* the counts are optional on the property cards */
     }
     this.items.set(
       page.items.map((garden) => {
@@ -348,12 +309,6 @@ export class GardenListPage implements OnInit, OnDestroy {
       }
     });
   }
-}
-
-function localIso(date = new Date()): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function gardenFeet(feet: number): number {

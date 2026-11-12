@@ -189,6 +189,12 @@ textarea {
   background: var(--sand);
 }
 
+/* A page inside a section: Plantings under Plan, Transplants under Calendar. */
+.side-nav a.nav-sub {
+  padding-left: 1.6rem;
+  font-weight: 500;
+}
+
 .nav-group-label {
   margin: 1rem 0.7rem 0.25rem;
   color: var(--muted);
@@ -562,7 +568,7 @@ og-garden-plan-canvas {
 }
 
 .garden-tab-bar,
-.garden-more {
+.section-tabs {
   display: none;
 }
 
@@ -1177,8 +1183,7 @@ legend {
     border-top: 1px solid var(--line);
   }
 
-  .garden-tab-bar a,
-  .garden-tab-bar button {
+  .garden-tab-bar a {
     flex: 1;
     text-align: center;
     background: transparent;
@@ -1194,24 +1199,24 @@ legend {
     font-weight: 700;
   }
 
-  .garden-more {
+  /* On mobile the side nav is hidden, so a section's pages are tabs here. */
+  .section-tabs {
     display: flex;
-    flex-direction: column;
-    position: fixed;
-    z-index: 26;
-    right: 0.5rem;
-    bottom: 3.6rem;
-    min-width: 10rem;
-    padding: 0.4rem;
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
   }
 
-  .garden-more a {
-    padding: 0.45rem 0.6rem;
+  .section-tabs a {
+    padding: 0.45rem 0.8rem;
     color: var(--ink);
     text-decoration: none;
+  }
+
+  .section-tabs a.active {
+    color: var(--leaf);
+    font-weight: 700;
+    border-bottom: 2px solid var(--leaf);
   }
 
   .sidebar-backdrop {

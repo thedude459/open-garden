@@ -45,12 +45,13 @@ import { SOURCE_CODE_URL } from './source-link';
             ></button>
           }
           <aside class="sidebar" [class.open]="menuOpen()">
-            <a class="nav-brand" routerLink="/gardens">
+            <a class="nav-brand" routerLink="/today">
               <img src="assets/icon-512.png" alt="" width="32" height="32" />
               <h1 class="brand-name">Open Garden</h1>
             </a>
             <div class="sidebar-body">
               <nav class="side-nav" aria-label="Primary">
+                <a routerLink="/today" routerLinkActive="active">Today</a>
                 <a
                   routerLink="/gardens"
                   routerLinkActive="active"
@@ -69,26 +70,31 @@ import { SOURCE_CODE_URL } from './source-link';
                   @if (openBedName(); as bed) {
                     <p class="nav-bed">{{ bed }}</p>
                   }
-                  <a
-                    [routerLink]="['/gardens', id, 'layout']"
-                    routerLinkActive="active"
-                    aria-label="Garden Overview"
-                    >Overview</a
+                  <a [routerLink]="['/gardens', id, 'layout']" [class.active]="section() === 'plan'"
+                    >Plan</a
                   >
-                  <a [routerLink]="['/gardens', id, 'plantings']" routerLinkActive="active"
+                  <a
+                    class="nav-sub"
+                    [routerLink]="['/gardens', id, 'plantings']"
+                    routerLinkActive="active"
                     >Plantings</a
                   >
-                  <a [routerLink]="['/gardens', id, 'calendar']" routerLinkActive="active"
+                  <a
+                    [routerLink]="['/gardens', id, 'calendar']"
+                    [class.active]="section() === 'calendar'"
                     >Calendar</a
                   >
-                  <a [routerLink]="['/gardens', id, 'reminders']" routerLinkActive="active"
-                    >Reminders</a
-                  >
-                  <a [routerLink]="['/gardens', id, 'transplants']" routerLinkActive="active"
+                  <a
+                    class="nav-sub"
+                    [routerLink]="['/gardens', id, 'transplants']"
+                    routerLinkActive="active"
                     >Transplants</a
                   >
+                  <a [routerLink]="['/gardens', id, 'reminders']" routerLinkActive="active"
+                    >Tasks</a
+                  >
                   <a [routerLink]="['/gardens', id, 'configure']" routerLinkActive="active"
-                    >Configuration</a
+                    >Settings</a
                   >
                 </nav>
               }
@@ -101,34 +107,40 @@ import { SOURCE_CODE_URL } from './source-link';
             >
           </aside>
           <main class="shell">
+            @if (gardenId(); as id) {
+              @if (section() === 'plan') {
+                <nav class="section-tabs" aria-label="Plan">
+                  <a [routerLink]="['/gardens', id, 'layout']" routerLinkActive="active">Layout</a>
+                  <a [routerLink]="['/gardens', id, 'plantings']" routerLinkActive="active"
+                    >Plantings</a
+                  >
+                </nav>
+              } @else if (section() === 'calendar') {
+                <nav class="section-tabs" aria-label="Calendar">
+                  <a [routerLink]="['/gardens', id, 'calendar']" routerLinkActive="active"
+                    >Calendar</a
+                  >
+                  <a [routerLink]="['/gardens', id, 'transplants']" routerLinkActive="active"
+                    >Transplants</a
+                  >
+                </nav>
+              }
+            }
             <router-outlet />
           </main>
           @if (gardenId(); as id) {
             <nav class="garden-tab-bar" aria-label="Garden">
-              <a [routerLink]="['/gardens', id, 'layout']" routerLinkActive="active">Overview</a>
-              <a [routerLink]="['/gardens', id, 'reminders']" routerLinkActive="active">Today</a>
-              <a [routerLink]="['/gardens', id, 'calendar']" routerLinkActive="active">Calendar</a>
-              <button
-                type="button"
-                [attr.aria-expanded]="moreOpen()"
-                (click)="moreOpen.set(!moreOpen())"
+              <a [routerLink]="['/gardens', id, 'layout']" [class.active]="section() === 'plan'"
+                >Plan</a
               >
-                More
-              </button>
+              <a
+                [routerLink]="['/gardens', id, 'calendar']"
+                [class.active]="section() === 'calendar'"
+                >Calendar</a
+              >
+              <a [routerLink]="['/gardens', id, 'reminders']" routerLinkActive="active">Tasks</a>
+              <a [routerLink]="['/gardens', id, 'configure']" routerLinkActive="active">Settings</a>
             </nav>
-            @if (moreOpen()) {
-              <div class="garden-more">
-                <a [routerLink]="['/gardens', id, 'plantings']" routerLinkActive="active"
-                  >Plantings</a
-                >
-                <a [routerLink]="['/gardens', id, 'transplants']" routerLinkActive="active"
-                  >Transplants</a
-                >
-                <a [routerLink]="['/gardens', id, 'configure']" routerLinkActive="active"
-                  >Configuration</a
-                >
-              </div>
-            }
           }
         </div>
       } @else {
@@ -157,7 +169,8 @@ export class AppComponent {
   private readonly planner = inject(PlannerDraftService);
 
   readonly menuOpen = signal(false);
-  readonly moreOpen = signal(false);
+  /** Which of the four property sections the page belongs to. */
+  readonly section = signal<'plan' | 'calendar' | 'tasks' | 'settings' | null>(null);
   readonly gardenId = signal<string | null>(null);
   readonly gardenName = signal('Garden');
   readonly bedId = signal<string | null>(null);
@@ -184,7 +197,6 @@ export class AppComponent {
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
         this.menuOpen.set(false);
-        this.moreOpen.set(false);
         this.syncGarden(e.urlAfterRedirects);
         this.dropDraftIfLeft(e.urlAfterRedirects);
       });
@@ -222,6 +234,7 @@ export class AppComponent {
 
   private syncGarden(url: string) {
     this.bedId.set(bedIdFrom(url));
+    this.section.set(sectionFrom(url));
     const id = gardenIdFrom(url);
     if (id === this.gardenId()) return;
     this.gardenId.set(id);
@@ -245,4 +258,13 @@ function bedIdFrom(url: string): string | null {
   const path = url.split(/[?#]/)[0] ?? '';
   const match = path.match(/^\/gardens\/[^/]+\/layout\/beds\/([^/]+)/);
   return match?.[1] ?? null;
+}
+
+function sectionFrom(url: string): 'plan' | 'calendar' | 'tasks' | 'settings' | null {
+  const page = (url.split(/[?#]/)[0] ?? '').match(/^\/gardens\/[^/]+\/([^/]+)/)?.[1];
+  if (page === 'layout' || page === 'plantings') return 'plan';
+  if (page === 'calendar' || page === 'transplants') return 'calendar';
+  if (page === 'reminders') return 'tasks';
+  if (page === 'configure') return 'settings';
+  return null;
 }

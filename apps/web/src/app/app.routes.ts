@@ -4,7 +4,7 @@ import { adminGuard } from './admin/admin.guard';
 import { unsavedLayoutGuard } from './gardens/unsaved-layout';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'gardens' },
+  { path: '', pathMatch: 'full', redirectTo: 'today' },
   {
     path: 'login',
     loadComponent: () => import('./auth/login.page').then((m) => m.LoginPage),
@@ -23,6 +23,11 @@ export const routes: Routes = [
     path: 'favorites',
     canActivate: [authGuard],
     loadComponent: () => import('./favorites/favorites-list.page').then((m) => m.FavoritesListPage),
+  },
+  {
+    path: 'today',
+    canActivate: [authGuard],
+    loadComponent: () => import('./today/today.page').then((m) => m.TodayPage),
   },
   {
     path: 'gardens',

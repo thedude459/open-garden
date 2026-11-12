@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { signedInPage, uniqueEmail } from './session';
 import { confirmFixtureAddress } from './planner-helpers';
 
-test('login shows busy then lands on gardens without leftover notice', async ({ page }) => {
+test('login shows busy then lands on Today without leftover notice', async ({ page }) => {
   await page.route('**/api/auth/login', async (route) => {
     await new Promise((r) => setTimeout(r, 400));
     await route.continue();
@@ -13,7 +13,7 @@ test('login shows busy then lands on gardens without leftover notice', async ({ 
   const login = page.getByRole('button', { name: 'Login' });
   await login.click();
   await expect(login).toHaveAttribute('aria-busy', 'true');
-  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   await expect(page.getByLabel('Notification')).toHaveCount(0);
 });
 

@@ -78,7 +78,7 @@ export class LoginPage {
           await this.auth.register(this.email, this.password, this.displayName.trim() || undefined);
         }
         this.auth.markAuthenticated();
-        await this.router.navigateByUrl('/gardens');
+        await this.router.navigateByUrl('/today');
       } catch (err) {
         // Sign-in keeps one generic message. Sign-up says when the email is
         // already registered, so people know to sign in instead.

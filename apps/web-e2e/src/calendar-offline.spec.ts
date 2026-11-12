@@ -50,7 +50,7 @@ test('cached calendar stays readable when calendar API is aborted', async ({ bro
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.locator('article').filter({ hasText: 'Spinach' })).toHaveCount(0);
 
-  await page.getByRole('link', { name: 'Configuration' }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.locator('input[name="lastDay"]').fill('29');
   await saveGarden(page);
   await page.unroute('**/api/gardens/**/calendar**');
@@ -82,7 +82,7 @@ test('removed member drops stale calendar cache after reconnect', async ({ brows
 
   await createFrostGarden(owner, 'Stale calendar');
   await addFromCatalog(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`cal-stale-friend-${stamp}@example.com`);
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(`cal-stale-friend-${stamp}@example.com`)).toBeVisible();

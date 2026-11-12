@@ -11,6 +11,7 @@ export default defineConfig({
       'apps/api-e2e/**/*.spec.ts',
       'apps/web/src/app/gardens/planner-draft.service.spec.ts',
       'apps/web/src/app/gardens/unsaved-layout.spec.ts',
+      'apps/web/src/app/today/today-groups.spec.ts',
     ],
     coverage: {
       provider: 'v8',

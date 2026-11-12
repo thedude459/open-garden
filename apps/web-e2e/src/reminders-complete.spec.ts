@@ -3,14 +3,14 @@ import { signedInPage as newUser } from './session';
 import { confirmFixtureAddress } from './planner-helpers';
 
 async function goToReminders(page: Page) {
-  const onGardenDetail = page.getByRole('link', { name: 'Reminders' });
+  const onGardenDetail = page.getByRole('link', { name: 'Tasks', exact: true });
   if (await onGardenDetail.isVisible()) {
     await onGardenDetail.click();
   } else {
-    await page.getByRole('link', { name: 'Configuration' }).click();
-    await page.getByRole('link', { name: 'Reminders' }).click();
+    await page.getByRole('link', { name: 'Settings', exact: true }).click();
+    await page.getByRole('link', { name: 'Tasks', exact: true }).click();
   }
-  await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tasks' })).toBeVisible();
 }
 
 async function setupGardenWithTomato(page: Page, name: string) {
@@ -55,7 +55,7 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await setupGardenWithTomato(owner, 'Complete plot');
   await expect(owner.getByText('Harvest')).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-done-friend-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -64,7 +64,7 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await friend.goto('/gardens');
   await expect(friend.getByRole('link', { name: /Complete plot/ })).toBeVisible();
   await friend.getByRole('link', { name: /Complete plot/ }).click();
-  await friend.getByRole('link', { name: 'Reminders' }).click();
+  await friend.getByRole('link', { name: 'Tasks', exact: true }).click();
   await friend
     .locator('li')
     .filter({ hasText: 'Harvest' })
@@ -72,10 +72,10 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
     .click();
   await expect(friend.getByText('Harvest')).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Reminders' }).click();
+  await owner.getByRole('link', { name: 'Tasks', exact: true }).click();
   await expect(owner.getByText('Harvest')).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.getByRole('link', { name: 'Plantings', exact: true }).click();
   await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   await expect(owner.locator('input[name^="harvested-"]').first()).not.toHaveValue('');

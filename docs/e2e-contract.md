@@ -2,7 +2,7 @@
 
 **Feature**: `012-e2e-test-streamline`
 
-Layering and helper rules. Product REST shapes are unchanged (see existing feature contracts). Accessible **names** used by Playwright stay as in 008–011 (`Save layout`, `Garden Overview`, `Create bed`, `Notification`, `Drop missed a bed`, etc.).
+Layering and helper rules. Product REST shapes are unchanged (see existing feature contracts). Accessible **names** used by Playwright stay as in 008–011 (`Save layout`, the `Garden Overview` heading, `Create bed`, `Notification`, `Drop missed a bed`, etc.). The property nav links are `Plan`, `Calendar`, `Tasks`, and `Settings`, with `Plantings` and `Transplants` beneath; match them with `exact: true`, since `Plan` is a prefix of `Plantings`.
 
 ## Layer placement
 

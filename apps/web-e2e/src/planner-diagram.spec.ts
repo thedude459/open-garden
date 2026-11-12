@@ -35,7 +35,7 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
     .getByLabel('Waiting transplants')

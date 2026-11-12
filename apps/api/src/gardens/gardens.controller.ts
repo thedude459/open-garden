@@ -29,9 +29,11 @@ import {
 } from '@open-garden/plant-catalog-data';
 import type { TodayDto } from '@open-garden/shared-types';
 import {
+  CARE_VERBS,
   gardenCreateSchema,
   gardenListQuerySchema,
   gardenPatchSchema,
+  plantName,
 } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
@@ -115,8 +117,15 @@ export class GardensController {
             gardenId: garden.id,
             gardenName: garden.name,
             kind: item.urgency,
-            title: `${item.commonName} · ${item.kind}`,
+            title: `${CARE_VERBS[item.kind]} ${plantName(item)}`,
             bedName: item.bedName ?? null,
+            reminder: {
+              plantingId: item.plantingId,
+              kind: item.kind,
+              dueOn: item.dueOn,
+              intervalDays: item.intervalDays,
+            },
+            canEdit: garden.myRole !== 'viewer',
           });
         }
       } catch {
@@ -133,7 +142,7 @@ export class GardensController {
             gardenId: garden.id,
             gardenName: garden.name,
             kind: 'thisWeek',
-            title: `Start ${entry.commonName}`,
+            title: `Start ${plantName(entry)}`,
             bedName: null,
           });
         }

@@ -473,7 +473,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 
 | # | Finding | Change |
 |---|---|---|
-| 1 | No desktop home screen; the app opens on a property list. On mobile, "Today" is the per-garden Reminders page with "Nothing due or not ready yet." | **Today** home across all properties: tasks due, sow/plant windows open this week, frost/heat/rain alerts, quick log buttons. Empty state explains what will appear and links to the next step. |
+| 1 | No desktop home screen; the app opens on a property list. On mobile, "Today" is the per-garden Reminders page with "Nothing due or not ready yet." | **Done (core):** **Today** is the home page: care due across all properties with a Done button, and crops to start this week; empty states say what will appear. Frost/heat/rain alerts come with weather alerts (Phase 4 item 3). |
 | 2 | Placing a tomato in a bed does not put it on the Planting calendar; the calendar needs a separate catalog search. | Calendar is derived from plantings (and "planned" crops). Searching to add means "plan it", not a second list. |
 | 3 | Plantings page renders every planting as an open edit form (dates, note, photo, life cycle, save, sow again). Bed rename/sun/ground/mulch is duplicated here and on Overview. | List or table, one row per planting with status chips; click opens an edit drawer. Bed settings live in one place. |
 | 4 | Overview side panel stacks the selected bed's editor with create forms for bed, vegetable garden, tree, berry patch, tray, walkway. Size inputs show "8" and "4" without labels or units. Zoom/Save scroll away. | Toolbar with an **Add** menu; side panel is a contextual inspector for the selected object only. Labelled inputs with units. Sticky toolbar. |
@@ -487,7 +487,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | **Header done:** on mobile a sticky top bar holds Menu and the property name, in the page flow, so it never covers a heading. Phase 3: the canvas becomes view-first with a bottom sheet for actions. |
 | 13 | Vocabulary varies: Transplant View, Planting tray, Direct seed, placements. | **Glossary done** (`AGENTS.md`): "Planting tray" is now "Waiting transplants" (a tray is only a greenhouse seed tray), "Transplant View" is "Transplants", and property cards say "plants in beds". Phase 3: fold Transplants into a "Seed starting" section of Calendar. |
 | 14 | Brand mark is a plain leaf-green circle. This is intentional in `docs/design-system.md` ("solid leaf-green circle on sage"), but it reads as a missing image. | Revisit with the design system during the redesign; keep it if it is the chosen mark. |
-| 15 | Six per-garden nav items. | Four: **Plan** (layout + plantings), **Calendar** (incl. seed starting), **Tasks**, **Settings**. |
+| 15 | Six per-garden nav items. | **Done:** four: **Plan** (layout, with Plantings beneath), **Calendar** (with Transplants beneath), **Tasks**, **Settings**; a four-tab bar on mobile with section tabs for the pages beneath. Merging the pages themselves comes with the rest of the redesign. |
 
 Also: guided first run (name → location → climate auto-filled → pick crops
 from "popular in your climate" → first bed), and an accessibility pass

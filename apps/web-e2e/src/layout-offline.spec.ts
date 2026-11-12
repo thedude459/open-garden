@@ -54,7 +54,7 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   expect((await saveLayout(owner)).status()).toBe(200);
   await expect(owner.getByText('4 × 2 ft · 0°')).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`layout-stale-friend-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -95,7 +95,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
 
   await page.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(page, 'Tomato (Cherry)');
-  await page.getByRole('link', { name: 'Garden Overview' }).click();
+  await page.getByRole('link', { name: 'Plan', exact: true }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
   await page
     .getByLabel('Waiting transplants')
@@ -106,7 +106,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await page.getByRole('link', { name: 'Back to overview' }).click();
   await page.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(page, 'Basil (Genovese)');
-  await page.getByRole('link', { name: 'Garden Overview' }).click();
+  await page.getByRole('link', { name: 'Plan', exact: true }).click();
   await page.getByRole('button', { name: 'Open bed East' }).click();
   await page
     .getByLabel('Waiting transplants')

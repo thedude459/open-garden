@@ -38,7 +38,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByRole('button', { name: 'Add Spinach (Bloomsdale)' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Spinach' })).toBeVisible();
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await openOverview(owner);
   await expect(owner.getByText('Spinach')).toHaveCount(0);
   await createSizedBed(owner, 'Raised bed 1');
@@ -46,7 +46,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
     .getByLabel('Waiting transplants')
@@ -65,7 +65,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await owner.getByRole('link', { name: 'Back to overview' }).click();
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Basil (Genovese)');
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await owner
     .getByLabel('Waiting transplants')

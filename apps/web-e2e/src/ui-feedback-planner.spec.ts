@@ -64,7 +64,7 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
   await expect(owner.getByLabel('Notification')).toContainText('Transplant added');
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   const tray = owner.getByLabel('Waiting transplants');
   await tray

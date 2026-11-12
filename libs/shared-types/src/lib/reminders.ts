@@ -1,4 +1,11 @@
 export type CareKind = 'water' | 'fertilize' | 'harvest';
+
+/** The task as a verb: "Water", "Fertilize", "Harvest". */
+export const CARE_VERBS: Record<CareKind, string> = {
+  water: 'Water',
+  fertilize: 'Fertilize',
+  harvest: 'Harvest',
+};
 export type CareAction = 'completed' | 'dismissed';
 export type ReminderUrgency = 'overdue' | 'dueToday' | 'upcoming';
 
