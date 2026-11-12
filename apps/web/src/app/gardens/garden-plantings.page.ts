@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { formatDay } from '@open-garden/web-ui';
 import { plantName } from '@open-garden/shared-types';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -162,7 +163,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                           p.plantedOn ? 'Planted ' + p.plantedOn : 'Not planted'
                         }}</span>
                         @if (p.harvestedOn) {
-                          <span class="badge">Harvested {{ p.harvestedOn }}</span>
+                          <span class="badge">Harvested {{ formatDay(p.harvestedOn) }}</span>
                         }
                         @if (p.sync === 'pending') {
                           <span class="pending">pending</span>
@@ -331,6 +332,7 @@ export class GardenPlantingsPage implements OnInit {
   readonly plantName = plantName;
   private readonly api = inject(PlantingsApiService);
   readonly notices = inject(NoticeService);
+  readonly formatDay = formatDay;
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';

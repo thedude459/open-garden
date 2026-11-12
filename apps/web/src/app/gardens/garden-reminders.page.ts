@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { formatDay } from '@open-garden/web-ui';
 import { CARE_VERBS, plantName } from '@open-garden/shared-types';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -49,7 +50,7 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
                       "
                       >{{ urgencyLabel(item) }}</span
                     >
-                    due {{ item.dueOn }}
+                    due {{ formatDay(item.dueOn) }}
                     @if (item.rainNote) {
                       <span>{{ item.rainNote }}</span>
                     }
@@ -85,6 +86,7 @@ export class GardenRemindersPage implements OnInit {
   private readonly api = inject(RemindersApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
   private readonly notices = inject(NoticeService);
+  readonly formatDay = formatDay;
 
   gardenId = '';
   readonly list = signal<ClientReminderList | null>(null);

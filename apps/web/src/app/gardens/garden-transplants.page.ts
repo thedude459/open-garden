@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { formatDay } from '@open-garden/web-ui';
 import { plantName } from '@open-garden/shared-types';
 import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -71,7 +72,7 @@ import { PlaceMarker } from '../ui/place-marker';
         <ul class="card-list">
           @for (p of list()!.plantings; track p.id) {
             <li class="row">
-              <span>{{ plantingLabel(p) }} · started {{ p.indoorStartedOn }}</span>
+              <span>{{ plantingLabel(p) }} · started {{ formatDay(p.indoorStartedOn) }}</span>
               @if (canEdit()) {
                 @if (confirmDeleteId() !== p.id) {
                   <button
@@ -111,7 +112,7 @@ import { PlaceMarker } from '../ui/place-marker';
         <ul class="card-list">
           @for (item of list()!.indoorReminders; track item.plantingId + item.kind + item.dueOn) {
             <li class="row">
-              <span>{{ plantName(item) }} · {{ item.kind }} · {{ item.dueOn }}</span>
+              <span>{{ plantName(item) }} · {{ item.kind }} · {{ formatDay(item.dueOn) }}</span>
               @if (canEdit()) {
                 <button type="button" class="btn btn-secondary" (click)="complete(item)">
                   Complete
@@ -134,6 +135,7 @@ export class GardenTransplantsPage implements OnInit {
   private readonly remindersApi = inject(RemindersApiService);
   private readonly gardensApi = inject(GardensApiService);
   readonly notices = inject(NoticeService);
+  readonly formatDay = formatDay;
   private readonly route = inject(ActivatedRoute);
 
   gardenId = '';

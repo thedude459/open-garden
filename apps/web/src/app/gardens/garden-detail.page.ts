@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { formatDay } from '@open-garden/web-ui';
 import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
@@ -57,7 +58,7 @@ import { PlannerDraftService } from './planner-draft.service';
                   · {{ row.bedName }}
                 }
                 @if (row.harvestedOn) {
-                  · harvested {{ row.harvestedOn }}
+                  · harvested {{ formatDay(row.harvestedOn) }}
                 }
                 @if (row.note) {
                   · {{ row.note }}
@@ -403,6 +404,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly auth = inject(AuthApiService);
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
+  readonly formatDay = formatDay;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   garden = signal<GardenDetailDto | null>(null);
