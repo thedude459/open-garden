@@ -1,4 +1,4 @@
-import type { ClimateLookup } from '@open-garden/garden-place';
+import type { ClimateFacts, ClimateLookup } from '@open-garden/garden-place';
 import type {
   GardenCreateDto,
   GardenDetailDto,
@@ -11,11 +11,14 @@ import type {
   PageDto,
   PlaceCandidateDto,
 } from '@open-garden/shared-types';
+import { frostRare } from '@open-garden/shared-types';
 import type { GardenMembershipRepository, GardenRepository } from '@open-garden/plant-catalog-data';
 import { domainError } from './domain-error';
 import { validateSiteProfile } from './site-profile';
 
 const SEASON_UPDATED = 'Growing zone and frost dates were updated from this address.';
+const SEASON_FROST_FREE =
+  'Growing zone was updated from this address. It rarely frosts here, so sowing times follow the monthly temperatures.';
 const SEASON_PARTIAL =
   'This place was saved. Enter the growing zone and frost dates that could not be determined.';
 
@@ -42,6 +45,7 @@ export class GardenService {
       nameNormalized,
       notes: normalizeNotes(dto.notes ?? null),
       hardinessZone: season.hardinessZone,
+      monthlyMeanC: season.monthlyMeanC,
       lengthInches: gardenInches(dto.lengthInches ?? DEFAULT_LENGTH_INCHES),
       widthInches: gardenInches(dto.widthInches ?? DEFAULT_WIDTH_INCHES),
       ...frostColumns(season.lastFrost, season.firstFrost),
@@ -144,6 +148,7 @@ export class GardenService {
       widthInches:
         dto.widthInches !== undefined ? gardenInches(dto.widthInches) : garden.widthInches,
       ...frost,
+      ...(season ? { monthlyMeanC: season.monthlyMeanC } : {}),
       ...(nextPlace ? placeColumns(nextPlace) : {}),
     });
     if (!updated) throw domainError('NOT_FOUND', 'Garden not found');
@@ -173,6 +178,7 @@ export class GardenService {
       lastFrostDay: number | null;
       firstFrostMonth: number | null;
       firstFrostDay: number | null;
+      monthlyMeanC?: number[] | null;
       lengthInches: number;
       widthInches: number;
       formattedAddress?: string | null;
@@ -195,6 +201,10 @@ export class GardenService {
       hardinessZone: garden.hardinessZone,
       lastFrost: toMonthDay(garden.lastFrostMonth, garden.lastFrostDay),
       firstFrost: toMonthDay(garden.firstFrostMonth, garden.firstFrostDay),
+      frostFree:
+        garden.lastFrostMonth == null &&
+        garden.firstFrostMonth == null &&
+        frostRare(garden.monthlyMeanC),
       lengthInches: garden.lengthInches,
       widthInches: garden.widthInches,
       myRole: mine.role as GardenRole,
@@ -218,6 +228,7 @@ export class GardenService {
     hardinessZone: number | null;
     lastFrost: MonthDayDto | null;
     firstFrost: MonthDayDto | null;
+    monthlyMeanC: number[] | null;
     seasonNotice: string | null;
   }> {
     if (!this.climate) {
@@ -233,24 +244,36 @@ export class GardenService {
         hardinessZone: dto.hardinessZone ?? null,
         lastFrost,
         firstFrost,
+        monthlyMeanC: null,
         seasonNotice: null,
       };
     }
-    let facts = {
-      hardinessZone: null as number | null,
-      lastFrost: null as MonthDayDto | null,
-      firstFrost: null as MonthDayDto | null,
-    };
+    let facts: ClimateFacts = NO_CLIMATE;
     try {
       facts = await this.climate.lookup(place);
     } catch {
-      facts = { hardinessZone: null, lastFrost: null, firstFrost: null };
+      facts = NO_CLIMATE;
     }
-    const filled =
-      facts.hardinessZone != null && facts.lastFrost != null && facts.firstFrost != null;
-    return { ...facts, seasonNotice: filled ? SEASON_UPDATED : SEASON_PARTIAL };
+    const frost = facts.lastFrost != null && facts.firstFrost != null;
+    const frostFree = !frost && frostRare(facts.monthlyMeanC);
+    const seasonNotice =
+      facts.hardinessZone == null
+        ? SEASON_PARTIAL
+        : frost
+          ? SEASON_UPDATED
+          : frostFree
+            ? SEASON_FROST_FREE
+            : SEASON_PARTIAL;
+    return { ...facts, seasonNotice };
   }
 }
+
+const NO_CLIMATE: ClimateFacts = {
+  hardinessZone: null,
+  lastFrost: null,
+  firstFrost: null,
+  monthlyMeanC: null,
+};
 
 const HALF_FOOT_INCHES = 6;
 const DEFAULT_LENGTH_INCHES = 240;

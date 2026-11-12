@@ -827,7 +827,7 @@ export class GardenLayoutPage implements OnInit {
       this.gardenName.set(detail.name);
       this.plotLength.set(detail.lengthInches ?? null);
       this.plotWidth.set(detail.widthInches ?? null);
-      this.needsSite.set(!detail.lastFrost || !detail.firstFrost);
+      this.needsSite.set(!detail.frostFree && (!detail.lastFrost || !detail.firstFrost));
     }
     await this.loadAreas();
   }

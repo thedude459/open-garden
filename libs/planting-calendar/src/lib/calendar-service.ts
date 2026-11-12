@@ -18,7 +18,7 @@ import type {
 } from '@open-garden/plant-catalog-data';
 import { allowsPlant, homeFor } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
-import { computeWindows, frostComplete, seasonYear } from './windows';
+import { computeWindows, seasonYear, windowsAvailable, type WarmClimate } from './windows';
 
 export class CalendarService {
   constructor(
@@ -45,19 +45,20 @@ export class CalendarService {
     const safeSize = Math.min(200, Math.max(1, pageSize));
     const lastFrost = pair(garden.lastFrostMonth, garden.lastFrostDay);
     const firstFrost = pair(garden.firstFrostMonth, garden.firstFrostDay);
-    const windowsAvailable = frostComplete({ lastFrost, firstFrost });
+    const monthlyMeanC = garden.monthlyMeanC ?? null;
+    const available = windowsAvailable({ lastFrost, firstFrost }, monthlyMeanC);
     const year = seasonYear({ lastFrost, firstFrost }, today);
     const result = await this.entries.listByGarden(gardenId, safePage, safeSize);
 
     return {
       gardenId: garden.id,
       myRole: membership.role as GardenRole,
-      windowsAvailable,
+      windowsAvailable: available,
       hardinessZone: garden.hardinessZone,
       lastFrost,
       firstFrost,
       entries: result.items.map((row) =>
-        toEntry(row, garden.hardinessZone, lastFrost, firstFrost, year),
+        toEntry(row, garden.hardinessZone, lastFrost, firstFrost, year, monthlyMeanC),
       ),
       page: result.page,
       pageSize: result.pageSize,
@@ -114,6 +115,9 @@ type EntryRow = {
   transplantFrostAnchor: string | null;
   transplantWeeksEarliest: number | null;
   transplantWeeksLatest: number | null;
+  growMinC?: number | null;
+  growMaxC?: number | null;
+  sowSoilMinC?: number | null;
   planned?: boolean;
   planted?: boolean;
 };
@@ -124,6 +128,7 @@ function toEntry(
   lastFrost: MonthDayDto | null,
   firstFrost: MonthDayDto | null,
   year: number,
+  monthlyMeanC: number[] | null,
 ): CalendarEntryDto {
   const guidance = guidanceFromRow(row);
   const windows: CalendarWindowsDto = computeWindows(
@@ -131,6 +136,7 @@ function toEntry(
     guidance,
     row.daysToMaturity,
     year,
+    warmClimate(row, monthlyMeanC),
   );
   return {
     plantId: row.plantId,
@@ -146,6 +152,14 @@ function toEntry(
     planned: row.planned ?? true,
     planted: row.planted ?? false,
   };
+}
+
+function warmClimate(row: EntryRow, monthlyMeanC: number[] | null): WarmClimate {
+  const sowingTemperature =
+    row.growMinC != null && row.growMaxC != null
+      ? { minC: row.growMinC, maxC: row.growMaxC, minSoilC: row.sowSoilMinC ?? null }
+      : null;
+  return { monthlyMeanC, sowingTemperature };
 }
 
 function guidanceFromRow(row: EntryRow): GrowingGuidanceDto {

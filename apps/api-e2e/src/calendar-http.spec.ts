@@ -1,3 +1,4 @@
+import { HONOLULU_PLACE } from '@open-garden/garden-place';
 import { fixturePlace } from './fixture-place';
 import { describe, expect, test } from 'vitest';
 import { liveEnabled, LiveClient } from './live-http';
@@ -82,6 +83,33 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
     }
     return undefined;
   }
+
+  test('where it rarely frosts, windows follow the monthly temperatures', async () => {
+    const owner = new LiveClient();
+    await register(owner, `warm-${Date.now()}@example.com`);
+    const created = await owner.post('/api/gardens', {
+      data: { name: 'Warm plot', place: HONOLULU_PLACE },
+    });
+    expect(created.status()).toBe(201);
+    const garden = (await created.json()) as GardenDetail & {
+      frostFree: boolean;
+      seasonNotice: string;
+    };
+    expect(garden.frostFree).toBe(true);
+    expect(garden.seasonNotice).toMatch(/rarely frosts here/);
+
+    const tomato = await findPlant(owner, 'Tomato');
+    const added = await owner.post(`/api/gardens/${garden.id}/calendar`, {
+      data: { plantId: tomato.id },
+    });
+    const calendar = (await added.json()) as CalendarDto;
+    expect(calendar.windowsAvailable).toBe(true);
+    expect(calendar.entries[0]?.windows.transplant).toEqual({
+      earliest: { month: 1, day: 1 },
+      latest: { month: 12, day: 31 },
+      wrapsYear: false,
+    });
+  });
 
   test('unauthenticated calendar routes return 401', async () => {
     const request = new LiveClient();

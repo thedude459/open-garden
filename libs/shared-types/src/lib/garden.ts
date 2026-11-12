@@ -88,6 +88,8 @@ export interface GardenDetailDto extends GardenSummaryDto {
   notes: string | null;
   lastFrost: MonthDayDto | null;
   firstFrost: MonthDayDto | null;
+  /** No frost dates, but monthly temperatures place sowing instead (ADR 0025). */
+  frostFree: boolean;
   lengthInches: number;
   widthInches: number;
   ownerUserId: string;

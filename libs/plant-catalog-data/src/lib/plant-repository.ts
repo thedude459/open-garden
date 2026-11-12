@@ -12,7 +12,12 @@ import {
   sql,
   type SQL,
 } from 'drizzle-orm';
-import type { GrowingGuidanceDto, PlantType, RootstockSpacingDto } from '@open-garden/shared-types';
+import type {
+  GrowingGuidanceDto,
+  PlantType,
+  RootstockSpacingDto,
+  SowingTemperatureDto,
+} from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { plants } from './schema';
 
@@ -34,6 +39,7 @@ export interface PlantUpsertInput {
   providerExternalId: string | null;
   growingGuidance?: GrowingGuidanceDto | null;
   rootstockSpacingInches?: RootstockSpacingDto | null;
+  sowingTemperature?: SowingTemperatureDto | null;
   family?: string | null;
 }
 
@@ -148,6 +154,9 @@ export class PlantRepository {
           dwarfSpacingInches: sql`excluded.dwarf_spacing_inches`,
           semiDwarfSpacingInches: sql`excluded.semi_dwarf_spacing_inches`,
           standardSpacingInches: sql`excluded.standard_spacing_inches`,
+          growMinC: sql`excluded.grow_min_c`,
+          growMaxC: sql`excluded.grow_max_c`,
+          sowSoilMinC: sql`excluded.sow_soil_min_c`,
           family: sql`excluded.family`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
@@ -274,10 +283,15 @@ function escapeLike(value: string): string {
 
 function catalogColumns(input: {
   rootstockSpacingInches?: RootstockSpacingDto | null;
+  sowingTemperature?: SowingTemperatureDto | null;
   family?: string | null;
 }) {
   const r = input.rootstockSpacingInches;
+  const t = input.sowingTemperature;
   return {
+    growMinC: t?.minC ?? null,
+    growMaxC: t?.maxC ?? null,
+    sowSoilMinC: t?.minSoilC ?? null,
     family: input.family ?? null,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,

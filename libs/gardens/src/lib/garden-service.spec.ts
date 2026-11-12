@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   FixtureClimateLookup,
+  HONOLULU_PLACE,
   MAIN_STREET_PLACES,
   WASHINGTON_PLACE,
 } from '@open-garden/garden-place';
@@ -201,6 +202,21 @@ describe('GardenService', () => {
       code: 'FORBIDDEN',
       message: 'Viewers cannot update this garden',
     });
+  });
+
+  it('keeps monthly temperatures and says so where it rarely frosts', async () => {
+    const { service, ownerId, gardens } = createGardenMemory({
+      climate: new FixtureClimateLookup(),
+    });
+    const created = await service.create(ownerId, { name: 'Warm', place: HONOLULU_PLACE });
+    expect(created).toMatchObject({ hardinessZone: 12, lastFrost: null, firstFrost: null });
+    expect(created.seasonNotice).toMatch(/rarely frosts here/);
+    const row = await gardens.getById(created.id);
+    expect(row?.monthlyMeanC).toHaveLength(12);
+
+    // A new address replaces them; one the climate source does not know clears them.
+    await service.patch(ownerId, created.id, { place: MAIN_STREET_PLACES[0]! });
+    expect((await gardens.getById(created.id))?.monthlyMeanC).toBeNull();
   });
 
   it('replaces hand-edited season facts when the address changes', async () => {

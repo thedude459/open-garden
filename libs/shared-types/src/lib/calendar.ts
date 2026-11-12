@@ -61,3 +61,17 @@ export interface CalendarDto {
 export interface CalendarAddDto {
   plantId: string;
 }
+
+/** A month averaging this or warmer seldom sees a frost night (ADR 0025). */
+export const FROST_RARE_MEAN_C = 7;
+
+/**
+ * Frost is rare here: twelve monthly mean temperatures, the coldest at least
+ * FROST_RARE_MEAN_C. Where this holds and there are no frost dates, sowing
+ * windows follow the monthly temperatures instead.
+ * ponytail: one threshold on the coldest month; a frost-night count per year
+ * from the same daily data would be more exact.
+ */
+export function frostRare(monthlyMeanC: readonly number[] | null | undefined): boolean {
+  return monthlyMeanC?.length === 12 && Math.min(...monthlyMeanC) >= FROST_RARE_MEAN_C;
+}

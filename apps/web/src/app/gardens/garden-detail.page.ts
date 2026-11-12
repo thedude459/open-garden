@@ -195,6 +195,12 @@ import { PlannerDraftService } from './planner-draft.service';
             }
           </select>
         </label>
+        @if (g.frostFree && !lastMonth && !firstMonth) {
+          <p class="muted">
+            It rarely frosts here, so sowing times follow the monthly temperatures. Set frost dates
+            only if you get frost.
+          </p>
+        }
         <fieldset class="filters">
           <legend>Last frost (spring)</legend>
           @if (!g.lastFrost && !lastMonth) {

@@ -266,6 +266,7 @@ function toUpsert(
     providerExternalId: plant.providerExternalId,
     growingGuidance: plant.growingGuidance,
     rootstockSpacingInches: plant.rootstockSpacingInches,
+    sowingTemperature: plant.sowingTemperature,
     family: plant.family,
     sourceLinks: plant.sourceLinks,
   };

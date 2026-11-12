@@ -6,7 +6,7 @@ import {
   keepFrostPair,
   zoneFromMinimum,
 } from './climate';
-import { MAIN_STREET_PLACES, WASHINGTON_PLACE } from './fixtures';
+import { HONOLULU_PLACE, MAIN_STREET_PLACES, WASHINGTON_PLACE } from './fixtures';
 
 describe('climate rules', () => {
   it('maps a mean annual extreme minimum to the USDA 10 °F bands', () => {
@@ -42,17 +42,25 @@ describe('climate rules', () => {
     expect(keepFrostPair(autumn, spring, -34)).toEqual({ last: null, first: null });
   });
 
+  it('gives the frost-free fixture warm months and no frost dates', async () => {
+    const facts = await new FixtureClimateLookup().lookup(HONOLULU_PLACE);
+    expect(facts).toMatchObject({ hardinessZone: 12, lastFrost: null, firstFrost: null });
+    expect(facts.monthlyMeanC).toHaveLength(12);
+  });
+
   it('fills Washington and leaves another fixture coordinate empty', async () => {
     const climate = new FixtureClimateLookup();
     await expect(climate.lookup(WASHINGTON_PLACE)).resolves.toEqual({
       hardinessZone: 8,
       lastFrost: { month: 4, day: 15 },
       firstFrost: { month: 10, day: 20 },
+      monthlyMeanC: [2, 4, 9, 14, 20, 25, 27, 26, 22, 15, 10, 4],
     });
     await expect(climate.lookup(MAIN_STREET_PLACES[0]!)).resolves.toEqual({
       hardinessZone: null,
       lastFrost: null,
       firstFrost: null,
+      monthlyMeanC: null,
     });
   });
 });
@@ -71,6 +79,7 @@ describe('climate from daily minimums', () => {
       hardinessZone: 7,
       lastFrost: { month: 4, day: 10 },
       firstFrost: { month: 10, day: 20 },
+      monthlyMeanC: null,
     });
   });
 
@@ -82,6 +91,7 @@ describe('climate from daily minimums', () => {
       hardinessZone: 12,
       lastFrost: null,
       firstFrost: null,
+      monthlyMeanC: null,
     });
   });
 
@@ -104,12 +114,27 @@ describe('climate from daily minimums', () => {
       hardinessZone: null,
       lastFrost: null,
       firstFrost: null,
+      monthlyMeanC: null,
     });
     expect(climateFromDailyMinimums(data.time, data.minimums, 45)).toEqual({
       hardinessZone: 9,
       lastFrost: { month: 3, day: 31 },
       firstFrost: null,
+      monthlyMeanC: null,
     });
+  });
+});
+
+describe('monthly mean temperatures', () => {
+  it('averages each month over the years, and needs every month', () => {
+    const data = daily(2021, 2022, (_y, month) => month);
+    const means = data.time.map((day) => Number(day.slice(5, 7)) + 0.5);
+    const facts = climateFromDailyMinimums(data.time, data.minimums, 10, means);
+    expect(facts.monthlyMeanC).toEqual([
+      1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5,
+    ]);
+    const noJuly = means.map((t, i) => (data.time[i]!.slice(5, 7) === '07' ? null : t));
+    expect(climateFromDailyMinimums(data.time, data.minimums, 10, noJuly).monthlyMeanC).toBeNull();
   });
 });
 
@@ -123,17 +148,25 @@ describe('live climate lookup', () => {
     let asked: URL | undefined;
     const fetchFn = (async (input: RequestInfo | URL) => {
       asked = new URL(String(input));
-      return json({ daily: { time: data.time, temperature_2m_min: data.minimums } });
+      return json({
+        daily: {
+          time: data.time,
+          temperature_2m_min: data.minimums,
+          temperature_2m_mean: data.minimums.map((t) => t + 5),
+        },
+      });
     }) as typeof fetch;
     const facts = await new LiveClimateLookup(fetchFn, now).lookup(WASHINGTON_PLACE);
     expect(asked?.hostname).toBe('archive-api.open-meteo.com');
     expect(asked?.searchParams.get('start_date')).toBe('1996-01-01');
     expect(asked?.searchParams.get('end_date')).toBe('2025-12-31');
     expect(asked?.searchParams.get('latitude')).toBe(String(WASHINGTON_PLACE.latitude));
+    expect(asked?.searchParams.get('daily')).toBe('temperature_2m_min,temperature_2m_mean');
     expect(facts).toEqual({
       hardinessZone: 10,
       lastFrost: { month: 4, day: 15 },
       firstFrost: { month: 10, day: 20 },
+      monthlyMeanC: [11, 11, 11, 10.8, 11, 11, 11, 11, 11, 10.8, 11, 11],
     });
   });
 
@@ -156,7 +189,7 @@ describe('live climate lookup', () => {
   });
 
   it('leaves the climate unset when the service fails or answers oddly', async () => {
-    const none = { hardinessZone: null, lastFrost: null, firstFrost: null };
+    const none = { hardinessZone: null, lastFrost: null, firstFrost: null, monthlyMeanC: null };
     const answers: Array<() => Response> = [
       () => ({ ok: false }) as Response,
       () => json({ daily: { time: ['2025-01-01'], temperature_2m_min: [] } }),

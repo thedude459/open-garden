@@ -44,6 +44,18 @@ export interface PlantSummaryDto {
   family?: string | null;
 }
 
+/**
+ * Temperatures a crop grows and is sown in, from the dataset. Where there is
+ * no frost to anchor windows to, these place them instead (ADR 0025).
+ */
+export interface SowingTemperatureDto {
+  /** Air temperature range for growth, °C. */
+  minC: number;
+  maxC: number;
+  /** Soil temperature needed to sow, °C. */
+  minSoilC: number | null;
+}
+
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sunRequirements: string | null;
   waterNeeds: string | null;

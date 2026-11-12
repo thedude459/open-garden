@@ -1,5 +1,7 @@
 import type { PlaceLookupDto } from '@open-garden/shared-types';
 import {
+  HONOLULU_PLACE,
+  HONOLULU_QUERY,
   MAIN_STREET_PLACES,
   MAIN_STREET_QUERY,
   WASHINGTON_PLACE,
@@ -17,6 +19,9 @@ export class FixturePlaceLookup implements PlaceLookup {
     const trimmed = query.trim();
     if (trimmed === WASHINGTON_QUERY) {
       return { candidates: [WASHINGTON_PLACE], truncated: false };
+    }
+    if (trimmed === HONOLULU_QUERY) {
+      return { candidates: [HONOLULU_PLACE], truncated: false };
     }
     if (trimmed === MAIN_STREET_QUERY) {
       return { candidates: MAIN_STREET_PLACES, truncated: false };

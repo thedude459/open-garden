@@ -36,11 +36,27 @@ export class FixtureClimateLookup implements ClimateLookup {
         hardinessZone: 8,
         lastFrost: { month: 4, day: 15 },
         firstFrost: { month: 10, day: 20 },
+        monthlyMeanC: [2, 4, 9, 14, 20, 25, 27, 26, 22, 15, 10, 4],
       };
     }
-    return { hardinessZone: null, lastFrost: null, firstFrost: null };
+    if (place.placeId === 'fixture-honolulu') {
+      return {
+        hardinessZone: 12,
+        lastFrost: null,
+        firstFrost: null,
+        monthlyMeanC: [23, 23, 23, 24, 25, 26, 27, 27, 27, 26, 25, 24],
+      };
+    }
+    return NO_CLIMATE;
   }
 }
+
+const NO_CLIMATE: ClimateFacts = {
+  hardinessZone: null,
+  lastFrost: null,
+  firstFrost: null,
+  monthlyMeanC: null,
+};
 
 const DAY_MS = 86_400_000;
 const MIN_DAYS_PER_YEAR = 300;
@@ -79,7 +95,9 @@ export function climateFromDailyMinimums(
   time: readonly string[],
   minimums: readonly (number | null)[],
   latitude: number,
+  means: readonly (number | null)[] = [],
 ): ClimateFacts {
+  const monthlyMeanC = monthlyMeans(time, means);
   const seasonStart = latitude < 0 ? dayOfYear(7, 1) : 0;
   const coldest = new Map<number, number>();
   const counts = new Map<number, number>();
@@ -111,7 +129,7 @@ export function climateFromDailyMinimums(
     : null;
 
   const full = [...seasons.values()].filter((s) => s.days >= MIN_DAYS_PER_YEAR);
-  if (full.length === 0) return { hardinessZone, lastFrost: null, firstFrost: null };
+  if (full.length === 0) return { hardinessZone, lastFrost: null, firstFrost: null, monthlyMeanC };
   const last = median(full.map((s) => s.last));
   const first = median(full.map((s) => s.first));
   const date = (offset: number) => monthDayOf((offset + seasonStart) % 365);
@@ -119,7 +137,23 @@ export function climateFromDailyMinimums(
     hardinessZone,
     lastFrost: last < 0 ? null : date(last),
     firstFrost: first > 364 ? null : date(first),
+    monthlyMeanC,
   };
+}
+
+/** Mean of the daily means in each calendar month, to a tenth; null unless every month has a year's worth. */
+function monthlyMeans(time: readonly string[], means: readonly (number | null)[]): number[] | null {
+  const sums = new Array<number>(12).fill(0);
+  const counts = new Array<number>(12).fill(0);
+  for (let i = 0; i < time.length; i++) {
+    const t = means[i];
+    const month = Number(time[i]?.slice(5, 7));
+    if (t == null || !Number.isFinite(t) || !(month >= 1 && month <= 12)) continue;
+    sums[month - 1]! += t;
+    counts[month - 1]! += 1;
+  }
+  if (counts.some((n) => n < 28)) return null;
+  return sums.map((sum, m) => Math.round((sum / counts[m]!) * 10) / 10);
 }
 
 /**
@@ -143,19 +177,28 @@ export class LiveClimateLookup implements ClimateLookup {
     url.searchParams.set('longitude', String(place.longitude));
     url.searchParams.set('start_date', `${lastYear - 29}-01-01`);
     url.searchParams.set('end_date', `${lastYear}-12-31`);
-    url.searchParams.set('daily', 'temperature_2m_min');
+    url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_mean');
     url.searchParams.set('timezone', 'auto');
-    const none = { hardinessZone: null, lastFrost: null, firstFrost: null };
+    const none = NO_CLIMATE;
     try {
       const response = await this.fetchFn(url, { signal: AbortSignal.timeout(10_000) });
       if (!response.ok) return none;
       const body = (await response.json()) as {
-        daily?: { time?: string[]; temperature_2m_min?: Array<number | null> };
+        daily?: {
+          time?: string[];
+          temperature_2m_min?: Array<number | null>;
+          temperature_2m_mean?: Array<number | null>;
+        };
       };
       const time = body.daily?.time;
       const minimums = body.daily?.temperature_2m_min;
       if (!time || !minimums || time.length !== minimums.length) return none;
-      const facts = climateFromDailyMinimums(time, minimums, place.latitude);
+      const facts = climateFromDailyMinimums(
+        time,
+        minimums,
+        place.latitude,
+        body.daily?.temperature_2m_mean ?? [],
+      );
       const pair = keepFrostPair(facts.lastFrost, facts.firstFrost, place.latitude);
       return { ...facts, lastFrost: pair.last, firstFrost: pair.first };
     } catch {
