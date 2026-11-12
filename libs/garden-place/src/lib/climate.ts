@@ -37,6 +37,10 @@ export class FixtureClimateLookup implements ClimateLookup {
         lastFrost: { month: 4, day: 15 },
         firstFrost: { month: 10, day: 20 },
         monthlyMeanC: [2, 4, 9, 14, 20, 25, 27, 26, 22, 15, 10, 4],
+        frostRisk: {
+          lateLastFrost: { month: 5, day: 2 },
+          earlyFirstFrost: { month: 10, day: 5 },
+        },
       };
     }
     if (place.placeId === 'fixture-honolulu') {
@@ -75,6 +79,12 @@ function monthDayOf(doy: number): MonthDay {
 function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor((sorted.length - 1) / 2)]!;
+}
+
+/** Nearest-rank percentile (0–1) of `values`. */
+function percentile(values: number[], p: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil(p * sorted.length) - 1)]!;
 }
 
 /** USDA hardiness zone from a mean annual extreme minimum: 10 °F bands from -60 °F. */
@@ -133,12 +143,28 @@ export function climateFromDailyMinimums(
   const last = median(full.map((s) => s.last));
   const first = median(full.map((s) => s.first));
   const date = (offset: number) => monthDayOf((offset + seasonStart) % 365);
-  return {
-    hardinessZone,
-    lastFrost: last < 0 ? null : date(last),
-    firstFrost: first > 364 ? null : date(first),
-    monthlyMeanC,
-  };
+  const lastFrost = last < 0 ? null : date(last);
+  const firstFrost = first > 364 ? null : date(first);
+  // A frost-free side counts as frost-free, so with both medians set these
+  // stay inside the season: the late last frost is at or after the median.
+  const frostRisk =
+    lastFrost && firstFrost
+      ? {
+          lateLastFrost: date(
+            percentile(
+              full.map((s) => s.last),
+              0.9,
+            ),
+          ),
+          earlyFirstFrost: date(
+            percentile(
+              full.map((s) => s.first),
+              0.1,
+            ),
+          ),
+        }
+      : null;
+  return { hardinessZone, lastFrost, firstFrost, monthlyMeanC, frostRisk };
 }
 
 /** Mean of the daily means in each calendar month, to a tenth; null unless every month has a year's worth. */
@@ -200,7 +226,12 @@ export class LiveClimateLookup implements ClimateLookup {
         body.daily?.temperature_2m_mean ?? [],
       );
       const pair = keepFrostPair(facts.lastFrost, facts.firstFrost, place.latitude);
-      return { ...facts, lastFrost: pair.last, firstFrost: pair.first };
+      return {
+        ...facts,
+        lastFrost: pair.last,
+        firstFrost: pair.first,
+        frostRisk: pair.last ? facts.frostRisk : null,
+      };
     } catch {
       return none;
     }

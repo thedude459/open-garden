@@ -14,6 +14,10 @@ export interface GardenInsert {
   firstFrostMonth: number | null;
   firstFrostDay: number | null;
   monthlyMeanC: number[] | null;
+  lateLastFrostMonth?: number | null;
+  lateLastFrostDay?: number | null;
+  earlyFirstFrostMonth?: number | null;
+  earlyFirstFrostDay?: number | null;
   lengthInches: number;
   widthInches: number;
   formattedAddress: string | null;
@@ -32,6 +36,10 @@ export interface GardenUpdate {
   firstFrostMonth?: number | null;
   firstFrostDay?: number | null;
   monthlyMeanC?: number[] | null;
+  lateLastFrostMonth?: number | null;
+  lateLastFrostDay?: number | null;
+  earlyFirstFrostMonth?: number | null;
+  earlyFirstFrostDay?: number | null;
   lengthInches?: number;
   widthInches?: number;
   ownerId?: string;

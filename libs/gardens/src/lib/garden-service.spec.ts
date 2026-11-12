@@ -218,7 +218,9 @@ describe('GardenService', () => {
 
     // A new address replaces them; one the climate source does not know clears them.
     await service.patch(ownerId, created.id, { place: MAIN_STREET_PLACES[0]! });
-    expect((await gardens.getById(created.id))?.monthlyMeanC).toBeNull();
+    const moved = await gardens.getById(created.id);
+    expect(moved?.monthlyMeanC).toBeNull();
+    expect(moved?.lateLastFrostMonth).toBeNull();
   });
 
   it('replaces hand-edited season facts when the address changes', async () => {
@@ -236,6 +238,10 @@ describe('GardenService', () => {
     expect(created.seasonNotice).toBe(
       'Growing zone and frost dates were updated from this address.',
     );
+    expect(created.frostRisk).toEqual({
+      lateLastFrost: { month: 5, day: 2 },
+      earlyFirstFrost: { month: 10, day: 5 },
+    });
 
     const edited = await service.patch(ownerId, created.id, { hardinessZone: 5 });
     expect(edited.hardinessZone).toBe(5);

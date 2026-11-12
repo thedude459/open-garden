@@ -152,6 +152,11 @@ export const gardens = pgTable(
     firstFrostDay: integer('first_frost_day'),
     /** Mean daily temperature per month, January first, °C (ADR 0025). */
     monthlyMeanC: real('monthly_mean_c').array(),
+    /** 1-in-10 frost dates from the climate data (ADR 0027). */
+    lateLastFrostMonth: integer('late_last_frost_month'),
+    lateLastFrostDay: integer('late_last_frost_day'),
+    earlyFirstFrostMonth: integer('early_first_frost_month'),
+    earlyFirstFrostDay: integer('early_first_frost_day'),
     lengthInches: integer('length_inches').notNull().default(240),
     widthInches: integer('width_inches').notNull().default(120),
     formattedAddress: text('formatted_address'),
