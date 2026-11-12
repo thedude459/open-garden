@@ -12,6 +12,7 @@ export {
   FixtureClimateLookup,
   LiveClimateLookup,
   climateFromDailyMinimums,
+  frostInOrder,
   keepFrostPair,
   zoneFromMinimum,
 } from './lib/climate';

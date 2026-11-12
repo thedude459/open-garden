@@ -1,16 +1,27 @@
 import type { PlaceCandidateDto } from '@open-garden/shared-types';
 import type { ClimateFacts, ClimateLookup, MonthDay } from './ports';
 
-/** Last frost must fall earlier in the calendar year than first frost. Otherwise store neither. */
+/**
+ * The frost-free season runs from last frost to first frost. In the north it
+ * sits inside one calendar year (last frost earlier); south of the equator it
+ * wraps the year end (last frost in spring, later in the calendar year than
+ * first frost in autumn). A place with no latitude follows the north.
+ */
+export function frostInOrder(last: MonthDay, first: MonthDay, latitude?: number | null): boolean {
+  const lastKey = last.month * 100 + last.day;
+  const firstKey = first.month * 100 + first.day;
+  return latitude != null && latitude < 0 ? firstKey < lastKey : lastKey < firstKey;
+}
+
+/** Keep both frost dates when they are valid and in order for the hemisphere; otherwise neither. */
 export function keepFrostPair(
   last: MonthDay | null,
   first: MonthDay | null,
+  latitude?: number | null,
 ): { last: MonthDay | null; first: MonthDay | null } {
   if (!last || !first) return { last: null, first: null };
   if (!validDay(last) || !validDay(first)) return { last: null, first: null };
-  const lastKey = last.month * 100 + last.day;
-  const firstKey = first.month * 100 + first.day;
-  if (lastKey >= firstKey) return { last: null, first: null };
+  if (!frostInOrder(last, first, latitude)) return { last: null, first: null };
   return { last, first };
 }
 
@@ -145,7 +156,7 @@ export class LiveClimateLookup implements ClimateLookup {
       const minimums = body.daily?.temperature_2m_min;
       if (!time || !minimums || time.length !== minimums.length) return none;
       const facts = climateFromDailyMinimums(time, minimums, place.latitude);
-      const pair = keepFrostPair(facts.lastFrost, facts.firstFrost);
+      const pair = keepFrostPair(facts.lastFrost, facts.firstFrost, place.latitude);
       return { ...facts, lastFrost: pair.last, firstFrost: pair.first };
     } catch {
       return none;

@@ -10,6 +10,10 @@ import {
   openAdd,
 } from './planner-helpers';
 
+// Eight weeks before a 15 April last frost: 19 February in a leap year, else
+// the 18th (windows are counted in the season's real year).
+const INDOOR_TOMATO = /Indoor Feb 1[89] – Mar 4/;
+
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Property name').fill(name);
@@ -57,7 +61,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await addFromCatalog(owner, 'Apple (Honeycrisp)');
   await addFromCatalog(owner, 'Radish (Cherry Belle)');
 
-  await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
+  await expect(owner.getByText(INDOOR_TOMATO)).toBeVisible();
   await expect(owner.getByText(/Sow Oct 6 – Nov 17/)).toBeVisible();
   await expect(
     owner
@@ -81,7 +85,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await owner.locator('input[name="firstDay"]').fill('3');
   await saveGarden(owner);
   await owner.getByRole('link', { name: 'Calendar' }).click();
-  await expect(owner.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
+  await expect(owner.getByText(INDOOR_TOMATO)).toBeVisible();
   await expect(owner.getByText(/Sow Oct 20 – Dec 1/)).toBeVisible();
 
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();

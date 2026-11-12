@@ -57,4 +57,20 @@ describe('site-profile', () => {
       'VALIDATION_ERROR',
     );
   });
+
+  it('south of the equator expects first frost earlier in the calendar year', () => {
+    const southern = {
+      lastFrost: { month: 9, day: 15 },
+      firstFrost: { month: 5, day: 10 },
+    };
+    expect(() => validateSiteProfile({ ...southern, latitude: -34 })).not.toThrow();
+    expectCode(() => validateSiteProfile(southern), 'VALIDATION_ERROR');
+    expect(() =>
+      validateSiteProfile({
+        lastFrost: { month: 5, day: 10 },
+        firstFrost: { month: 9, day: 15 },
+        latitude: -34,
+      }),
+    ).toThrow(/south of the equator/);
+  });
 });

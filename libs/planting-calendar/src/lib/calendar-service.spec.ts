@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CalendarService } from './calendar-service';
 import type { FrostAnchor, GardenRole, PlantStatus, PlantType } from '@open-garden/shared-types';
 
@@ -54,7 +54,14 @@ const maple = plantRow({
 });
 
 describe('CalendarService', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('adds a plant once and lists it with computed windows', async () => {
+    // Windows are counted in the season's real year; 2024 is a leap year.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2024, 5, 1));
     const mem = createMemory();
     const first = await mem.service.add(mem.ownerId, mem.gardenId, tomato.id);
     expect(first.created).toBe(true);

@@ -37,6 +37,15 @@ export function putBodyFromDraft(d: GardenLayoutDto): LayoutPutDto {
   };
 }
 
+/**
+ * Whether a freshly fetched layout may replace the one on screen: not over
+ * unsaved edits, and not over a change made while it loaded (a bed renamed),
+ * which is newer than the response.
+ */
+export function freshLayoutApplies<T>(shownBefore: T, shownNow: T, dirty: boolean): boolean {
+  return !dirty && shownNow === shownBefore;
+}
+
 export function draftIsDirty(
   d: GardenLayoutDto | null,
   savedPutJson: string,

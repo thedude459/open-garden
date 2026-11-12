@@ -451,16 +451,14 @@ In the app:
 
 Current state: zone and frost dates are computed anywhere from 30 years of
 Open-Meteo daily minimums ([ADR 0023](adr/0023-climate-from-open-meteo-history.md));
-phzmapi.org and FarmSense are gone. `keepFrostPair` still drops any pair
-where last frost is later in the calendar year than first frost — which is
-every Southern Hemisphere garden — until the calendar handles a season that
-wraps the year end.
+phzmapi.org and FarmSense are gone, and a southern season that wraps the
+year end is kept and drives the calendar.
 
 | Item | Approach |
 |---|---|
 | Frost dates anywhere | **Done (median dates; no 10%-risk date yet; fallback source still to do).** Compute from Open-Meteo historical daily minimum temperature (already used for rain outlook; no key). Median last spring / first fall day ≤ 0 °C over the last 30 years, plus a 10%-risk date. Cache per rounded lat/long. **Fallback source:** [NASA POWER](https://power.larc.nasa.gov/) (worldwide daily data, free and unrestricted) or NOAA [GSOD](https://www.ncei.noaa.gov/) station data (public domain), behind the same climate port, for operators whose use does not fit Open-Meteo's non-commercial terms or when it is unreachable. |
 | Hardiness zone anywhere | **Done.** Derive from mean annual extreme minimum over the same 30 years using the USDA temperature bands (the bands are just numbers and work globally). Keep the zone label, show °C/°F. Computed zones arrived first, so the bundled US frostline table was not needed. |
-| Southern Hemisphere | Treat the growing season as a range that may wrap the year end. Fix `keepFrostPair` and calendar math. `planting-calendar`'s `addDays` works in a fixed leap year (2024) and drops the year, so windows that cross the year end can be a day off around 29 February (found by a fast-check property; see `month-day.property.spec.ts`). Carry the year through. |
+| Southern Hemisphere | **Done.** Treat the growing season as a range that may wrap the year end. Fix `keepFrostPair` and calendar math. `planting-calendar`'s `addDays` works in a fixed leap year (2024) and drops the year, so windows that cross the year end can be a day off around 29 February (found by a fast-check property; see `month-day.property.spec.ts`). Carry the year through. |
 | Frost-free climates | Use the crop's temperature window and wet/dry season instead of frost anchors. |
 | Units | Per-user metric/imperial setting; store metric internally, display either. |
 | Locale | Month names instead of numbers, locale date formats, crop common names by locale from Wikidata. |
