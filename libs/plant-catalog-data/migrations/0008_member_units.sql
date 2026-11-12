@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "units" text DEFAULT 'imperial' NOT NULL;

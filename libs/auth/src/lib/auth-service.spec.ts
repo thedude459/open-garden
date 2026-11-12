@@ -22,7 +22,26 @@ describe('AuthService', () => {
       email: 'a@example.com',
       displayName: 'A',
       role: 'user',
+      units: 'imperial',
     });
+  });
+
+  it('carries a member’s units and saves a change', async () => {
+    const where = vi.fn().mockResolvedValue(undefined);
+    const set = vi.fn().mockReturnValue({ where });
+    const returning = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'u1', email: 'a@example.com', displayName: null, role: 'user', units: 'metric' },
+      ]);
+    const db = {
+      insert: vi.fn().mockReturnValue({ values: vi.fn().mockReturnValue({ returning }) }),
+      update: vi.fn().mockReturnValue({ set }),
+    };
+    const svc = new AuthService(db as never);
+    expect((await svc.register('a@example.com', 'password123')).units).toBe('metric');
+    await svc.setUnits('u1', 'imperial');
+    expect(set).toHaveBeenCalledWith({ units: 'imperial' });
   });
 
   it('turns a duplicate email into a CONFLICT instead of a raw query error', async () => {

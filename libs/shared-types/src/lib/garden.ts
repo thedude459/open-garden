@@ -1,3 +1,7 @@
+/** How a member sees lengths. Lengths are stored in inches either way (ADR 0024). */
+export const UNITS = ['imperial', 'metric'] as const;
+export type Units = (typeof UNITS)[number];
+
 export type GardenRole = 'owner' | 'collaborator' | 'viewer';
 
 export interface MonthDayDto {

@@ -8,7 +8,9 @@ import {
   groupPlantings,
   type PlantingGroup,
 } from '@open-garden/seasonal-plantings/group-plantings';
-import type { FavoriteListItemDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type { FavoriteListItemDto, PlantSummaryDto, Units } from '@open-garden/shared-types';
+import { feetFromTreeSpacing, lengthUnit, treeSpacingInput } from '@open-garden/garden-layout';
+import { AuthApiService } from '../auth/auth-api.service';
 import { allowsPlant } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
@@ -265,9 +267,9 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                           type="number"
                           min="1"
                           [attr.name]="'feet-' + p.id"
-                          placeholder="Spacing (ft)"
-                          [ngModel]="feetDraft[p.id] ?? p.spacingFeet"
-                          (ngModelChange)="feetDraft[p.id] = $event"
+                          [placeholder]="'Spacing (' + lengthUnit(units()) + ')'"
+                          [ngModel]="spacingDraft[p.id]?.value ?? treeSpacing(p.spacingFeet)"
+                          (ngModelChange)="spacingDraft[p.id] = { value: $event, units: units() }"
                           [ngModelOptions]="{ standalone: true }"
                         />
                       }
@@ -367,7 +369,10 @@ export class GardenPlantingsPage implements OnInit {
   lifeDraft: Record<string, 'annual' | 'perennial' | 'tree'> = {};
   rootstockDraft: Record<string, string> = {};
   yearsDraft: Record<string, number | null> = {};
-  feetDraft: Record<string, number | null> = {};
+  /** Tree spacing as typed, with the units it was typed in. */
+  spacingDraft: Record<string, { value: number | null; units: Units }> = {};
+  readonly units = inject(AuthApiService).units;
+  readonly lengthUnit = lengthUnit;
   favorites = signal<FavoriteListItemDto[]>([]);
   /** Drops a list response that lost the race with a newer load or edit. */
   private listEpoch = 0;
@@ -551,6 +556,15 @@ export class GardenPlantingsPage implements OnInit {
    * finished could reload the list before the first reached the server, then
    * drop the first's result as stale, leaving a rejected date on screen.
    */
+  treeSpacing(feet: number | null | undefined): number | null {
+    return feet == null ? null : treeSpacingInput(feet, this.units());
+  }
+
+  private spacingFeet(planting: ClientPlanting): number | null {
+    const draft = this.spacingDraft[planting.id];
+    return draft ? typedFeet(draft) : (planting.spacingFeet ?? null);
+  }
+
   async save(planting: ClientPlanting, plantedOn: string, harvestedOn: string, bedId: string) {
     await this.notices.run(`save-planting-${planting.id}`, () =>
       this.saveNow(planting, plantedOn, harvestedOn, bedId),
@@ -580,7 +594,7 @@ export class GardenPlantingsPage implements OnInit {
         life,
         rootstock: this.rootstockDraft[planting.id] ?? planting.rootstock ?? null,
         yearsToFruit: numberOrNull(this.yearsDraft[planting.id] ?? planting.yearsToFruit),
-        spacingFeet: numberOrNull(this.feetDraft[planting.id] ?? planting.spacingFeet),
+        spacingFeet: this.spacingFeet(planting),
         plantedYear:
           life === 'tree'
             ? (planting.plantedYear ?? new Date().getFullYear())
@@ -648,6 +662,11 @@ export class GardenPlantingsPage implements OnInit {
       this.error.set(messageFrom(err));
     }
   }
+}
+
+function typedFeet(draft: { value: number | null; units: Units }): number | null {
+  if (draft.value == null || String(draft.value) === '') return null;
+  return feetFromTreeSpacing(draft.value, draft.units) || null;
 }
 
 function numberOrNull(value: unknown): number | null {

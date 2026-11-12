@@ -1,10 +1,18 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
-import { feetToInches, snapHalfFoot } from '@open-garden/garden-layout';
+import {
+  convertLength,
+  inchesFromInput,
+  lengthInput,
+  lengthStep,
+  lengthUnit,
+  snapHalfFoot,
+} from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type { GardenSummaryDto, PlaceCandidateDto } from '@open-garden/shared-types';
+import type { GardenSummaryDto, PlaceCandidateDto, Units } from '@open-garden/shared-types';
+import { AuthApiService } from '../auth/auth-api.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
@@ -30,24 +38,24 @@ import { localIso } from '../today/today-groups';
       <form class="filters card" (ngSubmit)="create()">
         <input [(ngModel)]="name" name="gardenName" placeholder="Property name" required />
         <label>
-          Length (ft)
+          Length ({{ lengthUnit(units()) }})
           <input
             type="number"
-            min="0.5"
-            step="0.5"
+            [min]="lengthStep(units())"
+            [step]="lengthStep(units())"
             name="gardenLength"
-            [(ngModel)]="lengthFeet"
+            [(ngModel)]="lengthValue"
             required
           />
         </label>
         <label>
-          Width (ft)
+          Width ({{ lengthUnit(units()) }})
           <input
             type="number"
-            min="0.5"
-            step="0.5"
+            [min]="lengthStep(units())"
+            [step]="lengthStep(units())"
             name="gardenWidth"
-            [(ngModel)]="widthFeet"
+            [(ngModel)]="widthValue"
             required
           />
         </label>
@@ -134,8 +142,23 @@ export class GardenListPage implements OnInit, OnDestroy {
   name = '';
   notes = '';
   addressQuery = '';
-  lengthFeet = 20;
-  widthFeet = 10;
+  readonly units = inject(AuthApiService).units;
+  readonly lengthUnit = lengthUnit;
+  readonly lengthStep = lengthStep;
+  /** Units the size fields are typed in; a switch converts what is typed. */
+  sizeUnits: Units = this.units();
+  /** Property size as typed (20 × 10 ft to start). */
+  lengthValue = lengthInput(240, this.sizeUnits);
+  widthValue = lengthInput(120, this.sizeUnits);
+  private readonly followUnits = effect(() => {
+    const units = this.units();
+    untracked(() => {
+      if (units === this.sizeUnits) return;
+      this.lengthValue = convertLength(this.lengthValue, this.sizeUnits, units);
+      this.widthValue = convertLength(this.widthValue, this.sizeUnits, units);
+      this.sizeUnits = units;
+    });
+  });
   readonly candidates = signal<PlaceCandidateDto[]>([]);
   readonly truncated = signal(false);
   readonly selected = signal<PlaceCandidateDto | null>(null);
@@ -281,8 +304,8 @@ export class GardenListPage implements OnInit, OnDestroy {
         const created = await this.api.create({
           name: this.name,
           notes: this.notes.trim() ? this.notes : null,
-          lengthInches: gardenFeet(this.lengthFeet),
-          widthInches: gardenFeet(this.widthFeet),
+          lengthInches: gardenInches(this.lengthValue, this.sizeUnits),
+          widthInches: gardenInches(this.widthValue, this.sizeUnits),
           place,
         });
         this.name = '';
@@ -292,8 +315,9 @@ export class GardenListPage implements OnInit, OnDestroy {
         this.selected.set(null);
         this.truncated.set(false);
         this.clearMap();
-        this.lengthFeet = 20;
-        this.widthFeet = 10;
+        this.sizeUnits = this.units();
+        this.lengthValue = lengthInput(240, this.sizeUnits);
+        this.widthValue = lengthInput(120, this.sizeUnits);
         this.loadGen++;
         this.items.update((list) => [
           withCounts(created),
@@ -311,8 +335,8 @@ export class GardenListPage implements OnInit, OnDestroy {
   }
 }
 
-function gardenFeet(feet: number): number {
-  return Math.max(6, snapHalfFoot(feetToInches(feet)));
+function gardenInches(value: number, units: Units): number {
+  return Math.max(6, snapHalfFoot(inchesFromInput(value, units)));
 }
 
 function userMessage(err: unknown): string {
