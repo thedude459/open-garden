@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { openPlantingsFromGarden, confirmFixtureAddress } from './planner-helpers';
+import { openPlantingsFromGarden, confirmFixtureAddress, openPlanting } from './planner-helpers';
 
 async function openPlantings(page: Page, name: string) {
   await page.goto('/gardens');
@@ -51,7 +51,8 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await openPlantings(owner, 'Record bed');
   await addFromCatalog(owner, 'Tomato (Cherry)');
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
-  await expect(tomato.getByText('Not set').first()).toBeVisible();
+  await expect(tomato.getByText('Not planted')).toBeVisible();
+  await openPlanting(tomato);
   const planted = tomato.locator('input[type="date"]').first();
   await expect(planted).toHaveValue('');
   const today = new Date().toISOString().slice(0, 10);
@@ -83,6 +84,7 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();
 
   const basil = owner.locator('article').filter({ hasText: 'Basil (Genovese)' });
+  await openPlanting(basil);
   await basil.getByRole('button', { name: 'Remove Basil (Genovese)' }).click();
   await basil.getByRole('button', { name: 'Cancel' }).click();
   await expect(owner.locator('article').filter({ hasText: 'Basil (Genovese)' })).toBeVisible();

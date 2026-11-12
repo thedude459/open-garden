@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { signedInPage } from './session';
 
 export { signedInContext, signedInPage, uniqueEmail } from './session';
@@ -141,4 +141,22 @@ export async function addTransplant(page: Page, name: string, date = '2026-03-01
   await page.locator('li').filter({ hasText: name }).locator('input[type="date"]').fill(date);
   await add.click();
   await expect(page.getByText(`${name} · started`, { exact: false })).toBeVisible();
+}
+
+/** Opens a planting's editor on the Plantings page, unless it is already open. */
+export async function openPlanting(row: Locator) {
+  const edit = row.getByRole('button', { name: /^Edit / });
+  await expect(edit).toBeVisible();
+  if ((await edit.getAttribute('aria-expanded')) !== 'true') await edit.click();
+}
+
+/** Opens a bed's settings on the Plantings page. */
+export async function openBedSettings(page: Page, bedName: string) {
+  const section = page.locator('section').filter({
+    has: page.getByRole('heading', { name: bedName, exact: true }),
+  });
+  const details = section.locator('details.bed-settings');
+  if ((await details.getAttribute('open')) === null) {
+    await section.getByText('Bed settings').click();
+  }
 }

@@ -5,6 +5,8 @@ import {
   openPlantingsFromGarden,
   saveLayout,
   confirmFixtureAddress,
+  openBedSettings,
+  openPlanting,
 } from './planner-helpers';
 
 async function openPlantings(page: Page, name: string) {
@@ -47,6 +49,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await addFromCatalog(owner, 'Tomato (Cherry)');
   await addFromCatalog(owner, 'Basil (Genovese)');
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
+  await openPlanting(tomato);
   await tomato.locator('select[name^="bed-"]').selectOption({ label: 'Raised bed 1' });
   await tomato.getByRole('button', { name: 'Save planting' }).click();
 
@@ -74,6 +77,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   ).toBeVisible();
 
   const basil = owner.locator('article').filter({ hasText: 'Basil (Genovese)' });
+  await openPlanting(basil);
   await basil.locator('select[name^="bed-"]').selectOption({ label: 'Patio pots' });
   await basil.getByRole('button', { name: 'Save planting' }).click();
   await expect(owner.getByRole('heading', { name: 'Unassigned' })).toHaveCount(0);
@@ -88,6 +92,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(owner.getByText(/No plantings match this bed filter/)).toBeVisible();
   await owner.getByRole('button', { name: 'Show all' }).click();
 
+  await openBedSettings(owner, 'Raised bed 1');
   await owner
     .locator('form')
     .filter({ has: owner.getByRole('button', { name: 'Rename Raised bed 1' }) })
@@ -103,6 +108,7 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
       .filter({ hasText: 'Tomato (Cherry)' }),
   ).toBeVisible();
 
+  await openBedSettings(owner, 'North bed');
   await owner.getByRole('button', { name: 'Delete bed North bed' }).click();
   await expect(owner.getByRole('heading', { name: 'North bed' })).toHaveCount(0);
   await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
@@ -121,4 +127,8 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(friend.getByRole('button', { name: 'Create bed' })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: /Rename/ })).toHaveCount(0);
   await expect(friend.getByRole('button', { name: /Delete bed/ })).toHaveCount(0);
+  // A viewer sees each planting's status, without an editor.
+  const friendBasil = friend.locator('article').filter({ hasText: 'Basil (Genovese)' });
+  await expect(friendBasil.getByText('Not planted')).toBeVisible();
+  await expect(friendBasil.getByRole('button', { name: /^Edit / })).toHaveCount(0);
 });

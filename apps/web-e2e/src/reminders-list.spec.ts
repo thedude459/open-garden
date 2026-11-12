@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { addTransplant, confirmFixtureAddress } from './planner-helpers';
+import { addTransplant, confirmFixtureAddress, openPlanting } from './planner-helpers';
 
 async function openReminders(page: Page, name: string) {
   await page.goto('/gardens');
@@ -56,6 +56,7 @@ test('reminders list: harvest, one water reminder, empty CTA, viewer read-only',
 
   await addFromCatalog(owner, 'Tomato (Cherry)');
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
+  await openPlanting(tomato);
   await fillDate(tomato.locator('input[type="date"]').first(), '2026-01-01');
   // Wait for the save to reach the server: Reminders reads the planting date from it.
   await Promise.all([

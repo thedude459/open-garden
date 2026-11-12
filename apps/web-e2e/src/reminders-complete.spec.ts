@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { confirmFixtureAddress } from './planner-helpers';
+import { confirmFixtureAddress, openPlanting } from './planner-helpers';
 
 async function goToReminders(page: Page) {
   const onGardenDetail = page.getByRole('link', { name: 'Tasks', exact: true });
@@ -24,6 +24,7 @@ async function setupGardenWithTomato(page: Page, name: string) {
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Tomato (Cherry)' }).click();
   const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
+  await openPlanting(tomato);
   await tomato
     .locator('input[type="date"]')
     .first()
@@ -78,5 +79,10 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.getByRole('link', { name: 'Plantings', exact: true }).click();
   await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
-  await expect(owner.locator('input[name^="harvested-"]').first()).not.toHaveValue('');
+  await expect(
+    owner
+      .locator('article')
+      .filter({ hasText: 'Tomato (Cherry)' })
+      .getByText(/^Harvested /),
+  ).toBeVisible();
 });
