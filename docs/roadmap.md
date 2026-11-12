@@ -289,6 +289,7 @@ names the dataset version it needs:
 | Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
 | `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties: the first feature that needs crop-level rows |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
+| Named rootstocks: pick M.9, Bud 9, G.41…; bed sized from its spacing; zone check uses the less hardy of variety and rootstock | v0.3 | Named rootstocks per tree crop, each with size, spacing, hardiness zones, and staking |
 | Worldwide sowing (Phase 2) | Later | Frost-free windows |
 
 Each release attaches `open-garden-catalog-<version>.json` with a SHA-256 and
@@ -345,7 +346,16 @@ habit and use, mismatches are **blocked**, and bramble is its own type.
   dwarf, semi-dwarf, and standard rootstocks. A tree planting records its
   rootstock, and its one-tree orchard bed is created at that rootstock's
   spacing (a new tree bed is 8 × 8 ft today, smaller than any dataset tree).
-  An unknown rootstock uses the semi-dwarf default.
+  An unknown rootstock uses the semi-dwarf default. *Done for the three
+  classes ([ADR 0021](adr/0021-area-rules-by-habit.md)).*
+- **Named rootstocks** (with dataset v0.3). Hardiness and spacing follow the
+  named rootstock, not only its class: Bud 9 and G.41 dwarf apples take
+  colder winters than M.9, and "dwarf" spans roughly 25–40% of full size. A
+  tree planting picks a named rootstock (the rootstock field becomes that
+  choice instead of free text, with the class as the fallback), its bed takes
+  that rootstock's spacing, and the zone check warns, without blocking, when
+  the property is colder than the less hardy of the variety and the
+  rootstock. Staking is noted on the planting.
 - Needs the dataset's habit and use fields, so it ships with or after the
   first dataset import.
 
@@ -604,8 +614,8 @@ dataset v0.1; step 1, the dataset as the catalog
 | 6 | Phase 2 climate: frost and zones anywhere (with a NASA POWER or NOAA fallback, and bundled frostline zones for the US first), Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
 | 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |
 | 8 | Phase 4 items 3–6: weather alerts, watering by water balance, soil tests per bed (with soil by location), Home Assistant both ways | Care features that build on reminders (step 4) and data from step 5p. Water balance needs the dataset's crop coefficients. |
-| 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops and pests and diseases | Broadens the catalog; unblocks pest advice. |
-| 10 | Phase 3 remaining and onboarding; mobile browser tests (test item 8) | Polishes what steps 2–8 added. |
+| 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases | Broadens the catalog; unblocks pest advice. |
+| 10 | Phase 3 remaining and onboarding; mobile browser tests (test item 8); [named rootstocks](#area-types) for tree plantings | Polishes what steps 2–8 added. |
 | 11 | Phase 4 items 7–15, in the order listed | Useful, but none unblocks other work. |
 | *Ongoing* | Coverage plan steps 4 (controller edge cases), 5, 6; test items 9–12 and the web half of 15 (Playwright against the Compose web image); OpenSSF Best Practices badge (maintainer); hygiene item 17 when the repo moves to an organization | Fit around the steps above; none blocks them. |
 
