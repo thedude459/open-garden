@@ -35,7 +35,7 @@ test('Save layout busy + success notice; offline Save persists until Dismiss', a
   expect((await pending).status()).toBe(200);
   await expect(page.getByLabel('Notification')).toContainText('Layout saved');
 
-  await page.getByRole('button', { name: 'Edit size North' }).click();
+  await page.getByRole('button', { name: 'Edit bed North' }).click();
   await page.locator('input[name="originX"]').fill('1');
   await page.context().setOffline(true);
   await save.click();

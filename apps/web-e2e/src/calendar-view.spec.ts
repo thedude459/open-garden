@@ -7,6 +7,7 @@ import {
   openCalendar,
   openOverview,
   confirmFixtureAddress,
+  openAdd,
 } from './planner-helpers';
 
 async function createFrostGarden(page: Page, name: string) {
@@ -49,7 +50,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   // Garlic is sown relative to the first fall frost.
   await addFromCatalog(owner, 'Garlic (Music)');
   await openOverview(owner);
-  await owner.getByRole('button', { name: 'Add tree' }).click();
+  await openAdd(owner, 'Add tree');
   expect((await saveLayout(owner)).ok()).toBeTruthy();
   await owner.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();

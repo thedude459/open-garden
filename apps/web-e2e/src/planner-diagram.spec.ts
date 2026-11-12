@@ -6,6 +6,7 @@ import {
   openOverview,
   saveLayout,
   confirmFixtureAddress,
+  openAdd,
 } from './planner-helpers';
 
 test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks on Overview', async ({
@@ -20,6 +21,7 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   await owner.getByRole('link', { name: /Planner diagram/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'Raised bed 1');
+  await openAdd(owner, 'Add walkway');
   await owner.getByPlaceholder('Area name').fill('Path');
   await owner.locator('input[name="newAreaLength"]').fill('4');
   await owner.locator('input[name="newAreaWidth"]').fill('2');

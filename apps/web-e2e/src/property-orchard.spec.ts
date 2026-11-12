@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { confirmFixtureAddress, createSizedBed, newUser, saveLayout } from './planner-helpers';
+import {
+  confirmFixtureAddress,
+  createSizedBed,
+  newUser,
+  openAdd,
+  saveLayout,
+} from './planner-helpers';
 
 test('a tree gets its own mulched bed and stays out of a vegetable bed search', async ({
   browser,
@@ -13,9 +19,11 @@ test('a tree gets its own mulched bed and stays out of a vegetable bed search', 
   await page.getByRole('link', { name: /Home place/ }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
 
-  await page.locator('select[name="bedMulch"]').selectOption('wood_chips');
-  await page.getByRole('button', { name: 'Add tree' }).click();
+  await openAdd(page, 'Add tree');
   expect((await saveLayout(page)).ok()).toBeTruthy();
+  // The new tree bed is selected; once saved, its settings are in the side panel.
+  await page.locator('select[name="selectedMulch"]').selectOption('wood_chips');
+  await page.getByRole('button', { name: 'Done' }).click();
   await expect(
     page.locator('li').filter({ hasText: 'Tree' }).getByText('Wood chips'),
   ).toBeVisible();
@@ -43,7 +51,7 @@ test('a bramble patch takes cane fruit and keeps vegetables out', async ({ brows
   await page.getByRole('link', { name: /Cane place/ }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Add bramble patch' }).click();
+  await openAdd(page, 'Add bramble patch');
   expect((await saveLayout(page)).ok()).toBeTruthy();
   await page.reload();
   await expect(page.locator('[data-area-kind="bramble"]')).toHaveText('Bramble patch');
@@ -66,7 +74,7 @@ test('a tree bed takes the tree’s spacing on its rootstock', async ({ browser 
   await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Apple place/ }).click();
-  await page.getByRole('button', { name: 'Add tree' }).click();
+  await openAdd(page, 'Add tree');
   expect((await saveLayout(page)).ok()).toBeTruthy();
   await expect(page.locator('li').filter({ hasText: 'Tree' }).getByText('8 × 8 ft')).toBeVisible();
 

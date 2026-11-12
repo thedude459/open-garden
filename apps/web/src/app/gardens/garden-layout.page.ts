@@ -32,10 +32,11 @@ import type {
   PropertyAreaDto,
   TrayDto,
 } from '@open-garden/shared-types';
-import { MULCH_LABELS } from '@open-garden/shared-types';
+import { MULCH_LABELS, mulchOrNone } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
+import { PlantingsApiService } from './plantings-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
@@ -61,6 +62,48 @@ import { EmptyState } from '../ui/empty-state';
             <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
             <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
             @if (canEdit()) {
+              <div class="add-menu">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  aria-haspopup="true"
+                  [attr.aria-expanded]="addMenuOpen()"
+                  (click)="addMenuOpen.set(!addMenuOpen())"
+                >
+                  Add
+                </button>
+                @if (addMenuOpen()) {
+                  <div class="add-menu-list" role="group" aria-label="Add to the plan">
+                    <button type="button" aria-label="Add bed" (click)="startAdding('bed')">
+                      Bed
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Add vegetable garden"
+                      [disabled]="!areasLoaded()"
+                      (click)="addVegetable()"
+                    >
+                      Vegetable garden
+                    </button>
+                    <button type="button" aria-label="Add tree" (click)="addStation('tree')">
+                      Tree
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Add bramble patch"
+                      (click)="addStation('berry')"
+                    >
+                      Bramble patch
+                    </button>
+                    <button type="button" aria-label="Add tray" (click)="startAdding('tray')">
+                      Tray
+                    </button>
+                    <button type="button" aria-label="Add walkway" (click)="startAdding('walkway')">
+                      Walkway
+                    </button>
+                  </div>
+                }
+              </div>
               <button
                 type="button"
                 class="btn btn-primary"
@@ -127,148 +170,326 @@ import { EmptyState } from '../ui/empty-state';
             [planLabel]="'Garden plan'"
             [plotLengthInches]="plotLength()"
             [plotWidthInches]="plotWidth()"
-            (focusBed)="selectedId.set($event)"
+            (focusBed)="editGeometry($event)"
             (bedGeometry)="onBedGeometry($event)"
             (areaGeometry)="onAreaGeometry($event)"
             (gestureEnd)="refreshFlags()"
             (offlineRequired)="onOfflineRequired()"
           />
           <aside class="planner-rail">
-            @if (!draft()!.beds.length) {
-              <og-empty-state title="No beds yet" [body]="emptyBedBody()">
-                @if (canEdit()) {
-                  <span class="muted">Use Create bed with a name, length, and width.</span>
+            @if (canEdit() && addingNow() === 'bed') {
+              <form class="inspector" aria-label="New bed" (ngSubmit)="createBed()">
+                <h3>New bed</h3>
+                @if (!draft()!.beds.length) {
+                  <p class="muted">{{ emptyBedBody() }}</p>
                 }
-              </og-empty-state>
+                <label>
+                  Name
+                  <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
+                </label>
+                <label>
+                  Length (ft)
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    [(ngModel)]="newLength"
+                    name="newLength"
+                  />
+                </label>
+                <label>
+                  Width (ft)
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    [(ngModel)]="newWidth"
+                    name="newWidth"
+                  />
+                </label>
+                <label>
+                  Ground
+                  <select name="bedSite" [(ngModel)]="bedSite">
+                    <option value="in_ground">In-ground</option>
+                    <option value="raised">Raised</option>
+                  </select>
+                </label>
+                <label>
+                  Mulch
+                  <select name="bedMulch" [(ngModel)]="bedMulch">
+                    @for (choice of mulchChoices; track choice.id) {
+                      <option [value]="choice.id">{{ choice.label }}</option>
+                    }
+                  </select>
+                </label>
+                <div class="filters">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    [attr.aria-busy]="notices.busyMap().has('create-bed') || null"
+                    [disabled]="notices.busyMap().has('create-bed')"
+                  >
+                    Create bed
+                  </button>
+                  @if (draft()!.beds.length) {
+                    <button type="button" class="btn btn-secondary" (click)="adding.set(null)">
+                      Cancel
+                    </button>
+                  }
+                </div>
+              </form>
+            } @else if (canEdit() && addingNow() === 'tray') {
+              <form class="inspector" aria-label="New tray" (ngSubmit)="addTray()">
+                <h3>New tray</h3>
+                <label>
+                  Name
+                  <input [(ngModel)]="trayName" name="trayName" placeholder="Tray name" />
+                </label>
+                <div class="filters">
+                  <button type="submit" class="btn btn-primary">Create tray</button>
+                  <button type="button" class="btn btn-secondary" (click)="adding.set(null)">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            } @else if (canEdit() && addingNow() === 'walkway') {
+              <form class="inspector" aria-label="New walkway" (ngSubmit)="createArea()">
+                <h3>New walkway</h3>
+                <label>
+                  Name
+                  <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
+                </label>
+                <label>
+                  Length (ft)
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    [(ngModel)]="newAreaLength"
+                    name="newAreaLength"
+                  />
+                </label>
+                <label>
+                  Width (ft)
+                  <input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    [(ngModel)]="newAreaWidth"
+                    name="newAreaWidth"
+                  />
+                </label>
+                <div class="filters">
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    aria-label="Create non-planting area"
+                  >
+                    Create walkway
+                  </button>
+                  <button type="button" class="btn btn-secondary" (click)="adding.set(null)">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            } @else if (canEdit() && selectedBed(); as bed) {
+              <section class="inspector" aria-label="Selected bed">
+                <h3>{{ bed.name }}</h3>
+                @if (isSaved(bed)) {
+                  <form class="filters" (ngSubmit)="saveBedSettings(bed, { name: renameDraft })">
+                    <label>
+                      Name
+                      <input name="selectedName" [(ngModel)]="renameDraft" />
+                    </label>
+                    <button
+                      type="submit"
+                      class="btn btn-secondary"
+                      [attr.aria-label]="'Rename ' + bed.name"
+                    >
+                      Rename
+                    </button>
+                  </form>
+                  <label>
+                    Sun
+                    <select
+                      name="selectedSun"
+                      [ngModel]="bed.sun ?? ''"
+                      (ngModelChange)="saveBedSettings(bed, { sun: $event || null })"
+                    >
+                      <option value="">Not set</option>
+                      <option value="full">Full sun</option>
+                      <option value="part">Part sun</option>
+                      <option value="shade">Shade</option>
+                    </select>
+                  </label>
+                  <label>
+                    Ground
+                    <select
+                      name="selectedSite"
+                      [ngModel]="bed.site ?? 'in_ground'"
+                      (ngModelChange)="saveBedSettings(bed, { site: $event })"
+                    >
+                      <option value="in_ground">In-ground</option>
+                      <option value="raised">Raised</option>
+                    </select>
+                  </label>
+                  <label>
+                    Mulch
+                    <select
+                      name="selectedMulch"
+                      [ngModel]="bed.mulch ?? 'none'"
+                      (ngModelChange)="saveBedSettings(bed, { mulch: $event })"
+                    >
+                      @for (choice of mulchChoices; track choice.id) {
+                        <option [value]="choice.id">{{ choice.label }}</option>
+                      }
+                    </select>
+                  </label>
+                } @else {
+                  <p class="muted">Save the layout to set its name, sun, ground, and mulch.</p>
+                }
+                @if (bed.geometry) {
+                  <form class="filters" (ngSubmit)="save()">
+                    <label>
+                      Origin X (ft)
+                      <input
+                        type="number"
+                        step="0.5"
+                        name="originX"
+                        [value]="inchesToFeetInput(bed.geometry.originXInches)"
+                        (input)="
+                          patchSelected({
+                            originXInches: originInchesFromFeet(fieldFeet($event)),
+                          })
+                        "
+                      />
+                    </label>
+                    <label>
+                      Origin Y (ft)
+                      <input
+                        type="number"
+                        step="0.5"
+                        name="originY"
+                        [value]="inchesToFeetInput(bed.geometry.originYInches)"
+                        (input)="
+                          patchSelected({
+                            originYInches: originInchesFromFeet(fieldFeet($event)),
+                          })
+                        "
+                      />
+                    </label>
+                    <label>
+                      Length (ft)
+                      <input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        name="length"
+                        [value]="inchesToFeetInput(bed.geometry.lengthInches)"
+                        (input)="
+                          patchSelected({ lengthInches: sizeInchesFromFeet(fieldFeet($event)) })
+                        "
+                      />
+                    </label>
+                    <label>
+                      Width (ft)
+                      <input
+                        type="number"
+                        min="0.5"
+                        step="0.5"
+                        name="width"
+                        [value]="inchesToFeetInput(bed.geometry.widthInches)"
+                        (input)="
+                          patchSelected({ widthInches: sizeInchesFromFeet(fieldFeet($event)) })
+                        "
+                      />
+                    </label>
+                  </form>
+                }
+                <div class="filters">
+                  <button type="button" class="btn btn-secondary" (click)="rotateSelected()">
+                    Rotate 90°
+                  </button>
+                  @if (confirmDeleteId() !== bed.id) {
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [attr.aria-label]="'Delete bed ' + bed.name"
+                      (click)="confirmDeleteId.set(bed.id)"
+                    >
+                      Delete
+                    </button>
+                  }
+                  <button type="button" class="btn btn-secondary" (click)="selectedId.set(null)">
+                    Done
+                  </button>
+                </div>
+                @if (confirmDeleteId() === bed.id) {
+                  <p>
+                    Permanently delete {{ bed.name }}? Direct-seed plantings in this bed will be
+                    deleted. Transplants return to the tray.
+                  </p>
+                  <div class="filters">
+                    <button
+                      type="button"
+                      class="btn btn-destructive"
+                      [attr.aria-label]="'Confirm delete ' + bed.name"
+                      (click)="deleteBed(bed)"
+                      [attr.aria-busy]="notices.busyMap().has('delete-bed') || null"
+                      [disabled]="notices.busyMap().has('delete-bed')"
+                    >
+                      Confirm delete
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      (click)="confirmDeleteId.set(null)"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                }
+              </section>
+            }
+            @if (!draft()!.beds.length && !canEdit()) {
+              <og-empty-state title="No beds yet" [body]="emptyBedBody()" />
             }
             @if (sizedBeds().length) {
+              <h3>Beds</h3>
               <ul class="card-list">
                 @for (bed of sizedBeds(); track bed.id) {
-                  <li class="stack">
-                    <div class="row">
+                  <li class="row" [class.selected-row]="selectedId() === bed.id">
+                    <span>
                       <strong>{{ bed.name }}</strong>
                       @if (showMulch(bed)) {
-                        <span class="muted">{{ mulchLabel(bed.mulch) }}</span>
+                        <span class="muted"> · {{ mulchLabel(bed.mulch) }}</span>
                       }
-                      <span class="member-actions">
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          [attr.aria-label]="'Open bed ' + bed.name"
-                          (click)="openBed(bed.id)"
-                        >
-                          Open
-                        </button>
-                        @if (canEdit()) {
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            [attr.aria-label]="'Edit size ' + bed.name"
-                            (click)="editGeometry(bed.id)"
-                          >
-                            Edit
-                          </button>
-                        }
-                      </span>
-                    </div>
-                    @if (bed.geometry; as geo) {
-                      <span>{{
-                        formatPlanSize(geo.lengthInches, geo.widthInches, geo.orientation)
-                      }}</span>
-                    }
-                    @if (canEdit() && selectedId() === bed.id && bed.geometry) {
-                      <form class="filters" (ngSubmit)="save()">
-                        <label>
-                          Origin X (ft)
-                          <input
-                            type="number"
-                            step="0.5"
-                            name="originX"
-                            [value]="inchesToFeetInput(bed.geometry.originXInches)"
-                            (input)="
-                              patchSelected({
-                                originXInches: originInchesFromFeet(fieldFeet($event)),
-                              })
-                            "
-                          />
-                        </label>
-                        <label>
-                          Origin Y (ft)
-                          <input
-                            type="number"
-                            step="0.5"
-                            name="originY"
-                            [value]="inchesToFeetInput(bed.geometry.originYInches)"
-                            (input)="
-                              patchSelected({
-                                originYInches: originInchesFromFeet(fieldFeet($event)),
-                              })
-                            "
-                          />
-                        </label>
-                        <label>
-                          Length (ft)
-                          <input
-                            type="number"
-                            min="0.5"
-                            step="0.5"
-                            name="length"
-                            [value]="inchesToFeetInput(bed.geometry.lengthInches)"
-                            (input)="
-                              patchSelected({ lengthInches: sizeInchesFromFeet(fieldFeet($event)) })
-                            "
-                          />
-                        </label>
-                        <label>
-                          Width (ft)
-                          <input
-                            type="number"
-                            min="0.5"
-                            step="0.5"
-                            name="width"
-                            [value]="inchesToFeetInput(bed.geometry.widthInches)"
-                            (input)="
-                              patchSelected({ widthInches: sizeInchesFromFeet(fieldFeet($event)) })
-                            "
-                          />
-                        </label>
-                      </form>
-                      <button type="button" class="btn btn-secondary" (click)="rotateSelected()">
-                        Rotate 90°
+                      @if (bed.geometry; as geo) {
+                        <span class="muted">
+                          · {{ formatPlanSize(geo.lengthInches, geo.widthInches, geo.orientation) }}
+                        </span>
+                      }
+                    </span>
+                    <span class="member-actions">
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [attr.aria-label]="'Open bed ' + bed.name"
+                        (click)="openBed(bed.id)"
+                      >
+                        Open
                       </button>
-                      @if (confirmDeleteId() !== bed.id) {
+                      @if (canEdit()) {
                         <button
                           type="button"
                           class="btn btn-secondary"
-                          [attr.aria-label]="'Delete bed ' + bed.name"
-                          (click)="confirmDeleteId.set(bed.id)"
+                          [attr.aria-label]="'Edit bed ' + bed.name"
+                          (click)="editGeometry(bed.id)"
                         >
-                          Delete
-                        </button>
-                      } @else {
-                        <p>
-                          Permanently delete {{ bed.name }}? Direct-seed plantings in this bed will
-                          be deleted. Transplants return to the tray.
-                        </p>
-                        <button
-                          type="button"
-                          class="btn btn-destructive"
-                          [attr.aria-label]="'Confirm delete ' + bed.name"
-                          (click)="deleteBed(bed)"
-                          [attr.aria-busy]="notices.busyMap().has('delete-bed') || null"
-                          [disabled]="notices.busyMap().has('delete-bed')"
-                        >
-                          Confirm delete
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          (click)="confirmDeleteId.set(null)"
-                        >
-                          Cancel
+                          Edit
                         </button>
                       }
-                    }
+                    </span>
                   </li>
                 }
               </ul>
@@ -317,113 +538,16 @@ import { EmptyState } from '../ui/empty-state';
                 }
               </ul>
             }
-            @if (canEdit()) {
-              <form class="filters" (ngSubmit)="createBed()">
-                <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
-                <input
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  [(ngModel)]="newLength"
-                  name="newLength"
-                  placeholder="Length (ft)"
-                  aria-label="Length in feet"
-                />
-                <input
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  [(ngModel)]="newWidth"
-                  name="newWidth"
-                  placeholder="Width (ft)"
-                  aria-label="Width in feet"
-                />
-                <label>
-                  Ground
-                  <select name="bedSite" [(ngModel)]="bedSite">
-                    <option value="in_ground">In-ground</option>
-                    <option value="raised">Raised</option>
-                  </select>
-                </label>
-                <label>
-                  Mulch
-                  <select name="bedMulch" [(ngModel)]="bedMulch">
-                    @for (choice of mulchChoices; track choice.id) {
-                      <option [value]="choice.id">{{ choice.label }}</option>
-                    }
-                  </select>
-                </label>
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                  [attr.aria-busy]="notices.busyMap().has('create-bed') || null"
-                  [disabled]="notices.busyMap().has('create-bed')"
-                >
-                  Create bed
-                </button>
-              </form>
-              @if (areas().length) {
-                <ul class="card-list">
-                  @for (area of areas(); track area.id) {
-                    <li [attr.data-area-kind]="area.kind">{{ area.name }}</li>
-                  }
-                </ul>
-              }
-              @if (trays().length) {
-                <ul class="card-list">
-                  @for (tray of trays(); track tray.id) {
-                    <li>{{ tray.name }}</li>
-                  }
-                </ul>
-              }
-              <p>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [disabled]="!areasLoaded()"
-                  (click)="addVegetable()"
-                >
-                  Add vegetable garden
-                </button>
-                <button type="button" class="btn btn-secondary" (click)="addStation('tree')">
-                  Add tree
-                </button>
-                <button type="button" class="btn btn-secondary" (click)="addStation('berry')">
-                  Add bramble patch
-                </button>
-              </p>
-              <form class="filters" (ngSubmit)="addTray()">
-                <input [(ngModel)]="trayName" name="trayName" placeholder="Tray name" />
-                <button type="submit" class="btn btn-secondary">Add tray</button>
-              </form>
-              <form class="filters" (ngSubmit)="createArea()">
-                <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
-                <input
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  [(ngModel)]="newAreaLength"
-                  name="newAreaLength"
-                  placeholder="Length (ft)"
-                  aria-label="Area length in feet"
-                />
-                <input
-                  type="number"
-                  min="0.5"
-                  step="0.5"
-                  [(ngModel)]="newAreaWidth"
-                  name="newAreaWidth"
-                  placeholder="Width (ft)"
-                  aria-label="Area width in feet"
-                />
-                <button
-                  type="submit"
-                  class="btn btn-secondary"
-                  aria-label="Create non-planting area"
-                >
-                  Add walkway
-                </button>
-              </form>
+            @if (canEdit() && (areas().length || trays().length)) {
+              <h3>Areas</h3>
+              <ul class="card-list">
+                @for (area of areas(); track area.id) {
+                  <li [attr.data-area-kind]="area.kind">{{ area.name }}</li>
+                }
+                @for (tray of trays(); track tray.id) {
+                  <li>{{ tray.name }}</li>
+                }
+              </ul>
             }
           </aside>
         </div>
@@ -434,6 +558,7 @@ import { EmptyState } from '../ui/empty-state';
 export class GardenLayoutPage implements OnInit {
   private readonly api = inject(LayoutApiService);
   private readonly gardensApi = inject(GardensApiService);
+  private readonly bedsApi = inject(PlantingsApiService);
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
   private readonly route = inject(ActivatedRoute);
@@ -450,6 +575,10 @@ export class GardenLayoutPage implements OnInit {
   status = signal('');
   needsSite = signal(false);
   selectedId = signal<string | null>(null);
+  readonly addMenuOpen = signal(false);
+  /** The create form open in the side panel, chosen from the Add menu. */
+  readonly adding = signal<'bed' | 'tray' | 'walkway' | null>(null);
+  renameDraft = '';
   confirmDeleteId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
   newBedName = '';
@@ -501,6 +630,11 @@ export class GardenLayoutPage implements OnInit {
     if (this.gardenId) void this.load();
   }
 
+  @HostListener('document:keydown.escape')
+  closeAddMenu() {
+    this.addMenuOpen.set(false);
+  }
+
   @HostListener('window:online')
   onWindowOnline() {
     this.online.set(true);
@@ -530,7 +664,72 @@ export class GardenLayoutPage implements OnInit {
   }
 
   editGeometry(id: string) {
+    this.adding.set(null);
+    this.confirmDeleteId.set(null);
     this.selectedId.set(id);
+    this.renameDraft = this.draft()?.beds.find((b) => b.id === id)?.name ?? '';
+  }
+
+  /** The open create form; an empty property opens on the bed form. */
+  addingNow() {
+    return this.adding() ?? (this.draft()?.beds.length ? null : 'bed');
+  }
+
+  startAdding(kind: 'bed' | 'tray' | 'walkway') {
+    this.addMenuOpen.set(false);
+    this.selectedId.set(null);
+    this.adding.set(kind);
+  }
+
+  selectedBed() {
+    const id = this.selectedId();
+    return id ? (this.draft()?.beds.find((b) => b.id === id) ?? null) : null;
+  }
+
+  /** A bed the server has, so its name and settings can be changed now. */
+  isSaved(bed: LayoutBedDto) {
+    return !this.planner.newBedIds.has(bed.id);
+  }
+
+  async saveBedSettings(
+    bed: LayoutBedDto,
+    patch: { name?: string; sun?: string | null; site?: string; mulch?: string },
+  ) {
+    this.error.set('');
+    const name = (patch.name ?? bed.name).trim();
+    if (!name) return;
+    const sun =
+      patch.sun === undefined
+        ? undefined
+        : patch.sun === 'full' || patch.sun === 'part' || patch.sun === 'shade'
+          ? patch.sun
+          : null;
+    const site: BedSite | undefined =
+      patch.site === undefined ? undefined : patch.site === 'raised' ? 'raised' : 'in_ground';
+    const mulch = patch.mulch === undefined ? undefined : mulchOrNone(patch.mulch);
+    try {
+      await this.bedsApi.renameBed(this.gardenId, bed.id, name, sun, { site, mulch });
+      const d = this.draft();
+      if (!d) return;
+      // Name and settings are not part of the layout save, so this keeps the draft clean.
+      this.planner.setDraft({
+        ...d,
+        beds: d.beds.map((b) =>
+          b.id === bed.id
+            ? {
+                ...b,
+                name,
+                ...(sun !== undefined ? { sun } : {}),
+                ...(site ? { site } : {}),
+                ...(mulch ? { mulch } : {}),
+              }
+            : b,
+        ),
+      });
+      this.renameDraft = name;
+    } catch (err) {
+      this.fail(err);
+    }
   }
 
   zoomIn() {
@@ -625,6 +824,7 @@ export class GardenLayoutPage implements OnInit {
   }
 
   async addVegetable() {
+    this.addMenuOpen.set(false);
     this.error.set('');
     if (!this.guardMutate()) return;
     try {
@@ -636,12 +836,16 @@ export class GardenLayoutPage implements OnInit {
   }
 
   addStation(station: 'tree' | 'berry') {
-    if (!this.newBedName.trim()) this.newBedName = station === 'tree' ? 'Tree' : 'Canes';
+    this.addMenuOpen.set(false);
+    this.newBedName = station === 'tree' ? 'Tree' : 'Canes';
     // A tree bed, or a row of canes in a bramble patch.
     this.newLength = station === 'tree' ? 8 : 10;
     this.newWidth = station === 'tree' ? 8 : 3;
     this.pendingStation = station;
-    void this.createBed();
+    void this.createBed().finally(() => {
+      this.newLength = 8;
+      this.newWidth = 4;
+    });
   }
 
   async addTray() {
@@ -651,6 +855,7 @@ export class GardenLayoutPage implements OnInit {
     try {
       await this.gardensApi.createTray(this.gardenId, name);
       this.trayName = '';
+      this.adding.set(null);
       await this.loadAreas();
     } catch (err) {
       this.error.set(messageFrom(err));
@@ -697,7 +902,8 @@ export class GardenLayoutPage implements OnInit {
         },
       ],
     });
-    this.selectedId.set(id);
+    this.adding.set(null);
+    this.editGeometry(id);
     this.newBedName = '';
     this.refreshFlags();
   }
@@ -722,6 +928,7 @@ export class GardenLayoutPage implements OnInit {
     });
     this.planner.setDraft({ ...d, areas: [...(d.areas ?? []), placed] });
     this.newAreaName = '';
+    this.adding.set(null);
   }
 
   async deleteArea(area: LayoutAreaDto) {

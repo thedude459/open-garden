@@ -4,12 +4,11 @@ import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { assertDatePair } from '@open-garden/seasonal-plantings/dates';
-import { normalizeBedName } from '@open-garden/seasonal-plantings/beds';
 import {
   groupPlantings,
   type PlantingGroup,
 } from '@open-garden/seasonal-plantings/group-plantings';
-import type { FavoriteListItemDto, Mulch, PlantSummaryDto } from '@open-garden/shared-types';
+import type { FavoriteListItemDto, PlantSummaryDto } from '@open-garden/shared-types';
 import { allowsPlant } from '@open-garden/shared-types';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
@@ -100,7 +99,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
             }
           </ul>
         }
-        <p class="muted">Create beds on Garden Overview.</p>
+        <p class="muted">Create beds and change their settings on Plan.</p>
       }
       <div class="filters">
         <label>
@@ -119,8 +118,7 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
       </div>
       @if (visibleGroups().length === 0 && !list()!.plantings.length && !list()!.beds.length) {
         <p class="muted">
-          No plantings yet. Search the catalog or your favorites to record one. Create beds on
-          Garden Overview.
+          No plantings yet. Search the catalog or your favorites to record one. Create beds on Plan.
         </p>
       } @else if (visibleGroups().length === 0) {
         <p class="muted">No plantings match this bed filter.</p>
@@ -136,73 +134,6 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                 <span class="needs-attention">needs-attention</span>
               }
             </h3>
-            @if (canEdit() && group.bedId) {
-              <details class="bed-settings">
-                <summary>Bed settings</summary>
-                <form class="filters" (ngSubmit)="renameBed(group)">
-                  <input
-                    [ngModel]="renameDraft[group.bedId] ?? group.title"
-                    (ngModelChange)="renameDraft[group.bedId!] = $event"
-                    [ngModelOptions]="{ standalone: true }"
-                    [attr.name]="'rename-' + group.bedId"
-                  />
-                  <label>
-                    Sun
-                    <select
-                      [attr.name]="'sun-' + group.bedId"
-                      [ngModel]="bedSun(group.bedId)"
-                      (ngModelChange)="saveSun(group, $event)"
-                      [ngModelOptions]="{ standalone: true }"
-                    >
-                      <option value="">Not set</option>
-                      <option value="full">Full sun</option>
-                      <option value="part">Part sun</option>
-                      <option value="shade">Shade</option>
-                    </select>
-                  </label>
-                  <label>
-                    Ground
-                    <select
-                      [attr.name]="'site-' + group.bedId"
-                      [ngModel]="bedSite(group.bedId)"
-                      (ngModelChange)="saveSite(group, $event)"
-                      [ngModelOptions]="{ standalone: true }"
-                    >
-                      <option value="in_ground">In-ground</option>
-                      <option value="raised">Raised</option>
-                    </select>
-                  </label>
-                  <label>
-                    Mulch
-                    <select
-                      [attr.name]="'mulch-' + group.bedId"
-                      [ngModel]="bedMulch(group.bedId)"
-                      (ngModelChange)="saveMulch(group, $event)"
-                      [ngModelOptions]="{ standalone: true }"
-                    >
-                      @for (choice of mulchChoices; track choice.id) {
-                        <option [value]="choice.id">{{ choice.label }}</option>
-                      }
-                    </select>
-                  </label>
-                  <button
-                    type="submit"
-                    class="btn btn-secondary"
-                    [attr.aria-label]="'Rename ' + group.title"
-                  >
-                    Rename
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    [attr.aria-label]="'Delete bed ' + group.title"
-                    (click)="deleteBed(group.bedId!)"
-                  >
-                    Delete bed
-                  </button>
-                </form>
-              </details>
-            }
             @if (group.plantings.length === 0) {
               <p class="muted">No plantings in this bed.</p>
             }
@@ -409,18 +340,8 @@ export class GardenPlantingsPage implements OnInit {
   editingId = signal<string | null>(null);
   failures = signal<QueueItem[]>([]);
   bedFilter = '';
-  renameDraft: Record<string, string> = {};
   catalogHits = signal<PlantSummaryDto[]>([]);
   startTrayId = '';
-  readonly mulchChoices: { id: Mulch; label: string }[] = [
-    { id: 'none', label: 'No mulch' },
-    { id: 'wood_chips', label: 'Wood chips' },
-    { id: 'straw', label: 'Straw' },
-    { id: 'leaves', label: 'Leaves' },
-    { id: 'compost', label: 'Compost' },
-    { id: 'paper', label: 'Paper' },
-    { id: 'plastic', label: 'Plastic' },
-  ];
 
   trays() {
     return this.list()?.trays ?? [];
@@ -590,62 +511,6 @@ export class GardenPlantingsPage implements OnInit {
     }
   }
 
-  bedSun(bedId: string | null): string {
-    if (!bedId) return '';
-    return this.list()?.beds.find((bed) => bed.id === bedId)?.sun ?? '';
-  }
-
-  async saveSun(group: PlantingGroup, sun: string) {
-    if (!group.bedId) return;
-    const name = this.renameDraft[group.bedId] ?? group.title;
-    try {
-      await this.api.renameBed(
-        this.gardenId,
-        group.bedId,
-        name,
-        sun === 'full' || sun === 'part' || sun === 'shade' ? sun : null,
-      );
-      await this.load(true);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
-  bedSite(bedId: string | null): string {
-    if (!bedId) return 'in_ground';
-    return this.list()?.beds.find((bed) => bed.id === bedId)?.site ?? 'in_ground';
-  }
-
-  bedMulch(bedId: string | null): string {
-    if (!bedId) return 'none';
-    return this.list()?.beds.find((bed) => bed.id === bedId)?.mulch ?? 'none';
-  }
-
-  async saveSite(group: PlantingGroup, site: string) {
-    if (!group.bedId) return;
-    const name = this.renameDraft[group.bedId] ?? group.title;
-    try {
-      await this.api.renameBed(this.gardenId, group.bedId, name, undefined, {
-        site: site === 'raised' ? 'raised' : 'in_ground',
-      });
-      await this.load(true);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
-  async saveMulch(group: PlantingGroup, mulch: string) {
-    if (!group.bedId) return;
-    const name = this.renameDraft[group.bedId] ?? group.title;
-    const choice = this.mulchChoices.find((entry) => entry.id === mulch)?.id ?? 'none';
-    try {
-      await this.api.renameBed(this.gardenId, group.bedId, name, undefined, { mulch: choice });
-      await this.load(true);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
   onPhoto(plantingId: string, event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -778,29 +643,6 @@ export class GardenPlantingsPage implements OnInit {
     try {
       await this.api.remove(this.gardenId, planting.id);
       this.confirmRemoveId.set(null);
-      await this.load(true);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
-  async renameBed(group: PlantingGroup<ClientPlanting>) {
-    if (!group.bedId) return;
-    this.error.set('');
-    try {
-      const { name } = normalizeBedName(this.renameDraft[group.bedId] ?? group.title);
-      await this.api.renameBed(this.gardenId, group.bedId, name);
-      await this.load(true);
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
-  async deleteBed(bedId: string) {
-    this.error.set('');
-    try {
-      await this.api.deleteBed(this.gardenId, bedId);
-      if (this.bedFilter === bedId) this.bedFilter = '';
       await this.load(true);
     } catch (err) {
       this.error.set(messageFrom(err));

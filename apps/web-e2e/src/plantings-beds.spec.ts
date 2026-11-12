@@ -5,7 +5,7 @@ import {
   openPlantingsFromGarden,
   saveLayout,
   confirmFixtureAddress,
-  openBedSettings,
+  openOverview,
   openPlanting,
 } from './planner-helpers';
 
@@ -92,14 +92,17 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(owner.getByText(/No plantings match this bed filter/)).toBeVisible();
   await owner.getByRole('button', { name: 'Show all' }).click();
 
-  await openBedSettings(owner, 'Raised bed 1');
-  await owner
-    .locator('form')
-    .filter({ has: owner.getByRole('button', { name: 'Rename Raised bed 1' }) })
-    .locator('input')
-    .fill('North bed');
+  // Bed settings live in Plan's side panel.
+  await openOverview(owner);
+  await owner.getByRole('button', { name: 'Edit bed Raised bed 1' }).click();
+  await owner.locator('input[name="selectedName"]').fill('North bed');
   await owner.getByRole('button', { name: 'Rename Raised bed 1' }).click();
   await expect(owner.getByRole('heading', { name: 'North bed' })).toBeVisible();
+  await owner.locator('select[name="selectedSun"]').selectOption('full');
+  await owner.reload();
+  await owner.getByRole('button', { name: 'Edit bed North bed' }).click();
+  await expect(owner.locator('select[name="selectedSun"]')).toHaveValue('full');
+  await openPlantingsFromGarden(owner);
   await expect(
     owner
       .locator('section')
@@ -108,8 +111,12 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
       .filter({ hasText: 'Tomato (Cherry)' }),
   ).toBeVisible();
 
-  await openBedSettings(owner, 'North bed');
+  await openOverview(owner);
+  await owner.getByRole('button', { name: 'Edit bed North bed' }).click();
   await owner.getByRole('button', { name: 'Delete bed North bed' }).click();
+  await owner.getByRole('button', { name: 'Confirm delete North bed' }).click();
+  await expect(owner.getByRole('button', { name: 'Open bed North bed' })).toHaveCount(0);
+  await openPlantingsFromGarden(owner);
   await expect(owner.getByRole('heading', { name: 'North bed' })).toHaveCount(0);
   await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
   await expect(owner.getByRole('heading', { name: 'Patio pots' })).toBeVisible();
