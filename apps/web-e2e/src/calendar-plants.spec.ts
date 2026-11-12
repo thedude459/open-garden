@@ -103,3 +103,24 @@ test('add from favorites and catalog, filter, remove, zone mismatch, no duplicat
   await expect(friend.getByRole('button', { name: 'Show favorites' })).toHaveCount(0);
   await expect(friend.getByText('Your favorites')).toHaveCount(0);
 });
+
+test('a recorded planting is on the calendar without adding it there', async ({ browser }) => {
+  test.setTimeout(90_000);
+  const owner = await newUser(browser, `cal-planted-${Date.now()}@example.com`);
+  await createFrostGarden(owner, 'Planted calendar');
+  await owner.getByRole('link', { name: 'Plantings', exact: true }).click();
+  await addFromCatalog(owner, 'Tomato (Cherry)');
+
+  await owner.getByRole('link', { name: 'Calendar', exact: true }).click();
+  await expect(owner.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
+  const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' });
+  await expect(tomato.getByText('Planted', { exact: true })).toBeVisible();
+  // It leaves the calendar with its planting, not from here.
+  await expect(tomato.getByRole('button', { name: 'Remove Tomato (Cherry)' })).toHaveCount(0);
+
+  await addFromCatalog(owner, 'Basil (Genovese)');
+  const basil = owner.locator('article').filter({ hasText: 'Basil (Genovese)' });
+  await expect(basil.getByText('Planned', { exact: true })).toBeVisible();
+  await basil.getByRole('button', { name: 'Remove Basil (Genovese)' }).click();
+  await expect(basil).toHaveCount(0);
+});

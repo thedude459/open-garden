@@ -1,13 +1,31 @@
-import { and, asc, count, eq } from 'drizzle-orm';
+import { and, asc, count, eq, exists, or } from 'drizzle-orm';
 import type { AppDatabase } from './db';
-import { gardenCalendarEntries, plants } from './schema';
+import { visiblePlantings } from './planting-repository';
+import { gardenCalendarEntries, gardenPlantings, plants } from './schema';
 
 export class CalendarEntryRepository {
   constructor(private readonly db: AppDatabase) {}
 
+  /**
+   * The calendar: crops on the household's plan, and crops planted this
+   * season (so placing a plant in a bed puts it on the calendar).
+   */
   async listByGarden(gardenId: string, page: number, pageSize: number) {
     const offset = (page - 1) * pageSize;
-    const where = eq(gardenCalendarEntries.gardenId, gardenId);
+    const planned = this.db
+      .select({ one: gardenCalendarEntries.plantId })
+      .from(gardenCalendarEntries)
+      .where(
+        and(
+          eq(gardenCalendarEntries.gardenId, gardenId),
+          eq(gardenCalendarEntries.plantId, plants.id),
+        ),
+      );
+    const planted = this.db
+      .select({ one: gardenPlantings.plantId })
+      .from(gardenPlantings)
+      .where(and(visiblePlantings(gardenId), eq(gardenPlantings.plantId, plants.id)));
+    const where = or(exists(planned), exists(planted));
 
     const rows = await this.db
       .select({
@@ -29,18 +47,16 @@ export class CalendarEntryRepository {
         transplantFrostAnchor: plants.transplantFrostAnchor,
         transplantWeeksEarliest: plants.transplantWeeksEarliest,
         transplantWeeksLatest: plants.transplantWeeksLatest,
+        planned: exists(planned).mapWith(Boolean),
+        planted: exists(planted).mapWith(Boolean),
       })
-      .from(gardenCalendarEntries)
-      .innerJoin(plants, eq(gardenCalendarEntries.plantId, plants.id))
+      .from(plants)
       .where(where)
       .orderBy(asc(plants.commonName))
       .limit(pageSize)
       .offset(offset);
 
-    const [total] = await this.db
-      .select({ value: count() })
-      .from(gardenCalendarEntries)
-      .where(where);
+    const [total] = await this.db.select({ value: count() }).from(plants).where(where);
 
     return {
       items: rows,

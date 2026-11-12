@@ -105,6 +105,8 @@ type EntryRow = {
   transplantFrostAnchor: string | null;
   transplantWeeksEarliest: number | null;
   transplantWeeksLatest: number | null;
+  planned?: boolean;
+  planted?: boolean;
 };
 
 function toEntry(
@@ -130,6 +132,8 @@ function toEntry(
     zoneMax: row.zoneMax,
     zoneMismatch: zoneMismatch(gardenZone, row.zoneMin, row.zoneMax),
     windows,
+    planned: row.planned ?? true,
+    planted: row.planted ?? false,
   };
 }
 

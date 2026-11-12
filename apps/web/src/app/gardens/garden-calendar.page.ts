@@ -100,7 +100,10 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
           </label>
         </div>
         @if (visible().length === 0 && cal.entries.length === 0) {
-          <p class="muted">No plants on this calendar yet.</p>
+          <p class="muted">
+            Nothing planned or planted yet. Plants you put in your beds appear here; search the
+            catalog to plan a crop you have not planted.
+          </p>
         } @else if (visible().length === 0) {
           <p class="muted">No plants match this type.</p>
           <button type="button" class="btn btn-secondary" (click)="clearFilter()">
@@ -122,6 +125,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                   @if (e.zoneMismatch) {
                     <span class="badge">Zone mismatch</span>
                   }
+                  <span class="badge">{{ e.planted ? 'Planted' : 'Planned' }}</span>
                   <p class="windows">
                     <span>Indoor {{ formatWindow(e.windows.indoorStart) }}</span>
                     <span>Sow {{ formatWindow(e.windows.outdoorSow) }}</span>
@@ -142,7 +146,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                     </button>
                   }
                 }
-                @if (canEdit()) {
+                <!-- A planted crop leaves the calendar when its planting is removed. -->
+                @if (canEdit() && !e.planted) {
                   <button
                     type="button"
                     class="btn btn-secondary"
