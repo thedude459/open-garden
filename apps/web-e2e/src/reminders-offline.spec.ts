@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { confirmFixtureAddress } from './planner-helpers';
+import { confirmFixtureAddress, openPlanting } from './planner-helpers';
 
 async function abortReminders(page: Page) {
   await page.route('**/api/gardens/**/reminders**', (route) => route.abort());
@@ -32,6 +32,7 @@ async function openRemindersWithPlant(page: Page, gardenName: string) {
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Tomato (Cherry)' }).click();
   const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
+  await openPlanting(tomato);
   await tomato
     .locator('input[type="date"]')
     .first()

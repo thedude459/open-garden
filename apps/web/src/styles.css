@@ -1033,6 +1033,62 @@ legend {
   letter-spacing: 0.04em;
 }
 
+/* Plantings: one row per planting; Edit opens its form in place. */
+.planting-row {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 0.8rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--elev-1);
+}
+
+.planting-row > .row {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0;
+}
+
+.planting-editor label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.planting-editor input,
+.planting-editor select,
+.planting-editor textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.planting-editor {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.bed-settings > summary {
+  cursor: pointer;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
 .pending-row {
   border-color: rgba(122, 78, 0, 0.45);
   background: #fff8e8;

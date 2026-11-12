@@ -137,68 +137,71 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
               }
             </h3>
             @if (canEdit() && group.bedId) {
-              <form class="filters" (ngSubmit)="renameBed(group)">
-                <input
-                  [ngModel]="renameDraft[group.bedId] ?? group.title"
-                  (ngModelChange)="renameDraft[group.bedId!] = $event"
-                  [ngModelOptions]="{ standalone: true }"
-                  [attr.name]="'rename-' + group.bedId"
-                />
-                <label>
-                  Sun
-                  <select
-                    [attr.name]="'sun-' + group.bedId"
-                    [ngModel]="bedSun(group.bedId)"
-                    (ngModelChange)="saveSun(group, $event)"
+              <details class="bed-settings">
+                <summary>Bed settings</summary>
+                <form class="filters" (ngSubmit)="renameBed(group)">
+                  <input
+                    [ngModel]="renameDraft[group.bedId] ?? group.title"
+                    (ngModelChange)="renameDraft[group.bedId!] = $event"
                     [ngModelOptions]="{ standalone: true }"
+                    [attr.name]="'rename-' + group.bedId"
+                  />
+                  <label>
+                    Sun
+                    <select
+                      [attr.name]="'sun-' + group.bedId"
+                      [ngModel]="bedSun(group.bedId)"
+                      (ngModelChange)="saveSun(group, $event)"
+                      [ngModelOptions]="{ standalone: true }"
+                    >
+                      <option value="">Not set</option>
+                      <option value="full">Full sun</option>
+                      <option value="part">Part sun</option>
+                      <option value="shade">Shade</option>
+                    </select>
+                  </label>
+                  <label>
+                    Ground
+                    <select
+                      [attr.name]="'site-' + group.bedId"
+                      [ngModel]="bedSite(group.bedId)"
+                      (ngModelChange)="saveSite(group, $event)"
+                      [ngModelOptions]="{ standalone: true }"
+                    >
+                      <option value="in_ground">In-ground</option>
+                      <option value="raised">Raised</option>
+                    </select>
+                  </label>
+                  <label>
+                    Mulch
+                    <select
+                      [attr.name]="'mulch-' + group.bedId"
+                      [ngModel]="bedMulch(group.bedId)"
+                      (ngModelChange)="saveMulch(group, $event)"
+                      [ngModelOptions]="{ standalone: true }"
+                    >
+                      @for (choice of mulchChoices; track choice.id) {
+                        <option [value]="choice.id">{{ choice.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <button
+                    type="submit"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Rename ' + group.title"
                   >
-                    <option value="">Not set</option>
-                    <option value="full">Full sun</option>
-                    <option value="part">Part sun</option>
-                    <option value="shade">Shade</option>
-                  </select>
-                </label>
-                <label>
-                  Ground
-                  <select
-                    [attr.name]="'site-' + group.bedId"
-                    [ngModel]="bedSite(group.bedId)"
-                    (ngModelChange)="saveSite(group, $event)"
-                    [ngModelOptions]="{ standalone: true }"
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Delete bed ' + group.title"
+                    (click)="deleteBed(group.bedId!)"
                   >
-                    <option value="in_ground">In-ground</option>
-                    <option value="raised">Raised</option>
-                  </select>
-                </label>
-                <label>
-                  Mulch
-                  <select
-                    [attr.name]="'mulch-' + group.bedId"
-                    [ngModel]="bedMulch(group.bedId)"
-                    (ngModelChange)="saveMulch(group, $event)"
-                    [ngModelOptions]="{ standalone: true }"
-                  >
-                    @for (choice of mulchChoices; track choice.id) {
-                      <option [value]="choice.id">{{ choice.label }}</option>
-                    }
-                  </select>
-                </label>
-                <button
-                  type="submit"
-                  class="btn btn-secondary"
-                  [attr.aria-label]="'Rename ' + group.title"
-                >
-                  Rename
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-label]="'Delete bed ' + group.title"
-                  (click)="deleteBed(group.bedId!)"
-                >
-                  Delete bed
-                </button>
-              </form>
+                    Delete bed
+                  </button>
+                </form>
+              </details>
             }
             @if (group.plantings.length === 0) {
               <p class="muted">No plantings in this bed.</p>
@@ -206,58 +209,69 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
             <div class="card-list">
               @for (p of group.plantings; track p.id) {
                 <article
-                  class="row"
+                  class="planting-row"
                   [class.pending-row]="p.sync === 'pending'"
                   [class.needs-attention-row]="p.sync === 'failed'"
                 >
-                  <div>
-                    <strong>{{ plantName(p) }}</strong>
-                    <span class="muted"> · {{ p.species }} </span>
-                    @if (p.status !== 'active') {
-                      <span class="badge">Unavailable variety</span>
-                    }
-                    @if (p.sync === 'pending') {
-                      <span class="pending">pending</span>
-                    }
-                    @if (p.sync === 'failed') {
-                      <span class="needs-attention">needs-attention: {{ p.syncMessage }}</span>
-                    }
-                    @if (showPlantOut(p)) {
-                      <label>
-                        Plant out
-                        <select [attr.name]="'out-' + p.id" (change)="plantOut(p.id, $event)">
-                          <option value="">Choose a bed</option>
-                          @for (bed of list()!.beds; track bed.id) {
-                            <option [value]="bed.id">{{ bed.name }}</option>
-                          }
-                        </select>
-                      </label>
-                    }
-                    <p>
-                      Planted
-                      @if (!p.plantedOn) {
-                        <span class="muted">Not set</span>
+                  <div class="row">
+                    <div>
+                      <strong>{{ plantName(p) }}</strong>
+                      <span class="muted"> · {{ p.species }}</span>
+                      <p class="chips">
+                        @if (p.status !== 'active') {
+                          <span class="badge">Unavailable variety</span>
+                        }
+                        <span class="badge">{{ lifeLabel(p.life) }}</span>
+                        @if (p.startMethod === 'transplant') {
+                          <span class="badge">{{ inTray(p) ? 'In a tray' : 'Transplant' }}</span>
+                        }
+                        <span class="badge">{{
+                          p.plantedOn ? 'Planted ' + p.plantedOn : 'Not planted'
+                        }}</span>
+                        @if (p.harvestedOn) {
+                          <span class="badge">Harvested {{ p.harvestedOn }}</span>
+                        }
+                        @if (p.sync === 'pending') {
+                          <span class="pending">pending</span>
+                        }
+                        @if (p.sync === 'failed') {
+                          <span class="needs-attention">needs-attention: {{ p.syncMessage }}</span>
+                        }
+                      </p>
+                      @if (showPlantOut(p)) {
+                        <label>
+                          Plant out
+                          <select [attr.name]="'out-' + p.id" (change)="plantOut(p.id, $event)">
+                            <option value="">Choose a bed</option>
+                            @for (bed of list()!.beds; track bed.id) {
+                              <option [value]="bed.id">{{ bed.name }}</option>
+                            }
+                          </select>
+                        </label>
                       }
-                      <input
-                        #plantedInput
-                        type="date"
-                        [attr.name]="'planted-' + p.id"
-                        [disabled]="!canEdit()"
-                      />
-                    </p>
-                    <p>
-                      Harvest
-                      @if (!p.harvestedOn) {
-                        <span class="muted">Not set</span>
-                      }
-                      <input
-                        #harvestInput
-                        type="date"
-                        [attr.name]="'harvested-' + p.id"
-                        [disabled]="!canEdit()"
-                      />
-                    </p>
+                    </div>
                     @if (canEdit()) {
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        [attr.aria-label]="'Edit ' + plantName(p)"
+                        [attr.aria-expanded]="editingId() === p.id"
+                        (click)="toggleEdit(p.id)"
+                      >
+                        {{ editingId() === p.id ? 'Close' : 'Edit' }}
+                      </button>
+                    }
+                  </div>
+                  @if (canEdit() && editingId() === p.id) {
+                    <div class="planting-editor">
+                      <label>
+                        Planted
+                        <input #plantedInput type="date" [attr.name]="'planted-' + p.id" />
+                      </label>
+                      <label>
+                        Harvest
+                        <input #harvestInput type="date" [attr.name]="'harvested-' + p.id" />
+                      </label>
                       <label>
                         Bed
                         <select #bedSelect [attr.name]="'bed-' + p.id">
@@ -326,49 +340,50 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                           [ngModelOptions]="{ standalone: true }"
                         />
                       }
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        [attr.aria-busy]="notices.busyMap().has('save-planting-' + p.id) || null"
-                        [disabled]="notices.busyMap().has('save-planting-' + p.id)"
-                        (click)="save(p, plantedInput.value, harvestInput.value, bedSelect.value)"
-                      >
-                        Save planting
-                      </button>
-                      <button type="button" class="btn btn-secondary" (click)="sowAgain(p)">
-                        Sow again
-                      </button>
-                    }
-                  </div>
-                  @if (canEdit()) {
-                    @if (confirmRemoveId() !== p.id) {
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        [attr.aria-label]="'Remove ' + plantName(p)"
-                        (click)="confirmRemoveId.set(p.id)"
-                      >
-                        Remove
-                      </button>
-                    } @else {
-                      <span>
+                      <div class="filters">
+                        <button
+                          type="button"
+                          class="btn btn-primary"
+                          [attr.aria-busy]="notices.busyMap().has('save-planting-' + p.id) || null"
+                          [disabled]="notices.busyMap().has('save-planting-' + p.id)"
+                          (click)="save(p, plantedInput.value, harvestInput.value, bedSelect.value)"
+                        >
+                          Save planting
+                        </button>
+                        <button type="button" class="btn btn-secondary" (click)="sowAgain(p)">
+                          Sow again
+                        </button>
+                        @if (confirmRemoveId() !== p.id) {
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            [attr.aria-label]="'Remove ' + plantName(p)"
+                            (click)="confirmRemoveId.set(p.id)"
+                          >
+                            Remove
+                          </button>
+                        }
+                      </div>
+                      @if (confirmRemoveId() === p.id) {
                         <p>Permanently remove this planting? This cannot be undone.</p>
-                        <button
-                          type="button"
-                          class="btn btn-destructive"
-                          (click)="confirmRemove(p)"
-                        >
-                          Confirm remove
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          (click)="confirmRemoveId.set(null)"
-                        >
-                          Cancel
-                        </button>
-                      </span>
-                    }
+                        <div class="filters">
+                          <button
+                            type="button"
+                            class="btn btn-destructive"
+                            (click)="confirmRemove(p)"
+                          >
+                            Confirm remove
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            (click)="confirmRemoveId.set(null)"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      }
+                    </div>
                   }
                 </article>
               }
@@ -390,6 +405,8 @@ export class GardenPlantingsPage implements OnInit {
   loading = signal(true);
   error = signal('');
   confirmRemoveId = signal<string | null>(null);
+  /** The planting whose editor is open; one at a time. */
+  editingId = signal<string | null>(null);
   failures = signal<QueueItem[]>([]);
   bedFilter = '';
   renameDraft: Record<string, string> = {};
@@ -743,6 +760,17 @@ export class GardenPlantingsPage implements OnInit {
         }
       }
     });
+  }
+
+  toggleEdit(id: string) {
+    const opening = this.editingId() !== id;
+    this.editingId.set(opening ? id : null);
+    this.confirmRemoveId.set(null);
+    if (opening) this.syncDateInputs();
+  }
+
+  lifeLabel(life: ClientPlanting['life']) {
+    return life === 'tree' ? 'Tree' : life === 'perennial' ? 'Perennial' : 'Annual';
   }
 
   async confirmRemove(planting: ClientPlanting) {

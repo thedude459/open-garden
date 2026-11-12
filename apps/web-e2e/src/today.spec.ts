@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { confirmFixtureAddress } from './planner-helpers';
+import { confirmFixtureAddress, openPlanting } from './planner-helpers';
 
 test('Today is home: it explains itself when empty and completes due tasks', async ({
   browser,
@@ -22,6 +22,7 @@ test('Today is home: it explains itself when empty and completes due tasks', asy
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await page.getByRole('button', { name: 'Add Tomato (Cherry)' }).click();
   const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
+  await openPlanting(tomato);
   // Planted long ago, so its harvest is overdue.
   await tomato
     .locator('input[type="date"]')

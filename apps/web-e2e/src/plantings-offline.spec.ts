@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { signedInPage as newUser } from './session';
-import { createSizedBed, saveLayout, confirmFixtureAddress } from './planner-helpers';
+import { createSizedBed, saveLayout, confirmFixtureAddress, openPlanting } from './planner-helpers';
 
 async function clickPlantings(page: Page) {
   // exact: garden names like "Stale plantings" also match name: 'Plantings'
@@ -115,6 +115,7 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
 
   await abortPlantingApis(owner);
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
+  await openPlanting(tomato);
   await fillDate(tomato.locator('input[type="date"]').first(), '2026-05-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
   await expect(tomato.getByText('pending')).toBeVisible();
@@ -124,6 +125,7 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
   ).toBeVisible();
 
   const friendTomato = friend.locator('article').filter({ hasText: 'Tomato (Cherry)' });
+  await openPlanting(friendTomato);
   await friendTomato.getByRole('button', { name: 'Remove Tomato (Cherry)' }).click();
   await friendTomato.getByRole('button', { name: 'Confirm remove' }).click();
   await expect(friend.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
