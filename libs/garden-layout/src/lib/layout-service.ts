@@ -206,6 +206,7 @@ export class LayoutService {
         ),
         spacingFeet: (row as { spacingFeet?: number | null }).spacingFeet ?? null,
         sunRequirements: (row as { sunRequirements?: string | null }).sunRequirements ?? null,
+        family: (row as { family?: string | null }).family ?? null,
         life: ((row as { life?: string }).life ?? 'annual') as 'annual' | 'perennial' | 'tree',
         startMethod: ((row as { startMethod?: string }).startMethod ??
           'direct_seed') as StartMethod,

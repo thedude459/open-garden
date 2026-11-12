@@ -40,6 +40,8 @@ export interface PlantSummaryDto {
   illustrationUrl: string | null;
   /** Trees only: spacing by rootstock, which sizes a tree's bed. */
   rootstockSpacingInches?: RootstockSpacingDto | null;
+  /** Botanical family by its common name, for rotation advice. */
+  family?: string | null;
 }
 
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {

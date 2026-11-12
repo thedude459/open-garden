@@ -1,6 +1,8 @@
 // Repository integration tests against a real PostgreSQL (PGlite): the plant
 // catalog, calendar entries, care events, seasons and companion pairs, and the
 // catalog pipeline's settings and source links.
+import { eq } from 'drizzle-orm';
+import * as schema from './schema';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BedRepository } from './bed-repository';
 import { CalendarEntryRepository } from './calendar-entry-repository';
@@ -189,12 +191,26 @@ describe('YearRecordRepository', () => {
     expect((await plantings.getById(annual.id))?.seasonYear).toBe(2026);
 
     // Last year's annual in this bed shows up as rotation advice and "plant again".
+    await t.db
+      .update(schema.plants)
+      .set({ family: 'Cabbage family' })
+      .where(eq(schema.plants.id, plant.id));
     const advice = await seasons.layoutAdvice(garden.id);
     expect(advice.prior).toEqual([
-      { bedId: bed.id, plantId: plant.id, commonName: 'Season Plant' },
+      { bedId: bed.id, plantId: plant.id, commonName: 'Season Plant', family: 'Cabbage family' },
     ]);
     const snapshot = await seasons.snapshot(garden.id);
     expect(JSON.stringify(snapshot)).toContain('Rotation bed');
+
+    // A planting added after closing 2026 (still in 2026) belongs to 2027.
+    const next = await plantings.insert({
+      gardenId: garden.id,
+      plantId: plant.id,
+      bedId: bed.id,
+      plantedOn: null,
+      harvestedOn: null,
+    });
+    expect(next.seasonYear).toBe(2027);
   });
 
   it('stores one companion pair per kind and updates its reason', async () => {

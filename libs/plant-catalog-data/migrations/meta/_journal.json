@@ -43,6 +43,13 @@
       "when": 1794428575393,
       "tag": "0005_rootstock_spacing",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794486524895,
+      "tag": "0006_plant_family",
+      "breakpoints": true
     }
   ]
 }

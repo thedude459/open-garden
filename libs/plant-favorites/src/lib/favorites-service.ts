@@ -36,6 +36,7 @@ export class FavoritesService {
           status: row.plant.status as PlantStatus,
           illustrationUrl: null,
           rootstockSpacingInches: rootstockSpacing(row.plant),
+          family: row.plant.family,
         },
       })),
     };

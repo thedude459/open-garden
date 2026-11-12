@@ -45,6 +45,7 @@ export interface SeasonPlantingDto {
   note: string | null;
   harvestedOn: string | null;
   life: 'annual' | 'perennial' | 'tree';
+  family?: string | null;
 }
 
 export interface SeasonDto {

@@ -534,17 +534,7 @@ export class GardenBedViewPage implements OnInit {
   catalogPlant(plant: FavoriteListItemDto['plant']): PlantSummaryDto | null {
     const spacingInches = plant.spacingInches;
     if (spacingInches == null) return null;
-    return {
-      id: plant.id,
-      commonName: plant.commonName,
-      species: plant.species,
-      cultivar: plant.cultivar,
-      plantType: plant.plantType,
-      zoneMin: plant.zoneMin,
-      zoneMax: plant.zoneMax,
-      spacingInches,
-      illustrationUrl: plant.illustrationUrl,
-    };
+    return { ...plant, spacingInches };
   }
 
   onArmPointerDown(ev: PointerEvent, plant: PlantSummaryDto) {
@@ -604,6 +594,7 @@ export class GardenBedViewPage implements OnInit {
       species: plant.species,
       cultivar: plant.cultivar,
       plantType: plant.plantType,
+      family: plant.family ?? null,
       status: 'active',
       bedId: bed.id,
       spacingInches: plant.spacingInches,
@@ -647,6 +638,7 @@ export class GardenBedViewPage implements OnInit {
       species: plant.species,
       cultivar: plant.cultivar,
       plantType: plant.plantType,
+      family: plant.family ?? null,
       status: 'active',
       bedId: bed.id,
       spacingInches: sized.spacingFeet * 12,

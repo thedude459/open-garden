@@ -48,6 +48,7 @@ export interface LayoutPlantingDto {
   indoorStartedOn: IsoDate | null;
   placement: LayoutPlacementDto | null;
   sunRequirements?: string | null;
+  family?: string | null;
   life?: 'annual' | 'perennial' | 'tree';
   spacingFeet?: number | null;
   rootstock?: string | null;
@@ -96,6 +97,8 @@ export interface PriorCropDto {
   bedId: string;
   plantId: string;
   commonName: string;
+  /** For rotation advice: a crop of the same family in the same bed. */
+  family?: string | null;
 }
 
 export type CompanionKind = 'helps' | 'hinders' | 'pollinates';

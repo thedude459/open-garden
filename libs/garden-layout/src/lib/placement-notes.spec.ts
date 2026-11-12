@@ -52,6 +52,35 @@ describe('placement notes', () => {
     ]);
   });
 
+  it('notes another of the same family in the bed last year, as advice', () => {
+    const kale = {
+      id: 'p1',
+      plantId: 'kale',
+      commonName: 'Kale',
+      family: 'Cabbage family',
+      spacingInches: 18,
+      placement: { bedId: 'bed' },
+    };
+    const broccoli = { bedId: 'bed', plantId: 'broccoli', commonName: 'Broccoli' };
+    const notes = (family: string | null, bedId = 'bed') =>
+      placementNotes({
+        beds: [{ id: 'bed' }, { id: 'other' }],
+        plantings: [kale],
+        priorCrops: [{ ...broccoli, bedId, family }],
+      });
+    expect(notes('Cabbage family')).toEqual([
+      {
+        kind: 'repeat',
+        plantingIds: ['p1'],
+        blocking: false,
+        message: 'Kale: Broccoli (cabbage family) grew in this bed last year',
+      },
+    ]);
+    expect(notes('Onion family')).toEqual([]);
+    expect(notes(null)).toEqual([]);
+    expect(notes('Cabbage family', 'other')).toEqual([]);
+  });
+
   it('notes a repeat and a companion without blocking save', () => {
     const flags = placementNotes({
       beds: [{ id: 'bed', sun: 'full' }],

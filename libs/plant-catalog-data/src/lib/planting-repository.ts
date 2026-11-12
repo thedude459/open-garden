@@ -153,7 +153,15 @@ export class PlantingRepository {
         indoorStartedOn: input.indoorStartedOn ?? null,
         clientMutationId: input.clientMutationId ?? null,
         life: input.life ?? 'annual',
-        seasonYear: input.seasonYear ?? new Date().getUTCFullYear(),
+        // The property's open season, so a planting added after a season is
+        // closed lands in the next one; the calendar year before any is closed.
+        seasonYear:
+          input.seasonYear ??
+          sql`coalesce((
+            SELECT year FROM garden_seasons
+            WHERE garden_id = ${input.gardenId} AND status = 'open'
+            ORDER BY year DESC LIMIT 1
+          ), ${new Date().getUTCFullYear()})`,
         note: input.note ?? null,
         photo: input.photo || null,
         plantedYear: input.plantedYear ?? null,
@@ -237,6 +245,7 @@ export class PlantingRepository {
         status: plants.status,
         spacingInches: plants.spacingInches,
         sunRequirements: plants.sunRequirements,
+        family: plants.family,
         life: gardenPlantings.life,
         spacingFeet: gardenPlantings.spacingFeet,
       })

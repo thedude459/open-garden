@@ -13,6 +13,7 @@ export type NotePlanting = {
   plantId?: string;
   commonName?: string;
   plantType?: string;
+  family?: string | null;
   sunRequirements?: string | null;
   spacingInches: number | null;
   spacingFeet?: number | null;
@@ -85,15 +86,21 @@ export function placementNotes(input: {
         message: `${planting.commonName ?? 'Plant'} no longer suits this bed`,
       });
     }
-    const repeated = (input.priorCrops ?? []).some(
-      (crop) => crop.bedId === bedId && crop.plantId === planting.plantId,
-    );
-    if (repeated) {
+    // Rotation advice: the same plant, or another of its family, in this bed last year.
+    const lastYear = (input.priorCrops ?? []).filter((crop) => crop.bedId === bedId);
+    const name = planting.commonName ?? 'Plant';
+    const same = lastYear.find((crop) => crop.plantId === planting.plantId);
+    const kin = planting.family
+      ? lastYear.find((crop) => crop.family === planting.family)
+      : undefined;
+    if (same || kin) {
       flags.push({
         kind: 'repeat',
         plantingIds: [planting.id],
         blocking: false,
-        message: `${planting.commonName ?? 'Plant'} grew in this bed last year`,
+        message: same
+          ? `${name} grew in this bed last year`
+          : `${name}: ${kin!.commonName} (${kin!.family!.toLowerCase()}) grew in this bed last year`,
       });
     }
   }

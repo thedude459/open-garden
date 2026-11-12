@@ -164,6 +164,18 @@ describe('DatasetReleaseProvider', () => {
     expect(items[1]?.rootstockSpacingInches).toBeNull();
   });
 
+  it("names each plant's family by its common name", async () => {
+    const kale = { ...tomato, id: 'kale', family: 'brassicaceae', varieties: [] };
+    const families = [
+      { id: 'brassicaceae', name: 'Brassicaceae', commonName: 'Cabbage family (kale, broccoli)' },
+      { id: 'poaceae', name: 'Poaceae' },
+    ];
+    const corn = { ...tomato, id: 'corn', family: 'poaceae', varieties: [] };
+    const unknown = { ...tomato, id: 'odd', family: 'nosuchfamily', varieties: [] };
+    const { items } = await pinned(catalog([kale, corn, unknown], { families })).listPage();
+    expect(items.map((p) => p.family)).toEqual(['Cabbage family', 'Poaceae', null]);
+  });
+
   it('searches by name and variety', async () => {
     const provider = pinned(catalog([tomato]));
     expect((await provider.searchByName('cherry')).map((p) => p.externalId)).toEqual([

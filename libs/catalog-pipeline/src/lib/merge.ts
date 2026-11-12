@@ -17,6 +17,7 @@ const MERGE_FIELDS = [
   'fertilizeIntervalDays',
   'growingGuidance',
   'rootstockSpacingInches',
+  'family',
 ] as const;
 
 export type MergeField = (typeof MERGE_FIELDS)[number];
@@ -37,6 +38,7 @@ export interface MergedPlant {
   fertilizeIntervalDays: number | null;
   growingGuidance: GrowingGuidanceDto | null;
   rootstockSpacingInches: RootstockSpacingDto | null;
+  family: string | null;
   provider: string;
   providerExternalId: string;
   contributingSources: string[];
@@ -139,6 +141,7 @@ export function mergeCatalogRecords(
       fertilizeIntervalDays: row.values.fertilizeIntervalDays ?? null,
       growingGuidance: row.values.growingGuidance ?? null,
       rootstockSpacingInches: row.values.rootstockSpacingInches ?? null,
+      family: row.values.family ?? null,
       provider: last?.sourceId ?? row.contributingSources[row.contributingSources.length - 1] ?? '',
       providerExternalId: last?.externalId ?? '',
       contributingSources: row.contributingSources,
@@ -166,6 +169,7 @@ function applyFields(row: Acc, plant: ProviderPlant, sourceId: string) {
     fertilizeIntervalDays: plant.fertilizeIntervalDays ?? null,
     growingGuidance: plant.growingGuidance ?? null,
     rootstockSpacingInches: plant.rootstockSpacingInches ?? null,
+    family: plant.family ?? null,
   };
   for (const field of MERGE_FIELDS) {
     const value = incoming[field];
