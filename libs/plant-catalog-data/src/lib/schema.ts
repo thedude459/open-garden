@@ -11,6 +11,8 @@ import {
   jsonb,
   uniqueIndex,
   index,
+  boolean,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -19,8 +21,42 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   displayName: text('display_name'),
   role: text('role').notNull().default('user'),
+  /** The member asked for the daily reminder email. */
+  emailDigest: boolean('email_digest').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** A browser or phone a member turned push reminders on for. */
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('push_subscriptions_endpoint_uidx').on(t.endpoint),
+    index('push_subscriptions_user_id_idx').on(t.userId),
+  ],
+);
+
+/** One row per member, channel, and day sent, so a reminder goes out once a day. */
+export const reminderDeliveries = pgTable(
+  'reminder_deliveries',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    channel: text('channel').notNull(),
+    sentOn: date('sent_on').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.channel, t.sentOn] })],
+);
 
 export const sessions = pgTable('sessions', {
   id: uuid('id').defaultRandom().primaryKey(),

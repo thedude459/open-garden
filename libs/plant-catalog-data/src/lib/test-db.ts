@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import type { AppDatabase } from './db';
 import { MIGRATIONS_FOLDER } from './migrate';
@@ -48,12 +49,18 @@ let sequence = 0;
 const unique = (prefix: string) =>
   `${prefix}-${++sequence}-${Math.random().toString(36).slice(2, 7)}`;
 
+/**
+ * Raw SQL with the columns every migration has, so tests of an old migration
+ * (a database migrated only part way) can still add users.
+ */
 export async function insertUser(db: AppDatabase, email = `${unique('user')}@example.com`) {
-  const [user] = await db
-    .insert(schema.users)
-    .values({ email, passwordHash: 'x', displayName: email.split('@')[0] })
-    .returning();
-  return user!;
+  const result = await db.execute<{ id: string; email: string; display_name: string }>(sql`
+    insert into users (email, password_hash, display_name)
+    values (${email}, 'x', ${email.split('@')[0]})
+    returning id, email, display_name`);
+  const row = (result as unknown as { rows: { id: string; email: string; display_name: string }[] })
+    .rows[0]!;
+  return { id: row.id, email: row.email, displayName: row.display_name };
 }
 
 export function gardenInput(ownerId: string, name = unique('Garden')) {

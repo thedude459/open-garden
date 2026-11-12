@@ -45,6 +45,13 @@ test('Today is home: it explains itself when empty and completes due tasks', asy
 
   await page.getByRole('link', { name: 'Today', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Today plot' })).toBeVisible();
+  // Reminders: the e2e server has push keys and no SMTP server.
+  const reminders = page.getByRole('region', { name: 'Reminders' });
+  await expect(reminders.getByText(/sent once a day, from \d\d:00/)).toBeVisible();
+  await expect(
+    reminders.getByRole('button', { name: 'Turn on push reminders on this device' }),
+  ).toBeVisible();
+  await expect(reminders.getByText('Email reminders are not set up on this server.')).toBeVisible();
   const done = page.getByRole('button', { name: 'Done: Harvest Tomato (Cherry)' });
   await expect(done).toBeVisible();
   await done.click();

@@ -12,6 +12,12 @@ export DATABASE_URL="${DATABASE_URL:-postgresql://open_garden:open_garden@localh
 export SEED_DEMO_USERS="${SEED_DEMO_USERS:-true}"
 export CORS_ORIGIN="${CORS_ORIGIN:-http://localhost:4200}"
 export PLACE_PROVIDER="${PLACE_PROVIDER:-fixture}"
+# Push reminders on, with a key pair made for this run (never committed).
+if [[ -z "${VAPID_PUBLIC_KEY:-}" ]]; then
+  VAPID_PAIR="$(node -e "const k=require('web-push').generateVAPIDKeys();console.log(k.publicKey+' '+k.privateKey)")"
+  export VAPID_PUBLIC_KEY="${VAPID_PAIR%% *}"
+  export VAPID_PRIVATE_KEY="${VAPID_PAIR##* }"
+fi
 export CI="${CI:-true}"
 
 API_PID=""

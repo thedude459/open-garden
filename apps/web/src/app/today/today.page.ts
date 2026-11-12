@@ -5,13 +5,14 @@ import type { TodayTaskDto } from '@open-garden/shared-types';
 import { GardensApiService } from '../gardens/gardens-api.service';
 import { RemindersApiService } from '../gardens/reminders-api.service';
 import { EmptyState } from '../ui/empty-state';
+import { ReminderSettings } from './reminder-settings';
 import { NoticeService } from '../ui/notice.service';
 import { groupTodayTasks, localIso, type TodayGroup } from './today-groups';
 
 /** The home page: what needs doing today across every property. */
 @Component({
   standalone: true,
-  imports: [RouterLink, EmptyState],
+  imports: [RouterLink, EmptyState, ReminderSettings],
   template: `
     <h2>Today</h2>
     @if (error()) {
@@ -85,6 +86,9 @@ import { groupTodayTasks, localIso, type TodayGroup } from './today-groups';
           }
         </section>
       }
+    }
+    @if (!loading() && hasProperties()) {
+      <og-reminder-settings />
     }
   `,
 })

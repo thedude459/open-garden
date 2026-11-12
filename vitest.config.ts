@@ -34,6 +34,7 @@ export default defineConfig({
         'libs/seasonal-plantings/src/lib/**/*.ts',
         'libs/garden-layout/src/lib/**/*.ts',
         'libs/care-reminders/src/lib/**/*.ts',
+        'libs/reminder-delivery/src/lib/**/*.ts',
         'libs/web-ui/src/lib/**/*.ts',
         'libs/catalog-pipeline/src/lib/**/*.ts',
         'libs/garden-place/src/lib/**/*.ts',
@@ -128,6 +129,10 @@ export default defineConfig({
         'libs/garden-layout/src/lib/viewport-center.ts',
       ),
       '@open-garden/care-reminders': path.resolve(__dirname, 'libs/care-reminders/src/index.ts'),
+      '@open-garden/reminder-delivery': path.resolve(
+        __dirname,
+        'libs/reminder-delivery/src/index.ts',
+      ),
       '@open-garden/care-reminders/derive': path.resolve(
         __dirname,
         'libs/care-reminders/src/lib/derive-export.ts',
