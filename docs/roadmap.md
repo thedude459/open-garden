@@ -591,7 +591,7 @@ fast-check property tests; quick UX fixes (#5, #8 month names, #12, #13); the
 data repository, baseline migration, dataset importer, and the 50 crops of
 dataset v0.1; step 1, the dataset as the catalog
 ([ADR 0020](adr/0020-dataset-as-the-catalog.md)); step 2, typed areas
-([ADR 0021](adr/0021-area-rules-by-habit.md)).
+([ADR 0021](adr/0021-area-rules-by-habit.md)); step 3, crop rotation hints.
 
 | Order | Work | Why this order |
 |---|---|---|
