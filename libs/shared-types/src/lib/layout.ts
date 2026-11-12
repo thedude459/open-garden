@@ -50,6 +50,7 @@ export interface LayoutPlantingDto {
   sunRequirements?: string | null;
   life?: 'annual' | 'perennial' | 'tree';
   spacingFeet?: number | null;
+  rootstock?: string | null;
 }
 
 export type LayoutFlagKind =

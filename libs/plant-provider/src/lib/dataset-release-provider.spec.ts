@@ -116,6 +116,10 @@ describe('DatasetReleaseProvider', () => {
       lifeCycle: 'perennial',
       varieties: [],
       hardinessZones: { min: 3, max: 8 },
+      rootstocks: {
+        dwarf: { spacingCm: { inRow: 240 } },
+        standard: { spacingCm: { inRow: 750 } },
+      },
     };
     const rhubarb = {
       ...tomato,
@@ -156,6 +160,8 @@ describe('DatasetReleaseProvider', () => {
       ['thyme', 'herb', 1, 13],
       ['melon', 'fruit', 1, 13],
     ]);
+    expect(items[0]?.rootstockSpacingInches).toEqual({ dwarf: 94, semiDwarf: null, standard: 295 });
+    expect(items[1]?.rootstockSpacingInches).toBeNull();
   });
 
   it('searches by name and variety', async () => {

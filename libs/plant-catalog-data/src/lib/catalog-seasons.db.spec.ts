@@ -85,6 +85,18 @@ describe('PlantRepository', () => {
     expect(paged.totalCount).toBe(3);
   });
 
+  it("stores a tree's spacing by rootstock, on insert and on update", async () => {
+    const spacing = { dwarf: 94, semiDwarf: 165, standard: null };
+    await plantsRepo.upsertByVarietyKey(variety('rs-apple', { rootstockSpacingInches: spacing }));
+    const [inserted] = (await plantsRepo.list({ page: 1, pageSize: 5, q: 'rs-apple' })).items;
+    expect(inserted).toMatchObject({ dwarfSpacingInches: 94, standardSpacingInches: null });
+    await plantsRepo.upsertManyByVarietyKey([
+      variety('rs-apple', { rootstockSpacingInches: { ...spacing, standard: 295 } }),
+    ]);
+    const updated = await plantsRepo.getById(inserted!.id);
+    expect(updated).toMatchObject({ semiDwarfSpacingInches: 165, standardSpacingInches: 295 });
+  });
+
   it('treats % and _ in a search as literal characters', async () => {
     await plantsRepo.upsertByVarietyKey(variety('pct', { commonName: 'Odd 100% Plant' }));
     await plantsRepo.upsertByVarietyKey(variety('pct2', { commonName: 'Odd 1000 Plant' }));

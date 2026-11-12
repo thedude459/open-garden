@@ -1,5 +1,5 @@
 import type { PlantType } from '@open-garden/shared-types';
-import type { GrowingGuidanceDto } from '@open-garden/shared-types';
+import type { GrowingGuidanceDto, RootstockSpacingDto } from '@open-garden/shared-types';
 
 export interface ProviderPlant {
   externalId: string;
@@ -21,6 +21,7 @@ export interface ProviderPlant {
   waterIntervalDays?: number | null;
   fertilizeIntervalDays?: number | null;
   growingGuidance?: GrowingGuidanceDto | null;
+  rootstockSpacingInches?: RootstockSpacingDto | null;
 }
 
 export interface PlantDataProvider {

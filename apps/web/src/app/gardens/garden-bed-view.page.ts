@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { plantName } from '@open-garden/shared-types';
 import {
   ChangeDetectionStrategy,
@@ -16,6 +17,8 @@ import {
   formatFeet,
   plantingDropOutcome,
   remainingGridCount,
+  sizeTreeBed,
+  treeSpacingInches,
 } from '@open-garden/garden-layout';
 import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/drop';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
@@ -25,7 +28,13 @@ import type {
   LayoutPlantingDto,
   PlantSummaryDto,
 } from '@open-garden/shared-types';
-import { allowsPlant, areaKindFor } from '@open-garden/shared-types';
+import {
+  allowsPlant,
+  areaKindFor,
+  ROOTSTOCK_LABELS,
+  ROOTSTOCKS,
+  type Rootstock,
+} from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
 import { PlannerDraftService } from './planner-draft.service';
@@ -39,7 +48,15 @@ import { EmptyState } from '../ui/empty-state';
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, GardenPlanCanvas, PlantingTray, PlaceMarker, EmptyState, PlantPicker],
+  imports: [
+    FormsModule,
+    RouterLink,
+    GardenPlanCanvas,
+    PlantingTray,
+    PlaceMarker,
+    EmptyState,
+    PlantPicker,
+  ],
   template: `
     <p class="back-link"><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
     <div class="planner">
@@ -137,6 +154,17 @@ import { EmptyState } from '../ui/empty-state';
             <section id="plant-panel" class="plant-panel" aria-label="Plant panel">
               @if (canEdit()) {
                 <h3>Add a plant</h3>
+                @if (bed()?.station === 'tree') {
+                  <label>
+                    Rootstock
+                    <select name="rootstock" [(ngModel)]="rootstock">
+                      @for (r of rootstocks; track r) {
+                        <option [value]="r">{{ rootstockLabels[r] }}</option>
+                      }
+                    </select>
+                  </label>
+                  <p class="muted">The tree's bed takes its spacing on this rootstock.</p>
+                }
                 @if (!armedPlant()) {
                   <p class="muted">Choose Place, then click the bed. Or drag the plant onto it.</p>
                 }
@@ -311,6 +339,10 @@ export class GardenBedViewPage implements OnInit {
   activeZone = signal<number | undefined>(undefined);
   catalogHits = signal<PlantSummaryDto[]>([]);
   favorites = signal<FavoriteListItemDto[]>([]);
+  /** The rootstock a tree placed in this bed grows on; it sets the bed's size. */
+  rootstock: Rootstock = 'semiDwarf';
+  readonly rootstocks = ROOTSTOCKS;
+  readonly rootstockLabels = ROOTSTOCK_LABELS;
   searched = signal(false);
   armedPlant = signal<PlantSummaryDto | null>(null);
   confirmRemoveId = signal<string | null>(null);
@@ -554,6 +586,10 @@ export class GardenBedViewPage implements OnInit {
     const d = this.draft();
     const bed = this.bed();
     if (!d || !bed?.geometry || !this.guardMutate()) return;
+    if (plant.plantType === 'tree' && bed.station === 'tree') {
+      this.placeTree(plant);
+      return;
+    }
     const outcome = catalogDropOutcome(bed, d.plantings, planX, planY, plant.spacingInches);
     if (outcome !== 'ok') {
       this.rejectCatalog(outcome, plant.spacingInches);
@@ -582,6 +618,65 @@ export class GardenBedViewPage implements OnInit {
     };
     this.planner.newDirectSeedIds.add(id);
     this.planner.setDraft({ ...d, plantings: [planting, ...d.plantings] });
+    this.armedPlant.set(null);
+    this.refreshFlags();
+  }
+
+  /**
+   * A tree goes in the middle of its bed, and the bed takes the tree's
+   * spacing on the chosen rootstock. Underplanting keeps its place.
+   */
+  private placeTree(plant: PlantSummaryDto) {
+    const d = this.draft();
+    const bed = this.bed();
+    if (!d || !bed?.geometry) return;
+    if (d.plantings.some((p) => p.bedId === bed.id && p.plantType === 'tree')) {
+      this.armedPlant.set(null);
+      this.notices.error('A tree bed holds one tree');
+      return;
+    }
+    const spacing = treeSpacingInches(plant, this.rootstock);
+    if (spacing === null) return;
+    const sized = sizeTreeBed(bed.geometry, spacing);
+    const id = crypto.randomUUID();
+    const size = sized.geometry.lengthInches;
+    const tree: LayoutPlantingDto = {
+      id,
+      plantId: plant.id,
+      commonName: plant.commonName,
+      species: plant.species,
+      cultivar: plant.cultivar,
+      plantType: plant.plantType,
+      status: 'active',
+      bedId: bed.id,
+      spacingInches: sized.spacingFeet * 12,
+      spacingFeet: sized.spacingFeet,
+      rootstock: ROOTSTOCK_LABELS[this.rootstock],
+      life: 'tree',
+      startMethod: 'direct_seed',
+      indoorStartedOn: null,
+      placement: { plantingId: id, bedId: bed.id, xInches: size / 2, yInches: size / 2 },
+    };
+    this.planner.newDirectSeedIds.add(id);
+    this.planner.setDraft({
+      ...d,
+      beds: d.beds.map((b) => (b.id === bed.id ? { ...b, geometry: sized.geometry } : b)),
+      plantings: [
+        tree,
+        ...d.plantings.map((p) =>
+          p.placement?.bedId === bed.id
+            ? {
+                ...p,
+                placement: {
+                  ...p.placement,
+                  xInches: p.placement.xInches + sized.shiftX,
+                  yInches: p.placement.yInches + sized.shiftY,
+                },
+              }
+            : p,
+        ),
+      ],
+    });
     this.armedPlant.set(null);
     this.refreshFlags();
   }

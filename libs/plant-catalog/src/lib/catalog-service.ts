@@ -5,7 +5,7 @@ import type {
   PlantSummaryDto,
   PlantType,
 } from '@open-garden/shared-types';
-import { PLANT_TYPES } from '@open-garden/shared-types';
+import { PLANT_TYPES, rootstockSpacing } from '@open-garden/shared-types';
 
 export class CatalogService {
   constructor(private readonly plants: PlantRepository) {}
@@ -56,6 +56,9 @@ function toSummary(row: {
   zoneMin: number;
   zoneMax: number;
   spacingInches: number | null;
+  dwarfSpacingInches?: number | null;
+  semiDwarfSpacingInches?: number | null;
+  standardSpacingInches?: number | null;
 }): PlantSummaryDto {
   return {
     id: row.id,
@@ -67,6 +70,7 @@ function toSummary(row: {
     zoneMax: row.zoneMax,
     spacingInches: row.spacingInches as number,
     illustrationUrl: null,
+    rootstockSpacingInches: rootstockSpacing(row),
   };
 }
 
