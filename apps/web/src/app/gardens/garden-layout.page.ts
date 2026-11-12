@@ -62,7 +62,7 @@ import { EmptyState } from '../ui/empty-state';
             <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
             <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
             @if (canEdit()) {
-              <div class="add-menu" (keydown.escape)="addMenuOpen.set(false)">
+              <div class="add-menu">
                 <button
                   type="button"
                   class="btn btn-secondary"
@@ -628,6 +628,11 @@ export class GardenLayoutPage implements OnInit {
   ngOnInit() {
     this.gardenId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.gardenId) void this.load();
+  }
+
+  @HostListener('document:keydown.escape')
+  closeAddMenu() {
+    this.addMenuOpen.set(false);
   }
 
   @HostListener('window:online')
