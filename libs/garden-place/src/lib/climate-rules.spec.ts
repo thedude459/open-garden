@@ -34,6 +34,14 @@ describe('climate rules', () => {
     expect(keepFrostPair({ month: 4, day: 15 }, null)).toEqual({ last: null, first: null });
   });
 
+  it('south of the equator keeps a spring-then-autumn pair that wraps the year end', () => {
+    const spring = { month: 9, day: 15 };
+    const autumn = { month: 5, day: 10 };
+    expect(keepFrostPair(spring, autumn, -34)).toEqual({ last: spring, first: autumn });
+    expect(keepFrostPair(spring, autumn, 34)).toEqual({ last: null, first: null });
+    expect(keepFrostPair(autumn, spring, -34)).toEqual({ last: null, first: null });
+  });
+
   it('fills Washington and leaves another fixture coordinate empty', async () => {
     const climate = new FixtureClimateLookup();
     await expect(climate.lookup(WASHINGTON_PLACE)).resolves.toEqual({
@@ -126,6 +134,24 @@ describe('live climate lookup', () => {
       hardinessZone: 10,
       lastFrost: { month: 4, day: 15 },
       firstFrost: { month: 10, day: 20 },
+    });
+  });
+
+  it('keeps southern frost dates', async () => {
+    const data = daily(1996, 2025, (_y, month, day) =>
+      (month === 9 && day === 15) || (month === 5 && day === 10) ? -1 : 6,
+    );
+    const fetchFn = (async () =>
+      json({
+        daily: { time: data.time, temperature_2m_min: data.minimums },
+      })) as unknown as typeof fetch;
+    const facts = await new LiveClimateLookup(fetchFn, now).lookup({
+      ...WASHINGTON_PLACE,
+      latitude: -34,
+    });
+    expect(facts).toMatchObject({
+      lastFrost: { month: 9, day: 15 },
+      firstFrost: { month: 5, day: 10 },
     });
   });
 

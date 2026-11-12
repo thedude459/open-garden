@@ -18,7 +18,7 @@ import type {
 } from '@open-garden/plant-catalog-data';
 import { allowsPlant, homeFor } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
-import { computeWindows, frostComplete } from './windows';
+import { computeWindows, frostComplete, seasonYear } from './windows';
 
 export class CalendarService {
   constructor(
@@ -29,7 +29,13 @@ export class CalendarService {
     private readonly areas?: PlantingAreaRepository,
   ) {}
 
-  async list(userId: string, gardenId: string, page = 1, pageSize = 100): Promise<CalendarDto> {
+  async list(
+    userId: string,
+    gardenId: string,
+    page = 1,
+    pageSize = 100,
+    today = new Date(),
+  ): Promise<CalendarDto> {
     const membership = await this.memberships.get(gardenId, userId);
     if (!membership) throw CALENDAR_ERRORS.gardenNotFound();
     const garden = await this.gardens.getById(gardenId);
@@ -40,6 +46,7 @@ export class CalendarService {
     const lastFrost = pair(garden.lastFrostMonth, garden.lastFrostDay);
     const firstFrost = pair(garden.firstFrostMonth, garden.firstFrostDay);
     const windowsAvailable = frostComplete({ lastFrost, firstFrost });
+    const year = seasonYear({ lastFrost, firstFrost }, today);
     const result = await this.entries.listByGarden(gardenId, safePage, safeSize);
 
     return {
@@ -49,7 +56,9 @@ export class CalendarService {
       hardinessZone: garden.hardinessZone,
       lastFrost,
       firstFrost,
-      entries: result.items.map((row) => toEntry(row, garden.hardinessZone, lastFrost, firstFrost)),
+      entries: result.items.map((row) =>
+        toEntry(row, garden.hardinessZone, lastFrost, firstFrost, year),
+      ),
       page: result.page,
       pageSize: result.pageSize,
       total: result.totalCount,
@@ -114,12 +123,14 @@ function toEntry(
   gardenZone: number | null,
   lastFrost: MonthDayDto | null,
   firstFrost: MonthDayDto | null,
+  year: number,
 ): CalendarEntryDto {
   const guidance = guidanceFromRow(row);
   const windows: CalendarWindowsDto = computeWindows(
     { lastFrost, firstFrost },
     guidance,
     row.daysToMaturity,
+    year,
   );
   return {
     plantId: row.plantId,

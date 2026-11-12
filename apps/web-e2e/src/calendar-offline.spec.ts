@@ -7,6 +7,10 @@ import {
   confirmFixtureAddress,
 } from './planner-helpers';
 
+// Eight weeks before a 15 April last frost: 19 February in a leap year, else
+// the 18th (windows are counted in the season's real year).
+const INDOOR_TOMATO = /Indoor Feb 1[89] – Mar 4/;
+
 async function createFrostGarden(page: Page, name: string) {
   await page.goto('/gardens');
   await page.getByPlaceholder('Property name').fill(name);
@@ -37,12 +41,12 @@ test('cached calendar stays readable when calendar API is aborted', async ({ bro
   const page = await newUser(browser, `cal-off-${Date.now()}@example.com`);
   await createFrostGarden(page, 'Cached calendar');
   await addFromCatalog(page, 'Tomato (Cherry)');
-  await expect(page.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
+  await expect(page.getByText(INDOOR_TOMATO)).toBeVisible();
 
   await page.route('**/api/gardens/**/calendar**', (route) => route.abort());
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
-  await expect(page.getByText(/Indoor Feb 19 – Mar 4/)).toBeVisible();
+  await expect(page.getByText(INDOOR_TOMATO)).toBeVisible();
 
   await page.getByRole('textbox', { name: 'Search catalog to add' }).fill('Spinach');
   await page.getByRole('button', { name: 'Search catalog' }).click();

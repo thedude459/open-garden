@@ -28,16 +28,26 @@ the calendar's sowing windows hang off frost dates.
 3. **Zone.** The mean of each year's lowest minimum, in the USDA 10 °F bands
    from -60 °F (zone 1) to 60 °F and above (zone 13). The bands are just
    numbers, so they work anywhere.
-4. **Same failure rule.** A failed or odd response leaves zone and frost
+4. **The season may wrap the year end.** South of the equator (latitude
+   below 0) last frost (spring) falls later in the calendar year than first
+   frost (autumn). `frostInOrder` holds the rule for both hemispheres;
+   computed pairs and pairs a household types are kept only in their
+   hemisphere's order, and a property with no place follows the north.
+   Sowing windows are worked out in real years: last frost in the season's
+   year, first frost in the next one when the season wraps, so a window that
+   crosses 29 February or the year end lands on the right day. The season's
+   year is this year, or last year while a wrapping season has not reached
+   its first frost.
+5. **Same failure rule.** A failed or odd response leaves zone and frost
    unset and still saves the place; the household can set them by hand.
 
 ## Consequences
 
-+ Properties anywhere get a zone, and Northern Hemisphere properties get
-  frost dates.
-- Southern Hemisphere frost dates are computed but still dropped by
-  `keepFrostPair` until the calendar handles a season that wraps the year
-  end (the next slice).
++ Properties anywhere get a zone and frost dates, and the calendar's
+  windows follow a southern season across the year end.
+- A southern property's calendar still lists crops in January-to-December
+  order; it starts with what is upcoming, but the season reads across the
+  year end.
 - ERA5 cells are about 10 km across, so a frost pocket or a valley colder
   than its cell gets dates that are too mild, and a city's heat island the
   reverse. The dates stay editable.

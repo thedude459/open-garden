@@ -118,6 +118,7 @@ export class GardenService {
       hardinessZone: nextZone,
       lastFrost: nextLast,
       firstFrost: nextFirst,
+      latitude: nextPlace ? nextPlace.latitude : garden.latitude,
     });
 
     const nameNormalized = normalizeName(nextName);
@@ -226,6 +227,7 @@ export class GardenService {
         hardinessZone: dto.hardinessZone,
         lastFrost,
         firstFrost,
+        latitude: place.latitude,
       });
       return {
         hardinessZone: dto.hardinessZone ?? null,

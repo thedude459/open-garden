@@ -38,6 +38,22 @@ describe('frost dates (properties)', () => {
     );
   });
 
+  it('a pair is kept for exactly one hemisphere, unless it is the same day', () => {
+    const valid = fc.record({
+      month: fc.integer({ min: 1, max: 12 }),
+      day: fc.integer({ min: 1, max: 28 }),
+    });
+    fc.assert(
+      fc.property(valid, valid, (last, first) => {
+        const north = keepFrostPair(last, first, 40).last !== null;
+        const south = keepFrostPair(last, first, -40).last !== null;
+        const sameDay = last.month === first.month && last.day === first.day;
+        expect(north && south).toBe(false);
+        expect(north || south).toBe(!sameDay);
+      }),
+    );
+  });
+
   it('a zone is 1–13 and never falls as winters get milder', () => {
     fc.assert(
       fc.property(
