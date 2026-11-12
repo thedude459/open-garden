@@ -99,7 +99,12 @@ export class YearRecordRepository {
       const key = `${row.bedId}:${row.plantId}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      prior.push({ bedId: row.bedId, plantId: row.plantId, commonName: row.commonName });
+      prior.push({
+        bedId: row.bedId,
+        plantId: row.plantId,
+        commonName: row.commonName,
+        family: row.family ?? null,
+      });
     }
     return { prior, pairs: await this.listPairs(gardenId) };
   }
@@ -162,6 +167,7 @@ export class YearRecordRepository {
         id: gardenPlantings.id,
         plantId: gardenPlantings.plantId,
         commonName: plants.commonName,
+        family: plants.family,
         bedId: gardenPlantings.bedId,
         bedName: gardenBeds.name,
         note: gardenPlantings.note,

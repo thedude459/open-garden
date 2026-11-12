@@ -96,12 +96,20 @@ export async function readCatalog(
   }
   // Each crop is checked on its own: a crop using a value from a newer minor
   // release is skipped and counted, and the rest still import.
+  // "Cabbage family (cabbage, kale, broccoli)" is named "Cabbage family".
+  const families = new Map(
+    (parsed.data.families ?? []).map((f) => [
+      f.id,
+      f.commonName?.replace(/\s*\(.*\)\s*$/, '') || f.name,
+    ]),
+  );
   const plants: ProviderPlant[] = [];
   let skipped = 0;
   for (const raw of parsed.data.crops) {
     const crop = cropSchema.safeParse(raw);
-    if (crop.success) plants.push(...cropPlants(crop.data));
-    else skipped += 1;
+    if (crop.success) {
+      plants.push(...cropPlants(crop.data, families.get(crop.data.family ?? '') ?? null));
+    } else skipped += 1;
   }
   return { plants, skipped };
 }
@@ -129,6 +137,7 @@ const cropSchema = z.object({
   scientificName: z.string().min(1),
   habit: z.enum(['herbaceous', 'vine', 'cane', 'shrub', 'tree']),
   use: z.enum(['vegetable', 'fruit', 'nut', 'herb', 'flower']),
+  family: slug.optional(),
   lifeCycle: z.enum(['annual', 'biennial', 'perennial']),
   sun: z.enum(['full', 'part', 'shade']),
   water: z.enum(['low', 'moderate', 'high']),
@@ -160,6 +169,9 @@ const cropSchema = z.object({
 const catalogSchema = z.object({
   version: z.string(),
   units: z.object({ length: z.literal('cm'), temperature: z.literal('C') }),
+  families: z
+    .array(z.object({ id: z.string(), name: z.string(), commonName: z.string().optional() }))
+    .optional(),
   // Crops are checked one by one in readCatalog.
   crops: z.array(z.unknown()),
 });
@@ -179,7 +191,7 @@ const FEED_INTERVAL_DAYS: Record<NonNullable<Crop['feeding']>, number> = {
 };
 
 /** One plant for the crop itself, then one per variety. */
-function cropPlants(crop: Crop): ProviderPlant[] {
+function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
   const base: ProviderPlant = {
     externalId: crop.id,
     varietyKey: `dataset:${crop.id}`,
@@ -198,6 +210,7 @@ function cropPlants(crop: Crop): ProviderPlant[] {
     waterIntervalDays: WATER_INTERVAL_DAYS[crop.water],
     fertilizeIntervalDays: crop.feeding ? FEED_INTERVAL_DAYS[crop.feeding] : null,
     rootstockSpacingInches: rootstocks(crop.rootstocks),
+    family,
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),

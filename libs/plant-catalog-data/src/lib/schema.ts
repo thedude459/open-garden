@@ -52,6 +52,7 @@ export const plants = pgTable(
     dwarfSpacingInches: integer('dwarf_spacing_inches'),
     semiDwarfSpacingInches: integer('semi_dwarf_spacing_inches'),
     standardSpacingInches: integer('standard_spacing_inches'),
+    family: text('family'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
     indoorWeeksLatest: integer('indoor_weeks_latest'),

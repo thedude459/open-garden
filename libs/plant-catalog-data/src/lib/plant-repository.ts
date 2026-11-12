@@ -34,6 +34,7 @@ export interface PlantUpsertInput {
   providerExternalId: string | null;
   growingGuidance?: GrowingGuidanceDto | null;
   rootstockSpacingInches?: RootstockSpacingDto | null;
+  family?: string | null;
 }
 
 export interface PlantListFilters {
@@ -49,7 +50,7 @@ export class PlantRepository {
   constructor(private readonly db: AppDatabase) {}
 
   async upsertByVarietyKey(input: PlantUpsertInput) {
-    const guidance = { ...flattenGuidance(input.growingGuidance), ...flattenRootstocks(input) };
+    const guidance = { ...flattenGuidance(input.growingGuidance), ...catalogColumns(input) };
     const [row] = await this.db
       .insert(plants)
       .values({
@@ -103,7 +104,7 @@ export class PlantRepository {
   async upsertManyByVarietyKey(inputs: PlantUpsertInput[]) {
     if (inputs.length === 0) return [];
     const values = inputs.map((input) => {
-      const guidance = { ...flattenGuidance(input.growingGuidance), ...flattenRootstocks(input) };
+      const guidance = { ...flattenGuidance(input.growingGuidance), ...catalogColumns(input) };
       return {
         varietyKey: input.varietyKey,
         commonName: input.commonName,
@@ -147,6 +148,7 @@ export class PlantRepository {
           dwarfSpacingInches: sql`excluded.dwarf_spacing_inches`,
           semiDwarfSpacingInches: sql`excluded.semi_dwarf_spacing_inches`,
           standardSpacingInches: sql`excluded.standard_spacing_inches`,
+          family: sql`excluded.family`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
           status: sql`excluded.status`,
@@ -270,9 +272,13 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
 }
 
-function flattenRootstocks(input: { rootstockSpacingInches?: RootstockSpacingDto | null }) {
+function catalogColumns(input: {
+  rootstockSpacingInches?: RootstockSpacingDto | null;
+  family?: string | null;
+}) {
   const r = input.rootstockSpacingInches;
   return {
+    family: input.family ?? null,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,
     standardSpacingInches: r?.standard ?? null,

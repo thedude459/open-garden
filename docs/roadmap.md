@@ -495,9 +495,10 @@ Large page components to split before or during this phase:
 In priority order (the [implementation order](#implementation-order) places
 each against the other phases):
 
-1. **Crop rotation hints** — family per crop + year records → "Brassicas
-   were in North last year." Advice only. Needs only the dataset's families,
-   so it follows typed areas.
+1. **Crop rotation hints** — *done.* Plants carry the dataset's family
+   ("Cabbage family"), and the plan notes an annual placed where last season
+   grew one of its family: "Kale: Broccoli (cabbage family) grew in this bed
+   last year." Advice only.
 2. **Reminders that reach people** — care reminders and the Today home only
    work inside the app. Web push for the PWA (opt-in per member) and an
    optional daily email digest, so watering and harvest reminders arrive on
@@ -597,8 +598,8 @@ dataset v0.1; step 1, the dataset as the catalog
 | 1 | **Done ([ADR 0020](adr/0020-dataset-as-the-catalog.md)).** Dataset v0.1.0 tagged and bundled in the API image as the catalog's only source: the [checklist](#before-the-dataset-becomes-the-default) items 1–4 and 6–8, e2e on dataset crops, and the Perenual provider, second fixture, scheduler, and source ordering deleted | Everything after this needs real catalog data. |
 | 1p *(parallel, data repo)* | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before outside contributions start; no app dependency. |
 | 2 | **Done ([ADR 0021](adr/0021-area-rules-by-habit.md)).** Phase 1 typed areas: habit rules (herbs of any habit), bramble patch, tree beds sized by rootstock, `garden_beds.kind` removed | The dataset's habit, use, and rootstocks are only useful once areas enforce them, and the 8 × 8 ft tree bed is wrong for every dataset tree. |
-| **3 (next)** | Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
-| 4 | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
+| 3 | **Done.** Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
+| **4 (next)** | Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
 | 5p *(parallel, data repo)* | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
 | 6 | Phase 2 climate: frost and zones anywhere (with a NASA POWER or NOAA fallback, and bundled frostline zones for the US first), Southern Hemisphere, frost-free windows, units setting and metric storage, locale | Makes the dataset's windows usable outside the US; the units migration is easier before more tables store lengths. |
 | 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |

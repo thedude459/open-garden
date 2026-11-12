@@ -22,6 +22,8 @@ export interface ProviderPlant {
   fertilizeIntervalDays?: number | null;
   growingGuidance?: GrowingGuidanceDto | null;
   rootstockSpacingInches?: RootstockSpacingDto | null;
+  /** Botanical family, by its common name ("Cabbage family"). */
+  family?: string | null;
 }
 
 export interface PlantDataProvider {
