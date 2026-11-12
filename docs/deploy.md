@@ -50,7 +50,7 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `POSTGRES_USER`, `POSTGRES_DB` | `open_garden` | Database user and name. Same first-start rule. |
 | `ADMIN_EMAIL` | unset | Gives the account with this email the admin role when the API starts. The account must already exist; see [Admin account](#admin-account). |
 | `SEED_DEMO_USERS` | unset (off) | `true` creates `gardener@example.com` and `admin@example.com` with password `password123`. For trying the app only. |
-| `PLACE_PROVIDER` | `live` | `live` uses real services for address lookup and map previews (OpenStreetMap Nominatim), hardiness zone and frost dates (phzmapi, FarmSense; US addresses today), and the rain outlook (Open-Meteo). `fixture` uses built-in sample data and makes no outside calls; the tests and `.env.example` use it. |
+| `PLACE_PROVIDER` | `live` | `live` uses real services for address lookup and map previews (OpenStreetMap Nominatim), hardiness zone and frost dates (computed from Open-Meteo's historical temperatures, worldwide), and the rain outlook (Open-Meteo). `fixture` uses built-in sample data and makes no outside calls; the tests and `.env.example` use it. |
 | `WEB_HOST` | `127.0.0.1` | Address the web port binds to on the host. `0.0.0.0` makes it reachable from other devices. |
 | `WEB_PORT` | `8080` | Host port for the web container. |
 | `COOKIE_SECURE` | `false` | Set `true` when people reach the app over HTTPS, so the session cookie is only sent over TLS. |
@@ -80,8 +80,8 @@ task names only. See [ADR 0022](adr/0022-reminder-delivery.md).
 
 ### Outside services
 
-By default (`PLACE_PROVIDER=live`), the API sends the addresses people look up to OpenStreetMap Nominatim and the garden's coordinates to phzmapi.org,
-FarmSense, and Open-Meteo, and browsers load the OpenStreetMap embed. These are
+By default (`PLACE_PROVIDER=live`), the API sends the addresses people look up to OpenStreetMap Nominatim and the garden's coordinates to Open-Meteo
+(forecast and historical weather), and browsers load the OpenStreetMap embed. These are
 free services with usage policies (Nominatim allows about one request per
 second; Open-Meteo's free tier is for non-commercial use). A household
 install stays far inside them. If you host for many people, check their terms.
