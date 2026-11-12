@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { newUser, openOverview, confirmFixtureAddress } from './planner-helpers';
 
-test('Garden Overview is one click from plantings, calendar, reminders, transplants', async ({
+test('Plan is one click from plantings, calendar, tasks, transplants, settings', async ({
   browser,
 }) => {
   test.setTimeout(90_000);
@@ -16,17 +16,11 @@ test('Garden Overview is one click from plantings, calendar, reminders, transpla
   await openOverview(page);
   await expect(page.locator('.layout-plan')).toHaveAttribute('viewBox', '0 0 360 180');
 
-  for (const dest of [
-    'Plantings',
-    'Calendar',
-    'Reminders',
-    'Transplants',
-    'Configuration',
-  ] as const) {
+  for (const dest of ['Plantings', 'Calendar', 'Tasks', 'Transplants', 'Settings'] as const) {
     await page.getByRole('link', { name: dest, exact: true }).click();
     await page
       .locator('nav[aria-label="Garden"]')
-      .getByRole('link', { name: 'Garden Overview' })
+      .getByRole('link', { name: 'Plan', exact: true })
       .click();
     await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   }

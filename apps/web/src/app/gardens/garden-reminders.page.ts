@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { plantName } from '@open-garden/shared-types';
+import { CARE_VERBS, plantName } from '@open-garden/shared-types';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RemindersApiService, RemindersColdOfflineError } from './reminders-api.service';
@@ -11,7 +11,7 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <h2>Reminders</h2>
+    <h2>Tasks</h2>
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -108,9 +108,7 @@ export class GardenRemindersPage implements OnInit {
   }
 
   kindLabel(kind: ClientReminderItem['kind']) {
-    if (kind === 'harvest') return 'Harvest';
-    if (kind === 'water') return 'Water';
-    return 'Fertilize';
+    return CARE_VERBS[kind];
   }
 
   urgencyLabel(item: ClientReminderItem) {

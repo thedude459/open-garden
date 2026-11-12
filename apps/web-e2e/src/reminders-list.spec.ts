@@ -8,19 +8,19 @@ async function openReminders(page: Page, name: string) {
   await confirmFixtureAddress(page);
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: new RegExp(name) }).click();
-  await page.getByRole('link', { name: 'Reminders' }).click();
-  await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+  await page.getByRole('link', { name: 'Tasks', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Tasks' })).toBeVisible();
 }
 
 async function goToReminders(page: Page) {
-  const onGardenDetail = page.getByRole('link', { name: 'Reminders' });
+  const onGardenDetail = page.getByRole('link', { name: 'Tasks', exact: true });
   if (await onGardenDetail.isVisible()) {
     await onGardenDetail.click();
   } else {
-    await page.getByRole('link', { name: 'Configuration' }).click();
-    await page.getByRole('link', { name: 'Reminders' }).click();
+    await page.getByRole('link', { name: 'Settings', exact: true }).click();
+    await page.getByRole('link', { name: 'Tasks', exact: true }).click();
   }
-  await expect(page.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Tasks' })).toBeVisible();
 }
 
 async function addFromCatalog(page: Page, name: string) {
@@ -75,19 +75,19 @@ test('reminders list: harvest, one water reminder, empty CTA, viewer read-only',
     owner.locator('li').filter({ hasText: 'Tomato (Cherry)' }).getByText('Water', { exact: true }),
   ).toHaveCount(1);
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-list-viewer-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(`rem-list-viewer-${stamp}@example.com`)).toBeVisible();
-  await owner.getByRole('link', { name: 'Reminders' }).click();
+  await owner.getByRole('link', { name: 'Tasks', exact: true }).click();
   await expect(
     owner.locator('li').filter({ hasText: 'Harvest' }).getByRole('button', { name: 'Complete' }),
   ).toBeVisible();
 
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Reminder list/ }).click();
-  await viewer.getByRole('link', { name: 'Reminders' }).click();
+  await viewer.getByRole('link', { name: 'Tasks', exact: true }).click();
   await expect(viewer.getByText('Harvest')).toBeVisible();
   await expect(
     viewer.locator('li').filter({ hasText: 'Harvest' }).getByRole('button', { name: 'Complete' }),
@@ -102,12 +102,12 @@ test('garden reminders list does not include indoor-only transplant tasks', asyn
   await confirmFixtureAddress(owner);
   await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Indoor split/ }).click();
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
-  await owner.getByRole('link', { name: 'Configuration' }).click();
-  await owner.getByRole('link', { name: 'Reminders' }).click();
-  await expect(owner.getByRole('heading', { name: 'Reminders' })).toBeVisible();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
+  await owner.getByRole('link', { name: 'Tasks', exact: true }).click();
+  await expect(owner.getByRole('heading', { name: 'Tasks' })).toBeVisible();
   await expect(owner.locator('li').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(0);
 });

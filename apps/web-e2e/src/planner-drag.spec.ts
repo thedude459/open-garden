@@ -29,7 +29,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('heading', { name: 'Bed View' })).toBeVisible();
 

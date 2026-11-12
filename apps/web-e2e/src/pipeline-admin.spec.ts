@@ -7,7 +7,7 @@ async function loginAdmin(page: import('@playwright/test').Page) {
   await page.getByPlaceholder('Email').fill('admin@example.com');
   await page.getByPlaceholder('Password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
-  await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 }
 
 test('admin can start a catalog import and see the dataset source', async ({ page }) => {

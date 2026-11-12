@@ -30,7 +30,7 @@ import { PlannerDraftService } from './planner-draft.service';
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }
-      <h3>Configuration</h3>
+      <h3>Settings</h3>
       @if (season(); as season) {
         <section>
           <h3>Season {{ season.openYear }}</h3>

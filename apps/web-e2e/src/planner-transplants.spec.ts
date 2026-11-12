@@ -35,7 +35,7 @@ test('planner transplants: add/delete, viewer cannot mutate, indoor items stay o
   await expect(viewer.getByRole('button', { name: /Add transplant/ })).toHaveCount(0);
   await expect(viewer.getByRole('button', { name: /Delete transplant/ })).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Garden Overview' }).click();
+  await owner.getByRole('link', { name: 'Plan', exact: true }).click();
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await owner.getByRole('button', { name: 'Delete transplant Tomato (Cherry)' }).click();
   await owner.getByRole('button', { name: 'Confirm delete Tomato (Cherry)' }).click();

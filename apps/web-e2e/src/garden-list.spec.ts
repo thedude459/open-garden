@@ -15,7 +15,7 @@ test('empty state, create, list, detail, rename, cancel vs confirm delete', asyn
   await expect(page.getByRole('link', { name: /Backyard/ })).toBeVisible();
   await page.getByRole('link', { name: /Backyard/ }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Configuration' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Settings' })).toHaveCount(0);
   await openConfiguration(page);
   await expect(page.getByText(/You are owner/i)).toBeVisible();
   await page.locator('input[name="name"]').fill('Front yard');

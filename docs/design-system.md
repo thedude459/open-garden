@@ -6,7 +6,7 @@ Self-hosted household garden planner. Gardeners plan beds on a scale map, record
 
 **JTBD:** Open the app and know what to do in the yard today; open a garden and see the map.
 
-**Key screens:** Sign in → Gardens home → Garden Overview (map) → Bed View → Calendar / Reminders → Configuration (site + invite).
+**Key screens:** Sign in → Today (tasks across properties) → Properties → Plan (Garden Overview map, Bed View, Plantings) → Calendar (and Transplants) → Tasks → Settings (site + invite).
 
 ## Brand
 
@@ -61,7 +61,7 @@ Dark text is Ink or Soil, never pure black. Primary button is Leaf with **white*
 1. **Signed-in home is Gardens**, never the plant catalog.
 2. Home answers “what should I do?” then lists yards as rich cards (name, role, zone, overdue, this week), not a single cramped meta line.
 3. Create garden is an obvious Leaf button — never white-on-white.
-4. Inside a garden: map is the hero; garden nav is a compact pill/tab bar; Configuration is settings, not the landing.
+4. Inside a garden: map is the hero; garden nav is four items (Plan, Calendar, Tasks, Settings), a tab bar on mobile; Settings is not the landing.
 5. First-run empty state is welcoming and branded, with one next step.
 6. Desktop: map + rail. Phone: actions above the map.
 

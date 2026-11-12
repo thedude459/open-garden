@@ -86,7 +86,7 @@ export async function openCalendar(page: Page) {
 export async function openOverview(page: Page) {
   await page
     .locator('nav[aria-label="Garden"]')
-    .getByRole('link', { name: 'Garden Overview', exact: true })
+    .getByRole('link', { name: 'Plan', exact: true })
     .click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
 }
@@ -95,7 +95,7 @@ export async function openConfiguration(page: Page) {
   await page.waitForURL(/\/gardens\/[^/?#]+/);
   const config = page
     .locator('nav[aria-label="Garden"]')
-    .getByRole('link', { name: 'Configuration', exact: true });
+    .getByRole('link', { name: 'Settings', exact: true });
   if (await config.isVisible()) {
     await config.click();
   } else {
@@ -103,7 +103,7 @@ export async function openConfiguration(page: Page) {
     expect(id).toBeTruthy();
     await page.goto(`/gardens/${id}/configure`);
   }
-  await expect(page.getByRole('heading', { name: 'Configuration' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
 }
 
 export async function inviteViewer(owner: Page, email: string) {

@@ -29,6 +29,15 @@ export interface TodayTaskDto {
   kind: 'overdue' | 'dueToday' | 'thisWeek';
   title: string;
   bedName: string | null;
+  /** Care tasks (overdue, due today) carry the reminder, so Today can complete it. */
+  reminder?: {
+    plantingId: string;
+    kind: import('./reminders').CareKind;
+    dueOn: string;
+    intervalDays: number | null;
+  };
+  /** Members who can only view see tasks but cannot complete them. */
+  canEdit?: boolean;
 }
 
 export interface TodayDto {

@@ -82,7 +82,7 @@ test('offline cache stays readable and queued add syncs for another member', asy
     owner.locator('article').filter({ hasText: 'Basil (Genovese)' }).getByText('pending'),
   ).toHaveCount(0);
 
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`plant-off-friend-${stamp}@example.com`);
   await owner.getByRole('button', { name: 'Invite' }).click();
   await expect(owner.getByText(`plant-off-friend-${stamp}@example.com`)).toBeVisible();
@@ -102,7 +102,7 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
 
   await openPlantings(owner, 'No resurrect');
   await addFromCatalog(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`plant-nr-b-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('collaborator');
   await owner.getByRole('button', { name: 'Invite' }).click();
@@ -150,7 +150,7 @@ test('viewer offline reads cache; removed collaborator drops cache after reconne
 
   await openPlantings(owner, 'Stale plantings');
   await addFromCatalog(owner, 'Tomato (Cherry)');
-  await owner.getByRole('link', { name: 'Configuration' }).click();
+  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`plant-stale-viewer-${stamp}@example.com`);
   await owner.locator('select[name="inviteRole"]').selectOption('viewer');
   await owner.getByRole('button', { name: 'Invite' }).click();
