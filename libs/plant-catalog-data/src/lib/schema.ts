@@ -23,6 +23,8 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('user'),
   /** The member asked for the daily reminder email. */
   emailDigest: boolean('email_digest').notNull().default(false),
+  /** imperial or metric: how this member sees lengths (stored in inches either way). */
+  units: text('units').notNull().default('imperial'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UNITS } from './garden';
 
 export const gardenRoleSchema = z.enum(['owner', 'collaborator', 'viewer']);
 export const inviteRoleSchema = z.enum(['collaborator', 'viewer']);
@@ -63,3 +64,5 @@ export type GardenCreateParsed = z.infer<typeof gardenCreateSchema>;
 export type GardenPatchParsed = z.infer<typeof gardenPatchSchema>;
 export type GardenInviteParsed = z.infer<typeof gardenInviteSchema>;
 export type GardenMemberPatchParsed = z.infer<typeof gardenMemberPatchSchema>;
+
+export const unitsSchema = z.object({ units: z.enum(UNITS) }).strict();

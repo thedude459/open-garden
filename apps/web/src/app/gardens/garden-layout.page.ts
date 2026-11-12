@@ -4,8 +4,10 @@ import {
   Component,
   HostListener,
   OnInit,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -13,9 +15,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   originFromCenter,
   drawableBeds,
-  feetToInches,
+  convertLength,
   formatPlanSize,
-  inchesToFeetInput,
+  inchesFromInput,
+  lengthInput,
+  lengthStep,
+  lengthUnit,
   snapHalfFoot,
   clampSizeToPlot,
   clampOriginToPlot,
@@ -31,6 +36,7 @@ import type {
   Mulch,
   PropertyAreaDto,
   TrayDto,
+  Units,
 } from '@open-garden/shared-types';
 import { MULCH_LABELS, mulchOrNone } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
@@ -39,6 +45,7 @@ import { PlannerDraftService } from './planner-draft.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
+import { AuthApiService } from '../auth/auth-api.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
 
@@ -188,21 +195,21 @@ import { EmptyState } from '../ui/empty-state';
                   <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
                 </label>
                 <label>
-                  Length (ft)
+                  Length ({{ lengthUnit(units()) }})
                   <input
                     type="number"
-                    min="0.5"
-                    step="0.5"
+                    [min]="lengthStep(units())"
+                    [step]="lengthStep(units())"
                     [(ngModel)]="newLength"
                     name="newLength"
                   />
                 </label>
                 <label>
-                  Width (ft)
+                  Width ({{ lengthUnit(units()) }})
                   <input
                     type="number"
-                    min="0.5"
-                    step="0.5"
+                    [min]="lengthStep(units())"
+                    [step]="lengthStep(units())"
                     [(ngModel)]="newWidth"
                     name="newWidth"
                   />
@@ -260,21 +267,21 @@ import { EmptyState } from '../ui/empty-state';
                   <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
                 </label>
                 <label>
-                  Length (ft)
+                  Length ({{ lengthUnit(units()) }})
                   <input
                     type="number"
-                    min="0.5"
-                    step="0.5"
+                    [min]="lengthStep(units())"
+                    [step]="lengthStep(units())"
                     [(ngModel)]="newAreaLength"
                     name="newAreaLength"
                   />
                 </label>
                 <label>
-                  Width (ft)
+                  Width ({{ lengthUnit(units()) }})
                   <input
                     type="number"
-                    min="0.5"
-                    step="0.5"
+                    [min]="lengthStep(units())"
+                    [step]="lengthStep(units())"
                     [(ngModel)]="newAreaWidth"
                     name="newAreaWidth"
                   />
@@ -351,57 +358,49 @@ import { EmptyState } from '../ui/empty-state';
                 @if (bed.geometry) {
                   <form class="filters" (ngSubmit)="save()">
                     <label>
-                      Origin X (ft)
+                      Origin X ({{ lengthUnit(units()) }})
                       <input
                         type="number"
-                        step="0.5"
+                        [step]="lengthStep(units())"
                         name="originX"
-                        [value]="inchesToFeetInput(bed.geometry.originXInches)"
-                        (input)="
-                          patchSelected({
-                            originXInches: originInchesFromFeet(fieldFeet($event)),
-                          })
-                        "
+                        [value]="lengthInput(bed.geometry.originXInches, units())"
+                        (input)="patchField('originXInches', $event)"
+                        (change)="patchField('originXInches', $event)"
                       />
                     </label>
                     <label>
-                      Origin Y (ft)
+                      Origin Y ({{ lengthUnit(units()) }})
                       <input
                         type="number"
-                        step="0.5"
+                        [step]="lengthStep(units())"
                         name="originY"
-                        [value]="inchesToFeetInput(bed.geometry.originYInches)"
-                        (input)="
-                          patchSelected({
-                            originYInches: originInchesFromFeet(fieldFeet($event)),
-                          })
-                        "
+                        [value]="lengthInput(bed.geometry.originYInches, units())"
+                        (input)="patchField('originYInches', $event)"
+                        (change)="patchField('originYInches', $event)"
                       />
                     </label>
                     <label>
-                      Length (ft)
+                      Length ({{ lengthUnit(units()) }})
                       <input
                         type="number"
-                        min="0.5"
-                        step="0.5"
+                        [min]="lengthStep(units())"
+                        [step]="lengthStep(units())"
                         name="length"
-                        [value]="inchesToFeetInput(bed.geometry.lengthInches)"
-                        (input)="
-                          patchSelected({ lengthInches: sizeInchesFromFeet(fieldFeet($event)) })
-                        "
+                        [value]="lengthInput(bed.geometry.lengthInches, units())"
+                        (input)="patchField('lengthInches', $event)"
+                        (change)="patchField('lengthInches', $event)"
                       />
                     </label>
                     <label>
-                      Width (ft)
+                      Width ({{ lengthUnit(units()) }})
                       <input
                         type="number"
-                        min="0.5"
-                        step="0.5"
+                        [min]="lengthStep(units())"
+                        [step]="lengthStep(units())"
                         name="width"
-                        [value]="inchesToFeetInput(bed.geometry.widthInches)"
-                        (input)="
-                          patchSelected({ widthInches: sizeInchesFromFeet(fieldFeet($event)) })
-                        "
+                        [value]="lengthInput(bed.geometry.widthInches, units())"
+                        (input)="patchField('widthInches', $event)"
+                        (change)="patchField('widthInches', $event)"
                       />
                     </label>
                   </form>
@@ -466,7 +465,15 @@ import { EmptyState } from '../ui/empty-state';
                       }
                       @if (bed.geometry; as geo) {
                         <span class="muted">
-                          · {{ formatPlanSize(geo.lengthInches, geo.widthInches, geo.orientation) }}
+                          ·
+                          {{
+                            formatPlanSize(
+                              geo.lengthInches,
+                              geo.widthInches,
+                              geo.orientation,
+                              units()
+                            )
+                          }}
                         </span>
                       }
                     </span>
@@ -501,7 +508,9 @@ import { EmptyState } from '../ui/empty-state';
                   <li class="stack">
                     <span
                       >{{ area.name }} ·
-                      {{ formatPlanSize(area.lengthInches, area.widthInches) }}</span
+                      {{
+                        formatPlanSize(area.lengthInches, area.widthInches, undefined, units())
+                      }}</span
                     >
                     @if (canEdit()) {
                       @if (confirmDeleteAreaId() !== area.id) {
@@ -582,8 +591,11 @@ export class GardenLayoutPage implements OnInit {
   confirmDeleteId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
   newBedName = '';
-  newLength: number | null = 8;
-  newWidth: number | null = 4;
+  readonly units = inject(AuthApiService).units;
+  /** Units the add forms are typed in; a switch converts what is typed. */
+  addUnits: Units = this.units();
+  newLength: number | null = lengthInput(96, this.addUnits);
+  newWidth: number | null = lengthInput(48, this.addUnits);
   bedSite: BedSite = 'in_ground';
   bedMulch: Mulch = 'none';
   pendingStation: 'tree' | 'berry' | null = null;
@@ -602,23 +614,43 @@ export class GardenLayoutPage implements OnInit {
     { id: 'plastic', label: 'Plastic' },
   ];
   newAreaName = '';
-  newAreaLength: number | null = 4;
-  newAreaWidth: number | null = 4;
+  newAreaLength: number | null = lengthInput(48, this.addUnits);
+  newAreaWidth: number | null = lengthInput(48, this.addUnits);
+  private readonly followUnits = effect(() => {
+    const units = this.units();
+    untracked(() => {
+      if (units === this.addUnits) return;
+      const from = this.addUnits;
+      const convert = (value: number | null) =>
+        value == null ? null : convertLength(value, from, units);
+      this.newLength = convert(this.newLength);
+      this.newWidth = convert(this.newWidth);
+      this.newAreaLength = convert(this.newAreaLength);
+      this.newAreaWidth = convert(this.newAreaWidth);
+      this.addUnits = units;
+    });
+  });
   confirmDeleteAreaId = signal<string | null>(null);
   readonly formatPlanSize = formatPlanSize;
-  readonly inchesToFeetInput = inchesToFeetInput;
-  readonly feetToInches = feetToInches;
+  readonly lengthInput = lengthInput;
+  readonly lengthStep = lengthStep;
+  readonly lengthUnit = lengthUnit;
 
-  originInchesFromFeet(feet: string | number): number {
-    return snapHalfFoot(feetToInches(feet));
-  }
-
-  fieldFeet(event: Event): string {
-    return (event.target as HTMLInputElement).value;
-  }
-
-  sizeInchesFromFeet(feet: string | number): number {
-    return Math.max(HALF_FOOT_INCHES, snapHalfFoot(feetToInches(feet)));
+  /**
+   * A selected bed's position or size field. Feet apply as they are typed;
+   * metres apply when the field is left, since the half-foot grid would
+   * rewrite a metric value mid-entry.
+   */
+  patchField(
+    key: 'originXInches' | 'originYInches' | 'lengthInches' | 'widthInches',
+    event: Event,
+  ) {
+    const metric = this.units() === 'metric';
+    if (metric !== (event.type === 'change')) return;
+    const value = (event.target as HTMLInputElement).value;
+    const inches = snapHalfFoot(inchesFromInput(value, this.units()));
+    const size = key === 'lengthInches' || key === 'widthInches';
+    this.patchSelected({ [key]: size ? Math.max(HALF_FOOT_INCHES, inches) : inches });
   }
 
   atGardenEdge() {
@@ -838,13 +870,13 @@ export class GardenLayoutPage implements OnInit {
   addStation(station: 'tree' | 'berry') {
     this.addMenuOpen.set(false);
     this.newBedName = station === 'tree' ? 'Tree' : 'Canes';
-    // A tree bed, or a row of canes in a bramble patch.
-    this.newLength = station === 'tree' ? 8 : 10;
-    this.newWidth = station === 'tree' ? 8 : 3;
+    // A tree bed (8 × 8 ft), or a row of canes in a bramble patch (10 × 3 ft).
+    this.newLength = lengthInput(station === 'tree' ? 96 : 120, this.addUnits);
+    this.newWidth = lengthInput(station === 'tree' ? 96 : 36, this.addUnits);
     this.pendingStation = station;
     void this.createBed().finally(() => {
-      this.newLength = 8;
-      this.newWidth = 4;
+      this.newLength = lengthInput(96, this.addUnits);
+      this.newWidth = lengthInput(48, this.addUnits);
     });
   }
 
@@ -871,8 +903,8 @@ export class GardenLayoutPage implements OnInit {
     this.status.set('');
     if (!this.guardMutate()) return;
     const name = this.newBedName.trim();
-    const length = feetToInches(this.newLength ?? 0);
-    const width = feetToInches(this.newWidth ?? 0);
+    const length = inchesFromInput(this.newLength ?? 0, this.addUnits);
+    const width = inchesFromInput(this.newWidth ?? 0, this.addUnits);
     if (!name || length < 1 || width < 1) return;
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
@@ -912,8 +944,8 @@ export class GardenLayoutPage implements OnInit {
     const d = this.draft();
     if (!d || !this.guardMutate()) return;
     const name = this.newAreaName.trim();
-    const length = feetToInches(this.newAreaLength ?? 0);
-    const width = feetToInches(this.newAreaWidth ?? 0);
+    const length = inchesFromInput(this.newAreaLength ?? 0, this.addUnits);
+    const width = inchesFromInput(this.newAreaWidth ?? 0, this.addUnits);
     if (!name || length < 1 || width < 1) return;
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };

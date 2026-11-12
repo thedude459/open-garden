@@ -99,6 +99,17 @@ import { SOURCE_CODE_URL } from './source-link';
                 </nav>
               }
             </div>
+            <label class="sidebar-units">
+              Units
+              <select #unitsSelect (change)="changeUnits(unitsSelect)">
+                <option value="imperial" [selected]="units() === 'imperial'">
+                  Feet and inches
+                </option>
+                <option value="metric" [selected]="units() === 'metric'">
+                  Metres and centimetres
+                </option>
+              </select>
+            </label>
             <button type="button" class="nav-text sidebar-signout" (click)="logout()">
               Sign out
             </button>
@@ -216,6 +227,18 @@ export class AppComponent {
 
   signedIn() {
     return this.auth.isAuthenticated();
+  }
+
+  readonly units = computed(() => this.auth.units());
+
+  async changeUnits(select: HTMLSelectElement) {
+    const units = select.value === 'metric' ? 'metric' : 'imperial';
+    try {
+      await this.auth.setUnits(units);
+    } catch {
+      // Offline or signed out: keep showing the units still in use.
+      select.value = this.auth.units();
+    }
   }
 
   async logout() {

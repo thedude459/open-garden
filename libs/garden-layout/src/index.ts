@@ -13,8 +13,17 @@ export {
   inchesToFeet,
   inchesToFeetInput,
   feetToInches,
+  convertLength,
   formatFeet,
+  formatLength,
   formatPlanSize,
+  formatSpacing,
+  feetFromTreeSpacing,
+  inchesFromInput,
+  lengthInput,
+  lengthStep,
+  lengthUnit,
+  treeSpacingInput,
 } from './lib/display-units';
 export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';
