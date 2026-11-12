@@ -66,6 +66,7 @@ export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   status: PlantStatus;
   isFavorite: boolean;
   growingGuidance: import('./calendar').GrowingGuidanceDto;
+  sowingTemperature: SowingTemperatureDto | null;
 }
 
 export interface PageDto<T> {

@@ -90,6 +90,8 @@ export interface GardenDetailDto extends GardenSummaryDto {
   firstFrost: MonthDayDto | null;
   /** No frost dates, but monthly temperatures place sowing instead (ADR 0025). */
   frostFree: boolean;
+  /** Mean daily temperature in each month, January first, °C; null when unknown. */
+  monthlyMeanC: number[] | null;
   lengthInches: number;
   widthInches: number;
   ownerUserId: string;

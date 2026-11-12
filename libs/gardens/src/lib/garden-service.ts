@@ -205,6 +205,7 @@ export class GardenService {
         garden.lastFrostMonth == null &&
         garden.firstFrostMonth == null &&
         frostRare(garden.monthlyMeanC),
+      monthlyMeanC: garden.monthlyMeanC ?? null,
       lengthInches: garden.lengthInches,
       widthInches: garden.widthInches,
       myRole: mine.role as GardenRole,

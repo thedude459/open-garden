@@ -57,6 +57,19 @@ export function formatLength(inches: number, units: Units): string {
   return `${lengthInput(inches, units)} ${lengthUnit(units)}`;
 }
 
+/** A temperature in the member's units, to the degree: "16 °C" or "61 °F". */
+export function formatTemperature(celsius: number, units: Units): string {
+  return units === 'metric'
+    ? `${Math.round(celsius)} °C`
+    : `${Math.round((celsius * 9) / 5 + 32)} °F`;
+}
+
+/** A temperature range in the member's units: "10–35 °C" or "50–95 °F". */
+export function formatTemperatureRange(minC: number, maxC: number, units: Units): string {
+  const [low] = formatTemperature(minC, units).split(' ');
+  return `${low}–${formatTemperature(maxC, units)}`;
+}
+
 /** A plant's spacing: "12 in" or "30 cm". */
 export function formatSpacing(inches: number, units: Units): string {
   return units === 'metric' ? `${Math.round(inches * CM_PER_INCH)} cm` : `${inches} in`;

@@ -5,6 +5,7 @@ import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   convertLength,
+  formatTemperature,
   inchesFromInput,
   lengthInput,
   lengthStep,
@@ -195,6 +196,12 @@ import { PlannerDraftService } from './planner-draft.service';
             }
           </select>
         </label>
+        @if (g.monthlyMeanC?.length === 12) {
+          <p class="muted">
+            Monthly average temperature: coldest {{ formatTemperature(coldest(g), units()) }},
+            warmest {{ formatTemperature(warmest(g), units()) }}.
+          </p>
+        }
         @if (g.frostFree && !lastMonth && !firstMonth) {
           <p class="muted">
             It rarely frosts here, so sowing times follow the monthly temperatures. Set frost dates
@@ -411,6 +418,15 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   notes = '';
   readonly lengthUnit = lengthUnit;
   readonly units = this.auth.units;
+  readonly formatTemperature = formatTemperature;
+
+  coldest(g: GardenDetailDto): number {
+    return Math.min(...(g.monthlyMeanC ?? [0]));
+  }
+
+  warmest(g: GardenDetailDto): number {
+    return Math.max(...(g.monthlyMeanC ?? [0]));
+  }
   readonly lengthStep = lengthStep;
   /** Units the size fields are typed in; a switch converts what is typed. */
   sizeUnits: Units = this.auth.units();

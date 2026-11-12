@@ -37,7 +37,11 @@ sown in a yearly window.
    last. The crop's frost guidance still says how it is grown: a sowing
    window if it is sown in place, a transplant window if it is transplanted.
    Harvest follows from the start, as before. Indoor starts are not given.
-5. **Frost dates win.** A property with both frost dates keeps frost-based
+5. **Shown in the member's units.** Temperatures are stored in °C. The plant
+   page shows a crop's growing range and soil temperature, and property
+   Settings show the coldest and warmest monthly averages, in °C or °F by the
+   member's units setting (ADR 0024).
+6. **Frost dates win.** A property with both frost dates keeps frost-based
    windows. Property Settings, the Plan, and the calendar say when sowing
    follows the monthly temperatures instead.
 

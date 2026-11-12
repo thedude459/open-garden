@@ -211,6 +211,8 @@ describe('GardenService', () => {
     const created = await service.create(ownerId, { name: 'Warm', place: HONOLULU_PLACE });
     expect(created).toMatchObject({ hardinessZone: 12, lastFrost: null, firstFrost: null });
     expect(created.seasonNotice).toMatch(/rarely frosts here/);
+    expect(created.frostFree).toBe(true);
+    expect(created.monthlyMeanC).toHaveLength(12);
     const row = await gardens.getById(created.id);
     expect(row?.monthlyMeanC).toHaveLength(12);
 

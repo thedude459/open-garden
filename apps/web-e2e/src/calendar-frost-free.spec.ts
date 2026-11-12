@@ -26,4 +26,10 @@ test('where it rarely frosts, the calendar places crops by monthly temperature',
   await page.getByRole('button', { name: 'Add Okra', exact: true }).click();
   const okra = page.locator('article').filter({ hasText: 'Okra' }).first();
   await expect(okra.getByText('Sow Jan 1 – Dec 31')).toBeVisible();
+
+  // Settings show the monthly averages, in °F for this member.
+  await page.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Settings' }).click();
+  await expect(
+    page.getByText('Monthly average temperature: coldest 73 °F, warmest 81 °F.'),
+  ).toBeVisible();
 });

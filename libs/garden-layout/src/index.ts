@@ -18,6 +18,8 @@ export {
   formatLength,
   formatPlanSize,
   formatSpacing,
+  formatTemperature,
+  formatTemperatureRange,
   feetFromTreeSpacing,
   inchesFromInput,
   lengthInput,
