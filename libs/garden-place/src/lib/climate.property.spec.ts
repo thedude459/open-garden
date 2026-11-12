@@ -1,7 +1,7 @@
 // Property-based tests (fast-check) for the frost-date pair stored on a garden.
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { keepFrostPair, zoneNumberFromLabel } from './climate';
+import { keepFrostPair, zoneFromMinimum } from './climate';
 
 const anyMonthDay = fc.record({
   month: fc.integer({ min: -2, max: 15 }),
@@ -38,17 +38,17 @@ describe('frost dates (properties)', () => {
     );
   });
 
-  it('a zone label yields 1–13 or nothing', () => {
+  it('a zone is 1–13 and never falls as winters get milder', () => {
     fc.assert(
       fc.property(
-        fc.oneof(fc.string(), fc.integer({ min: -5, max: 20 }).map(String), fc.constant(null)),
-        (label) => {
-          const zone = zoneNumberFromLabel(label);
-          if (zone !== null) {
-            expect(Number.isInteger(zone)).toBe(true);
-            expect(zone).toBeGreaterThanOrEqual(1);
-            expect(zone).toBeLessThanOrEqual(13);
-          }
+        fc.double({ min: -80, max: 50, noNaN: true }),
+        fc.double({ min: 0, max: 30, noNaN: true }),
+        (cold, milder) => {
+          const zone = zoneFromMinimum(cold);
+          expect(Number.isInteger(zone)).toBe(true);
+          expect(zone).toBeGreaterThanOrEqual(1);
+          expect(zone).toBeLessThanOrEqual(13);
+          expect(zoneFromMinimum(cold + milder)).toBeGreaterThanOrEqual(zone);
         },
       ),
     );

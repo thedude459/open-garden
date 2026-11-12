@@ -11,9 +11,9 @@ export { NominatimPlaceLookup } from './lib/nominatim-place-lookup';
 export {
   FixtureClimateLookup,
   LiveClimateLookup,
+  climateFromDailyMinimums,
   keepFrostPair,
-  mmdd,
-  zoneNumberFromLabel,
+  zoneFromMinimum,
 } from './lib/climate';
 export { FixtureRainOutlook, shiftIsoDate } from './lib/fixture-rain-outlook';
 export { OpenMeteoRainOutlook, parseRainSums } from './lib/open-meteo-rain-outlook';
