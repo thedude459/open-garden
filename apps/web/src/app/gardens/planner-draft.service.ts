@@ -6,6 +6,7 @@ import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import {
   draftIsDirty,
+  freshLayoutApplies,
   putBodyFromDraft,
   savePlannerDraft,
   type PlannerSaveTracking,
@@ -59,13 +60,14 @@ export class PlannerDraftService {
     } else {
       this.loading.set(true);
     }
+    const shown = this.draft();
     const layout = await this.api.get(gardenId);
     if (!layout) {
       this.draft.set(null);
       this.loading.set(false);
       return null;
     }
-    if (!this.dirty()) this.hydrate(layout);
+    if (freshLayoutApplies(shown, this.draft(), this.dirty())) this.hydrate(layout);
     this.loading.set(false);
     return this.draft();
   }
