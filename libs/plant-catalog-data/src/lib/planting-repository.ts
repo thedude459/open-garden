@@ -2,7 +2,8 @@ import { and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import type { AppDatabase } from './db';
 import { gardenBeds, gardenPlantingHarvests, gardenPlantings, plants } from './schema';
 
-function visiblePlantings(gardenId: string) {
+/** Plantings of the open season, plus perennials and trees carried across seasons. */
+export function visiblePlantings(gardenId: string) {
   return and(
     eq(gardenPlantings.gardenId, gardenId),
     sql`(

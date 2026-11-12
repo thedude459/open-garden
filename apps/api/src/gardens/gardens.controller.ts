@@ -134,6 +134,8 @@ export class GardensController {
       try {
         const calendar = await this.calendar.list(user.id, garden.id, 1, 200);
         for (const entry of calendar.entries) {
+          // A crop already in the ground is not one to start.
+          if (entry.planted) continue;
           if (!overlapsThisWeek([entry.windows.outdoorSow, entry.windows.transplant], today)) {
             continue;
           }

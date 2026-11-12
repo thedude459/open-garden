@@ -39,6 +39,10 @@ export interface CalendarEntryDto {
   zoneMax: number;
   zoneMismatch: boolean | null;
   windows: CalendarWindowsDto;
+  /** On the household's plan (added from the calendar's search). */
+  planned: boolean;
+  /** Has a planting this season; it stays on the calendar while it does. */
+  planted: boolean;
 }
 
 export interface CalendarDto {
