@@ -1,5 +1,9 @@
 import type { PlantType } from '@open-garden/shared-types';
-import type { GrowingGuidanceDto, RootstockSpacingDto } from '@open-garden/shared-types';
+import type {
+  GrowingGuidanceDto,
+  RootstockSpacingDto,
+  SowingTemperatureDto,
+} from '@open-garden/shared-types';
 
 export interface ProviderPlant {
   externalId: string;
@@ -22,6 +26,7 @@ export interface ProviderPlant {
   fertilizeIntervalDays?: number | null;
   growingGuidance?: GrowingGuidanceDto | null;
   rootstockSpacingInches?: RootstockSpacingDto | null;
+  sowingTemperature?: SowingTemperatureDto | null;
   /** Botanical family, by its common name ("Cabbage family"). */
   family?: string | null;
 }

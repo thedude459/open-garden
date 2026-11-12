@@ -4,6 +4,7 @@ import {
   uuid,
   text,
   integer,
+  real,
   smallint,
   doublePrecision,
   timestamp,
@@ -90,6 +91,10 @@ export const plants = pgTable(
     dwarfSpacingInches: integer('dwarf_spacing_inches'),
     semiDwarfSpacingInches: integer('semi_dwarf_spacing_inches'),
     standardSpacingInches: integer('standard_spacing_inches'),
+    /** Air temperature range for growth and soil temperature to sow, °C (ADR 0025). */
+    growMinC: real('grow_min_c'),
+    growMaxC: real('grow_max_c'),
+    sowSoilMinC: real('sow_soil_min_c'),
     family: text('family'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
@@ -145,6 +150,8 @@ export const gardens = pgTable(
     lastFrostDay: integer('last_frost_day'),
     firstFrostMonth: integer('first_frost_month'),
     firstFrostDay: integer('first_frost_day'),
+    /** Mean daily temperature per month, January first, °C (ADR 0025). */
+    monthlyMeanC: real('monthly_mean_c').array(),
     lengthInches: integer('length_inches').notNull().default(240),
     widthInches: integer('width_inches').notNull().default(120),
     formattedAddress: text('formatted_address'),

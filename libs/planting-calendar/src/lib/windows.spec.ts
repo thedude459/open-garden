@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeWindows, seasonYear } from './windows';
+import { computeWindows, seasonYear, windowsAvailable } from './windows';
 import type { GrowingGuidanceDto } from '@open-garden/shared-types';
 
 const tomatoGuidance: GrowingGuidanceDto = {
@@ -247,5 +247,97 @@ describe('seasonYear', () => {
     expect(seasonYear(south, new Date(2026, 4, 10))).toBe(2025);
     expect(seasonYear(south, new Date(2026, 4, 11))).toBe(2026);
     expect(seasonYear({ lastFrost: null, firstFrost: null }, new Date(2026, 1, 1))).toBe(2026);
+  });
+});
+
+describe('windows where it rarely frosts', () => {
+  const noFrost = { lastFrost: null, firstFrost: null };
+  // Honolulu-like: 23–27 °C all year, coolest in winter.
+  const warm = [23, 23, 23, 24, 25, 26, 27, 27, 27, 26, 25, 24];
+  const tomatoTemps = { minC: 10, maxC: 35, minSoilC: 16 };
+  const lettuceTemps = { minC: 4, maxC: 24, minSoilC: 4 };
+
+  it('plants a warm crop all year, from the crop’s own method', () => {
+    const w = computeWindows(noFrost, tomatoGuidance, 65, 2026, {
+      monthlyMeanC: warm,
+      sowingTemperature: tomatoTemps,
+    });
+    expect(w.transplant).toEqual({
+      earliest: { month: 1, day: 1 },
+      latest: { month: 12, day: 31 },
+      wrapsYear: false,
+    });
+    expect(w.outdoorSow).toBeNull();
+    expect(w.indoorStart).toBeNull();
+    expect(w.harvest?.earliest).toEqual({ month: 3, day: 7 });
+  });
+
+  it('gives a cool crop the cooler months, across the year end', () => {
+    const w = computeWindows(noFrost, spinachGuidance, 45, 2026, {
+      monthlyMeanC: warm,
+      sowingTemperature: lettuceTemps,
+    });
+    expect(w.outdoorSow).toEqual({
+      earliest: { month: 12, day: 1 },
+      latest: { month: 4, day: 30 },
+      wrapsYear: true,
+    });
+  });
+
+  it('takes the longer of two runs of suitable months', () => {
+    // Cool in Jan–Mar and again in Oct–Nov; too hot in between and in December.
+    const twoSeasons = [20, 20, 20, 30, 30, 30, 30, 30, 30, 20, 20, 30];
+    expect(Math.min(...twoSeasons)).toBeGreaterThanOrEqual(7);
+    const w = computeWindows(noFrost, spinachGuidance, null, 2026, {
+      monthlyMeanC: twoSeasons,
+      sowingTemperature: lettuceTemps,
+    });
+    expect(w.outdoorSow).toEqual({
+      earliest: { month: 1, day: 1 },
+      latest: { month: 3, day: 31 },
+      wrapsYear: false,
+    });
+  });
+
+  it('gives no window when no month suits, or the crop or place has no temperatures', () => {
+    const empty = { indoorStart: null, outdoorSow: null, transplant: null, harvest: null };
+    const hot = new Array<number>(12).fill(30);
+    expect(
+      computeWindows(noFrost, spinachGuidance, 45, 2026, {
+        monthlyMeanC: hot,
+        sowingTemperature: lettuceTemps,
+      }),
+    ).toEqual(empty);
+    expect(
+      computeWindows(noFrost, tomatoGuidance, 65, 2026, {
+        monthlyMeanC: warm,
+        sowingTemperature: null,
+      }),
+    ).toEqual(empty);
+    expect(computeWindows(noFrost, tomatoGuidance, 65, 2026)).toEqual(empty);
+  });
+
+  it('uses frost dates whenever the property has both', () => {
+    const w = computeWindows(typicalFrost, tomatoGuidance, 65, 2024, {
+      monthlyMeanC: warm,
+      sowingTemperature: tomatoTemps,
+    });
+    expect(w.transplant?.earliest).toEqual({ month: 4, day: 22 });
+  });
+
+  it('has windows with frost dates, or monthly temperatures where frost is rare', () => {
+    expect(windowsAvailable(typicalFrost, null)).toBe(true);
+    expect(windowsAvailable(noFrost, warm)).toBe(true);
+    expect(windowsAvailable(noFrost, null)).toBe(false);
+    expect(windowsAvailable(noFrost, [20])).toBe(false);
+    // Frost dates cleared in a place with cold winters: no temperature windows.
+    const temperate = [2, 4, 9, 14, 20, 25, 27, 26, 22, 15, 10, 4];
+    expect(windowsAvailable(noFrost, temperate)).toBe(false);
+    expect(
+      computeWindows(noFrost, tomatoGuidance, 65, 2026, {
+        monthlyMeanC: temperate,
+        sowingTemperature: tomatoTemps,
+      }).transplant,
+    ).toBeNull();
   });
 });

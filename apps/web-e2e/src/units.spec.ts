@@ -36,4 +36,19 @@ test('a member who picks metric types and reads lengths in metres', async ({ bro
   // Switching back shows the same bed in feet.
   await units.selectOption('imperial');
   await expect(page.getByText('8 × 4 ft').first()).toBeVisible();
+
+  // Temperatures follow the same setting.
+  const tomato = await page.request.get('/api/plants?q=Tomato&pageSize=50');
+  const items = (
+    (await tomato.json()) as {
+      items: Array<{ id: string; commonName: string; cultivar: string | null }>;
+    }
+  ).items;
+  const id = items.find((p) => p.commonName === 'Tomato' && !p.cultivar)!.id;
+  await page.goto(`/plants/${id}`);
+  await expect(page.getByText('50–95 °F')).toBeVisible();
+  await expect(page.getByText('61 °F or warmer')).toBeVisible();
+  await units.selectOption('metric');
+  await expect(page.getByText('10–35 °C')).toBeVisible();
+  await expect(page.getByText('16 °C or warmer')).toBeVisible();
 });

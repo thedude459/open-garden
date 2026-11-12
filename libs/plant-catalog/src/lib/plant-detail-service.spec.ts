@@ -34,6 +34,9 @@ describe('PlantDetailService', () => {
         transplantFrostAnchor: 'last',
         transplantWeeksEarliest: 1,
         transplantWeeksLatest: 2,
+        growMinC: 10,
+        growMaxC: 35,
+        sowSoilMinC: 16,
       }),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(true) };
@@ -47,6 +50,7 @@ describe('PlantDetailService', () => {
       weeksLatest: -6,
     });
     expect(detail?.growingGuidance.outdoorSow).toBeNull();
+    expect(detail?.sowingTemperature).toEqual({ minC: 10, maxC: 35, minSoilC: 16 });
   });
 
   it('returns leftover null spacing on getById', async () => {

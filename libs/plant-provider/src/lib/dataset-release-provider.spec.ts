@@ -106,6 +106,19 @@ describe('DatasetReleaseProvider', () => {
     expect(items[0]?.fertilizeIntervalDays).toBeNull();
   });
 
+  it('reads the temperatures a crop grows and is sown in, when the release has them', async () => {
+    const warm = {
+      ...tomato,
+      temperatureC: { min: 10, optimal: 24, max: 35 },
+      minSoilTemperatureC: 16,
+    };
+    const { items } = await pinned(
+      catalog([warm, { ...tomato, id: 'plain', varieties: [] }]),
+    ).listPage();
+    expect(items[0]?.sowingTemperature).toEqual({ minC: 10, maxC: 35, minSoilC: 16 });
+    expect(items.find((p) => p.externalId === 'plain')?.sowingTemperature).toBeNull();
+  });
+
   it('uses hardiness zones for perennials and leaves them unset when missing', async () => {
     const apple = {
       ...tomato,
@@ -241,6 +254,11 @@ describe('the bundled open-garden-data release', () => {
     expect(items.map((p) => p.varietyKey)).toEqual(
       expect.arrayContaining(['dataset:tomato', 'dataset:tomato-cherry', 'dataset:apple']),
     );
+    expect(items.find((p) => p.varietyKey === 'dataset:tomato')?.sowingTemperature).toEqual({
+      minC: 10,
+      maxC: 35,
+      minSoilC: 16,
+    });
   });
 
   it('is accepted on its provenance attestation alone', async () => {

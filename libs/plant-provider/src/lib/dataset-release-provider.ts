@@ -147,6 +147,8 @@ const cropSchema = z.object({
   windows: z.object({ indoorStart: window, directSow: window, transplant: window }),
   daysToMaturity: dayRange.optional(),
   hardinessZones: zones.optional(),
+  temperatureC: z.object({ min: z.number(), max: z.number() }).optional(),
+  minSoilTemperatureC: z.number().optional(),
   rootstocks: z
     .object({
       dwarf: z.object({ spacingCm: spacing }).optional(),
@@ -210,6 +212,13 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
     waterIntervalDays: WATER_INTERVAL_DAYS[crop.water],
     fertilizeIntervalDays: crop.feeding ? FEED_INTERVAL_DAYS[crop.feeding] : null,
     rootstockSpacingInches: rootstocks(crop.rootstocks),
+    sowingTemperature: crop.temperatureC
+      ? {
+          minC: crop.temperatureC.min,
+          maxC: crop.temperatureC.max,
+          minSoilC: crop.minSoilTemperatureC ?? null,
+        }
+      : null,
     family,
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),

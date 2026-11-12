@@ -1,5 +1,7 @@
 export { embedMapReachable, embedMapUrl } from './lib/embed-map';
 export {
+  HONOLULU_PLACE,
+  HONOLULU_QUERY,
   MAIN_STREET_PLACES,
   MAIN_STREET_QUERY,
   WASHINGTON_PLACE,

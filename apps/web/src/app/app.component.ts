@@ -103,11 +103,9 @@ import { SOURCE_CODE_URL } from './source-link';
               Units
               <select #unitsSelect (change)="changeUnits(unitsSelect)">
                 <option value="imperial" [selected]="units() === 'imperial'">
-                  Feet and inches
+                  Imperial (ft, °F)
                 </option>
-                <option value="metric" [selected]="units() === 'metric'">
-                  Metres and centimetres
-                </option>
+                <option value="metric" [selected]="units() === 'metric'">Metric (m, °C)</option>
               </select>
             </label>
             <button type="button" class="nav-text sidebar-signout" (click)="logout()">

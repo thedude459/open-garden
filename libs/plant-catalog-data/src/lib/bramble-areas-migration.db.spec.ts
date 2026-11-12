@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MIGRATIONS_FOLDER } from './migrate';
 import * as schema from './schema';
-import { createTestDb, gardenInput, insertUser, type TestDb } from './test-db';
+import { createTestDb, insertGarden, insertUser, type TestDb } from './test-db';
 
 const MIGRATION = readFileSync(
   resolve(process.cwd(), MIGRATIONS_FOLDER, '0004_bramble_areas.sql'),
@@ -23,16 +23,16 @@ describe('migration 0004: bramble areas', { timeout: 30_000 }, () => {
     const t = await createTestDb('0004');
     open.push(t);
     const user = await insertUser(t.db);
-    const [garden] = await t.db.insert(schema.gardens).values(gardenInput(user.id)).returning();
+    const garden = await insertGarden(t.db, user.id);
     const [orchard, vegetable] = await t.db
       .insert(schema.gardenAreas)
       .values([
-        { gardenId: garden!.id, name: 'Orchard', nameNormalized: 'orchard', kind: 'orchard' },
-        { gardenId: garden!.id, name: 'Veg', nameNormalized: 'veg', kind: 'vegetable' },
+        { gardenId: garden.id, name: 'Orchard', nameNormalized: 'orchard', kind: 'orchard' },
+        { gardenId: garden.id, name: 'Veg', nameNormalized: 'veg', kind: 'vegetable' },
       ])
       .returning();
     const bed = (name: string, areaId: string, station: string | null) => ({
-      gardenId: garden!.id,
+      gardenId: garden.id,
       name,
       nameNormalized: name.toLowerCase(),
       areaId,
@@ -52,7 +52,7 @@ describe('migration 0004: bramble areas', { timeout: 30_000 }, () => {
     const areas = await t.db
       .select()
       .from(schema.gardenAreas)
-      .where(eq(schema.gardenAreas.gardenId, garden!.id));
+      .where(eq(schema.gardenAreas.gardenId, garden.id));
     const bramble = areas.find((a) => a.kind === 'bramble');
     expect(bramble?.name).toBe('Bramble patch');
     const beds = await t.db.select().from(schema.gardenBeds);
@@ -65,7 +65,7 @@ describe('migration 0004: bramble areas', { timeout: 30_000 }, () => {
     // Area kinds are no longer limited by a constraint.
     await expect(
       t.db.insert(schema.gardenAreas).values({
-        gardenId: garden!.id,
+        gardenId: garden.id,
         name: 'Bramble patch 2',
         nameNormalized: 'bramble patch 2',
         kind: 'bramble',

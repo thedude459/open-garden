@@ -6,6 +6,8 @@ import {
   formatLength,
   formatPlanSize,
   formatSpacing,
+  formatTemperature,
+  formatTemperatureRange,
   inchesFromInput,
   inchesToFeetInput,
   lengthInput,
@@ -60,6 +62,14 @@ describe('display units', () => {
     expect(convertLength(20, 'imperial', 'metric')).toBe(6.1);
     expect(convertLength(6.1, 'metric', 'imperial')).toBe(20);
     expect(convertLength(7, 'metric', 'metric')).toBe(7);
+  });
+
+  it('shows temperatures in °C or °F', () => {
+    expect(formatTemperature(16, 'metric')).toBe('16 °C');
+    expect(formatTemperature(16, 'imperial')).toBe('61 °F');
+    expect(formatTemperature(-17.8, 'imperial')).toBe('0 °F');
+    expect(formatTemperatureRange(10, 35, 'metric')).toBe('10–35 °C');
+    expect(formatTemperatureRange(10, 35, 'imperial')).toBe('50–95 °F');
   });
 
   it('shows plant spacing in inches or centimetres', () => {

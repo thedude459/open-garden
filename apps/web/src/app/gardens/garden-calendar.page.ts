@@ -39,6 +39,12 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
             on this calendar are still listed below.
           </p>
         }
+        @if (cal.windowsAvailable && !cal.lastFrost) {
+          <p class="muted">
+            It rarely frosts here, so windows are the months warm and cool enough for each crop.
+            Crops without temperature data have none.
+          </p>
+        }
         @if (canEdit()) {
           <og-plant-picker
             inputName="calendarSearch"
