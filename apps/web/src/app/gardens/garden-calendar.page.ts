@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { plantName } from '@open-garden/shared-types';
+import { formatMonthDay } from '@open-garden/web-ui';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -247,8 +248,8 @@ export class GardenCalendarPage implements OnInit {
 
   formatWindow(window: SeasonalWindowDto | null): string {
     if (!window) return 'unavailable';
-    const a = formatMd(window.earliest);
-    const b = formatMd(window.latest);
+    const a = formatMonthDay(window.earliest);
+    const b = formatMonthDay(window.latest);
     return a === b ? a : `${a} – ${b}`;
   }
 
@@ -350,24 +351,6 @@ function nextStartKey(entry: CalendarEntryDto, today: Date): number {
 
 function mdKey(md: { month: number; day: number }): number {
   return md.month * 100 + md.day;
-}
-
-function formatMd(md: { month: number; day: number }): string {
-  const names = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return `${names[md.month - 1] ?? md.month} ${md.day}`;
 }
 
 function messageFrom(err: unknown): string {
