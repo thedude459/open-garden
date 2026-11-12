@@ -6,6 +6,7 @@ import {
   saveLayout,
   uniqueEmail,
   confirmFixtureAddress,
+  openAdd,
 } from './planner-helpers';
 
 test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({ browser }) => {
@@ -19,6 +20,7 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   await openOverview(owner);
   await expect(owner.getByLabel('You are here')).toContainText('Garden Overview');
   await createSizedBed(owner, 'North');
+  await openAdd(owner, 'Add walkway');
   await owner.getByPlaceholder('Area name').fill('Path');
   await owner.locator('input[name="newAreaLength"]').fill('4');
   await owner.locator('input[name="newAreaWidth"]').fill('2');

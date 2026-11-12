@@ -7,6 +7,7 @@ import {
   openOverview,
   saveLayout,
   confirmFixtureAddress,
+  openAdd,
 } from './planner-helpers';
 
 test('planner overview: beds, areas, labels, no planting drag', async ({ browser }) => {
@@ -43,6 +44,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await expect(owner.locator('.layout-plant')).toHaveCount(0);
   await expect(owner.getByRole('button', { name: 'Place planting' })).toHaveCount(0);
 
+  await openAdd(owner, 'Add walkway');
   await owner.getByPlaceholder('Area name').fill('Path');
   await owner.locator('input[name="newAreaLength"]').fill('4');
   await owner.locator('input[name="newAreaWidth"]').fill('2');

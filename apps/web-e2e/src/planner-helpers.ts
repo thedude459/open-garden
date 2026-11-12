@@ -114,16 +114,30 @@ export async function inviteViewer(owner: Page, email: string) {
   await expect(owner.getByText(email)).toBeVisible();
 }
 
+/** Opens the planner's Add menu, unless it is open already. */
+export async function openAddMenu(page: Page) {
+  const add = page.getByRole('button', { name: 'Add', exact: true });
+  if ((await add.getAttribute('aria-expanded')) !== 'true') await add.click();
+}
+
+/** Chooses an item from the planner's Add menu, such as "Add tree" or "Add walkway". */
+export async function openAdd(page: Page, item: string) {
+  await openAddMenu(page);
+  await page.getByRole('button', { name: item, exact: true }).click();
+}
+
 export async function createSizedBed(page: Page, name: string, length = '8', width = '4') {
   const vegetable = page.locator('[data-area-kind="vegetable"]');
+  await openAddMenu(page);
   const addVegetable = page.getByRole('button', { name: 'Add vegetable garden' });
-  // count() does not wait. The button stays disabled until areas have loaded,
+  // count() does not wait. The item stays disabled until areas have loaded,
   // so the count below reflects saved areas, not a list still in flight.
   await expect(addVegetable).toBeEnabled();
   if ((await vegetable.count()) === 0) {
     await addVegetable.click();
     await expect(vegetable).toBeVisible();
   }
+  await openAdd(page, 'Add bed');
   await page.getByPlaceholder('Bed name').fill(name);
   await page.locator('input[name="newLength"]').fill(length);
   await page.locator('input[name="newWidth"]').fill(width);
@@ -148,15 +162,4 @@ export async function openPlanting(row: Locator) {
   const edit = row.getByRole('button', { name: /^Edit / });
   await expect(edit).toBeVisible();
   if ((await edit.getAttribute('aria-expanded')) !== 'true') await edit.click();
-}
-
-/** Opens a bed's settings on the Plantings page. */
-export async function openBedSettings(page: Page, bedName: string) {
-  const section = page.locator('section').filter({
-    has: page.getByRole('heading', { name: bedName, exact: true }),
-  });
-  const details = section.locator('details.bed-settings');
-  if ((await details.getAttribute('open')) === null) {
-    await section.getByText('Bed settings').click();
-  }
 }

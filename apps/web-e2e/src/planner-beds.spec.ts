@@ -7,6 +7,7 @@ import {
   openConfiguration,
   openOverview,
   saveLayout,
+  openAdd,
 } from './planner-helpers';
 
 test('planner beds: create bed and area, select opens Bed View, viewer cannot mutate', async ({
@@ -50,6 +51,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   expect((await saveLayout(owner)).status()).toBe(200);
   await expect(owner.getByText('Unsaved changes')).toHaveCount(0);
 
+  await openAdd(owner, 'Add walkway');
   await owner.getByPlaceholder('Area name').fill('Compost');
   await owner.locator('input[name="newAreaLength"]').fill('3');
   await owner.locator('input[name="newAreaWidth"]').fill('2');
@@ -71,7 +73,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await expect(owner.getByRole('button', { name: 'Create non-planting area' })).toHaveCount(0);
   await owner.getByRole('link', { name: 'Back to overview' }).click();
 
-  await owner.getByRole('button', { name: 'Edit size East' }).click();
+  await owner.getByRole('button', { name: 'Edit bed East' }).click();
   await owner.getByRole('button', { name: 'Rotate 90°' }).click();
   expect((await saveLayout(owner)).status()).toBe(200);
   await expect(owner.getByText('8 × 4 ft · 90°')).toBeVisible();

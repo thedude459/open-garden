@@ -25,7 +25,7 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   await createSizedBed(owner, 'East');
   expect((await saveLayout(owner)).status()).toBe(200);
 
-  await owner.getByRole('button', { name: 'Edit size East' }).click();
+  await owner.getByRole('button', { name: 'Edit bed East' }).click();
   const origin = owner.locator('input[name="originX"]');
   await expect(origin).toBeVisible();
   const startOrigin = await origin.inputValue();

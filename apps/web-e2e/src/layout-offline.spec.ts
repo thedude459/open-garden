@@ -6,6 +6,7 @@ import {
   openOverview,
   saveLayout,
   confirmFixtureAddress,
+  openAdd,
 } from './planner-helpers';
 
 test('cached layout stays readable when layout API is aborted', async ({ browser }) => {
@@ -26,11 +27,12 @@ test('cached layout stays readable when layout API is aborted', async ({ browser
   await expect(page.getByText('8 × 4 ft · 0°')).toBeVisible();
 
   await page.context().setOffline(true);
-  await page.getByRole('button', { name: 'Edit size Raised bed 1' }).click();
+  await page.getByRole('button', { name: 'Edit bed Raised bed 1' }).click();
   await page.locator('input[name="originX"]').fill('1');
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.getByText('Unsaved changes')).toHaveCount(0);
 
+  await openAdd(page, 'Add bed');
   await page.getByPlaceholder('Bed name').fill('Offline bed');
   await page.getByRole('button', { name: 'Create bed' }).click();
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
@@ -164,6 +166,7 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   expect((await saveLayout(page)).status()).toBe(200);
 
   await page.context().setOffline(true);
+  await openAdd(page, 'Add bed');
   await page.getByPlaceholder('Bed name').fill('Offline bed');
   await page.locator('input[name="newLength"]').fill('4');
   await page.locator('input[name="newWidth"]').fill('2');
@@ -171,7 +174,7 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await expect(page.getByRole('button', { name: 'Open bed Offline bed' })).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Edit size East' }).click();
+  await page.getByRole('button', { name: 'Edit bed East' }).click();
   await page.getByRole('button', { name: 'Delete bed East' }).click();
   await page.getByRole('button', { name: 'Confirm delete East' }).click();
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });

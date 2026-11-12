@@ -6,6 +6,7 @@ import {
   openOverview,
   saveLayout,
   confirmFixtureAddress,
+  openAdd,
 } from './planner-helpers';
 
 test('Overview create uses visible viewport center; grab-offset move; viewer cannot create', async ({
@@ -46,7 +47,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   expect(cy).toBeGreaterThan(vp!.y);
   expect(cy).toBeLessThan(vp!.y + vp!.height);
 
-  await owner.getByRole('button', { name: 'Edit size North' }).click();
+  await owner.getByRole('button', { name: 'Edit bed North' }).click();
   const originX = owner.locator('input[name="originX"]');
   const originY = owner.locator('input[name="originY"]');
   expect(Number(await originX.inputValue()) === 0 && Number(await originY.inputValue()) === 0).toBe(
@@ -56,7 +57,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
 
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
-  await owner.getByRole('button', { name: 'Edit size North' }).click();
+  await owner.getByRole('button', { name: 'Edit bed North' }).click();
   const ox = await originX.inputValue();
   await owner
     .locator('[data-bed-name="North"]')
@@ -65,6 +66,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   const movedX = await originX.inputValue();
   const movedY = await originY.inputValue();
 
+  await openAdd(owner, 'Add walkway');
   await owner.getByPlaceholder('Area name').fill('Path');
   await owner.locator('input[name="newAreaLength"]').fill('4');
   await owner.locator('input[name="newAreaWidth"]').fill('2');
@@ -74,7 +76,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   expect((await saveLayout(owner)).status()).toBe(200);
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
-  await owner.getByRole('button', { name: 'Edit size North' }).click();
+  await owner.getByRole('button', { name: 'Edit bed North' }).click();
   await expect(originX).toHaveValue(movedX);
   await expect(originY).toHaveValue(movedY);
   await expect(owner.locator('[data-area-name="Path"]')).toBeVisible();
