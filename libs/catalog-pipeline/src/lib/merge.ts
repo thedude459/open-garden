@@ -1,6 +1,11 @@
 import { buildVarietyKey } from '@open-garden/plant-catalog';
 import type { ProviderPlant } from '@open-garden/plant-provider';
-import type { GrowingGuidanceDto, PlantType, RootstockSpacingDto } from '@open-garden/shared-types';
+import type {
+  GrowingGuidanceDto,
+  PlantType,
+  RootstockSpacingDto,
+  SowingTemperatureDto,
+} from '@open-garden/shared-types';
 
 const MERGE_FIELDS = [
   'commonName',
@@ -17,6 +22,7 @@ const MERGE_FIELDS = [
   'fertilizeIntervalDays',
   'growingGuidance',
   'rootstockSpacingInches',
+  'sowingTemperature',
   'family',
 ] as const;
 
@@ -38,6 +44,7 @@ export interface MergedPlant {
   fertilizeIntervalDays: number | null;
   growingGuidance: GrowingGuidanceDto | null;
   rootstockSpacingInches: RootstockSpacingDto | null;
+  sowingTemperature: SowingTemperatureDto | null;
   family: string | null;
   provider: string;
   providerExternalId: string;
@@ -141,6 +148,7 @@ export function mergeCatalogRecords(
       fertilizeIntervalDays: row.values.fertilizeIntervalDays ?? null,
       growingGuidance: row.values.growingGuidance ?? null,
       rootstockSpacingInches: row.values.rootstockSpacingInches ?? null,
+      sowingTemperature: row.values.sowingTemperature ?? null,
       family: row.values.family ?? null,
       provider: last?.sourceId ?? row.contributingSources[row.contributingSources.length - 1] ?? '',
       providerExternalId: last?.externalId ?? '',
@@ -169,6 +177,7 @@ function applyFields(row: Acc, plant: ProviderPlant, sourceId: string) {
     fertilizeIntervalDays: plant.fertilizeIntervalDays ?? null,
     growingGuidance: plant.growingGuidance ?? null,
     rootstockSpacingInches: plant.rootstockSpacingInches ?? null,
+    sowingTemperature: plant.sowingTemperature ?? null,
     family: plant.family ?? null,
   };
   for (const field of MERGE_FIELDS) {

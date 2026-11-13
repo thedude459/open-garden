@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { and, eq, gt } from 'drizzle-orm';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
+import type { Units } from '@open-garden/shared-types';
 import { isUniqueViolation, sessions, users } from '@open-garden/plant-catalog-data';
 
 export interface AuthUser {
@@ -9,6 +10,7 @@ export interface AuthUser {
   email: string;
   displayName: string | null;
   role: string;
+  units: Units;
 }
 
 export class AuthService {
@@ -90,6 +92,10 @@ export class AuthService {
     return rows.length > 0;
   }
 
+  async setUnits(userId: string, units: Units): Promise<void> {
+    await this.db.update(users).set({ units }).where(eq(users.id, userId));
+  }
+
   async ensureAdmin(email: string, password: string): Promise<AuthUser> {
     const existing = await this.login(email, password);
     if (existing) {
@@ -119,11 +125,13 @@ function mapUser(user: {
   email: string;
   displayName: string | null;
   role: string;
+  units: string;
 }): AuthUser {
   return {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
     role: user.role,
+    units: user.units === 'metric' ? 'metric' : 'imperial',
   };
 }

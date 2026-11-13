@@ -1,15 +1,25 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { formatDay } from '@open-garden/web-ui';
+import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { feetToInches, inchesToFeetInput, snapHalfFoot } from '@open-garden/garden-layout';
+import {
+  convertLength,
+  formatTemperature,
+  inchesFromInput,
+  lengthInput,
+  lengthStep,
+  lengthUnit,
+  snapHalfFoot,
+} from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
 import type {
   GardenDetailDto,
   GardenRole,
   PlaceCandidateDto,
   SeasonDto,
+  Units,
 } from '@open-garden/shared-types';
 import { CalendarApiService } from './calendar-api.service';
 import { AuthApiService } from '../auth/auth-api.service';
@@ -48,7 +58,7 @@ import { PlannerDraftService } from './planner-draft.service';
                   · {{ row.bedName }}
                 }
                 @if (row.harvestedOn) {
-                  · harvested {{ row.harvestedOn }}
+                  · harvested {{ formatDay(row.harvestedOn) }}
                 }
                 @if (row.note) {
                   · {{ row.note }}
@@ -107,25 +117,25 @@ import { PlannerDraftService } from './planner-draft.service';
           <textarea [(ngModel)]="notes" name="notes" rows="3" [disabled]="!canEdit()"></textarea>
         </label>
         <label>
-          Length (ft)
+          Length ({{ lengthUnit(units()) }})
           <input
             type="number"
-            min="0.5"
-            step="0.5"
+            [min]="lengthStep(units())"
+            [step]="lengthStep(units())"
             name="gardenLength"
-            [(ngModel)]="lengthFeet"
+            [(ngModel)]="lengthValue"
             [disabled]="!canEdit()"
             required
           />
         </label>
         <label>
-          Width (ft)
+          Width ({{ lengthUnit(units()) }})
           <input
             type="number"
-            min="0.5"
-            step="0.5"
+            [min]="lengthStep(units())"
+            [step]="lengthStep(units())"
             name="gardenWidth"
-            [(ngModel)]="widthFeet"
+            [(ngModel)]="widthValue"
             [disabled]="!canEdit()"
             required
           />
@@ -187,6 +197,18 @@ import { PlannerDraftService } from './planner-draft.service';
             }
           </select>
         </label>
+        @if (g.monthlyMeanC?.length === 12) {
+          <p class="muted">
+            Monthly average temperature: coldest {{ formatTemperature(coldest(g), units()) }},
+            warmest {{ formatTemperature(warmest(g), units()) }}.
+          </p>
+        }
+        @if (g.frostFree && !lastMonth && !firstMonth) {
+          <p class="muted">
+            It rarely frosts here, so sowing times follow the monthly temperatures. Set frost dates
+            only if you get frost.
+          </p>
+        }
         <fieldset class="filters">
           <legend>Last frost (spring)</legend>
           @if (!g.lastFrost && !lastMonth) {
@@ -382,6 +404,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly auth = inject(AuthApiService);
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
+  readonly formatDay = formatDay;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   garden = signal<GardenDetailDto | null>(null);
@@ -395,8 +418,31 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   confirmDelete = signal(false);
   name = '';
   notes = '';
-  lengthFeet = 20;
-  widthFeet = 10;
+  readonly lengthUnit = lengthUnit;
+  readonly units = this.auth.units;
+  readonly formatTemperature = formatTemperature;
+
+  coldest(g: GardenDetailDto): number {
+    return Math.min(...(g.monthlyMeanC ?? [0]));
+  }
+
+  warmest(g: GardenDetailDto): number {
+    return Math.max(...(g.monthlyMeanC ?? [0]));
+  }
+  readonly lengthStep = lengthStep;
+  /** Units the size fields are typed in; a switch converts what is typed. */
+  sizeUnits: Units = this.auth.units();
+  lengthValue = 20;
+  widthValue = 10;
+  private readonly followUnits = effect(() => {
+    const units = this.auth.units();
+    untracked(() => {
+      if (units === this.sizeUnits) return;
+      this.lengthValue = convertLength(this.lengthValue, this.sizeUnits, units);
+      this.widthValue = convertLength(this.widthValue, this.sizeUnits, units);
+      this.sizeUnits = units;
+    });
+  });
   zone: number | null = null;
   lastMonth: number | null = null;
   lastDay: number | null = null;
@@ -611,8 +657,11 @@ export class GardenDetailPage implements OnInit, OnDestroy {
           hardinessZone: pending ? undefined : this.zone,
           lastFrost: pending ? undefined : toFrost(this.lastMonth, this.lastDay),
           firstFrost: pending ? undefined : toFrost(this.firstMonth, this.firstDay),
-          lengthInches: Math.max(6, snapHalfFoot(feetToInches(this.lengthFeet))),
-          widthInches: Math.max(6, snapHalfFoot(feetToInches(this.widthFeet))),
+          lengthInches: Math.max(
+            6,
+            snapHalfFoot(inchesFromInput(this.lengthValue, this.sizeUnits)),
+          ),
+          widthInches: Math.max(6, snapHalfFoot(inchesFromInput(this.widthValue, this.sizeUnits))),
           ...(pending ? { place: pending } : {}),
         });
         this.garden.set(updated);
@@ -725,8 +774,9 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   private applyForm(g: GardenDetailDto) {
     this.name = g.name;
     this.notes = g.notes ?? '';
-    this.lengthFeet = inchesToFeetInput(g.lengthInches ?? 240);
-    this.widthFeet = inchesToFeetInput(g.widthInches ?? 120);
+    this.sizeUnits = this.auth.units();
+    this.lengthValue = lengthInput(g.lengthInches ?? 240, this.sizeUnits);
+    this.widthValue = lengthInput(g.widthInches ?? 120, this.sizeUnits);
     this.zone = g.hardinessZone;
     this.lastMonth = g.lastFrost?.month ?? null;
     this.lastDay = g.lastFrost?.day ?? null;

@@ -9,6 +9,8 @@ export interface ClimateFacts {
   hardinessZone: number | null;
   lastFrost: MonthDay | null;
   firstFrost: MonthDay | null;
+  /** Mean daily temperature in each month, January first, °C; null when unknown. */
+  monthlyMeanC: number[] | null;
 }
 
 export interface PlaceLookup {

@@ -207,6 +207,14 @@ textarea {
   font-weight: 600;
 }
 
+.sidebar-units {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .sidebar-signout {
   margin-top: 0.5rem;
   text-align: left;

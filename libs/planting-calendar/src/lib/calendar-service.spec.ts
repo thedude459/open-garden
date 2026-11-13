@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CalendarService } from './calendar-service';
 import type { FrostAnchor, GardenRole, PlantStatus, PlantType } from '@open-garden/shared-types';
 
@@ -19,6 +19,9 @@ const plantDefaults = {
   transplantFrostAnchor: null as FrostAnchor | null,
   transplantWeeksEarliest: null as number | null,
   transplantWeeksLatest: null as number | null,
+  growMinC: null as number | null,
+  growMaxC: null as number | null,
+  sowSoilMinC: null as number | null,
 };
 
 const tomato = plantRow({
@@ -34,6 +37,9 @@ const tomato = plantRow({
   transplantFrostAnchor: 'last',
   transplantWeeksEarliest: 1,
   transplantWeeksLatest: 2,
+  growMinC: 10,
+  growMaxC: 35,
+  sowSoilMinC: 16,
 });
 
 const papaya = plantRow({
@@ -54,7 +60,25 @@ const maple = plantRow({
 });
 
 describe('CalendarService', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('places windows by monthly temperature where it rarely frosts', async () => {
+    const mem = createMemory(false, true);
+    const { calendar } = await mem.service.add(mem.ownerId, mem.gardenId, tomato.id);
+    expect(calendar.windowsAvailable).toBe(true);
+    expect(calendar.entries[0]?.windows.transplant).toEqual({
+      earliest: { month: 1, day: 1 },
+      latest: { month: 12, day: 31 },
+      wrapsYear: false,
+    });
+  });
+
   it('adds a plant once and lists it with computed windows', async () => {
+    // Windows are counted in the season's real year; 2024 is a leap year.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2024, 5, 1));
     const mem = createMemory();
     const first = await mem.service.add(mem.ownerId, mem.gardenId, tomato.id);
     expect(first.created).toBe(true);
@@ -139,7 +163,7 @@ function plantRow(partial: Partial<typeof plantDefaults> & { id: string; commonN
   return { ...plantDefaults, ...partial };
 }
 
-function createMemory(hasOrchard?: boolean) {
+function createMemory(hasOrchard?: boolean, frostFree = false) {
   const ownerId = 'owner-1';
   const viewerId = 'viewer-1';
   const strangerId = 'stranger-1';
@@ -160,11 +184,12 @@ function createMemory(hasOrchard?: boolean) {
       if (id !== gardenId) return null;
       return {
         id: gardenId,
-        hardinessZone: 7,
-        lastFrostMonth: 4,
-        lastFrostDay: 15,
-        firstFrostMonth: 10,
-        firstFrostDay: 20,
+        hardinessZone: frostFree ? 12 : 7,
+        lastFrostMonth: frostFree ? null : 4,
+        lastFrostDay: frostFree ? null : 15,
+        firstFrostMonth: frostFree ? null : 10,
+        firstFrostDay: frostFree ? null : 20,
+        monthlyMeanC: frostFree ? [23, 23, 23, 24, 25, 26, 27, 27, 27, 26, 25, 24] : null,
       };
     },
   };
@@ -207,6 +232,9 @@ function createMemory(hasOrchard?: boolean) {
             transplantFrostAnchor: plant.transplantFrostAnchor,
             transplantWeeksEarliest: plant.transplantWeeksEarliest,
             transplantWeeksLatest: plant.transplantWeeksLatest,
+            growMinC: plant.growMinC,
+            growMaxC: plant.growMaxC,
+            sowSoilMinC: plant.sowSoilMinC,
           };
         })
         .filter((row): row is NonNullable<typeof row> => row !== null)

@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   computed,
+  inject,
   input,
   linkedSignal,
   output,
@@ -11,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { plantName } from '@open-garden/shared-types';
+import { AuthApiService } from '../auth/auth-api.service';
 import {
   originFromGrabOffset,
   shortenPlantingMarkName,
@@ -169,7 +171,8 @@ type Gesture =
                 text-anchor="middle"
                 class="layout-label"
               >
-                Bed · {{ bed.name }} · {{ formatPlanSize(geo.lengthInches, geo.widthInches) }}
+                Bed · {{ bed.name }} ·
+                {{ formatPlanSize(geo.lengthInches, geo.widthInches, undefined, units()) }}
               </text>
               @for (name of priorNames(bed.id); track name) {
                 <text
@@ -273,7 +276,8 @@ type Gesture =
             text-anchor="middle"
             class="layout-label"
           >
-            Area · {{ area.name }} · {{ formatPlanSize(area.lengthInches, area.widthInches) }}
+            Area · {{ area.name }} ·
+            {{ formatPlanSize(area.lengthInches, area.widthInches, undefined, units()) }}
           </text>
           @if (canEdit() && allowBedGeometry()) {
             <rect
@@ -304,6 +308,7 @@ export class GardenPlanCanvas {
   readonly handleInches = HANDLE_INCHES;
   readonly planSize = bedPlanSize;
   readonly formatPlanSize = formatPlanSize;
+  readonly units = inject(AuthApiService).units;
 
   priorNames(bedId: string): string[] {
     return this.priorCrops()

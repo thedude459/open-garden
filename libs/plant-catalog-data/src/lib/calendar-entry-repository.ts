@@ -47,6 +47,9 @@ export class CalendarEntryRepository {
         transplantFrostAnchor: plants.transplantFrostAnchor,
         transplantWeeksEarliest: plants.transplantWeeksEarliest,
         transplantWeeksLatest: plants.transplantWeeksLatest,
+        growMinC: plants.growMinC,
+        growMaxC: plants.growMaxC,
+        sowSoilMinC: plants.sowSoilMinC,
         planned: exists(planned).mapWith(Boolean),
         planted: exists(planted).mapWith(Boolean),
       })
