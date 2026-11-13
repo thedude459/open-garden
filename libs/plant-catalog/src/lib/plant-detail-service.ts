@@ -35,6 +35,10 @@ export class PlantDetailService {
       isFavorite,
       illustrationUrl: null,
       growingGuidance: growingGuidanceFromRow(row),
+      sowingTemperature:
+        row.growMinC != null && row.growMaxC != null
+          ? { minC: row.growMinC, maxC: row.growMaxC, minSoilC: row.sowSoilMinC }
+          : null,
     };
   }
 }

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GardenLayoutDto } from '@open-garden/shared-types';
-import { savePlannerDraft, type PlannerSaveDeps, type PlannerSaveTracking } from './planner-save';
+import {
+  freshLayoutApplies,
+  savePlannerDraft,
+  type PlannerSaveDeps,
+  type PlannerSaveTracking,
+} from './planner-save';
 
 function layout(overrides: Partial<GardenLayoutDto> = {}): GardenLayoutDto {
   return {
@@ -172,5 +177,15 @@ describe('savePlannerDraft', () => {
     const d = deps();
     await savePlannerDraft(crowded, tracking(), d, crowded);
     expect(d.putLayout).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('freshLayoutApplies', () => {
+  it('keeps a change made while the fresh layout loaded, and unsaved edits', () => {
+    const cached = { beds: ['Raised bed 1'] };
+    const renamed = { beds: ['North bed'] };
+    expect(freshLayoutApplies(cached, cached, false)).toBe(true);
+    expect(freshLayoutApplies(cached, renamed, false)).toBe(false);
+    expect(freshLayoutApplies(cached, cached, true)).toBe(false);
   });
 });

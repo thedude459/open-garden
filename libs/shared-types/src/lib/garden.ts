@@ -1,3 +1,7 @@
+/** How a member sees lengths. Lengths are stored in inches either way (ADR 0024). */
+export const UNITS = ['imperial', 'metric'] as const;
+export type Units = (typeof UNITS)[number];
+
 export type GardenRole = 'owner' | 'collaborator' | 'viewer';
 
 export interface MonthDayDto {
@@ -84,6 +88,10 @@ export interface GardenDetailDto extends GardenSummaryDto {
   notes: string | null;
   lastFrost: MonthDayDto | null;
   firstFrost: MonthDayDto | null;
+  /** No frost dates, but monthly temperatures place sowing instead (ADR 0025). */
+  frostFree: boolean;
+  /** Mean daily temperature in each month, January first, °C; null when unknown. */
+  monthlyMeanC: number[] | null;
   lengthInches: number;
   widthInches: number;
   ownerUserId: string;

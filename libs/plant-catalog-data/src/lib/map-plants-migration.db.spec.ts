@@ -8,7 +8,7 @@ import type { AppDatabase } from './db';
 import { MIGRATIONS_FOLDER } from './migrate';
 import { PlantRepository } from './plant-repository';
 import * as schema from './schema';
-import { createTestDb, gardenInput, insertUser, type TestDb } from './test-db';
+import { createTestDb, insertGarden, insertUser, type TestDb } from './test-db';
 
 const MIGRATION = readFileSync(
   resolve(process.cwd(), MIGRATIONS_FOLDER, '0003_map_plants_to_dataset.sql'),
@@ -41,8 +41,8 @@ async function migrateRest(t: TestDb) {
 
 async function household(db: AppDatabase) {
   const user = await insertUser(db);
-  const [garden] = await db.insert(schema.gardens).values(gardenInput(user.id)).returning();
-  return { user, garden: garden! };
+  const garden = await insertGarden(db, user.id);
+  return { user, garden: garden };
 }
 
 async function plantRow(db: AppDatabase, id: string) {

@@ -1,5 +1,7 @@
 export { embedMapReachable, embedMapUrl } from './lib/embed-map';
 export {
+  HONOLULU_PLACE,
+  HONOLULU_QUERY,
   MAIN_STREET_PLACES,
   MAIN_STREET_QUERY,
   WASHINGTON_PLACE,
@@ -11,9 +13,10 @@ export { NominatimPlaceLookup } from './lib/nominatim-place-lookup';
 export {
   FixtureClimateLookup,
   LiveClimateLookup,
+  climateFromDailyMinimums,
+  frostInOrder,
   keepFrostPair,
-  mmdd,
-  zoneNumberFromLabel,
+  zoneFromMinimum,
 } from './lib/climate';
 export { FixtureRainOutlook, shiftIsoDate } from './lib/fixture-rain-outlook';
 export { OpenMeteoRainOutlook, parseRainSums } from './lib/open-meteo-rain-outlook';

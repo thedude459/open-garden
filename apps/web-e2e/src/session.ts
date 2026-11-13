@@ -55,8 +55,13 @@ export async function signedInContext(
   return { context: page.context(), email };
 }
 
-export async function signedInPage(browser: Browser, email = uniqueEmail()): Promise<Page> {
-  const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block' });
+/** `locale` is the browser's language and region; dates on the page follow it. */
+export async function signedInPage(
+  browser: Browser,
+  email = uniqueEmail(),
+  locale = 'en-US',
+): Promise<Page> {
+  const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block', locale });
   await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
     route.fulfill({
       status: 200,

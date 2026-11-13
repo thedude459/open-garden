@@ -1,6 +1,12 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  formatSpacing,
+  formatTemperature,
+  formatTemperatureRange,
+} from '@open-garden/garden-layout';
 import type { PlantDetailDto } from '@open-garden/shared-types';
+import { AuthApiService } from '../auth/auth-api.service';
 import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { NoticeService } from '../ui/notice.service';
@@ -31,8 +37,18 @@ import { NoticeService } from '../ui/notice.service';
         <dd>{{ p.waterNeeds ?? 'Unavailable' }}</dd>
         <dt>Days to maturity</dt>
         <dd>{{ p.daysToMaturity ?? 'Unavailable' }}</dd>
-        <dt>Spacing (in)</dt>
-        <dd>{{ p.spacingInches ?? 'Unavailable' }}</dd>
+        @if (p.sowingTemperature; as t) {
+          <dt>Grows in</dt>
+          <dd>{{ formatTemperatureRange(t.minC, t.maxC, units()) }}</dd>
+          @if (t.minSoilC != null) {
+            <dt>Soil to sow</dt>
+            <dd>{{ formatTemperature(t.minSoilC, units()) }} or warmer</dd>
+          }
+        }
+        <dt>Spacing</dt>
+        <dd>
+          {{ p.spacingInches != null ? formatSpacing(p.spacingInches, units()) : 'Unavailable' }}
+        </dd>
       </dl>
       <button
         type="button"
@@ -56,6 +72,10 @@ export class PlantDetailPage implements OnInit {
   private readonly api = inject(PlantsApiService);
   private readonly favorites = inject(FavoritesApiService);
   readonly notices = inject(NoticeService);
+  readonly units = inject(AuthApiService).units;
+  readonly formatSpacing = formatSpacing;
+  readonly formatTemperature = formatTemperature;
+  readonly formatTemperatureRange = formatTemperatureRange;
   plant = signal<PlantDetailDto | null>(null);
   pending = signal(false);
   loading = signal(true);

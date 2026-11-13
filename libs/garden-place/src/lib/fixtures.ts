@@ -11,6 +11,18 @@ export const WASHINGTON_PLACE: PlaceCandidateDto = {
   countryCode: 'US',
 };
 
+export const HONOLULU_QUERY = '1 Aloha Tower Drive, Honolulu, HI';
+
+/** A frost-free garden: zone 12, no frost dates, warm all year. */
+export const HONOLULU_PLACE: PlaceCandidateDto = {
+  formattedAddress: '1 Aloha Tower Drive, Honolulu, HI 96813, USA',
+  latitude: 21.3069,
+  longitude: -157.8583,
+  placeId: 'fixture-honolulu',
+  postalCode: '96813',
+  countryCode: 'US',
+};
+
 export const MAIN_STREET_QUERY = '100 Main Street';
 
 export const MAIN_STREET_PLACES: PlaceCandidateDto[] = [

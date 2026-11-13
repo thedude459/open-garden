@@ -14,25 +14,26 @@ const monthDay = fc
   .map((d) => ({ month: d.getUTCMonth() + 1, day: d.getUTCDate() }));
 
 describe('month/day arithmetic (properties)', () => {
-  // addDays works in a fixed leap year (2024) and drops the year, so a round
-  // trip that crosses into another year can be one day off around 29 February
-  // (found by this test; roadmap Phase 2 makes windows year-aware). Within one
-  // year the round trip must be exact.
-  it('adding then subtracting days returns the start day when the result stays in the year', () => {
+  it('adding then subtracting days returns the start day in any year', () => {
     fc.assert(
-      fc.property(monthDay, fc.integer({ min: -400, max: 400 }), (md, n) => {
-        const there = addDays(md, n);
-        fc.pre(there.year === 2024);
-        const back = addDays({ month: there.month, day: there.day }, -n);
-        expect({ month: back.month, day: back.day }).toEqual(md);
-      }),
+      fc.property(
+        monthDay,
+        fc.integer({ min: 2020, max: 2031 }),
+        fc.integer({ min: -400, max: 400 }),
+        (md, year, n) => {
+          fc.pre(!(md.month === 2 && md.day === 29) || year % 4 === 0);
+          const there = addDays(md, n, year);
+          const back = addDays({ month: there.month, day: there.day }, -n, there.year);
+          expect(back).toEqual({ ...md, year });
+        },
+      ),
     );
   });
 
   it('w weeks is the same as 7w days', () => {
     fc.assert(
       fc.property(monthDay, fc.integer({ min: -60, max: 60 }), (md, w) => {
-        expect(addWeeks(md, w)).toEqual(addDays(md, 7 * w));
+        expect(addWeeks(md, w, 2025)).toEqual(addDays(md, 7 * w, 2025));
       }),
     );
   });
@@ -49,7 +50,7 @@ describe('month/day arithmetic (properties)', () => {
   it('adding zero days changes nothing', () => {
     fc.assert(
       fc.property(monthDay, (md) => {
-        const same = addDays(md, 0);
+        const same = addDays(md, 0, 2024);
         expect({ month: same.month, day: same.day }).toEqual(md);
       }),
     );

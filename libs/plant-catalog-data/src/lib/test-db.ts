@@ -63,6 +63,15 @@ export async function insertUser(db: AppDatabase, email = `${unique('user')}@exa
   return { id: row.id, email: row.email, displayName: row.display_name };
 }
 
+/** A property with only the columns every migration has, for tests of old migrations. */
+export async function insertGarden(db: AppDatabase, ownerId: string, name = unique('Garden')) {
+  const result = await db.execute<{ id: string }>(sql`
+    insert into gardens (owner_id, name, name_normalized)
+    values (${ownerId}, ${name}, ${name.toLowerCase()})
+    returning id`);
+  return { id: (result as unknown as { rows: { id: string }[] }).rows[0]!.id };
+}
+
 export function gardenInput(ownerId: string, name = unique('Garden')) {
   return {
     ownerId,
@@ -74,6 +83,7 @@ export function gardenInput(ownerId: string, name = unique('Garden')) {
     lastFrostDay: null,
     firstFrostMonth: null,
     firstFrostDay: null,
+    monthlyMeanC: null,
     lengthInches: 240,
     widthInches: 120,
     formattedAddress: null,

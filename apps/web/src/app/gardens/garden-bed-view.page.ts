@@ -14,7 +14,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   catalogDropOutcome,
   fitsInBed,
-  formatFeet,
+  formatLength,
+  formatSpacing,
   plantingDropOutcome,
   remainingGridCount,
   sizeTreeBed,
@@ -42,6 +43,7 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
+import { AuthApiService } from '../auth/auth-api.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
 
@@ -105,10 +107,10 @@ import { EmptyState } from '../ui/empty-state';
           @if (armedPlant(); as picked) {
             <p class="place-hint" role="status">
               @if (slotsLeft(picked) === 0) {
-                No room left for {{ plantName(picked) }} ({{ picked.spacingInches }} in).
+                No room left for {{ plantName(picked) }} ({{ spacing(picked.spacingInches) }}).
               } @else {
                 Click the bed to place {{ plantName(picked) }}. About {{ slotsLeft(picked) }} more
-                fit at {{ picked.spacingInches }} in.
+                fit at {{ spacing(picked.spacingInches) }}.
               }
             </p>
           }
@@ -321,6 +323,7 @@ export class GardenBedViewPage implements OnInit {
   private readonly favoritesApi = inject(FavoritesApiService);
   private readonly gardensApi = inject(GardensApiService);
   readonly notices = inject(NoticeService);
+  readonly units = inject(AuthApiService).units;
   private readonly route = inject(ActivatedRoute);
   private readonly canvas = viewChild(GardenPlanCanvas);
   private readonly picker = viewChild(PlantPicker);
@@ -681,6 +684,10 @@ export class GardenBedViewPage implements OnInit {
   }
 
   /** A plant too big for the whole bed, or one placed too near its edge. */
+  spacing(inches: number | null | undefined): string {
+    return inches == null ? '' : formatSpacing(inches, this.units());
+  }
+
   private fitMessage(spacingInches: number | null): string {
     const geo = this.bed()?.geometry;
     if (
@@ -688,7 +695,7 @@ export class GardenBedViewPage implements OnInit {
       spacingInches !== null &&
       !fitsInBed(geo.lengthInches, geo.widthInches, spacingInches)
     ) {
-      return `Too big for this bed: needs ${formatFeet(spacingInches)} ft of space`;
+      return `Too big for this bed: needs ${formatLength(spacingInches, this.units())} of space`;
     }
     return 'Too close to the bed edge. Move it further in';
   }

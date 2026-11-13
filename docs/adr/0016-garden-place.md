@@ -1,7 +1,7 @@
 # ADR 0016: Garden place, season facts, and rain
 
 ## Status
-Accepted
+Accepted. The climate source (phzmapi, FarmSense) is superseded by [ADR 0023](0023-climate-from-open-meteo-history.md).
 
 ## Context
 A garden needs a street address so the product can show where it is, fill growing zone and frost dates, and skip watering when that day's forecast is already wet enough. Vendor calls must stay behind ports, the same way plant data does.
