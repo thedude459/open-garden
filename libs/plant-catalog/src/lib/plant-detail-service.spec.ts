@@ -37,6 +37,13 @@ describe('PlantDetailService', () => {
         growMinC: 10,
         growMaxC: 35,
         sowSoilMinC: 16,
+        kcInitial: 0.6,
+        kcMid: 1.15,
+        kcEnd: 0.8,
+        stageDaysInitial: 35,
+        stageDaysDevelopment: 40,
+        stageDaysMid: 50,
+        stageDaysLate: 30,
       }),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(true) };
@@ -51,6 +58,34 @@ describe('PlantDetailService', () => {
     });
     expect(detail?.growingGuidance.outdoorSow).toBeNull();
     expect(detail?.sowingTemperature).toEqual({ minC: 10, maxC: 35, minSoilC: 16 });
+    expect(detail?.cropCoefficients).toEqual({
+      initial: 0.6,
+      mid: 1.15,
+      end: 0.8,
+      stageDays: { initial: 35, development: 40, mid: 50, late: 30 },
+    });
+  });
+
+  it('gives crop coefficients without stages, and none without coefficients', async () => {
+    const row = {
+      id: 'm',
+      commonName: 'Mint',
+      status: 'active',
+      kcInitial: 0.6,
+      kcMid: 1.15,
+      kcEnd: 1.1,
+    };
+    const favorites = { isFavorite: vi.fn().mockResolvedValue(false) };
+    const mint = await new PlantDetailService(
+      { getById: vi.fn().mockResolvedValue(row) } as never,
+      favorites as never,
+    ).getById('m', 'u');
+    expect(mint?.cropCoefficients).toEqual({ initial: 0.6, mid: 1.15, end: 1.1, stageDays: null });
+    const basil = await new PlantDetailService(
+      { getById: vi.fn().mockResolvedValue({ ...row, kcMid: null }) } as never,
+      favorites as never,
+    ).getById('m', 'u');
+    expect(basil?.cropCoefficients).toBeNull();
   });
 
   it('returns leftover null spacing on getById', async () => {

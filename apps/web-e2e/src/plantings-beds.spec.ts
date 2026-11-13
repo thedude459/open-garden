@@ -98,7 +98,14 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await owner.locator('input[name="selectedName"]').fill('North bed');
   await owner.getByRole('button', { name: 'Rename Raised bed 1' }).click();
   await expect(owner.getByRole('heading', { name: 'North bed' })).toBeVisible();
+  // Sun saves on change; reload only once the bed PATCH is done.
+  const sunSaved = owner.waitForResponse(
+    (res) =>
+      res.request().method() === 'PATCH' &&
+      /\/api\/gardens\/[^/]+\/beds\/[^/]+$/.test(new URL(res.url()).pathname),
+  );
   await owner.locator('select[name="selectedSun"]').selectOption('full');
+  expect((await sunSaved).ok()).toBeTruthy();
   await owner.reload();
   await owner.getByRole('button', { name: 'Edit bed North bed' }).click();
   await expect(owner.locator('select[name="selectedSun"]')).toHaveValue('full');

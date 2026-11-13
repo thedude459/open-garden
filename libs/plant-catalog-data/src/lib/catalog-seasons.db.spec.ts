@@ -80,6 +80,26 @@ describe('PlantRepository', () => {
     expect(await plantsRepo.getById(spring!.id)).toMatchObject({ fallSowWeeksEarliest: null });
   });
 
+  it('stores crop coefficients and stage lengths', async () => {
+    const [row] = await plantsRepo.upsertManyByVarietyKey([
+      variety('cat-kc', {
+        cropCoefficients: {
+          initial: 0.6,
+          mid: 1.15,
+          end: 0.8,
+          stageDays: { initial: 35, development: 40, mid: 50, late: 30 },
+        },
+      }),
+    ]);
+    expect(await plantsRepo.getById(row!.id)).toMatchObject({
+      kcInitial: 0.6,
+      kcMid: 1.15,
+      kcEnd: 0.8,
+      stageDaysInitial: 35,
+      stageDaysLate: 30,
+    });
+  });
+
   it('stores soil pH', async () => {
     const [row] = await plantsRepo.upsertManyByVarietyKey([
       variety('cat-ph', { soilPh: { min: 4.5, max: 5.5 } }),

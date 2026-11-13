@@ -268,6 +268,7 @@ function toUpsert(
     rootstockSpacingInches: plant.rootstockSpacingInches,
     sowingTemperature: plant.sowingTemperature,
     soilPh: plant.soilPh,
+    cropCoefficients: plant.cropCoefficients,
     family: plant.family,
     sourceLinks: plant.sourceLinks,
   };

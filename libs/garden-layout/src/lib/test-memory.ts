@@ -152,9 +152,11 @@ export function createLayoutMemory() {
 
   const plantingRepo = {
     async listAllForLayout(gId: string) {
+      // Newest first, ties by id, as PlantingRepository orders them: plantings
+      // added in the same millisecond must not come back in a different order.
       return [...plantingRows.values()]
         .filter((r) => r.gardenId === gId)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id))
         .map(withPlant);
     },
     async setPlacement(

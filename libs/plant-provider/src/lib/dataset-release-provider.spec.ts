@@ -140,6 +140,35 @@ describe('DatasetReleaseProvider', () => {
     expect(items[1]).toMatchObject({ soilPh: null, growingGuidance: { fallSow: null } });
   });
 
+  it('reads crop coefficients, with stage lengths when the release has them', async () => {
+    const withStages = {
+      ...tomato,
+      varieties: [],
+      cropCoefficients: {
+        initial: 0.6,
+        mid: 1.15,
+        end: 0.8,
+        stageDays: { initial: 35, development: 40, mid: 50, late: 30 },
+      },
+    };
+    const kcOnly = {
+      ...tomato,
+      id: 'mint',
+      varieties: [],
+      cropCoefficients: { initial: 0.6, mid: 1.15, end: 1.1 },
+    };
+    const plain = { ...tomato, id: 'basil', varieties: [] };
+    const { items } = await pinned(catalog([withStages, kcOnly, plain])).listPage();
+    expect(items[0]?.cropCoefficients).toEqual(withStages.cropCoefficients);
+    expect(items[1]?.cropCoefficients).toEqual({
+      initial: 0.6,
+      mid: 1.15,
+      end: 1.1,
+      stageDays: null,
+    });
+    expect(items[2]?.cropCoefficients).toBeNull();
+  });
+
   it('uses hardiness zones for perennials and leaves them unset when missing', async () => {
     const apple = {
       ...tomato,
@@ -280,6 +309,10 @@ describe('the bundled open-garden-data release', () => {
         'dataset:hot-pepper-jalapeno',
       ]),
     );
+    expect(items.find((p) => p.varietyKey === 'dataset:tomato')?.cropCoefficients).toMatchObject({
+      mid: 1.15,
+      stageDays: { initial: 35, development: 40, mid: 50, late: 30 },
+    });
     expect(items.find((p) => p.varietyKey === 'dataset:blueberry')?.soilPh).toEqual({
       min: 4.5,
       max: 5.5,

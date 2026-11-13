@@ -159,7 +159,8 @@ describe('LayoutService placements', () => {
     const flags = (await mem.service.get(mem.ownerId, mem.gardenId)).flags;
     expect(flags).toContainEqual({
       kind: 'spacing',
-      plantingIds: [a.id, b.id],
+      // Newest planting first, as the repository lists them.
+      plantingIds: [b.id, a.id],
       blocking: false,
       message: 'Closer than recommended',
     });

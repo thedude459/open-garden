@@ -62,6 +62,19 @@ export interface SoilPhDto {
   max: number;
 }
 
+/**
+ * Crop coefficients (Kc) from the dataset, after FAO-56: the crop uses
+ * reference evapotranspiration times Kc, which rises from `initial` to `mid`
+ * at full cover and falls to `end` at harvest.
+ */
+export interface CropCoefficientsDto {
+  initial: number;
+  mid: number;
+  end: number;
+  /** Typical days in each growth stage, where the dataset has them. */
+  stageDays: { initial: number; development: number; mid: number; late: number } | null;
+}
+
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sunRequirements: string | null;
   waterNeeds: string | null;
@@ -74,6 +87,7 @@ export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   growingGuidance: import('./calendar').GrowingGuidanceDto;
   sowingTemperature: SowingTemperatureDto | null;
   soilPh: SoilPhDto | null;
+  cropCoefficients: CropCoefficientsDto | null;
 }
 
 export interface PageDto<T> {

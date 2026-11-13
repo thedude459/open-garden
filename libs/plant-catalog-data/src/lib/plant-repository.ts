@@ -15,6 +15,7 @@ import {
 import type {
   GrowingGuidanceDto,
   PlantType,
+  CropCoefficientsDto,
   RootstockSpacingDto,
   SoilPhDto,
   SowingTemperatureDto,
@@ -42,6 +43,7 @@ export interface PlantUpsertInput {
   rootstockSpacingInches?: RootstockSpacingDto | null;
   sowingTemperature?: SowingTemperatureDto | null;
   soilPh?: SoilPhDto | null;
+  cropCoefficients?: CropCoefficientsDto | null;
   family?: string | null;
 }
 
@@ -161,6 +163,13 @@ export class PlantRepository {
           sowSoilMinC: sql`excluded.sow_soil_min_c`,
           soilPhMin: sql`excluded.soil_ph_min`,
           soilPhMax: sql`excluded.soil_ph_max`,
+          kcInitial: sql`excluded.kc_initial`,
+          kcMid: sql`excluded.kc_mid`,
+          kcEnd: sql`excluded.kc_end`,
+          stageDaysInitial: sql`excluded.stage_days_initial`,
+          stageDaysDevelopment: sql`excluded.stage_days_development`,
+          stageDaysMid: sql`excluded.stage_days_mid`,
+          stageDaysLate: sql`excluded.stage_days_late`,
           family: sql`excluded.family`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
@@ -295,16 +304,25 @@ function catalogColumns(input: {
   rootstockSpacingInches?: RootstockSpacingDto | null;
   sowingTemperature?: SowingTemperatureDto | null;
   soilPh?: SoilPhDto | null;
+  cropCoefficients?: CropCoefficientsDto | null;
   family?: string | null;
 }) {
   const r = input.rootstockSpacingInches;
   const t = input.sowingTemperature;
+  const kc = input.cropCoefficients;
   return {
     growMinC: t?.minC ?? null,
     growMaxC: t?.maxC ?? null,
     sowSoilMinC: t?.minSoilC ?? null,
     soilPhMin: input.soilPh?.min ?? null,
     soilPhMax: input.soilPh?.max ?? null,
+    kcInitial: kc?.initial ?? null,
+    kcMid: kc?.mid ?? null,
+    kcEnd: kc?.end ?? null,
+    stageDaysInitial: kc?.stageDays?.initial ?? null,
+    stageDaysDevelopment: kc?.stageDays?.development ?? null,
+    stageDaysMid: kc?.stageDays?.mid ?? null,
+    stageDaysLate: kc?.stageDays?.late ?? null,
     family: input.family ?? null,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,
