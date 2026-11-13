@@ -461,7 +461,7 @@ year end is kept and drives the calendar.
 | Southern Hemisphere | **Done.** Treat the growing season as a range that may wrap the year end. Fix `keepFrostPair` and calendar math. `planting-calendar`'s `addDays` works in a fixed leap year (2024) and drops the year, so windows that cross the year end can be a day off around 29 February (found by a fast-check property; see `month-day.property.spec.ts`). Carry the year through. |
 | Frost-free climates | **Done for temperature ([ADR 0025](adr/0025-sowing-by-temperature-where-frost-is-rare.md)).** Where frost is rare, windows are the months whose mean temperature suits the crop. Wet/dry seasons wait for dataset data. |
 | Units | **Done ([ADR 0024](adr/0024-units-at-the-edge.md)).** Per-member metric/imperial setting, converted on screen; lengths stay in whole inches, and the plan grid stays half a foot (15 cm in metric). |
-| Locale | **Dates done ([ADR 0026](adr/0026-dates-in-the-browser-locale.md)):** month names and date formats follow the browser's language and region. **Crop names wait for interface translation** (Phase 4 item 16): German crop names inside English buttons and messages help no one, and names the server writes ("Harvest Tomato" on Today and in reminder emails) would need the request's language too. |
+| Locale | **English only for now ([ADR 0029](adr/0029-english-only-translations-by-contribution.md)).** Dates, month names, and crop names are US English whatever the browser's language. Dates and month names go through one setting (`APP_LOCALE`), so a contributed translation changes them in one place. Other languages come from contributors (Phase 4 item 16). |
 | Drop | **Done:** `phzmapi.org` and FarmSense. Keep Nominatim (respect its 1 req/s and User-Agent policy) and Open-Meteo (note its non-commercial terms in the deploy docs; the fallback source above covers operators it does not suit). |
 
 ---
@@ -584,17 +584,17 @@ each against the other phases):
     ready to log watering or a harvest (an idea from
     [HortusFox](https://github.com/danielbrendel/hortusfox-web)).
 15. **Custom varieties + suggest corrections** (from Phase 1 curation).
-16. **Interface translation, with crop names** — translate the interface
-    (Angular i18n or a small message catalog) and show crop names in the
-    reader's language at the same time; names the server writes (Today task
-    titles, reminder emails) follow the request's language. Crop names come
-    from the dataset (`names.<locale>`). A November 2026 look at Wikidata found
-    its food items (linked from each species by "this taxon is source of",
-    P1672) give a good name for about 60% of crop and language pairs in de,
-    es, fr, it, nl, and pt. The rest are products (oils, juices, sugar), Latin,
-    or missing, and crops that share a species (bush and pole bean, the
-    squashes) need their own names, so about 120 of 300 names need curating by
-    hand.
+16. **Translations, contributed** — the app is English only
+    ([ADR 0029](adr/0029-english-only-translations-by-contribution.md)) until
+    someone who speaks another language contributes one, as
+    `CONTRIBUTING.md` describes. The first contribution sets up Angular's
+    built-in i18n (mark and extract the interface's text, one build per
+    language); names the server writes (Today task titles, reminder emails)
+    then follow the request's language. Crop names come from the dataset's
+    `names.<locale>`. For whoever starts: a November 2026 look at Wikidata
+    found its food items (linked from each species by "this taxon is source
+    of", P1672) give a good name for about 60% of crop and language pairs in
+    de, es, fr, it, nl, and pt; the rest need curating by hand.
 
 ---
 
@@ -623,7 +623,7 @@ dataset v0.1; step 1, the dataset as the catalog
 | 3 | **Done.** Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
 | 4 | **Done.** Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
 | **5p (next, data repo)** | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
-| **6 (next)** | Phase 2 climate. **Done:** frost and zones anywhere ([ADR 0023](adr/0023-climate-from-open-meteo-history.md)), Southern Hemisphere, units setting ([ADR 0024](adr/0024-units-at-the-edge.md)), frost-free windows by temperature ([ADR 0025](adr/0025-sowing-by-temperature-where-frost-is-rare.md)), 1-in-10 frost dates ([ADR 0027](adr/0027-one-in-ten-frost-dates.md)), NASA POWER climate source ([ADR 0028](adr/0028-nasa-power-climate-source.md)). **Open:** wet/dry seasons (needs dataset data), crop names (dates done, [ADR 0026](adr/0026-dates-in-the-browser-locale.md); names wait for interface translation, Phase 4 item 16) | Makes the dataset's windows usable outside the US. |
+| **6 (next)** | Phase 2 climate. **Done:** frost and zones anywhere ([ADR 0023](adr/0023-climate-from-open-meteo-history.md)), Southern Hemisphere, units setting ([ADR 0024](adr/0024-units-at-the-edge.md)), frost-free windows by temperature ([ADR 0025](adr/0025-sowing-by-temperature-where-frost-is-rare.md)), 1-in-10 frost dates ([ADR 0027](adr/0027-one-in-ten-frost-dates.md)), NASA POWER climate source ([ADR 0028](adr/0028-nasa-power-climate-source.md)). **Open:** wet/dry seasons (needs dataset data), other languages (English only until contributed, [ADR 0029](adr/0029-english-only-translations-by-contribution.md); Phase 4 item 16) | Makes the dataset's windows usable outside the US. |
 | 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |
 | 8 | Phase 4 items 3–6: weather alerts, watering by water balance, soil tests per bed (with soil by location), Home Assistant both ways | Care features that build on reminders (step 4) and data from step 5p. Water balance needs the dataset's crop coefficients. |
 | 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases | Broadens the catalog; unblocks pest advice. |
@@ -650,7 +650,6 @@ dataset v0.1; step 1, the dataset as the catalog
 
 ## Open questions
 
-- Which locales besides `en-US` are wanted first?
 - Should operators be able to point at a self-hosted dataset mirror, or is
   GitHub Releases enough?
 - Is Open-Meteo's non-commercial term acceptable for all expected operators,

@@ -5,4 +5,4 @@ export {
   type NoticeQueue,
 } from './lib/notice-queue';
 export { createBusyLock, type BusyLock } from './lib/busy-lock';
-export { formatDay, formatMonthDay } from './lib/dates';
+export { APP_LOCALE, formatDay, formatMonthDay, formatMonthName } from './lib/dates';

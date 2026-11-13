@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR 0029](0029-english-only-translations-by-contribution.md): dates are English
+for everyone until a translation is contributed; the helpers below remain.
 
 ## Context
 
