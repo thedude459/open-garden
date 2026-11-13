@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { formatDay } from '@open-garden/web-ui';
+import { formatDay, formatMonthDay } from '@open-garden/web-ui';
 import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
@@ -201,6 +201,14 @@ import { PlannerDraftService } from './planner-draft.service';
           <p class="muted">
             Monthly average temperature: coldest {{ formatTemperature(coldest(g), units()) }},
             warmest {{ formatTemperature(warmest(g), units()) }}.
+          </p>
+        }
+        @if (g.frostRisk; as risk) {
+          <p class="muted">
+            From 30 years of weather: frost after
+            {{ formatMonthDay(risk.lateLastFrost) }} comes in 1 spring in 10, and frost before
+            {{ formatMonthDay(risk.earlyFirstFrost) }} in 1 autumn in 10. For tender crops, plan
+            around these dates instead of the median ones.
           </p>
         }
         @if (g.frostFree && !lastMonth && !firstMonth) {
@@ -405,6 +413,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
   readonly formatDay = formatDay;
+  readonly formatMonthDay = formatMonthDay;
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   garden = signal<GardenDetailDto | null>(null);

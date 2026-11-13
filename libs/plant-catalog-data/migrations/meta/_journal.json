@@ -71,6 +71,13 @@
       "when": 1794519922207,
       "tag": "0009_sowing_temperatures",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794525656018,
+      "tag": "0010_frost_risk",
+      "breakpoints": true
     }
   ]
 }

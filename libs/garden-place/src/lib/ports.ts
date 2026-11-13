@@ -11,6 +11,17 @@ export interface ClimateFacts {
   firstFrost: MonthDay | null;
   /** Mean daily temperature in each month, January first, °C; null when unknown. */
   monthlyMeanC: number[] | null;
+  /** Dates frost passes in 9 years out of 10; only with both median frost dates. */
+  frostRisk?: FrostRisk | null;
+}
+
+/**
+ * The 1-in-10 frost dates: a frost after `lateLastFrost` comes in one spring
+ * in ten, and one before `earlyFirstFrost` in one autumn in ten.
+ */
+export interface FrostRisk {
+  lateLastFrost: MonthDay;
+  earlyFirstFrost: MonthDay;
 }
 
 export interface PlaceLookup {

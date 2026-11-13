@@ -1,4 +1,4 @@
-import type { ClimateFacts, ClimateLookup } from '@open-garden/garden-place';
+import type { ClimateFacts, ClimateLookup, FrostRisk } from '@open-garden/garden-place';
 import type {
   GardenCreateDto,
   GardenDetailDto,
@@ -46,6 +46,7 @@ export class GardenService {
       notes: normalizeNotes(dto.notes ?? null),
       hardinessZone: season.hardinessZone,
       monthlyMeanC: season.monthlyMeanC,
+      ...riskColumns(season.frostRisk),
       lengthInches: gardenInches(dto.lengthInches ?? DEFAULT_LENGTH_INCHES),
       widthInches: gardenInches(dto.widthInches ?? DEFAULT_WIDTH_INCHES),
       ...frostColumns(season.lastFrost, season.firstFrost),
@@ -148,7 +149,7 @@ export class GardenService {
       widthInches:
         dto.widthInches !== undefined ? gardenInches(dto.widthInches) : garden.widthInches,
       ...frost,
-      ...(season ? { monthlyMeanC: season.monthlyMeanC } : {}),
+      ...(season ? { monthlyMeanC: season.monthlyMeanC, ...riskColumns(season.frostRisk) } : {}),
       ...(nextPlace ? placeColumns(nextPlace) : {}),
     });
     if (!updated) throw domainError('NOT_FOUND', 'Garden not found');
@@ -179,6 +180,10 @@ export class GardenService {
       firstFrostMonth: number | null;
       firstFrostDay: number | null;
       monthlyMeanC?: number[] | null;
+      lateLastFrostMonth?: number | null;
+      lateLastFrostDay?: number | null;
+      earlyFirstFrostMonth?: number | null;
+      earlyFirstFrostDay?: number | null;
       lengthInches: number;
       widthInches: number;
       formattedAddress?: string | null;
@@ -206,6 +211,7 @@ export class GardenService {
         garden.firstFrostMonth == null &&
         frostRare(garden.monthlyMeanC),
       monthlyMeanC: garden.monthlyMeanC ?? null,
+      frostRisk: storedRisk(garden),
       lengthInches: garden.lengthInches,
       widthInches: garden.widthInches,
       myRole: mine.role as GardenRole,
@@ -230,6 +236,7 @@ export class GardenService {
     lastFrost: MonthDayDto | null;
     firstFrost: MonthDayDto | null;
     monthlyMeanC: number[] | null;
+    frostRisk: FrostRisk | null;
     seasonNotice: string | null;
   }> {
     if (!this.climate) {
@@ -246,6 +253,7 @@ export class GardenService {
         lastFrost,
         firstFrost,
         monthlyMeanC: null,
+        frostRisk: null,
         seasonNotice: null,
       };
     }
@@ -265,7 +273,7 @@ export class GardenService {
           : frostFree
             ? SEASON_FROST_FREE
             : SEASON_PARTIAL;
-    return { ...facts, seasonNotice };
+    return { ...facts, frostRisk: facts.frostRisk ?? null, seasonNotice };
   }
 }
 
@@ -374,6 +382,26 @@ function storedPlace(garden: {
 function toMonthDay(month: number | null, day: number | null): MonthDayDto | null {
   if (month == null || day == null) return null;
   return { month, day };
+}
+
+function riskColumns(risk: FrostRisk | null) {
+  return {
+    lateLastFrostMonth: risk?.lateLastFrost.month ?? null,
+    lateLastFrostDay: risk?.lateLastFrost.day ?? null,
+    earlyFirstFrostMonth: risk?.earlyFirstFrost.month ?? null,
+    earlyFirstFrostDay: risk?.earlyFirstFrost.day ?? null,
+  };
+}
+
+function storedRisk(garden: {
+  lateLastFrostMonth?: number | null;
+  lateLastFrostDay?: number | null;
+  earlyFirstFrostMonth?: number | null;
+  earlyFirstFrostDay?: number | null;
+}): GardenDetailDto['frostRisk'] {
+  const late = toMonthDay(garden.lateLastFrostMonth ?? null, garden.lateLastFrostDay ?? null);
+  const early = toMonthDay(garden.earlyFirstFrostMonth ?? null, garden.earlyFirstFrostDay ?? null);
+  return late && early ? { lateLastFrost: late, earlyFirstFrost: early } : null;
 }
 
 function frostColumns(last: MonthDayDto | null, first: MonthDayDto | null) {

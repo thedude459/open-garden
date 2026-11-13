@@ -55,6 +55,7 @@ describe('climate rules', () => {
       lastFrost: { month: 4, day: 15 },
       firstFrost: { month: 10, day: 20 },
       monthlyMeanC: [2, 4, 9, 14, 20, 25, 27, 26, 22, 15, 10, 4],
+      frostRisk: { lateLastFrost: { month: 5, day: 2 }, earlyFirstFrost: { month: 10, day: 5 } },
     });
     await expect(climate.lookup(MAIN_STREET_PLACES[0]!)).resolves.toEqual({
       hardinessZone: null,
@@ -80,6 +81,7 @@ describe('climate from daily minimums', () => {
       lastFrost: { month: 4, day: 10 },
       firstFrost: { month: 10, day: 20 },
       monthlyMeanC: null,
+      frostRisk: { lateLastFrost: { month: 4, day: 20 }, earlyFirstFrost: { month: 10, day: 20 } },
     });
   });
 
@@ -92,6 +94,7 @@ describe('climate from daily minimums', () => {
       lastFrost: null,
       firstFrost: null,
       monthlyMeanC: null,
+      frostRisk: null,
     });
   });
 
@@ -121,6 +124,43 @@ describe('climate from daily minimums', () => {
       lastFrost: { month: 3, day: 31 },
       firstFrost: null,
       monthlyMeanC: null,
+      frostRisk: null,
+    });
+  });
+});
+
+describe('1-in-10 frost dates', () => {
+  it('puts 1 spring in 10 after the late date and 1 autumn in 10 before the early one', () => {
+    // Ten years; last frost on 1–10 April and first frost on 11–20 October.
+    const data = daily(2010, 2019, (year, month, day) =>
+      (month === 4 && day === year - 2009) || (month === 10 && day === year - 1999) ? -1 : 8,
+    );
+    const facts = climateFromDailyMinimums(data.time, data.minimums, 45);
+    expect(facts.lastFrost).toEqual({ month: 4, day: 5 });
+    expect(facts.frostRisk).toEqual({
+      lateLastFrost: { month: 4, day: 9 },
+      earlyFirstFrost: { month: 10, day: 11 },
+    });
+  });
+
+  it('keeps southern risk dates through the live lookup', async () => {
+    const data = daily(1996, 2025, (_y, month, day) =>
+      (month === 9 && day === 15) || (month === 5 && day === 10) ? -1 : 6,
+    );
+    const fetchFn = (async () =>
+      json({
+        daily: { time: data.time, temperature_2m_min: data.minimums },
+      })) as unknown as typeof fetch;
+    const facts = await new LiveClimateLookup(
+      fetchFn,
+      () => new Date('2026-06-01T00:00:00Z'),
+    ).lookup({
+      ...WASHINGTON_PLACE,
+      latitude: -34,
+    });
+    expect(facts.frostRisk).toEqual({
+      lateLastFrost: { month: 9, day: 15 },
+      earlyFirstFrost: { month: 5, day: 10 },
     });
   });
 });
@@ -167,6 +207,7 @@ describe('live climate lookup', () => {
       lastFrost: { month: 4, day: 15 },
       firstFrost: { month: 10, day: 20 },
       monthlyMeanC: [11, 11, 11, 10.8, 11, 11, 11, 11, 11, 10.8, 11, 11],
+      frostRisk: { lateLastFrost: { month: 4, day: 15 }, earlyFirstFrost: { month: 10, day: 20 } },
     });
   });
 

@@ -27,6 +27,7 @@ export {
   STREET_ADDRESS_MESSAGE,
   type ClimateFacts,
   type ClimateLookup,
+  type FrostRisk,
   type MonthDay,
   type PlaceLookup,
   type RainOutlook,

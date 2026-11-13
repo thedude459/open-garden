@@ -92,6 +92,8 @@ export interface GardenDetailDto extends GardenSummaryDto {
   frostFree: boolean;
   /** Mean daily temperature in each month, January first, °C; null when unknown. */
   monthlyMeanC: number[] | null;
+  /** From the climate data: frost after `lateLastFrost` in 1 spring in 10, before `earlyFirstFrost` in 1 autumn in 10. */
+  frostRisk: { lateLastFrost: MonthDayDto; earlyFirstFrost: MonthDayDto } | null;
   lengthInches: number;
   widthInches: number;
   ownerUserId: string;
