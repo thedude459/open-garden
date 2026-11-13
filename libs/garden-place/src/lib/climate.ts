@@ -205,35 +205,116 @@ export class LiveClimateLookup implements ClimateLookup {
     url.searchParams.set('end_date', `${lastYear}-12-31`);
     url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_mean');
     url.searchParams.set('timezone', 'auto');
-    const none = NO_CLIMATE;
-    try {
-      const response = await this.fetchFn(url, { signal: AbortSignal.timeout(10_000) });
-      if (!response.ok) return none;
-      const body = (await response.json()) as {
-        daily?: {
-          time?: string[];
-          temperature_2m_min?: Array<number | null>;
-          temperature_2m_mean?: Array<number | null>;
-        };
+    const body = await fetchJson<{
+      daily?: {
+        time?: string[];
+        temperature_2m_min?: Array<number | null>;
+        temperature_2m_mean?: Array<number | null>;
       };
-      const time = body.daily?.time;
-      const minimums = body.daily?.temperature_2m_min;
-      if (!time || !minimums || time.length !== minimums.length) return none;
-      const facts = climateFromDailyMinimums(
-        time,
-        minimums,
-        place.latitude,
-        body.daily?.temperature_2m_mean ?? [],
-      );
-      const pair = keepFrostPair(facts.lastFrost, facts.firstFrost, place.latitude);
-      return {
-        ...facts,
-        lastFrost: pair.last,
-        firstFrost: pair.first,
-        frostRisk: pair.last ? facts.frostRisk : null,
-      };
-    } catch {
-      return none;
-    }
+    }>(this.fetchFn, url);
+    const time = body?.daily?.time;
+    const minimums = body?.daily?.temperature_2m_min;
+    if (!time || !minimums || time.length !== minimums.length) return NO_CLIMATE;
+    return factsFor(place, time, minimums, body.daily?.temperature_2m_mean ?? []);
   }
+}
+
+/** NASA POWER's missing-value marker. */
+const POWER_FILL = -999;
+
+/**
+ * The same 30 years from NASA POWER (MERRA-2 reanalysis, about 50 km cells;
+ * public domain, no key, no usage limits for this volume). For installs whose
+ * use does not fit Open-Meteo's non-commercial terms, and as Open-Meteo's
+ * fallback (ADR 0028).
+ */
+export class NasaPowerClimateLookup implements ClimateLookup {
+  constructor(
+    private readonly fetchFn: typeof fetch = fetch,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
+
+  async lookup(place: PlaceCandidateDto): Promise<ClimateFacts> {
+    const lastYear = this.now().getUTCFullYear() - 1;
+    const url = new URL('https://power.larc.nasa.gov/api/temporal/daily/point');
+    url.searchParams.set('parameters', 'T2M_MIN,T2M');
+    url.searchParams.set('community', 'AG');
+    url.searchParams.set('latitude', String(place.latitude));
+    url.searchParams.set('longitude', String(place.longitude));
+    url.searchParams.set('start', `${lastYear - 29}0101`);
+    url.searchParams.set('end', `${lastYear}1231`);
+    url.searchParams.set('format', 'JSON');
+    const body = await fetchJson<{
+      properties?: {
+        parameter?: { T2M_MIN?: Record<string, number>; T2M?: Record<string, number> };
+      };
+    }>(this.fetchFn, url);
+    const minByDay = body?.properties?.parameter?.T2M_MIN;
+    const meanByDay = body?.properties?.parameter?.T2M ?? {};
+    if (!minByDay) return NO_CLIMATE;
+    const days = Object.keys(minByDay)
+      .filter((d) => /^\d{8}$/.test(d))
+      .sort();
+    const reading = (t: number | undefined) => (t == null || t <= POWER_FILL ? null : t);
+    return factsFor(
+      place,
+      days.map((d) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`),
+      days.map((d) => reading(minByDay[d])),
+      days.map((d) => reading(meanByDay[d])),
+    );
+  }
+}
+
+/**
+ * Asks `primary`, and `secondary` when the primary knows nothing about the
+ * place (unreachable, refused, or no data there).
+ */
+export class FallbackClimateLookup implements ClimateLookup {
+  constructor(
+    private readonly primary: ClimateLookup,
+    private readonly secondary: ClimateLookup,
+  ) {}
+
+  async lookup(place: PlaceCandidateDto): Promise<ClimateFacts> {
+    const facts = await this.primary.lookup(place);
+    const known = facts.hardinessZone != null || facts.monthlyMeanC != null;
+    return known ? facts : this.secondary.lookup(place);
+  }
+}
+
+/**
+ * The climate lookup for `PLACE_PROVIDER` and `CLIMATE_SOURCE`: fixtures for
+ * tests; NASA POWER alone with `CLIMATE_SOURCE=nasa-power`; otherwise
+ * Open-Meteo, falling back to NASA POWER.
+ */
+export function climateLookupFor(env: NodeJS.ProcessEnv = process.env): ClimateLookup {
+  if (env['PLACE_PROVIDER'] !== 'live') return new FixtureClimateLookup();
+  if (env['CLIMATE_SOURCE'] === 'nasa-power') return new NasaPowerClimateLookup();
+  return new FallbackClimateLookup(new LiveClimateLookup(), new NasaPowerClimateLookup());
+}
+
+async function fetchJson<T>(fetchFn: typeof fetch, url: URL): Promise<T | null> {
+  try {
+    const response = await fetchFn(url, { signal: AbortSignal.timeout(10_000) });
+    return response.ok ? ((await response.json()) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Facts from a source's daily readings, with the frost pair checked for the hemisphere. */
+function factsFor(
+  place: PlaceCandidateDto,
+  time: readonly string[],
+  minimums: readonly (number | null)[],
+  means: readonly (number | null)[],
+): ClimateFacts {
+  const facts = climateFromDailyMinimums(time, minimums, place.latitude, means);
+  const pair = keepFrostPair(facts.lastFrost, facts.firstFrost, place.latitude);
+  return {
+    ...facts,
+    lastFrost: pair.last,
+    firstFrost: pair.first,
+    frostRisk: pair.last ? facts.frostRisk : null,
+  };
 }

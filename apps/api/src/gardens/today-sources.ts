@@ -1,6 +1,6 @@
 import { CareReminderService } from '@open-garden/care-reminders';
 import { GardenService } from '@open-garden/gardens';
-import { FixtureClimateLookup, LiveClimateLookup } from '@open-garden/garden-place';
+import { climateLookupFor } from '@open-garden/garden-place';
 import {
   CalendarEntryRepository,
   CareEventRepository,
@@ -15,8 +15,7 @@ import type { TodaySources } from '@open-garden/reminder-delivery';
 
 /** Today's sources over the database: shared by the Today page and the daily reminders. */
 export function todaySources(db: AppDatabase): TodaySources {
-  const climate =
-    process.env['PLACE_PROVIDER'] === 'live' ? new LiveClimateLookup() : new FixtureClimateLookup();
+  const climate = climateLookupFor();
   const memberships = new GardenMembershipRepository(db);
   const events = new CareEventRepository(db);
   const gardens = new GardenService(new GardenRepository(db), memberships, climate);

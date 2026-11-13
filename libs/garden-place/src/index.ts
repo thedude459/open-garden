@@ -12,7 +12,10 @@ export { FixturePlaceLookup } from './lib/fixture-place-lookup';
 export { NominatimPlaceLookup } from './lib/nominatim-place-lookup';
 export {
   FixtureClimateLookup,
+  FallbackClimateLookup,
   LiveClimateLookup,
+  NasaPowerClimateLookup,
+  climateLookupFor,
   climateFromDailyMinimums,
   frostInOrder,
   keepFrostPair,

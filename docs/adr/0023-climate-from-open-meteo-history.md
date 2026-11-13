@@ -3,6 +3,7 @@
 ## Status
 
 Accepted. Supersedes the climate source in [ADR 0016](0016-garden-place.md).
+NASA POWER was added as fallback or sole source in [ADR 0028](0028-nasa-power-climate-source.md).
 
 ## Context
 
