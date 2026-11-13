@@ -545,7 +545,13 @@ each against the other phases):
    to the lab's recommendation, suggest compost for low organic matter, and
    remind to retest every 2–3 years. No application rates at first: labs
    report on different extraction methods and units, and rates depend on
-   buffer pH and texture; follow the lab where it gives them. **Soil by
+   buffer pH and texture; follow the lab where it gives them. **Amendment
+   advice from dataset v0.4:** lime and sulfur rates by soil texture and
+   buffer pH, and nitrogen, phosphorus, and potassium by soil-test level per
+   crop group, each regional with where it was shown, so the bed's test
+   becomes "about N lb of ground limestone per 100 sq ft this fall" when the
+   lab gave no rate, with timing and organic options. Still advice: the lab's
+   own recommendation wins, and nothing blocks a planting. **Soil by
    location:** before there is a test, pre-fill a bed's likely texture,
    typical pH, and drainage from USDA's Soil Data Access (US, public domain)
    or ISRIC SoilGrids (worldwide, CC BY 4.0, credited in the UI), through a
@@ -568,10 +574,19 @@ each against the other phases):
 8. **Seed inventory** — packets, quantity, year; viability by crop;
    "what can I sow this week from what I have?", and a seeds-needed
    calculator from bed size, spacing, and the dataset's seeding data (v0.3).
-9. **Pests and diseases** — from dataset v0.3: plant pages list the pests a
-   crop is prone to, with signs and organic controls, and companion advice
-   names the pest a companion deters or traps. Pest sightings can be logged
-   in the journal.
+9. **Pests and diseases, as integrated pest management (IPM)** — from
+   dataset v0.3, which organizes each pest the way extension services teach
+   IPM. Plant pages list the pests a crop is prone to, with the signs to look
+   for. Today and reminders prompt scouting when a pest is due ("check young
+   brassicas for flea beetles this week"), so problems are caught early. A
+   logged sighting is compared with the action threshold where extension
+   guidance gives one, and controls are offered in IPM order: cultural
+   (rotation, timing, resistant varieties), physical (row covers until bloom,
+   hand-picking, traps), biological (beneficial insects, and the companion
+   pairs and trap crops that act on that pest), and chemical last, least-toxic
+   first, by active ingredient, with a reminder to follow the label. Guidance
+   is ranked by how close the region it comes from is to the property, like
+   companion pairs. Sightings go in the journal (item 11).
 10. **Harvest totals** — yields per crop per year from
    `garden_planting_harvests`.
 11. **Journal** — dated notes with photos on a planting, bed, or property.
@@ -633,12 +648,12 @@ English only, with translations by contribution
 | **3 (next, data repo)** | Dataset v0.2 in small releases: (a) **done (v0.2.0):** `soilPh`, fall sowing, hot pepper; (b) **done (v0.2.1):** crop coefficients; (c) companion plants as crops and companion pairs with benefits, evidence, and sources | Unblocks soil-test advice, watering by water balance, and companion advice. Small releases keep each review short. |
 | 4 | The app reads each v0.2 release as it lands. **v0.2.0 done:** the bundled catalog is v0.2.0; soil pH is stored and shown on plant pages; a fall sowing window shows on the calendar and Today where the property has frost dates. **v0.2.1 done:** crop coefficients (Kc) and growth-stage days stored and shown on plant pages, ready for watering by water balance (step 8). Still to come: the `crops` table with companions | The data is only useful once the app reads it. |
 | 5 | Make the web app testable: Angular component tests under Vitest (test item 2), then split the 700–1,200-line pages (Layout, Plan canvas, Settings, Bed View, Plantings) along the way | Polish (step 7) rewrites these pages; tests first keep that safe. |
-| 6 | Companion advice from data, in the planner and on plant pages (Phase 3 item 9) | Needs v0.2 (c). |
+| 6 | Companion advice from data, in the planner and on plant pages (Phase 3 item 9), ranked by where each pair was shown relative to the property's zone | Needs v0.2 (c); pairs carry `shownIn` with USDA hardiness zones. |
 | 7 | Phase 3 polish, desktop first: Settings in sections (8), autosave with undo (7), fit-to-content and remembered zoom (6), catalog icons and filters (10), property cards (11), brand mark (14); onboarding for a new household; accessibility checks (test item 7) | The redesign's remaining items, now that pages have tests. |
 | 8 | Care features: weather alerts (Phase 4 item 3), soil tests per bed (5), watering by water balance (4), succession planting (7), harvest totals (10) | Gardening depth; each builds on reminders and v0.2 data. |
 | 9 | Account basics (Phase 4 item 17): change password, reset by email (SMTP is already there), delete account | Needed before more households join; small at household scale. |
-| 10p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases | Broadens the catalog; unblocks pest advice. |
-| 11 | Pests and diseases (Phase 4 item 9); named rootstocks for tree plantings | Need v0.3. |
+| 10p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases organized for IPM; then v0.4, soil amendment rates and nutrient recommendations | Broadens the catalog; unblocks pest advice and amendment advice. |
+| 11 | Pests and diseases as IPM (Phase 4 item 9): scouting reminders, thresholds, controls in IPM order; named rootstocks for tree plantings; then soil amendment advice on a bed's soil test (item 5) | Need v0.3, then v0.4. |
 | 12 | The rest of Phase 4 in this order: export and backup (13), journal (11), household tasks (12), seed inventory (8), custom varieties (15), Home Assistant (6), printable plan and QR labels (14), contributed translations (16) | Useful, but none unblocks other work; phone-first items come later on a computer-first install. |
 | *Later* | Mobile browser tests (test item 8) and phone polish; wet/dry-season windows (needs dataset data) | The install is used mostly on a computer. |
 | *Ongoing* | Coverage plan steps 4–6; test items 9–12, 16, and the web half of 15; the pipeline items from the review; OpenSSF Best Practices badge (maintainer); hygiene item 17 if the repo moves to an organization | Fit around the steps above; none blocks them. |
