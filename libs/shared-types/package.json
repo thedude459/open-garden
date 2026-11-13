@@ -1,0 +1,5 @@
+{
+  "name": "@open-garden/shared-types",
+  "private": true,
+  "sideEffects": false
+}

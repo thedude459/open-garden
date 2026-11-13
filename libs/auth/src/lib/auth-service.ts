@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, lt } from 'drizzle-orm';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import type { Units } from '@open-garden/shared-types';
 import { isUniqueViolation, sessions, users } from '@open-garden/plant-catalog-data';
@@ -56,6 +56,9 @@ export class AuthService {
       tokenHash,
       expiresAt,
     });
+    // Expired sessions are useless; clearing them on each sign-in keeps the
+    // table bounded without a scheduled job.
+    await this.db.delete(sessions).where(lt(sessions.expiresAt, new Date()));
     return { user: mapUser(user), token };
   }
 

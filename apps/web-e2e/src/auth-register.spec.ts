@@ -18,3 +18,24 @@ test('signing up with an email that already has an account says so', async ({ pa
   );
   await expect(page).toHaveURL(/\/login/);
 });
+
+test('after five wrong passwords, sign-in says how long to wait', async ({ page }) => {
+  const email = uniqueEmail('locked');
+  const created = await page.request.post('/api/auth/register', {
+    data: { email, password: TEST_PASSWORD, displayName: 'Locked' },
+  });
+  expect(created.status(), await created.text()).toBe(201);
+  await page.context().clearCookies();
+  for (let i = 0; i < 5; i++) {
+    const res = await page.request.post('/api/auth/login', {
+      data: { email, password: 'not-the-password' },
+    });
+    expect(res.status()).toBe(401);
+  }
+
+  await page.goto(`/login?email=${encodeURIComponent(email)}`);
+  await page.getByPlaceholder('Password').fill(TEST_PASSWORD);
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page.getByLabel('Notification')).toContainText(/Too many attempts\. Try again in/);
+  await expect(page).toHaveURL(/\/login/);
+});

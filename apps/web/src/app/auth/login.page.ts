@@ -81,12 +81,15 @@ export class LoginPage {
         await this.router.navigateByUrl('/today');
       } catch (err) {
         // Sign-in keeps one generic message. Sign-up says when the email is
-        // already registered, so people know to sign in instead.
-        const taken =
-          this.mode() === 'register' && err instanceof HttpErrorResponse && err.status === 409
-            ? (err.error as { error?: { message?: string } } | null)?.error?.message
+        // already registered, so people know to sign in instead, and both say
+        // when too many attempts mean waiting.
+        const status = err instanceof HttpErrorResponse ? err.status : 0;
+        const said =
+          status === 429 || (this.mode() === 'register' && status === 409)
+            ? ((err as HttpErrorResponse).error as { error?: { message?: string } } | null)?.error
+                ?.message
             : undefined;
-        this.notices.error(taken ?? 'Authentication failed');
+        this.notices.error(said ?? 'Authentication failed');
       }
     });
   }
