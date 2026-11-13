@@ -58,8 +58,11 @@ export async function todayFor(
     try {
       for (const entry of await sources.calendar(garden.id, userId)) {
         // A crop already in the ground is not one to start.
+        // ponytail: that includes a spring crop whose fall sowing is due; a
+        // second planting in one season would need the planting's dates here.
         if (entry.planted) continue;
-        if (!overlapsThisWeek([entry.windows.outdoorSow, entry.windows.transplant], today)) {
+        const { outdoorSow, transplant, fallSow } = entry.windows;
+        if (!overlapsThisWeek([outdoorSow, transplant, fallSow], today)) {
           continue;
         }
         thisWeek += 1;

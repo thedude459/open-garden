@@ -19,12 +19,15 @@ export interface GrowingGuidanceDto {
   indoorStart: FrostRelativeWeeksDto | null;
   outdoorSow: FrostRelativeWeeksDto | null;
   transplant: FrostRelativeWeeksDto | null;
+  /** A second outdoor sowing for a fall crop, counted from the first frost. */
+  fallSow: FrostRelativeWeeksDto | null;
 }
 
 export interface CalendarWindowsDto {
   indoorStart: SeasonalWindowDto | null;
   outdoorSow: SeasonalWindowDto | null;
   transplant: SeasonalWindowDto | null;
+  fallSow: SeasonalWindowDto | null;
   harvest: SeasonalWindowDto | null;
 }
 

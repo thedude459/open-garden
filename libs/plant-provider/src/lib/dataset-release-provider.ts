@@ -17,10 +17,10 @@ import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
  * verify`); bump all three together.
  */
 export const BUNDLED_CATALOG = {
-  version: '0.1.0',
+  version: '0.2.0',
   /** Relative to the working directory: the repository root, or /app in the API image. */
-  file: 'libs/plant-provider/catalog/open-garden-catalog-0.1.0.json',
-  sha256: '88c4ab45ee5e2074b67add9fc2962318cb5fd57292f4b403b9b7294455350ef2',
+  file: 'libs/plant-provider/catalog/open-garden-catalog-0.2.0.json',
+  sha256: '1d972b29826353efcfb7de6ff61c358d264b174674d6dfb4dd2309f83f1b6fb4',
 } as const;
 
 /**
@@ -144,11 +144,17 @@ const cropSchema = z.object({
   // Required by the dataset; optional here so a release without it still imports.
   feeding: z.enum(['light', 'moderate', 'heavy']).optional(),
   spacingCm: spacing,
-  windows: z.object({ indoorStart: window, directSow: window, transplant: window }),
+  windows: z.object({
+    indoorStart: window,
+    directSow: window,
+    transplant: window,
+    fallSow: window,
+  }),
   daysToMaturity: dayRange.optional(),
   hardinessZones: zones.optional(),
   temperatureC: z.object({ min: z.number(), max: z.number() }).optional(),
   minSoilTemperatureC: z.number().optional(),
+  soilPh: z.object({ min: z.number(), max: z.number() }).optional(),
   rootstocks: z
     .object({
       dwarf: z.object({ spacingCm: spacing }).optional(),
@@ -219,11 +225,13 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
           minSoilC: crop.minSoilTemperatureC ?? null,
         }
       : null,
+    soilPh: crop.soilPh ? { min: crop.soilPh.min, max: crop.soilPh.max } : null,
     family,
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),
       transplant: guidance(crop.windows.transplant),
+      fallSow: guidance(crop.windows.fallSow),
     },
   };
   return [

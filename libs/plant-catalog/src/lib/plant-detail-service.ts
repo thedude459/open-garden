@@ -39,6 +39,10 @@ export class PlantDetailService {
         row.growMinC != null && row.growMaxC != null
           ? { minC: row.growMinC, maxC: row.growMaxC, minSoilC: row.sowSoilMinC }
           : null,
+      soilPh:
+        row.soilPhMin != null && row.soilPhMax != null
+          ? { min: row.soilPhMin, max: row.soilPhMax }
+          : null,
     };
   }
 }
@@ -53,6 +57,8 @@ export function growingGuidanceFromRow(row: {
   transplantFrostAnchor: string | null;
   transplantWeeksEarliest: number | null;
   transplantWeeksLatest: number | null;
+  fallSowWeeksEarliest: number | null;
+  fallSowWeeksLatest: number | null;
 }): GrowingGuidanceDto {
   return {
     indoorStart: triplet(row.indoorFrostAnchor, row.indoorWeeksEarliest, row.indoorWeeksLatest),
@@ -62,6 +68,7 @@ export function growingGuidanceFromRow(row: {
       row.transplantWeeksEarliest,
       row.transplantWeeksLatest,
     ),
+    fallSow: triplet('first', row.fallSowWeeksEarliest, row.fallSowWeeksLatest),
   };
 }
 

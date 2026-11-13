@@ -55,13 +55,36 @@ describe('PlantRepository', () => {
           indoorStart: { frostAnchor: 'last', weeksEarliest: -8, weeksLatest: -6 },
           outdoorSow: { frostAnchor: 'last', weeksEarliest: 4, weeksLatest: 1 },
           transplant: { frostAnchor: 'last', weeksEarliest: 1, weeksLatest: 99 },
+          fallSow: { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -4 },
         },
       }),
     );
     const row = await plantsRepo.getById(ok!.id);
     expect(row).toMatchObject({ indoorFrostAnchor: 'last', indoorWeeksEarliest: -8 });
+    expect(row).toMatchObject({ fallSowWeeksEarliest: -8, fallSowWeeksLatest: -4 });
     // Earliest after latest, and more than a year out, are both rejected.
     expect(row).toMatchObject({ sowFrostAnchor: null, transplantFrostAnchor: null });
+  });
+
+  it('stores a fall sowing only when it counts from the first frost', async () => {
+    const spring = await plantsRepo.upsertByVarietyKey(
+      variety('cat-fall-last', {
+        growingGuidance: {
+          indoorStart: null,
+          outdoorSow: null,
+          transplant: null,
+          fallSow: { frostAnchor: 'last', weeksEarliest: -8, weeksLatest: -4 },
+        },
+      }),
+    );
+    expect(await plantsRepo.getById(spring!.id)).toMatchObject({ fallSowWeeksEarliest: null });
+  });
+
+  it('stores soil pH', async () => {
+    const [row] = await plantsRepo.upsertManyByVarietyKey([
+      variety('cat-ph', { soilPh: { min: 4.5, max: 5.5 } }),
+    ]);
+    expect(await plantsRepo.getById(row!.id)).toMatchObject({ soilPhMin: 4.5, soilPhMax: 5.5 });
   });
 
   it('lists with search, zone, type, and paging; hides deprecated and spacing-less plants', async () => {

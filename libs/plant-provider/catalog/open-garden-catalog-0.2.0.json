@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "CC0-1.0",
   "units": {
     "length": "cm",
@@ -126,6 +126,7 @@
         "en": "Apple"
       },
       "scientificName": "Malus domestica",
+      "wikidataId": "Q18674606",
       "family": "rosaceae",
       "habit": "tree",
       "use": "fruit",
@@ -186,6 +187,10 @@
           }
         }
       },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -219,6 +224,7 @@
         "en": "Asparagus"
       },
       "scientificName": "Asparagus officinalis",
+      "wikidataId": "Q28367",
       "family": "asparagaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -236,6 +242,10 @@
         "betweenRows": 120
       },
       "sowingDepthCm": 15,
+      "soilPh": {
+        "min": 6.5,
+        "max": 7.5
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -269,6 +279,7 @@
         "en": "Basil"
       },
       "scientificName": "Ocimum basilicum",
+      "wikidataId": "Q38859",
       "family": "lamiaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -292,6 +303,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 18,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -339,6 +354,7 @@
         "en": "Beet"
       },
       "scientificName": "Beta vulgaris",
+      "wikidataId": "Q165191",
       "family": "amaranthaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -362,6 +378,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -403,6 +423,7 @@
         "en": "Blackberry"
       },
       "scientificName": "Rubus fruticosus",
+      "wikidataId": "Q13541716",
       "family": "rosaceae",
       "habit": "cane",
       "use": "fruit",
@@ -418,6 +439,10 @@
       "spacingCm": {
         "inRow": 90,
         "betweenRows": 300
+      },
+      "soilPh": {
+        "min": 5.5,
+        "max": 7
       },
       "windows": {
         "transplant": {
@@ -452,6 +477,7 @@
         "en": "Blueberry"
       },
       "scientificName": "Vaccinium corymbosum",
+      "wikidataId": "Q468695",
       "family": "ericaceae",
       "habit": "shrub",
       "use": "fruit",
@@ -467,6 +493,10 @@
       "spacingCm": {
         "inRow": 120,
         "betweenRows": 240
+      },
+      "soilPh": {
+        "min": 4.5,
+        "max": 5.5
       },
       "windows": {
         "transplant": {
@@ -501,6 +531,7 @@
         "en": "Broccoli"
       },
       "scientificName": "Brassica oleracea var. italica",
+      "wikidataId": "Q47722",
       "family": "brassicaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -524,6 +555,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -570,6 +605,7 @@
         "en": "Brussels sprouts"
       },
       "scientificName": "Brassica oleracea var. gemmifera",
+      "wikidataId": "Q150463",
       "family": "brassicaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -593,6 +629,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -639,6 +679,7 @@
         "en": "Bush bean"
       },
       "scientificName": "Phaseolus vulgaris",
+      "wikidataId": "Q42339",
       "family": "fabaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -662,6 +703,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -703,6 +748,7 @@
         "en": "Cabbage"
       },
       "scientificName": "Brassica oleracea var. capitata",
+      "wikidataId": "Q35051",
       "family": "brassicaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -726,6 +772,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -772,6 +822,7 @@
         "en": "Carrot"
       },
       "scientificName": "Daucus carota subsp. sativus",
+      "wikidataId": "Q11678009",
       "family": "apiaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -795,6 +846,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -836,6 +891,7 @@
         "en": "Cauliflower"
       },
       "scientificName": "Brassica oleracea var. botrytis",
+      "wikidataId": "Q7537",
       "family": "brassicaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -859,6 +915,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -905,6 +965,7 @@
         "en": "Celery"
       },
       "scientificName": "Apium graveolens var. dulce",
+      "wikidataId": "Q1815126",
       "family": "apiaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -928,6 +989,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 10,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -974,6 +1039,7 @@
         "en": "Chives"
       },
       "scientificName": "Allium schoenoprasum",
+      "wikidataId": "Q51148",
       "family": "amaryllidaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -1001,6 +1067,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 10,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1042,6 +1112,7 @@
         "en": "Cilantro"
       },
       "scientificName": "Coriandrum sativum",
+      "wikidataId": "Q41611",
       "family": "apiaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -1065,6 +1136,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 10,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -1102,6 +1177,7 @@
         "en": "Cucumber"
       },
       "scientificName": "Cucumis sativus",
+      "wikidataId": "Q23425",
       "family": "cucurbitaceae",
       "habit": "vine",
       "use": "vegetable",
@@ -1125,6 +1201,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1176,6 +1256,7 @@
         "en": "Dill"
       },
       "scientificName": "Anethum graveolens",
+      "wikidataId": "Q26686",
       "family": "apiaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -1199,6 +1280,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 10,
+      "soilPh": {
+        "min": 5.5,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -1236,6 +1321,7 @@
         "en": "Eggplant"
       },
       "scientificName": "Solanum melongena",
+      "wikidataId": "Q7540",
       "family": "solanaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1259,6 +1345,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 18,
+      "soilPh": {
+        "min": 5.5,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1305,6 +1395,7 @@
         "en": "Garlic"
       },
       "scientificName": "Allium sativum",
+      "wikidataId": "Q23400",
       "family": "amaryllidaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1322,6 +1413,10 @@
         "betweenRows": 30
       },
       "sowingDepthCm": 5,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "first",
@@ -1354,11 +1449,94 @@
       ]
     },
     {
+      "id": "hot-pepper",
+      "names": {
+        "en": "Hot pepper"
+      },
+      "scientificName": "Capsicum annuum",
+      "wikidataId": "Q1380",
+      "family": "solanaceae",
+      "habit": "herbaceous",
+      "use": "vegetable",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 60
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 7,
+        "max": 21
+      },
+      "temperatureC": {
+        "min": 15,
+        "optimal": 27,
+        "max": 35
+      },
+      "minSoilTemperatureC": 21,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -10,
+          "weeksLatest": -8
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 2,
+          "weeksLatest": 4
+        }
+      },
+      "daysToMaturity": {
+        "min": 65,
+        "max": 90
+      },
+      "varieties": [
+        {
+          "id": "hot-pepper-jalapeno",
+          "name": "Jalapeño",
+          "daysToMaturity": {
+            "min": 70,
+            "max": 80
+          }
+        },
+        {
+          "id": "hot-pepper-cayenne",
+          "name": "Cayenne",
+          "daysToMaturity": {
+            "min": 70,
+            "max": 85
+          }
+        }
+      ],
+      "notes": "Grown like sweet pepper but likes it warmer; seeds sprout slowly in cool soil. Fruit grows hotter as it ripens, and dry spells at fruiting raise the heat further.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "kale",
       "names": {
         "en": "Kale"
       },
       "scientificName": "Brassica oleracea var. sabellica",
+      "wikidataId": "Q61676627",
       "family": "brassicaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1382,6 +1560,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1433,6 +1615,7 @@
         "en": "Leek"
       },
       "scientificName": "Allium ampeloprasum",
+      "wikidataId": "Q148995",
       "family": "amaryllidaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1456,6 +1639,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1502,6 +1689,7 @@
         "en": "Lettuce"
       },
       "scientificName": "Lactuca sativa",
+      "wikidataId": "Q83193",
       "family": "asteraceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1525,6 +1713,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 4,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1540,6 +1732,11 @@
           "frost": "last",
           "weeksEarliest": -2,
           "weeksLatest": 1
+        },
+        "fallSow": {
+          "frost": "first",
+          "weeksEarliest": -8,
+          "weeksLatest": -4
         }
       },
       "daysToMaturity": {
@@ -1576,6 +1773,7 @@
         "en": "Melon"
       },
       "scientificName": "Cucumis melo",
+      "wikidataId": "Q81602",
       "family": "cucurbitaceae",
       "habit": "vine",
       "use": "fruit",
@@ -1599,6 +1797,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 21,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1650,6 +1852,7 @@
         "en": "Mint"
       },
       "scientificName": "Mentha spicata",
+      "wikidataId": "Q160114",
       "family": "lamiaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -1665,6 +1868,10 @@
       "spacingCm": {
         "inRow": 45,
         "betweenRows": 60
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
       },
       "windows": {
         "transplant": {
@@ -1699,6 +1906,7 @@
         "en": "Okra"
       },
       "scientificName": "Abelmoschus esculentus",
+      "wikidataId": "Q80531",
       "family": "malvaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1722,6 +1930,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 21,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1773,6 +1985,7 @@
         "en": "Onion"
       },
       "scientificName": "Allium cepa",
+      "wikidataId": "Q23485",
       "family": "amaryllidaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1796,6 +2009,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1837,6 +2054,7 @@
         "en": "Oregano"
       },
       "scientificName": "Origanum vulgare",
+      "wikidataId": "Q134283",
       "family": "lamiaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -1864,6 +2082,10 @@
         "max": 29
       },
       "minSoilTemperatureC": 13,
+      "soilPh": {
+        "min": 6,
+        "max": 8
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1906,6 +2128,7 @@
         "en": "Parsley"
       },
       "scientificName": "Petroselinum crispum",
+      "wikidataId": "Q25284",
       "family": "apiaceae",
       "habit": "herbaceous",
       "use": "herb",
@@ -1929,6 +2152,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 10,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1976,6 +2203,7 @@
         "en": "Parsnip"
       },
       "scientificName": "Pastinaca sativa",
+      "wikidataId": "Q188614",
       "family": "apiaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -1999,6 +2227,10 @@
         "max": 24
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -2040,6 +2272,7 @@
         "en": "Pea"
       },
       "scientificName": "Pisum sativum",
+      "wikidataId": "Q25237",
       "family": "fabaceae",
       "habit": "vine",
       "use": "vegetable",
@@ -2063,11 +2296,20 @@
         "max": 24
       },
       "minSoilTemperatureC": 4,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "directSow": {
           "frost": "last",
           "weeksEarliest": -6,
           "weeksLatest": -2
+        },
+        "fallSow": {
+          "frost": "first",
+          "weeksEarliest": -12,
+          "weeksLatest": -10
         }
       },
       "daysToMaturity": {
@@ -2104,6 +2346,7 @@
         "en": "Peach"
       },
       "scientificName": "Prunus persica",
+      "wikidataId": "Q13189",
       "family": "rosaceae",
       "habit": "tree",
       "use": "fruit",
@@ -2164,6 +2407,10 @@
           }
         }
       },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -2197,6 +2444,7 @@
         "en": "Pear"
       },
       "scientificName": "Pyrus communis",
+      "wikidataId": "Q146281",
       "family": "rosaceae",
       "habit": "tree",
       "use": "fruit",
@@ -2257,6 +2505,10 @@
           }
         }
       },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -2290,6 +2542,7 @@
         "en": "Pole bean"
       },
       "scientificName": "Phaseolus vulgaris",
+      "wikidataId": "Q42339",
       "family": "fabaceae",
       "habit": "vine",
       "use": "vegetable",
@@ -2313,6 +2566,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -2354,6 +2611,7 @@
         "en": "Potato"
       },
       "scientificName": "Solanum tuberosum",
+      "wikidataId": "Q10998",
       "family": "solanaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -2373,6 +2631,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 5,
+        "max": 6.5
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -2414,6 +2676,7 @@
         "en": "Pumpkin"
       },
       "scientificName": "Cucurbita pepo",
+      "wikidataId": "Q7229863",
       "family": "cucurbitaceae",
       "habit": "vine",
       "use": "vegetable",
@@ -2437,6 +2700,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -2488,6 +2755,7 @@
         "en": "Radish"
       },
       "scientificName": "Raphanus sativus",
+      "wikidataId": "Q7224565",
       "family": "brassicaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -2511,11 +2779,20 @@
         "max": 24
       },
       "minSoilTemperatureC": 4,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
           "weeksEarliest": -5,
           "weeksLatest": 2
+        },
+        "fallSow": {
+          "frost": "first",
+          "weeksEarliest": -6,
+          "weeksLatest": -2
         }
       },
       "daysToMaturity": {
@@ -2552,6 +2829,7 @@
         "en": "Raspberry"
       },
       "scientificName": "Rubus idaeus",
+      "wikidataId": "Q12252383",
       "family": "rosaceae",
       "habit": "cane",
       "use": "fruit",
@@ -2567,6 +2845,10 @@
       "spacingCm": {
         "inRow": 60,
         "betweenRows": 240
+      },
+      "soilPh": {
+        "min": 5.5,
+        "max": 6.5
       },
       "windows": {
         "transplant": {
@@ -2601,6 +2883,7 @@
         "en": "Rhubarb"
       },
       "scientificName": "Rheum rhabarbarum",
+      "wikidataId": "Q7535",
       "family": "polygonaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -2618,6 +2901,10 @@
         "betweenRows": 120
       },
       "sowingDepthCm": 5,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -2651,6 +2938,7 @@
         "en": "Spinach"
       },
       "scientificName": "Spinacia oleracea",
+      "wikidataId": "Q81464",
       "family": "amaranthaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -2674,11 +2962,20 @@
         "max": 24
       },
       "minSoilTemperatureC": 4,
+      "soilPh": {
+        "min": 6.5,
+        "max": 7.5
+      },
       "windows": {
         "directSow": {
           "frost": "last",
           "weeksEarliest": -6,
           "weeksLatest": -2
+        },
+        "fallSow": {
+          "frost": "first",
+          "weeksEarliest": -8,
+          "weeksLatest": -4
         }
       },
       "daysToMaturity": {
@@ -2715,6 +3012,7 @@
         "en": "Strawberry"
       },
       "scientificName": "Fragaria × ananassa",
+      "wikidataId": "Q13158",
       "family": "rosaceae",
       "habit": "herbaceous",
       "use": "fruit",
@@ -2730,6 +3028,10 @@
       "spacingCm": {
         "inRow": 30,
         "betweenRows": 90
+      },
+      "soilPh": {
+        "min": 5.5,
+        "max": 6.5
       },
       "windows": {
         "transplant": {
@@ -2764,6 +3066,7 @@
         "en": "Summer squash"
       },
       "scientificName": "Cucurbita pepo",
+      "wikidataId": "Q7229863",
       "family": "cucurbitaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -2787,6 +3090,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -2838,6 +3145,7 @@
         "en": "Sweet cherry"
       },
       "scientificName": "Prunus avium",
+      "wikidataId": "Q165137",
       "family": "rosaceae",
       "habit": "tree",
       "use": "fruit",
@@ -2898,6 +3206,10 @@
           }
         }
       },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -2931,6 +3243,7 @@
         "en": "Sweet corn"
       },
       "scientificName": "Zea mays",
+      "wikidataId": "Q11575",
       "family": "poaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -2954,6 +3267,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -2995,6 +3312,7 @@
         "en": "Sweet pepper"
       },
       "scientificName": "Capsicum annuum",
+      "wikidataId": "Q1380",
       "family": "solanaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -3018,6 +3336,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 18,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -3064,6 +3386,7 @@
         "en": "Sweet potato"
       },
       "scientificName": "Ipomoea batatas",
+      "wikidataId": "Q37937",
       "family": "convolvulaceae",
       "habit": "vine",
       "use": "vegetable",
@@ -3082,6 +3405,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 18,
+      "soilPh": {
+        "min": 5.5,
+        "max": 6.5
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -3128,6 +3455,7 @@
         "en": "Swiss chard"
       },
       "scientificName": "Beta vulgaris subsp. vulgaris",
+      "wikidataId": "Q151964",
       "family": "amaranthaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -3151,6 +3479,10 @@
         "max": 27
       },
       "minSoilTemperatureC": 7,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -3192,6 +3524,7 @@
         "en": "Thyme"
       },
       "scientificName": "Thymus vulgaris",
+      "wikidataId": "Q148668",
       "family": "lamiaceae",
       "habit": "shrub",
       "use": "herb",
@@ -3219,6 +3552,10 @@
         "max": 29
       },
       "minSoilTemperatureC": 13,
+      "soilPh": {
+        "min": 6,
+        "max": 8
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -3255,6 +3592,7 @@
         "en": "Tomato"
       },
       "scientificName": "Solanum lycopersicum",
+      "wikidataId": "Q23501",
       "family": "solanaceae",
       "habit": "herbaceous",
       "use": "vegetable",
@@ -3278,6 +3616,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -3327,6 +3669,7 @@
         "en": "Watermelon"
       },
       "scientificName": "Citrullus lanatus",
+      "wikidataId": "Q17507129",
       "family": "cucurbitaceae",
       "habit": "vine",
       "use": "fruit",
@@ -3350,6 +3693,10 @@
         "max": 35
       },
       "minSoilTemperatureC": 21,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -3401,6 +3748,7 @@
         "en": "Winter squash"
       },
       "scientificName": "Cucurbita moschata",
+      "wikidataId": "Q160571",
       "family": "cucurbitaceae",
       "habit": "vine",
       "use": "vegetable",
@@ -3424,6 +3772,10 @@
         "max": 32
       },
       "minSoilTemperatureC": 16,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",

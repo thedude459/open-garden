@@ -16,6 +16,7 @@ import type {
   GrowingGuidanceDto,
   PlantType,
   RootstockSpacingDto,
+  SoilPhDto,
   SowingTemperatureDto,
 } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
@@ -40,6 +41,7 @@ export interface PlantUpsertInput {
   growingGuidance?: GrowingGuidanceDto | null;
   rootstockSpacingInches?: RootstockSpacingDto | null;
   sowingTemperature?: SowingTemperatureDto | null;
+  soilPh?: SoilPhDto | null;
   family?: string | null;
 }
 
@@ -157,6 +159,8 @@ export class PlantRepository {
           growMinC: sql`excluded.grow_min_c`,
           growMaxC: sql`excluded.grow_max_c`,
           sowSoilMinC: sql`excluded.sow_soil_min_c`,
+          soilPhMin: sql`excluded.soil_ph_min`,
+          soilPhMax: sql`excluded.soil_ph_max`,
           family: sql`excluded.family`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
@@ -172,6 +176,8 @@ export class PlantRepository {
           transplantFrostAnchor: sql`excluded.transplant_frost_anchor`,
           transplantWeeksEarliest: sql`excluded.transplant_weeks_earliest`,
           transplantWeeksLatest: sql`excluded.transplant_weeks_latest`,
+          fallSowWeeksEarliest: sql`excluded.fall_sow_weeks_earliest`,
+          fallSowWeeksLatest: sql`excluded.fall_sow_weeks_latest`,
         },
       })
       .returning();
@@ -252,6 +258,8 @@ function flattenGuidance(guidance: GrowingGuidanceDto | null | undefined) {
   const indoor = sanitizeWindow(guidance?.indoorStart);
   const sow = sanitizeWindow(guidance?.outdoorSow);
   const transplant = sanitizeWindow(guidance?.transplant);
+  const fall = sanitizeWindow(guidance?.fallSow);
+  const fallSow = fall?.frostAnchor === 'first' ? fall : null;
   return {
     indoorFrostAnchor: indoor?.frostAnchor ?? null,
     indoorWeeksEarliest: indoor?.weeksEarliest ?? null,
@@ -262,6 +270,8 @@ function flattenGuidance(guidance: GrowingGuidanceDto | null | undefined) {
     transplantFrostAnchor: transplant?.frostAnchor ?? null,
     transplantWeeksEarliest: transplant?.weeksEarliest ?? null,
     transplantWeeksLatest: transplant?.weeksLatest ?? null,
+    fallSowWeeksEarliest: fallSow?.weeksEarliest ?? null,
+    fallSowWeeksLatest: fallSow?.weeksLatest ?? null,
   };
 }
 
@@ -284,6 +294,7 @@ function escapeLike(value: string): string {
 function catalogColumns(input: {
   rootstockSpacingInches?: RootstockSpacingDto | null;
   sowingTemperature?: SowingTemperatureDto | null;
+  soilPh?: SoilPhDto | null;
   family?: string | null;
 }) {
   const r = input.rootstockSpacingInches;
@@ -292,6 +303,8 @@ function catalogColumns(input: {
     growMinC: t?.minC ?? null,
     growMaxC: t?.maxC ?? null,
     sowSoilMinC: t?.minSoilC ?? null,
+    soilPhMin: input.soilPh?.min ?? null,
+    soilPhMax: input.soilPh?.max ?? null,
     family: input.family ?? null,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,
