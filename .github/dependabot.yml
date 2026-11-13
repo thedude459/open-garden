@@ -23,10 +23,15 @@ updates:
     # (#150/#151, #158/#159), and both PRs failed to install.
     # Nest/Vitest majors stay together. Other ungrouped majors stay individual.
     # Security updates stay ungrouped so one new advisory cannot hold an
-    # unrelated patch in the same pull request.
+    # unrelated patch in the same pull request, except Angular: a fix to one
+    # @angular/* package moves the whole set, for the same peer reason.
     groups:
       angular:
         applies-to: version-updates
+        patterns:
+          - '@angular/*'
+      angular-security:
+        applies-to: security-updates
         patterns:
           - '@angular/*'
       nestjs-major:
