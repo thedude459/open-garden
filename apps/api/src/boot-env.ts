@@ -24,6 +24,10 @@ export function assertBootEnv(env: NodeJS.ProcessEnv = process.env): void {
   if (hour !== undefined && hour.trim() !== '' && !/^(?:[01]?\d|2[0-3])$/.test(hour.trim())) {
     throw new Error(`REMINDER_HOUR must be an hour from 0 to 23: ${hour}`);
   }
+  const climate = env['CLIMATE_SOURCE']?.trim();
+  if (climate && climate !== 'open-meteo' && climate !== 'nasa-power') {
+    throw new Error(`CLIMATE_SOURCE must be open-meteo or nasa-power: ${climate}`);
+  }
   const adminEmail = env['ADMIN_EMAIL']?.trim();
   if (adminEmail && !/^[^\s@]+@[^\s@]+$/.test(adminEmail)) {
     throw new Error(`ADMIN_EMAIL is not an email address: ${adminEmail}`);

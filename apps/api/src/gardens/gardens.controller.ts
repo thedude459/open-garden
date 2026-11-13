@@ -13,7 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
-import { FixtureClimateLookup, LiveClimateLookup } from '@open-garden/garden-place';
+import { climateLookupFor } from '@open-garden/garden-place';
 import { GardenService, domainError } from '@open-garden/gardens';
 import {
   GardenMembershipRepository,
@@ -40,10 +40,7 @@ export class GardensController {
   private readonly todaySources: TodaySources;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    const climate =
-      process.env['PLACE_PROVIDER'] === 'live'
-        ? new LiveClimateLookup()
-        : new FixtureClimateLookup();
+    const climate = climateLookupFor();
     this.gardens = new GardenService(
       new GardenRepository(bundle.db),
       new GardenMembershipRepository(bundle.db),

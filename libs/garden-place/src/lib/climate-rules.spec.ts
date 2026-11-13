@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   FixtureClimateLookup,
+  FallbackClimateLookup,
   LiveClimateLookup,
+  NasaPowerClimateLookup,
   climateFromDailyMinimums,
+  climateLookupFor,
   keepFrostPair,
   zoneFromMinimum,
 } from './climate';
@@ -244,6 +247,78 @@ describe('live climate lookup', () => {
         none,
       );
     }
+  });
+});
+
+describe('NASA POWER and the fallback', () => {
+  const now = () => new Date('2026-06-01T00:00:00Z');
+  const data = daily(1996, 2025, (_y, month, day) =>
+    (month === 4 && day === 15) || (month === 10 && day === 20) ? -1 : 6,
+  );
+  /** NASA POWER's shape: readings keyed YYYYMMDD, -999 where missing. */
+  const power = (fill = false) => {
+    const min: Record<string, number> = {};
+    const mean: Record<string, number> = {};
+    data.time.forEach((day, i) => {
+      const key = day.replaceAll('-', '');
+      min[key] = data.minimums[i]!;
+      mean[key] = fill && day.startsWith('2025-07') ? -999 : data.minimums[i]! + 5;
+    });
+    return { properties: { parameter: { T2M_MIN: min, T2M: mean } } };
+  };
+
+  it('reads NASA POWER for the last 30 full years', async () => {
+    let asked: URL | undefined;
+    const fetchFn = (async (input: RequestInfo | URL) => {
+      asked = new URL(String(input));
+      return json(power());
+    }) as typeof fetch;
+    const facts = await new NasaPowerClimateLookup(fetchFn, now).lookup(WASHINGTON_PLACE);
+    expect(asked?.hostname).toBe('power.larc.nasa.gov');
+    expect(asked?.searchParams.get('start')).toBe('19960101');
+    expect(asked?.searchParams.get('end')).toBe('20251231');
+    expect(asked?.searchParams.get('parameters')).toBe('T2M_MIN,T2M');
+    expect(facts).toMatchObject({
+      hardinessZone: 10,
+      lastFrost: { month: 4, day: 15 },
+      firstFrost: { month: 10, day: 20 },
+    });
+    expect(facts.monthlyMeanC).toHaveLength(12);
+  });
+
+  it('treats NASA POWER’s -999 as missing, and a failure as nothing known', async () => {
+    const filled = (async () => json(power(true))) as unknown as typeof fetch;
+    const facts = await new NasaPowerClimateLookup(filled, now).lookup(WASHINGTON_PLACE);
+    expect(facts.monthlyMeanC?.[6]).toBe(11);
+    const down = (async () => ({ ok: false }) as Response) as unknown as typeof fetch;
+    await expect(new NasaPowerClimateLookup(down, now).lookup(WASHINGTON_PLACE)).resolves.toEqual({
+      hardinessZone: null,
+      lastFrost: null,
+      firstFrost: null,
+      monthlyMeanC: null,
+    });
+  });
+
+  it('falls back only when the first source knows nothing', async () => {
+    const empty = { lookup: async () => new FixtureClimateLookup().lookup(MAIN_STREET_PLACES[0]!) };
+    const known = new FixtureClimateLookup();
+    const backup = {
+      lookup: async () => ({ ...(await known.lookup(WASHINGTON_PLACE)), hardinessZone: 5 }),
+    };
+    expect(
+      (await new FallbackClimateLookup(empty, backup).lookup(WASHINGTON_PLACE)).hardinessZone,
+    ).toBe(5);
+    expect(
+      (await new FallbackClimateLookup(known, backup).lookup(WASHINGTON_PLACE)).hardinessZone,
+    ).toBe(8);
+  });
+
+  it('picks the source from the environment', () => {
+    expect(climateLookupFor({})).toBeInstanceOf(FixtureClimateLookup);
+    expect(climateLookupFor({ PLACE_PROVIDER: 'live' })).toBeInstanceOf(FallbackClimateLookup);
+    expect(
+      climateLookupFor({ PLACE_PROVIDER: 'live', CLIMATE_SOURCE: 'nasa-power' }),
+    ).toBeInstanceOf(NasaPowerClimateLookup);
   });
 });
 

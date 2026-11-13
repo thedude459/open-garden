@@ -36,6 +36,8 @@ describe('assertBootEnv', () => {
     expect(() => assertBootEnv({ ...db, SMTP_HOST: 'smtp.example' })).toThrow(/SMTP_FROM/);
     expect(() => assertBootEnv({ ...db, REMINDER_HOUR: '24' })).toThrow(/REMINDER_HOUR/);
     expect(() => assertBootEnv({ ...db, REMINDER_HOUR: 'seven' })).toThrow(/REMINDER_HOUR/);
+    expect(() => assertBootEnv({ ...db, CLIMATE_SOURCE: 'nasa' })).toThrow(/CLIMATE_SOURCE/);
+    expect(() => assertBootEnv({ ...db, CLIMATE_SOURCE: 'nasa-power' })).not.toThrow();
     expect(() =>
       assertBootEnv({
         ...db,

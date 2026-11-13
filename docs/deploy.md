@@ -55,6 +55,7 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `WEB_PORT` | `8080` | Host port for the web container. |
 | `COOKIE_SECURE` | `false` | Set `true` when people reach the app over HTTPS, so the session cookie is only sent over TLS. |
 | `PLANT_CATALOG_FILE` | unset | Not needed: the image bundles the [open-garden-data](https://github.com/thedude459/open-garden-data/releases) release it was tested with and imports it when the API starts. To use a newer release before the app ships it, mount `open-garden-catalog-<version>.json` and its `open-garden-catalog-<version>.json.sigstore.json` (both from the release) into the API container and set this to the JSON file's path. A file whose provenance attestation does not verify, or that does not match the schema, fails that import and nothing changes. |
+| `CLIMATE_SOURCE` | `open-meteo` | Where a property's zone, frost dates, and monthly temperatures come from. `open-meteo` uses Open-Meteo's historical weather and falls back to NASA POWER when it is unreachable; `nasa-power` uses NASA POWER only (public domain, no usage limits), for installs whose use does not fit Open-Meteo's non-commercial terms. The rain outlook still uses Open-Meteo's forecast. |
 | `REMINDER_HOUR` | `7` | Hour of the day (0–23) the daily reminders go out, in the API container's time zone. |
 | `TZ` | `UTC` | The API container's time zone, for example `Europe/Berlin`. Reminders and "today" on the server follow it. |
 | `APP_URL` | unset | The address people open the app at, for example `https://garden.example.com`. Used for the link in reminder emails. |
@@ -81,7 +82,7 @@ task names only. See [ADR 0022](adr/0022-reminder-delivery.md).
 ### Outside services
 
 By default (`PLACE_PROVIDER=live`), the API sends the addresses people look up to OpenStreetMap Nominatim and the garden's coordinates to Open-Meteo
-(forecast and historical weather), and browsers load the OpenStreetMap embed. These are
+(forecast and historical weather) and, when Open-Meteo is unreachable or `CLIMATE_SOURCE=nasa-power`, to NASA POWER, and browsers load the OpenStreetMap embed. These are
 free services with usage policies (Nominatim allows about one request per
 second; Open-Meteo's free tier is for non-commercial use). A household
 install stays far inside them. If you host for many people, check their terms.
