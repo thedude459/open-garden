@@ -119,6 +119,27 @@ describe('DatasetReleaseProvider', () => {
     expect(items.find((p) => p.externalId === 'plain')?.sowingTemperature).toBeNull();
   });
 
+  it('reads soil pH and a fall sowing, when the release has them', async () => {
+    const lettuce = {
+      ...tomato,
+      id: 'lettuce',
+      varieties: [],
+      soilPh: { min: 6, max: 7 },
+      windows: {
+        directSow: { frost: 'last', weeksEarliest: -4, weeksLatest: 2 },
+        fallSow: { frost: 'first', weeksEarliest: -8, weeksLatest: -4 },
+      },
+    };
+    const { items } = await pinned(catalog([lettuce, { ...tomato, varieties: [] }])).listPage();
+    expect(items[0]).toMatchObject({
+      soilPh: { min: 6, max: 7 },
+      growingGuidance: {
+        fallSow: { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -4 },
+      },
+    });
+    expect(items[1]).toMatchObject({ soilPh: null, growingGuidance: { fallSow: null } });
+  });
+
   it('uses hardiness zones for perennials and leaves them unset when missing', async () => {
     const apple = {
       ...tomato,
@@ -252,7 +273,19 @@ describe('the bundled open-garden-data release', () => {
     const { items, skipped } = await new DatasetReleaseProvider().listPage();
     expect(skipped).toBe(0);
     expect(items.map((p) => p.varietyKey)).toEqual(
-      expect.arrayContaining(['dataset:tomato', 'dataset:tomato-cherry', 'dataset:apple']),
+      expect.arrayContaining([
+        'dataset:tomato',
+        'dataset:tomato-cherry',
+        'dataset:apple',
+        'dataset:hot-pepper-jalapeno',
+      ]),
+    );
+    expect(items.find((p) => p.varietyKey === 'dataset:blueberry')?.soilPh).toEqual({
+      min: 4.5,
+      max: 5.5,
+    });
+    expect(items.find((p) => p.varietyKey === 'dataset:lettuce')?.growingGuidance?.fallSow).toEqual(
+      { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -4 },
     );
     expect(items.find((p) => p.varietyKey === 'dataset:tomato')?.sowingTemperature).toEqual({
       minC: 10,

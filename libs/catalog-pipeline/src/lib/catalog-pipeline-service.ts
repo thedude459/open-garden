@@ -267,6 +267,7 @@ function toUpsert(
     growingGuidance: plant.growingGuidance,
     rootstockSpacingInches: plant.rootstockSpacingInches,
     sowingTemperature: plant.sowingTemperature,
+    soilPh: plant.soilPh,
     family: plant.family,
     sourceLinks: plant.sourceLinks,
   };

@@ -28,7 +28,13 @@ const entry = (over: Partial<CalendarEntryDto>): CalendarEntryDto =>
     commonName: 'Kale',
     cultivar: null,
     planted: false,
-    windows: { indoorStart: null, outdoorSow: window, transplant: null, harvest: null },
+    windows: {
+      indoorStart: null,
+      outdoorSow: window,
+      transplant: null,
+      fallSow: null,
+      harvest: null,
+    },
     ...over,
   }) as CalendarEntryDto;
 
@@ -71,6 +77,39 @@ describe('todayFor', () => {
     expect(today.gardens).toEqual([
       { id: 'a', overdue: 1, thisWeek: 1 },
       { id: 'b', overdue: 0, thisWeek: 0 },
+    ]);
+  });
+
+  it('lists a crop whose fall sowing is due', async () => {
+    const fallOnly = entry({
+      plantId: 'lettuce',
+      commonName: 'Lettuce',
+      windows: {
+        indoorStart: null,
+        outdoorSow: null,
+        transplant: null,
+        fallSow: window,
+        harvest: null,
+      },
+    });
+    const calendar = async () => [
+      fallOnly,
+      entry({
+        plantId: 'leek',
+        commonName: 'Leek',
+        windows: {
+          indoorStart: window,
+          outdoorSow: null,
+          transplant: null,
+          fallSow: null,
+          harvest: null,
+        },
+      }),
+    ];
+    const today = await todayFor(sources({ calendar }), 'u', '2026-08-25');
+    expect(today.tasks.filter((t) => t.kind === 'thisWeek').map((t) => t.title)).toEqual([
+      'Start Lettuce',
+      'Start Lettuce',
     ]);
   });
 

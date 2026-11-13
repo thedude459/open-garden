@@ -56,6 +56,12 @@ export interface SowingTemperatureDto {
   minSoilC: number | null;
 }
 
+/** The soil pH a crop grows best in, from the dataset. */
+export interface SoilPhDto {
+  min: number;
+  max: number;
+}
+
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sunRequirements: string | null;
   waterNeeds: string | null;
@@ -67,6 +73,7 @@ export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   isFavorite: boolean;
   growingGuidance: import('./calendar').GrowingGuidanceDto;
   sowingTemperature: SowingTemperatureDto | null;
+  soilPh: SoilPhDto | null;
 }
 
 export interface PageDto<T> {

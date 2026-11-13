@@ -115,6 +115,8 @@ type EntryRow = {
   transplantFrostAnchor: string | null;
   transplantWeeksEarliest: number | null;
   transplantWeeksLatest: number | null;
+  fallSowWeeksEarliest?: number | null;
+  fallSowWeeksLatest?: number | null;
   growMinC?: number | null;
   growMaxC?: number | null;
   sowSoilMinC?: number | null;
@@ -171,6 +173,7 @@ function guidanceFromRow(row: EntryRow): GrowingGuidanceDto {
       row.transplantWeeksEarliest,
       row.transplantWeeksLatest,
     ),
+    fallSow: triplet('first', row.fallSowWeeksEarliest ?? null, row.fallSowWeeksLatest ?? null),
   };
 }
 
