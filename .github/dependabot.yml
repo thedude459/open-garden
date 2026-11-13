@@ -14,8 +14,13 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
-    # One PR per group. First match wins. Angular spans production and
-    # development so the compiler and the build plugin move together.
+    # One PR per group. Angular spans production and development so the
+    # compiler and the build plugin move together: @angular/compiler and
+    # @angular/compiler-cli must be the same version, or `npm ci` fails with a
+    # peer conflict. The minor-patch groups exclude @angular/* explicitly
+    # rather than relying on the angular group being listed first: with only
+    # the order to go on, Dependabot split Angular across those two groups
+    # (#150/#151, #158/#159), and both PRs failed to install.
     # Nest/Vitest majors stay together. Other ungrouped majors stay individual.
     # Security updates stay ungrouped so one new advisory cannot hold an
     # unrelated patch in the same pull request.
@@ -40,12 +45,16 @@ updates:
       production-minor-patch:
         applies-to: version-updates
         dependency-type: production
+        exclude-patterns:
+          - '@angular/*'
         update-types:
           - minor
           - patch
       development-minor-patch:
         applies-to: version-updates
         dependency-type: development
+        exclude-patterns:
+          - '@angular/*'
         update-types:
           - minor
           - patch
@@ -80,6 +89,13 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - dependencies
+    ignore:
+      # Node majors move by hand, to the next LTS (even) release, together with
+      # .nvmrc and CI. Odd releases such as 25 are short-lived and were
+      # proposed here (#149) after reaching end of life.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
 
   # postgres image in docker-compose.yml.
   - package-ecosystem: docker-compose
