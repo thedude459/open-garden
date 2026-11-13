@@ -595,44 +595,81 @@ each against the other phases):
     found its food items (linked from each species by "this taxon is source
     of", P1672) give a good name for about 60% of crop and language pairs in
     de, es, fr, it, nl, and pt; the rest need curating by hand.
+17. **Account basics** — change password; reset a forgotten one by an
+    emailed link (SMTP is already configured for reminders); delete an
+    account and its sole-owned properties. Sign-in limits come earlier, with
+    the review's quick wins.
 
 ---
 
 ## Implementation order
 
 The one order of work across this repository and
-[open-garden-data](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md)
-(re-prioritized November 2026). Work on the lowest open step first; steps
+[open-garden-data](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md),
+re-prioritized after the November 2026 review (below). It assumes a household
+install for a household and a few friends, used mostly on a computer, with
+gardening depth and polish first. Work on the lowest open step first; steps
 marked *parallel* can run alongside the one above.
 
 **Done:** Phase 0 housekeeping and hygiene items 1–16; test items 1, 3–6,
 13, 14, and the API half of 15; coverage plan steps 1–3 and the guard half of
 step 4; OpenSSF token permissions, vulnerabilities, signed releases, and
-fast-check property tests; quick UX fixes (#5, #8 month names, #12, #13); the
-data repository, baseline migration, dataset importer, and the 50 crops of
-dataset v0.1; step 1, the dataset as the catalog
-([ADR 0020](adr/0020-dataset-as-the-catalog.md)); step 2, typed areas
-([ADR 0021](adr/0021-area-rules-by-habit.md)); step 3, crop rotation hints; step 4, the Phase 3 core and reminder delivery
-([ADR 0022](adr/0022-reminder-delivery.md)).
+fast-check property tests; the data repository and dataset v0.1 as the only
+catalog ([ADR 0020](adr/0020-dataset-as-the-catalog.md)); typed areas
+([ADR 0021](adr/0021-area-rules-by-habit.md)); crop rotation hints; the
+Phase 3 core (Today, calendar from plantings, plantings list, four-item nav,
+planner inspector) and reminders by push and email
+([ADR 0022](adr/0022-reminder-delivery.md)); Phase 2 climate: zone and frost
+anywhere from 30 years of data, the Southern Hemisphere, frost-free windows
+by temperature, 1-in-10 frost dates, NASA POWER as second source, and the
+units setting ([ADR 0023](adr/0023-climate-from-open-meteo-history.md)–[0028](adr/0028-nasa-power-climate-source.md));
+English only, with translations by contribution
+([ADR 0029](adr/0029-english-only-translations-by-contribution.md)).
 
 | Order | Work | Why this order |
 |---|---|---|
-| 1 | **Done ([ADR 0020](adr/0020-dataset-as-the-catalog.md)).** Dataset v0.1.0 tagged and bundled in the API image as the catalog's only source: the [checklist](#before-the-dataset-becomes-the-default) items 1–4 and 6–8, e2e on dataset crops, and the Perenual provider, second fixture, scheduler, and source ordering deleted | Everything after this needs real catalog data. |
-| 1p *(parallel, data repo)* | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before outside contributions start; no app dependency. |
-| 2 | **Done ([ADR 0021](adr/0021-area-rules-by-habit.md)).** Phase 1 typed areas: habit rules (herbs of any habit), bramble patch, tree beds sized by rootstock, `garden_beds.kind` removed | The dataset's habit, use, and rootstocks are only useful once areas enforce them, and the 8 × 8 ft tree bed is wrong for every dataset tree. |
-| 3 | **Done.** Phase 4 item 1, crop rotation hints | Small once plants carry families (added with typed areas); high value for vegetable growers. |
-| 4 | **Done.** Phase 3 core: Today home, calendar from plantings, plantings list, nav to four items, planner inspector; Phase 4 item 2, reminders that reach people (push, email digest) | The redesign is where reminders become useful, and delivery makes them reach people. Split pages and new screens ship with component tests (coverage step 5) and accessibility checks (test item 7). |
-| **5p (next, data repo)** | Dataset v0.2: companion plants as crops, pair benefits and evidence, hot pepper, fall sowing, `soilPh`, the `crops` table in the app | Unblocks companion advice (principle VIII change) and soil-test advice. |
-| **6 (next)** | Phase 2 climate. **Done:** frost and zones anywhere ([ADR 0023](adr/0023-climate-from-open-meteo-history.md)), Southern Hemisphere, units setting ([ADR 0024](adr/0024-units-at-the-edge.md)), frost-free windows by temperature ([ADR 0025](adr/0025-sowing-by-temperature-where-frost-is-rare.md)), 1-in-10 frost dates ([ADR 0027](adr/0027-one-in-ten-frost-dates.md)), NASA POWER climate source ([ADR 0028](adr/0028-nasa-power-climate-source.md)). **Open:** wet/dry seasons (needs dataset data), other languages (English only until contributed, [ADR 0029](adr/0029-english-only-translations-by-contribution.md); Phase 4 item 16) | Makes the dataset's windows usable outside the US. |
-| 7 | Companion advice from data, in the planner and on plant pages | Needs dataset v0.2 and the `crops` table. |
-| 8 | Phase 4 items 3–6: weather alerts, watering by water balance, soil tests per bed (with soil by location), Home Assistant both ways | Care features that build on reminders (step 4) and data from step 5p. Water balance needs the dataset's crop coefficients. |
-| 9p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases | Broadens the catalog; unblocks pest advice. |
-| 10 | Phase 3 remaining and onboarding; mobile browser tests (test item 8); [named rootstocks](#area-types) for tree plantings | Polishes what steps 2–8 added. |
-| 11 | Phase 4 items 7–16, in the order listed | Useful, but none unblocks other work. |
-| *Ongoing* | Coverage plan steps 4 (controller edge cases), 5, 6; test items 9–12 and the web half of 15 (Playwright against the Compose web image); OpenSSF Best Practices badge (maintainer); hygiene item 17 when the repo moves to an organization | Fit around the steps above; none blocks them. |
+| **1 (next)** | **Quick wins from the review:** keep zod out of the browser bundle (a schema-free entry for `@open-garden/shared-types`); limit sign-in and sign-up attempts per address and IP; delete expired sessions daily; make browser tests clean up the catalog rows load tests add | Small, independent, and each fixes something measured in the review (below). |
+| **2 (data repo)** | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before v0.2's data goes in; Claude drafts v0.2 and the maintainer reviews, so the checks catch slips. |
+| **3 (data repo)** | Dataset v0.2 in small releases: (a) `soilPh`, fall sowing, hot pepper; (b) crop coefficients; (c) companion plants as crops and companion pairs with benefits, evidence, and sources | Unblocks soil-test advice, watering by water balance, and companion advice. Small releases keep each review short. |
+| 4 | The app reads each v0.2 release as it lands: the `crops` table, fall windows in the calendar, `soilPh` and coefficients stored | The data is only useful once the app reads it. |
+| 5 | Make the web app testable: Angular component tests under Vitest (test item 2), then split the 700–1,200-line pages (Layout, Plan canvas, Settings, Bed View, Plantings) along the way | Polish (step 7) rewrites these pages; tests first keep that safe. |
+| 6 | Companion advice from data, in the planner and on plant pages (Phase 3 item 9) | Needs v0.2 (c). |
+| 7 | Phase 3 polish, desktop first: Settings in sections (8), autosave with undo (7), fit-to-content and remembered zoom (6), catalog icons and filters (10), property cards (11), brand mark (14); onboarding for a new household; accessibility checks (test item 7) | The redesign's remaining items, now that pages have tests. |
+| 8 | Care features: weather alerts (Phase 4 item 3), soil tests per bed (5), watering by water balance (4), succession planting (7), harvest totals (10) | Gardening depth; each builds on reminders and v0.2 data. |
+| 9 | Account basics (Phase 4 item 17): change password, reset by email (SMTP is already there), delete account | Needed before more households join; small at household scale. |
+| 10p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases | Broadens the catalog; unblocks pest advice. |
+| 11 | Pests and diseases (Phase 4 item 9); named rootstocks for tree plantings | Need v0.3. |
+| 12 | The rest of Phase 4 in this order: export and backup (13), journal (11), household tasks (12), seed inventory (8), custom varieties (15), Home Assistant (6), printable plan and QR labels (14), contributed translations (16) | Useful, but none unblocks other work; phone-first items come later on a computer-first install. |
+| *Later* | Mobile browser tests (test item 8) and phone polish; wet/dry-season windows (needs dataset data) | The install is used mostly on a computer. |
+| *Ongoing* | Coverage plan steps 4–6; test items 9–12, 16, and the web half of 15; the pipeline items from the review; OpenSSF Best Practices badge (maintainer); hygiene item 17 if the repo moves to an organization | Fit around the steps above; none blocks them. |
 
+### November 2026 review
 
----
+Measured on `main` after PR #167.
+
+- **Web app tests:** about 9,800 lines of Angular with 240 lines of unit
+  tests in 3 files; the five largest files are pages of 700–1,200 lines.
+  Vitest cannot compile Angular's decorators here, so component tests need
+  the Angular Vitest plugin first (step 5). Libraries and the API are well
+  covered (most libraries 90%+).
+- **Bundle:** the first load is about 188 kB compressed. The largest
+  initial chunk carries zod, pulled in because `@open-garden/shared-types`
+  re-exports its validation schemas next to the small helpers the web app
+  uses (step 1).
+- **Security at household scale:** security headers, CSP, cookie flags,
+  CodeQL, gitleaks, SCA, and image scans are in place, and `npm audit` is
+  clean. Gaps: no limit on sign-in attempts, expired sessions are never
+  deleted (step 1), and no password change or reset (step 9).
+- **Database:** every filtered foreign key and the session token are
+  indexed; nothing to add.
+- **Tests' own data:** the live load tests add catalog plants that are never
+  removed; on a reused database they pushed "Tomato (Cherry)" off the
+  catalog's 100-row first page and failed three browser tests (step 1).
+- **CI:** about 2.5 minutes for verify and 7 for the browser suite, which
+  docs-only changes skip. Candidates: cache Playwright's browser, shard the
+  browser suite in two, publish test results to the PR (test item 16), and
+  move to TypeScript 7 (the native compiler) once Angular and Nx support it.
+- **Dependencies:** current apart from patch releases Dependabot handles.
 
 ## Licensing
 
@@ -652,6 +689,3 @@ dataset v0.1; step 1, the dataset as the catalog
 
 - Should operators be able to point at a self-hosted dataset mirror, or is
   GitHub Releases enough?
-- Is Open-Meteo's non-commercial term acceptable for all expected operators,
-  or should the climate step also support importing a precomputed regional
-  table?
