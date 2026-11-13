@@ -45,6 +45,10 @@ import { NoticeService } from '../ui/notice.service';
             <dd>{{ formatTemperature(t.minSoilC, units()) }} or warmer</dd>
           }
         }
+        @if (p.soilPh; as ph) {
+          <dt>Soil pH</dt>
+          <dd>{{ ph.min.toFixed(1) }}–{{ ph.max.toFixed(1) }}</dd>
+        }
         <dt>Spacing</dt>
         <dd>
           {{ p.spacingInches != null ? formatSpacing(p.spacingInches, units()) : 'Unavailable' }}

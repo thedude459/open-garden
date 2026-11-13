@@ -13,6 +13,8 @@ test.describe('plant catalog', () => {
     await expect(page.getByText(/sync from api/i)).toHaveCount(0);
     await page.getByRole('link', { name: /Tomato \(Cherry\)/i }).click();
     await expect(page.getByText(/Zones|Sun|Water/i).first()).toBeVisible();
+    await expect(page.getByText('Soil pH')).toBeVisible();
+    await expect(page.getByText('6.0–7.0')).toBeVisible();
     await expect(page.getByRole('button', { name: /sync|refresh from api/i })).toHaveCount(0);
   });
 

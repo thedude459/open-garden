@@ -69,6 +69,11 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
       .filter({ hasText: 'Apple (Honeycrisp)' })
       .getByText(/Indoor unavailable/),
   ).toBeVisible();
+  // Radish is sown again for fall, 6 to 2 weeks before a 20 October first frost.
+  const radish = owner.locator('article').filter({ hasText: 'Radish (Cherry Belle)' });
+  await expect(radish.getByText('Fall sow Sep 8 – Oct 6')).toBeVisible();
+  const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' });
+  await expect(tomato.getByText(/Fall sow/)).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('select[name="lastMonth"]').selectOption('4');

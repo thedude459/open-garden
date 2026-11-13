@@ -6,12 +6,14 @@ const tomatoGuidance: GrowingGuidanceDto = {
   indoorStart: { frostAnchor: 'last', weeksEarliest: -8, weeksLatest: -6 },
   outdoorSow: null,
   transplant: { frostAnchor: 'last', weeksEarliest: 1, weeksLatest: 2 },
+  fallSow: null,
 };
 
 const spinachGuidance: GrowingGuidanceDto = {
   indoorStart: null,
   outdoorSow: { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -6 },
   transplant: null,
+  fallSow: null,
 };
 
 const typicalFrost = {
@@ -36,6 +38,18 @@ describe('computeWindows', () => {
     expect(windows.harvest).toEqual({
       earliest: { month: 6, day: 26 },
       latest: { month: 7, day: 3 },
+      wrapsYear: false,
+    });
+  });
+
+  it('counts a fall sowing back from the first frost', () => {
+    const lettuce: GrowingGuidanceDto = {
+      ...spinachGuidance,
+      fallSow: { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -4 },
+    };
+    expect(computeWindows(typicalFrost, lettuce, 45, 2024).fallSow).toEqual({
+      earliest: { month: 8, day: 25 },
+      latest: { month: 9, day: 22 },
       wrapsYear: false,
     });
   });
@@ -89,6 +103,7 @@ describe('computeWindows', () => {
         indoorStart: { frostAnchor: 'last', weeksEarliest: -4, weeksLatest: -4 },
         outdoorSow: null,
         transplant: null,
+        fallSow: null,
       },
       null,
       2024,
@@ -107,6 +122,7 @@ describe('computeWindows', () => {
         indoorStart: { frostAnchor: 'last', weeksEarliest: -8, weeksLatest: -6 },
         outdoorSow: { frostAnchor: 'last', weeksEarliest: 0, weeksLatest: 1 },
         transplant: null,
+        fallSow: null,
       },
       10,
       2024,
@@ -119,6 +135,7 @@ describe('computeWindows', () => {
         indoorStart: { frostAnchor: 'last', weeksEarliest: -8, weeksLatest: -6 },
         outdoorSow: null,
         transplant: null,
+        fallSow: null,
       },
       10,
       2024,
@@ -133,6 +150,7 @@ describe('computeWindows', () => {
         indoorStart: null,
         outdoorSow: null,
         transplant: null,
+        fallSow: null,
       },
       65,
       2024,
@@ -141,6 +159,7 @@ describe('computeWindows', () => {
       indoorStart: null,
       outdoorSow: null,
       transplant: null,
+      fallSow: null,
       harvest: null,
     });
 
@@ -167,6 +186,7 @@ describe('computeWindows', () => {
         indoorStart: { frostAnchor: 'last', weeksEarliest: 0, weeksLatest: 0 },
         outdoorSow: null,
         transplant: null,
+        fallSow: null,
       },
       null,
       2024,
@@ -185,6 +205,7 @@ describe('computeWindows', () => {
         indoorStart: { frostAnchor: 'last', weeksEarliest: -4, weeksLatest: 1 },
         outdoorSow: null,
         transplant: null,
+        fallSow: null,
       },
       null,
       2024,
@@ -273,7 +294,8 @@ describe('windows where it rarely frosts', () => {
   });
 
   it('gives a cool crop the cooler months, across the year end', () => {
-    const w = computeWindows(noFrost, spinachGuidance, 45, 2026, {
+    const fall = { frostAnchor: 'first' as const, weeksEarliest: -8, weeksLatest: -4 };
+    const w = computeWindows(noFrost, { ...spinachGuidance, fallSow: fall }, 45, 2026, {
       monthlyMeanC: warm,
       sowingTemperature: lettuceTemps,
     });
@@ -282,6 +304,8 @@ describe('windows where it rarely frosts', () => {
       latest: { month: 4, day: 30 },
       wrapsYear: true,
     });
+    // A fall sowing counts from a frost that does not come here.
+    expect(w.fallSow).toBeNull();
   });
 
   it('takes the longer of two runs of suitable months', () => {
@@ -300,7 +324,13 @@ describe('windows where it rarely frosts', () => {
   });
 
   it('gives no window when no month suits, or the crop or place has no temperatures', () => {
-    const empty = { indoorStart: null, outdoorSow: null, transplant: null, harvest: null };
+    const empty = {
+      indoorStart: null,
+      outdoorSow: null,
+      transplant: null,
+      fallSow: null,
+      harvest: null,
+    };
     const hot = new Array<number>(12).fill(30);
     expect(
       computeWindows(noFrost, spinachGuidance, 45, 2026, {

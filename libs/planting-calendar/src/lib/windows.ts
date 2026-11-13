@@ -48,6 +48,8 @@ export interface WarmClimate {
  * frost in the year it falls), so windows that cross 29 February or the year
  * end land on the right day. Without frost dates they follow the monthly
  * temperatures, when the property and the crop have them (ADR 0025).
+ * A fall sowing needs the first frost, so it is left out there. Harvest
+ * follows the first sowing or planting, not the fall one.
  */
 export function computeWindows(
   frost: GardenFrost,
@@ -59,6 +61,7 @@ export function computeWindows(
   let indoorStart: DatedWindow | null = null;
   let outdoorSow: DatedWindow | null = null;
   let transplant: DatedWindow | null = null;
+  let fallSow: DatedWindow | null = null;
   if (frostComplete(frost)) {
     const firstFrostYear = seasonWraps(frost) ? year + 1 : year;
     const window = (g: FrostRelativeWeeksDto | null) =>
@@ -66,6 +69,7 @@ export function computeWindows(
     indoorStart = window(guidance.indoorStart);
     outdoorSow = window(guidance.outdoorSow);
     transplant = window(guidance.transplant);
+    fallSow = window(guidance.fallSow);
   } else {
     const months = warmMonths(warm, year);
     if (!months) return emptyWindows();
@@ -84,6 +88,7 @@ export function computeWindows(
     indoorStart: toSeasonalWindow(indoorStart),
     outdoorSow: toSeasonalWindow(outdoorSow),
     transplant: toSeasonalWindow(transplant),
+    fallSow: toSeasonalWindow(fallSow),
     harvest: toSeasonalWindow(harvest),
   };
 }
@@ -133,7 +138,7 @@ function daysIn(year: number, month: number): number {
 }
 
 function emptyWindows(): CalendarWindowsDto {
-  return { indoorStart: null, outdoorSow: null, transplant: null, harvest: null };
+  return { indoorStart: null, outdoorSow: null, transplant: null, fallSow: null, harvest: null };
 }
 
 interface DatedWindow {

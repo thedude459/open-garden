@@ -283,7 +283,7 @@ names the dataset version it needs:
 | Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
 | Crop rotation advice by family | v0.1 | Every crop has a family |
 | Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
-| Soil-test advice (pH against each crop's range) | v0.2 | `soilPh` per crop |
+| Soil-test advice (pH against each crop's range) | v0.2 | `soilPh` per crop (imported and shown since v0.2.0) |
 | Watering by water balance | v0.2 | Crop coefficients (Kc) per growth stage |
 | Judging sensor readings | v0.3 | Soil moisture, light, and temperature ranges per crop |
 | Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
@@ -629,9 +629,9 @@ English only, with translations by contribution
 | Order | Work | Why this order |
 |---|---|---|
 | 1 | **Done.** Quick wins from the review: zod out of the browser bundle (`shared-types` is marked side-effect free; first load 188 → 109 kB compressed, and the initial budget now fails above 550 kB); failed sign-ins limited per address (5) and IP (30) per 15 minutes; expired sessions deleted on each sign-in; the layout load test removes its user and plant | Small, independent, and each fixes something measured in the review (below). |
-| **2 (next, data repo)** | Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before v0.2's data goes in; Claude drafts v0.2 and the maintainer reviews, so the checks catch slips. |
-| **3 (data repo)** | Dataset v0.2 in small releases: (a) `soilPh`, fall sowing, hot pepper; (b) crop coefficients; (c) companion plants as crops and companion pairs with benefits, evidence, and sources | Unblocks soil-test advice, watering by water balance, and companion advice. Small releases keep each review short. |
-| 4 | The app reads each v0.2 release as it lands: the `crops` table, fall windows in the calendar, `soilPh` and coefficients stored | The data is only useful once the app reads it. |
+| 2 | **Done (data repo).** Data quality checks and release notes ([data roadmap](https://github.com/thedude459/open-garden-data/blob/main/ROADMAP.md#data-quality-checks)) | Guard rails before v0.2's data goes in; Claude drafts v0.2 and the maintainer reviews, so the checks catch slips. |
+| **3 (next, data repo)** | Dataset v0.2 in small releases: (a) **done (v0.2.0):** `soilPh`, fall sowing, hot pepper; (b) crop coefficients; (c) companion plants as crops and companion pairs with benefits, evidence, and sources | Unblocks soil-test advice, watering by water balance, and companion advice. Small releases keep each review short. |
+| 4 | The app reads each v0.2 release as it lands. **v0.2.0 done:** the bundled catalog is v0.2.0; soil pH is stored and shown on plant pages; a fall sowing window shows on the calendar and Today where the property has frost dates. Still to come: coefficients stored, and the `crops` table with companions | The data is only useful once the app reads it. |
 | 5 | Make the web app testable: Angular component tests under Vitest (test item 2), then split the 700–1,200-line pages (Layout, Plan canvas, Settings, Bed View, Plantings) along the way | Polish (step 7) rewrites these pages; tests first keep that safe. |
 | 6 | Companion advice from data, in the planner and on plant pages (Phase 3 item 9) | Needs v0.2 (c). |
 | 7 | Phase 3 polish, desktop first: Settings in sections (8), autosave with undo (7), fit-to-content and remembered zoom (6), catalog icons and filters (10), property cards (11), brand mark (14); onboarding for a new household; accessibility checks (test item 7) | The redesign's remaining items, now that pages have tests. |

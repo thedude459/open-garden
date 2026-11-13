@@ -78,6 +78,13 @@
       "when": 1794525656018,
       "tag": "0010_frost_risk",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794586599855,
+      "tag": "0011_soil_ph_and_fall_sowing",
+      "breakpoints": true
     }
   ]
 }

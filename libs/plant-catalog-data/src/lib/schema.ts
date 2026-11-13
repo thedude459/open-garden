@@ -95,6 +95,9 @@ export const plants = pgTable(
     growMinC: real('grow_min_c'),
     growMaxC: real('grow_max_c'),
     sowSoilMinC: real('sow_soil_min_c'),
+    /** The soil pH the crop grows best in. */
+    soilPhMin: real('soil_ph_min'),
+    soilPhMax: real('soil_ph_max'),
     family: text('family'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
@@ -105,6 +108,9 @@ export const plants = pgTable(
     transplantFrostAnchor: text('transplant_frost_anchor'),
     transplantWeeksEarliest: integer('transplant_weeks_earliest'),
     transplantWeeksLatest: integer('transplant_weeks_latest'),
+    /** A fall sowing, in weeks from the first frost (always that anchor). */
+    fallSowWeeksEarliest: integer('fall_sow_weeks_earliest'),
+    fallSowWeeksLatest: integer('fall_sow_weeks_latest'),
     provider: text('provider'),
     providerExternalId: text('provider_external_id'),
     status: text('status').notNull().default('active'),

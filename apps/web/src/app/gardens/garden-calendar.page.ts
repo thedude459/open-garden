@@ -137,6 +137,9 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                     <span>Indoor {{ formatWindow(e.windows.indoorStart) }}</span>
                     <span>Sow {{ formatWindow(e.windows.outdoorSow) }}</span>
                     <span>Transplant {{ formatWindow(e.windows.transplant) }}</span>
+                    @if (e.windows.fallSow) {
+                      <span>Fall sow {{ formatWindow(e.windows.fallSow) }}</span>
+                    }
                     <span>Harvest {{ formatWindow(e.windows.harvest) }}</span>
                   </p>
                 </div>
@@ -211,7 +214,10 @@ export class GardenCalendarPage implements OnInit {
   }
 
   inStartWindow(entry: CalendarEntryDto): boolean {
-    return overlapsThisWeek([entry.windows.outdoorSow, entry.windows.transplant], new Date());
+    return overlapsThisWeek(
+      [entry.windows.outdoorSow, entry.windows.transplant, entry.windows.fallSow],
+      new Date(),
+    );
   }
 
   openPlanting(plantId: string): PlantingDto | null {
@@ -240,10 +246,7 @@ export class GardenCalendarPage implements OnInit {
   }
 
   isThisWeek(entry: CalendarEntryDto): boolean {
-    return overlapsThisWeek(
-      [entry.windows.indoorStart, entry.windows.outdoorSow, entry.windows.transplant],
-      new Date(),
-    );
+    return overlapsThisWeek(startWindows(entry), new Date());
   }
 
   formatWindow(window: SeasonalWindowDto | null): string {
@@ -317,18 +320,8 @@ function localIso(date = new Date()): string {
 }
 
 function compareEntries(a: CalendarEntryDto, b: CalendarEntryDto, today: Date): number {
-  const ae = overlapsThisWeek(
-    [a.windows.indoorStart, a.windows.outdoorSow, a.windows.transplant],
-    today,
-  )
-    ? 0
-    : 1;
-  const be = overlapsThisWeek(
-    [b.windows.indoorStart, b.windows.outdoorSow, b.windows.transplant],
-    today,
-  )
-    ? 0
-    : 1;
+  const ae = overlapsThisWeek(startWindows(a), today) ? 0 : 1;
+  const be = overlapsThisWeek(startWindows(b), today) ? 0 : 1;
   if (ae !== be) return ae - be;
   const an = nextStartKey(a, today);
   const bn = nextStartKey(b, today);
@@ -336,12 +329,14 @@ function compareEntries(a: CalendarEntryDto, b: CalendarEntryDto, today: Date): 
   return a.commonName.localeCompare(b.commonName);
 }
 
+/** Every window that starts a crop: indoors, sown, transplanted, or sown again for fall. */
+function startWindows(entry: CalendarEntryDto): Array<SeasonalWindowDto | null> {
+  const w = entry.windows;
+  return [w.indoorStart, w.outdoorSow, w.transplant, w.fallSow];
+}
+
 function nextStartKey(entry: CalendarEntryDto, today: Date): number {
-  const windows = [
-    entry.windows.indoorStart,
-    entry.windows.outdoorSow,
-    entry.windows.transplant,
-  ].filter((w): w is SeasonalWindowDto => w != null);
+  const windows = startWindows(entry).filter((w): w is SeasonalWindowDto => w != null);
   if (!windows.length) return Number.POSITIVE_INFINITY;
   const todayKey = mdKey({ month: today.getMonth() + 1, day: today.getDate() });
   const keys = windows.map((w) => mdKey(w.earliest));
