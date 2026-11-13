@@ -25,6 +25,13 @@ describe('AllExceptionsFilter', () => {
     });
   });
 
+  it('maps TOO_MANY_REQUESTS to 429 with its message', () => {
+    const err = Object.assign(new Error('Too many attempts. Try again in 15 minutes.'), {
+      code: 'TOO_MANY_REQUESTS',
+    });
+    expect(respond(err).status).toBe(429);
+  });
+
   it('never sends raw query details of an unexpected error, even outside production', () => {
     vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     vi.stubEnv('NODE_ENV', 'development');

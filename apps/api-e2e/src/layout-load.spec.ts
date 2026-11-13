@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
   AreaRepository,
@@ -7,6 +8,7 @@ import {
   GardenRepository,
   PlantingRepository,
   PlantRepository,
+  plants as plantsTable,
   users,
 } from '@open-garden/plant-catalog-data';
 import { WASHINGTON_PLACE } from '@open-garden/garden-place';
@@ -28,7 +30,14 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
   const beds = new BedRepository(db);
   const plantings = new PlantingRepository(db);
 
+  // What the test adds, removed afterwards: a catalog plant left behind
+  // would sit in the catalog other tests browse.
+  const created: { userId?: string; plantId?: string } = {};
+
   afterAll(async () => {
+    // The user's property and its plantings go with the user.
+    if (created.userId) await db.delete(users).where(eq(users.id, created.userId));
+    if (created.plantId) await db.delete(plantsTable).where(eq(plantsTable.id, created.plantId));
     await pool.end();
   });
 
@@ -43,6 +52,7 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
       })
       .returning();
     if (!user) throw new Error('failed to insert user');
+    created.userId = user.id;
 
     const garden = await gardens.create(user.id, { name: 'Load layout', place: WASHINGTON_PLACE });
     const plant = await plants.upsertByVarietyKey({
@@ -61,6 +71,7 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
       providerExternalId: 'load-tomato',
     });
     if (!plant) throw new Error('failed to upsert plant');
+    created.plantId = plant.id;
 
     const bed = await beds.insert({
       gardenId: garden.id,

@@ -130,11 +130,14 @@ describe('AuthService', () => {
       insert: vi.fn().mockReturnValue({
         values: vi.fn().mockResolvedValue(undefined),
       }),
+      delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) }),
     };
     const svc = new AuthService(db as never);
     const result = await svc.login('a@example.com', 'password123');
     expect(result?.user.id).toBe('u1');
     expect(result?.token).toHaveLength(64);
+    // Expired sessions are cleared on sign-in.
+    expect(db.delete).toHaveBeenCalled();
   });
 
   it('resolves a valid session', async () => {
