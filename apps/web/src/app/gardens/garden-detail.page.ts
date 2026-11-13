@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { formatDay, formatMonthDay } from '@open-garden/web-ui';
+import { formatDay, formatMonthDay, formatMonthName } from '@open-garden/web-ui';
 import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
@@ -470,11 +470,8 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   inviteEmail = '';
   inviteRole: 'collaborator' | 'viewer' = 'collaborator';
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-  /** Month names in the browser's language; the saved value stays 1–12. */
-  months = Array.from({ length: 12 }, (_, i) => ({
-    value: i + 1,
-    label: new Date(2024, i, 1).toLocaleString(undefined, { month: 'long' }),
-  }));
+  /** Month names in the app's language; the saved value stays 1–12. */
+  months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: formatMonthName(i + 1) }));
   private mapGen = 0;
   private mapWatch: ReturnType<typeof setTimeout> | null = null;
 

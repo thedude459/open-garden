@@ -181,6 +181,27 @@ The first time, check that both packages under the repository's **Packages**
 are **public** (Package settings → Change visibility), or installs cannot pull
 them.
 
+## Translations
+
+Open Garden is written in US English and shows English to everyone, whatever
+the browser's language ([ADR 0029](docs/adr/0029-english-only-translations-by-contribution.md)).
+Other languages come from people who speak them. If you would like to add
+one, open an issue first so we can agree on the approach.
+
+- **Dates and month names** already go through one setting, `APP_LOCALE` in
+  `libs/web-ui/src/lib/dates.ts`, and the helpers `formatDay`,
+  `formatMonthDay`, and `formatMonthName`. Use them for any new date; never
+  format one by hand or with the browser's locale.
+- **Interface text** is not marked for translation yet. The first translation
+  sets up Angular's built-in i18n (`@angular/localize`): mark the text in the
+  templates, extract `messages.xlf`, add `messages.<locale>.xlf`, and build
+  one app per language. Text the API writes (Today task titles, reminder
+  emails) then follows the request's language.
+- **Crop names** come from the dataset: add `names.<locale>` to a crop in
+  [open-garden-data](https://github.com/thedude459/open-garden-data).
+- New user-facing text should be plain, short sentences, so it translates
+  well.
+
 ## Pull requests
 
 - Branch from `main`; keep a pull request to one change.
