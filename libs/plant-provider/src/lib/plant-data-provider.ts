@@ -1,6 +1,7 @@
 import type { PlantType } from '@open-garden/shared-types';
 import type {
   GrowingGuidanceDto,
+  CropCoefficientsDto,
   RootstockSpacingDto,
   SoilPhDto,
   SowingTemperatureDto,
@@ -29,6 +30,7 @@ export interface ProviderPlant {
   rootstockSpacingInches?: RootstockSpacingDto | null;
   sowingTemperature?: SowingTemperatureDto | null;
   soilPh?: SoilPhDto | null;
+  cropCoefficients?: CropCoefficientsDto | null;
   /** Botanical family, by its common name ("Cabbage family"). */
   family?: string | null;
 }

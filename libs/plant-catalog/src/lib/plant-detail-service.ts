@@ -1,5 +1,6 @@
 import type { FavoriteRepository, PlantRepository } from '@open-garden/plant-catalog-data';
 import type {
+  CropCoefficientsDto,
   FrostRelativeWeeksDto,
   GrowingGuidanceDto,
   PlantDetailDto,
@@ -43,8 +44,31 @@ export class PlantDetailService {
         row.soilPhMin != null && row.soilPhMax != null
           ? { min: row.soilPhMin, max: row.soilPhMax }
           : null,
+      cropCoefficients: cropCoefficientsFromRow(row),
     };
   }
+}
+
+function cropCoefficientsFromRow(row: {
+  kcInitial: number | null;
+  kcMid: number | null;
+  kcEnd: number | null;
+  stageDaysInitial: number | null;
+  stageDaysDevelopment: number | null;
+  stageDaysMid: number | null;
+  stageDaysLate: number | null;
+}): CropCoefficientsDto | null {
+  if (row.kcInitial == null || row.kcMid == null || row.kcEnd == null) return null;
+  const { stageDaysInitial: i, stageDaysDevelopment: d, stageDaysMid: m, stageDaysLate: l } = row;
+  return {
+    initial: row.kcInitial,
+    mid: row.kcMid,
+    end: row.kcEnd,
+    stageDays:
+      i != null && d != null && m != null && l != null
+        ? { initial: i, development: d, mid: m, late: l }
+        : null,
+  };
 }
 
 export function growingGuidanceFromRow(row: {

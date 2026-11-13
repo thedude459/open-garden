@@ -98,6 +98,14 @@ export const plants = pgTable(
     /** The soil pH the crop grows best in. */
     soilPhMin: real('soil_ph_min'),
     soilPhMax: real('soil_ph_max'),
+    /** Crop coefficients (Kc) and days per growth stage, after FAO-56. */
+    kcInitial: real('kc_initial'),
+    kcMid: real('kc_mid'),
+    kcEnd: real('kc_end'),
+    stageDaysInitial: integer('stage_days_initial'),
+    stageDaysDevelopment: integer('stage_days_development'),
+    stageDaysMid: integer('stage_days_mid'),
+    stageDaysLate: integer('stage_days_late'),
     family: text('family'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),

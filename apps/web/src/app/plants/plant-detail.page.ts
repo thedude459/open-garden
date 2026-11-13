@@ -49,6 +49,20 @@ import { NoticeService } from '../ui/notice.service';
           <dt>Soil pH</dt>
           <dd>{{ ph.min.toFixed(1) }}–{{ ph.max.toFixed(1) }}</dd>
         }
+        @if (p.cropCoefficients; as kc) {
+          <dt>Crop coefficient</dt>
+          <dd>
+            {{ kc.initial.toFixed(2) }} young, {{ kc.mid.toFixed(2) }} at full growth,
+            {{ kc.end.toFixed(2) }} at harvest
+          </dd>
+          @if (kc.stageDays; as d) {
+            <dt>Growth stages</dt>
+            <dd>
+              {{ d.initial }} days young, {{ d.development }} growing, {{ d.mid }} at full growth,
+              {{ d.late }} ripening
+            </dd>
+          }
+        }
         <dt>Spacing</dt>
         <dd>
           {{ p.spacingInches != null ? formatSpacing(p.spacingInches, units()) : 'Unavailable' }}

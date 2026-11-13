@@ -15,6 +15,13 @@ test.describe('plant catalog', () => {
     await expect(page.getByText(/Zones|Sun|Water/i).first()).toBeVisible();
     await expect(page.getByText('Soil pH')).toBeVisible();
     await expect(page.getByText('6.0–7.0')).toBeVisible();
+    // Cherry tomato carries the tomato's FAO-56 crop coefficients.
+    await expect(
+      page.getByText(/0\.60 young, 1\.15 at full growth,\s+0\.80 at harvest/),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/35 days young, 40 growing, 50 at full growth,\s+30 ripening/),
+    ).toBeVisible();
     await expect(page.getByRole('button', { name: /sync|refresh from api/i })).toHaveCount(0);
   });
 
