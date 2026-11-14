@@ -4,10 +4,11 @@ import { staysOnPlanner } from './stays-on-planner';
 describe('staysOnPlanner', () => {
   const garden = 'g1';
 
-  it('keeps overview and bed view', () => {
+  it('keeps overview, bed view, and transplants', () => {
     expect(staysOnPlanner(garden, '/gardens/g1/layout')).toBe(true);
     expect(staysOnPlanner(garden, '/gardens/g1/layout/beds/b1')).toBe(true);
     expect(staysOnPlanner(garden, '/gardens/g1/layout?x=1')).toBe(true);
+    expect(staysOnPlanner(garden, '/gardens/g1/transplants')).toBe(true);
   });
 
   it('leaves for other garden pages and the rest of the app', () => {

@@ -11,6 +11,7 @@ import type {
 } from '@open-garden/shared-types';
 import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
+import { PlannerDraftService } from './planner-draft.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { RemindersApiService } from './reminders-api.service';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
@@ -132,6 +133,7 @@ export class GardenTransplantsPage implements OnInit {
   readonly plantName = plantName;
   private readonly layoutApi = inject(LayoutApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
+  private readonly planner = inject(PlannerDraftService);
   private readonly remindersApi = inject(RemindersApiService);
   private readonly gardensApi = inject(GardensApiService);
   readonly notices = inject(NoticeService);
@@ -222,6 +224,7 @@ export class GardenTransplantsPage implements OnInit {
         });
         this.catalogHits.set([]);
         await this.load();
+        await this.planner.syncWaitingTransplants();
         this.notices.success('Transplant added');
       } catch (err) {
         this.fail(err);
@@ -240,6 +243,7 @@ export class GardenTransplantsPage implements OnInit {
         await this.plantingsApi.remove(this.gardenId, id);
         this.confirmDeleteId.set(null);
         await this.load();
+        await this.planner.syncWaitingTransplants();
       } catch (err) {
         this.fail(err);
       }
