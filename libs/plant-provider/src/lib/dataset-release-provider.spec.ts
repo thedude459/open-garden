@@ -169,6 +169,43 @@ describe('DatasetReleaseProvider', () => {
     expect(items[2]?.cropCoefficients).toBeNull();
   });
 
+  it('reads companion pairs and each plant’s crop, skipping pairs it cannot read', async () => {
+    const pair = {
+      crops: ['tomato', 'basil'],
+      kind: 'helps',
+      benefits: ['deters-pests'],
+      evidence: 'research',
+      reason: 'Fewer thrips.',
+      shownIn: [{ where: 'Iowa', zones: { min: 5, max: 5 } }, { where: 'Greenhouse' }],
+      reference: 'A study',
+      source: 'hand-curation',
+    };
+    const provider = pinned(
+      catalog([tomato], { companions: [pair, { ...pair, kind: 'pollinates' }] }),
+    );
+    expect(await provider.companions()).toEqual([
+      {
+        crops: ['tomato', 'basil'],
+        kind: 'helps',
+        benefits: ['deters-pests'],
+        evidence: 'research',
+        reason: 'Fewer thrips.',
+        reference: 'A study',
+        shownIn: [
+          { where: 'Iowa', zones: { min: 5, max: 5 } },
+          { where: 'Greenhouse', zones: null },
+        ],
+      },
+    ]);
+    // A variety belongs to its crop.
+    const { items } = await provider.listPage();
+    expect(items.map((p) => [p.externalId, p.cropId])).toEqual([
+      ['tomato', 'tomato'],
+      ['tomato-cherry', 'tomato'],
+    ]);
+    expect(await pinned(catalog([tomato])).companions()).toEqual([]);
+  });
+
   it('uses hardiness zones for perennials and leaves them unset when missing', async () => {
     const apple = {
       ...tomato,
@@ -313,6 +350,11 @@ describe('the bundled open-garden-data release', () => {
       mid: 1.15,
       stageDays: { initial: 35, development: 40, mid: 50, late: 30 },
     });
+    const pairs = await new DatasetReleaseProvider().companions();
+    expect(pairs.length).toBeGreaterThanOrEqual(31);
+    expect(pairs).toContainEqual(
+      expect.objectContaining({ crops: ['tomato', 'potato'], kind: 'hinders' }),
+    );
     expect(items.find((p) => p.varietyKey === 'dataset:blueberry')?.soilPh).toEqual({
       min: 4.5,
       max: 5.5,

@@ -92,6 +92,13 @@
       "when": 1794610133773,
       "tag": "0012_crop_coefficients",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794613505297,
+      "tag": "0013_catalog_companions",
+      "breakpoints": true
     }
   ]
 }

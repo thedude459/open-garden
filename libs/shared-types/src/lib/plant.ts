@@ -75,6 +75,40 @@ export interface CropCoefficientsDto {
   stageDays: { initial: number; development: number; mid: number; late: number } | null;
 }
 
+export type CompanionBenefit =
+  | 'deters-pests'
+  | 'trap-crop'
+  | 'attracts-beneficials'
+  | 'attracts-pollinators'
+  | 'fixes-nitrogen'
+  | 'support'
+  | 'shade'
+  | 'ground-cover'
+  | 'competes'
+  | 'suppresses-growth'
+  | 'shares-pests';
+
+export type CompanionEvidence = 'research' | 'extension' | 'traditional';
+
+/** Where a companion pair's evidence comes from; a greenhouse has no zones. */
+export interface CompanionPlaceDto {
+  where: string;
+  zones: { min: number; max: number } | null;
+}
+
+/** A companion pair from the dataset, seen from one crop. Advice only. */
+export interface CatalogCompanionDto {
+  /** The other crop's dataset id and name. */
+  cropId: string;
+  name: string;
+  kind: 'helps' | 'hinders';
+  benefits: CompanionBenefit[];
+  evidence: CompanionEvidence;
+  reason: string;
+  reference: string | null;
+  shownIn: CompanionPlaceDto[];
+}
+
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sunRequirements: string | null;
   waterNeeds: string | null;
@@ -88,6 +122,13 @@ export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sowingTemperature: SowingTemperatureDto | null;
   soilPh: SoilPhDto | null;
   cropCoefficients: CropCoefficientsDto | null;
+  /**
+   * Companion pairs for this plant's crop, those shown nearest the member's
+   * properties first (by USDA hardiness zone).
+   */
+  companions: CatalogCompanionDto[];
+  /** The zones of the member's properties the order was ranked for. */
+  companionZones: number[];
 }
 
 export interface PageDto<T> {

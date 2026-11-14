@@ -2,6 +2,7 @@ import { and, asc, desc, eq, ne } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { CompanionPairDto, PriorCropDto, SeasonPlantingDto } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
+import { CatalogCompanionRepository } from './catalog-companion-repository';
 import { companionPairs, gardenBeds, gardenPlantings, gardenSeasons, plants } from './schema';
 
 const otherPlant = alias(plants, 'companion_other');
@@ -106,7 +107,54 @@ export class YearRecordRepository {
         family: row.family ?? null,
       });
     }
-    return { prior, pairs: await this.listPairs(gardenId) };
+    const household = await this.listPairs(gardenId);
+    return { prior, pairs: [...household, ...(await this.catalogPairs(gardenId, household))] };
+  }
+
+  /**
+   * Dataset companion pairs between plants planted in this property, as
+   * plant pairs the planner can show. A household pair for the same two
+   * plants wins, whatever its kind (ADR 0030).
+   */
+  private async catalogPairs(
+    gardenId: string,
+    household: CompanionPairDto[],
+  ): Promise<CompanionPairDto[]> {
+    const planted = await this.db
+      .selectDistinct({ id: plants.id, commonName: plants.commonName, cropId: plants.cropId })
+      .from(gardenPlantings)
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(eq(gardenPlantings.gardenId, gardenId));
+    const byCrop = new Map<string, Array<{ id: string; commonName: string }>>();
+    for (const plant of planted) {
+      if (!plant.cropId) continue;
+      byCrop.set(plant.cropId, [...(byCrop.get(plant.cropId) ?? []), plant]);
+    }
+    if (byCrop.size === 0) return [];
+    const key = (a: string, b: string) => [a, b].sort().join(':');
+    const taken = new Set(household.map((pair) => key(pair.plantId, pair.otherPlantId)));
+    const out: CompanionPairDto[] = [];
+    for (const pair of await new CatalogCompanionRepository(this.db).listForCrops([
+      ...byCrop.keys(),
+    ])) {
+      for (const plant of byCrop.get(pair.fromCropId) ?? []) {
+        for (const other of byCrop.get(pair.cropId) ?? []) {
+          const k = key(plant.id, other.id);
+          if (plant.id === other.id || taken.has(k)) continue;
+          taken.add(k);
+          out.push({
+            id: `catalog:${k}`,
+            plantId: plant.id,
+            otherPlantId: other.id,
+            plantName: plant.commonName,
+            otherName: other.commonName,
+            kind: pair.kind,
+            reason: pair.reason,
+          });
+        }
+      }
+    }
+    return out;
   }
 
   async addPair(input: {

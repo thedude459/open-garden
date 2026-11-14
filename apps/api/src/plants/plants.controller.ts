@@ -2,7 +2,9 @@ import { Controller, Get, Inject, Logger, Param, Query, UseGuards } from '@nestj
 import type { AuthUser } from '@open-garden/auth';
 import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
 import {
+  CatalogCompanionRepository,
   FavoriteRepository,
+  GardenRepository,
   PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
@@ -21,7 +23,11 @@ export class PlantsController {
     const plants = new PlantRepository(bundle.db);
     const favorites = new FavoriteRepository(bundle.db);
     this.catalog = new CatalogService(plants);
-    this.details = new PlantDetailService(plants, favorites);
+    const gardens = new GardenRepository(bundle.db);
+    this.details = new PlantDetailService(plants, favorites, {
+      pairs: new CatalogCompanionRepository(bundle.db),
+      zonesForUser: (userId) => gardens.zonesForUser(userId),
+    });
   }
 
   @Get()

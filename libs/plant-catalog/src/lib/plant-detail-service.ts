@@ -1,4 +1,8 @@
-import type { FavoriteRepository, PlantRepository } from '@open-garden/plant-catalog-data';
+import type {
+  CatalogCompanionRepository,
+  FavoriteRepository,
+  PlantRepository,
+} from '@open-garden/plant-catalog-data';
 import type {
   CropCoefficientsDto,
   FrostRelativeWeeksDto,
@@ -7,17 +11,24 @@ import type {
   PlantStatus,
   PlantType,
 } from '@open-garden/shared-types';
+import { rankCompanions } from './rank-companions';
 
 export class PlantDetailService {
   constructor(
     private readonly plants: PlantRepository,
     private readonly favorites: FavoriteRepository,
+    private readonly companions?: {
+      pairs: Pick<CatalogCompanionRepository, 'listForCrops'>;
+      /** Hardiness zones of the member's properties, to rank pairs by. */
+      zonesForUser(userId: string): Promise<number[]>;
+    },
   ) {}
 
   async getById(plantId: string, userId: string): Promise<PlantDetailDto | null> {
     const row = await this.plants.getById(plantId);
     if (!row) return null;
     const isFavorite = await this.favorites.isFavorite(userId, plantId);
+    const { companions, companionZones } = await this.companionsFor(row.cropId ?? null, userId);
     return {
       id: row.id,
       commonName: row.commonName,
@@ -45,7 +56,22 @@ export class PlantDetailService {
           ? { min: row.soilPhMin, max: row.soilPhMax }
           : null,
       cropCoefficients: cropCoefficientsFromRow(row),
+      companions,
+      companionZones,
     };
+  }
+
+  private async companionsFor(cropId: string | null, userId: string) {
+    if (!cropId || !this.companions) return { companions: [], companionZones: [] };
+    const [rows, zones] = await Promise.all([
+      this.companions.pairs.listForCrops([cropId]),
+      this.companions.zonesForUser(userId),
+    ]);
+    const companions = rankCompanions(
+      rows.map(({ fromCropId: _from, ...pair }) => pair),
+      zones,
+    );
+    return { companions, companionZones: [...zones].sort((a, b) => a - b) };
   }
 }
 
