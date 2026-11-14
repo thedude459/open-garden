@@ -99,10 +99,11 @@ across years.
   a hard gate, not advice. New area types are added to that one list, not by
   schema changes.
 - Principle IV still holds. An orchard canvas, a crop-family taxonomy, or a
-  companion graph MUST NOT be built until a feature needs it. A provider
-  call for companion pairs MUST NOT be added until a real source exists;
-  until then, pairs are household data. Principle III applies once a provider
-  is used.
+  companion graph MUST NOT be built until a feature needs it. Companion
+  pairs come from the open-garden-data dataset (a real source since v0.2.2),
+  through the provider abstraction (principle III), each with its evidence
+  and where it was shown. A household MAY add its own pairs; its pair wins
+  for the same two plants.
 
 **Rationale**: The layout and reminder features left companions and
 multi-year plants out of those versions. That exclusion is not permanent.

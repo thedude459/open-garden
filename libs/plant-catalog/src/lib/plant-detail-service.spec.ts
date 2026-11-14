@@ -88,6 +88,41 @@ describe('PlantDetailService', () => {
     expect(basil?.cropCoefficients).toBeNull();
   });
 
+  it('lists the crop’s companion pairs, nearest the member’s property zones first', async () => {
+    const pairAt = (name: string, zone: number) => ({
+      cropId: name.toLowerCase(),
+      name,
+      kind: 'helps' as const,
+      benefits: ['deters-pests' as const],
+      evidence: 'research' as const,
+      reason: 'x',
+      reference: null,
+      shownIn: [{ where: 'Somewhere', zones: { min: zone, max: zone } }],
+      fromCropId: 'tomato',
+    });
+    const listForCrops = vi.fn().mockResolvedValue([pairAt('Basil', 9), pairAt('Marigold', 5)]);
+    const svc = new PlantDetailService(
+      {
+        getById: vi.fn().mockResolvedValue({ id: 't', status: 'active', cropId: 'tomato' }),
+      } as never,
+      { isFavorite: vi.fn().mockResolvedValue(false) } as never,
+      { pairs: { listForCrops }, zonesForUser: vi.fn().mockResolvedValue([6, 4]) },
+    );
+    const detail = await svc.getById('t', 'u');
+    expect(listForCrops).toHaveBeenCalledWith(['tomato']);
+    expect(detail?.companions.map((c) => c.name)).toEqual(['Marigold', 'Basil']);
+    expect(detail?.companions[0]).not.toHaveProperty('fromCropId');
+    expect(detail?.companionZones).toEqual([4, 6]);
+
+    // A plant outside the dataset has no crop, so no pairs.
+    const custom = await new PlantDetailService(
+      { getById: vi.fn().mockResolvedValue({ id: 'c', status: 'active', cropId: null }) } as never,
+      { isFavorite: vi.fn().mockResolvedValue(false) } as never,
+      { pairs: { listForCrops }, zonesForUser: vi.fn() },
+    ).getById('c', 'u');
+    expect(custom).toMatchObject({ companions: [], companionZones: [] });
+  });
+
   it('returns leftover null spacing on getById', async () => {
     const plants = {
       getById: vi.fn().mockResolvedValue({

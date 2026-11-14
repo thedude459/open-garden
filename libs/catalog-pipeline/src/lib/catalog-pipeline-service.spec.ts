@@ -96,6 +96,36 @@ describe('CatalogPipelineService', () => {
     });
   });
 
+  it('imports a source’s companion pairs, and a change to pairs alone is a change', async () => {
+    const mem = new MemoryPipeline();
+    const pair = {
+      crops: ['basil', 'tomato'] as [string, string],
+      kind: 'helps' as const,
+      benefits: ['deters-pests' as const],
+      evidence: 'research' as const,
+      reason: 'Fewer thrips.',
+      reference: null,
+      shownIn: [{ where: 'Greenhouse', zones: null }],
+    };
+    const companions = [pair];
+    const provider = Object.assign(
+      new MemoryProvider('a', [
+        samplePlant({ externalId: 'p', commonName: 'Pair', species: 'Pair species' }),
+      ]),
+      { companions: async () => companions },
+    );
+    const svc = mem.service([provider]);
+    await svc.runAndWait();
+    expect(mem.companions).toEqual([pair]);
+    // Same plants and pairs: nothing written, pairs kept.
+    expect((await svc.runAndWait()).plantsUpserted).toBe(0);
+    expect(mem.companions).toEqual([pair]);
+    // Only the pairs changed: the run writes again.
+    companions.push({ ...pair, crops: ['onion', 'cabbage'] });
+    expect((await svc.runAndWait()).plantsUpserted).toBe(1);
+    expect(mem.companions).toHaveLength(2);
+  });
+
   it('hashes a catalog the same way whatever order the plants arrive in', () => {
     const a = { varietyKey: 'a' };
     const b = { varietyKey: 'b' };

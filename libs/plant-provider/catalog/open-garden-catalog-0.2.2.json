@@ -1,5 +1,5 @@
 {
-  "version": "0.2.1",
+  "version": "0.2.2",
   "license": "CC0-1.0",
   "units": {
     "length": "cm",
@@ -30,6 +30,11 @@
       "id": "asteraceae",
       "name": "Asteraceae",
       "commonName": "Daisy family (lettuce, sunflower, endive)"
+    },
+    {
+      "id": "boraginaceae",
+      "name": "Boraginaceae",
+      "commonName": "Borage family (borage, comfrey)"
     },
     {
       "id": "brassicaceae",
@@ -85,6 +90,11 @@
       "id": "solanaceae",
       "name": "Solanaceae",
       "commonName": "Nightshade family (tomato, pepper, potato, eggplant)"
+    },
+    {
+      "id": "tropaeolaceae",
+      "name": "Tropaeolaceae",
+      "commonName": "Nasturtium family (nasturtium)"
     }
   ],
   "sources": [
@@ -569,6 +579,64 @@
       ]
     },
     {
+      "id": "borage",
+      "names": {
+        "en": "Borage"
+      },
+      "scientificName": "Borago officinalis",
+      "wikidataId": "Q147075",
+      "family": "boraginaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 60
+      },
+      "sowingDepthCm": 1,
+      "germinationDays": {
+        "min": 5,
+        "max": 15
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 29
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 60
+      },
+      "notes": "Bees work its blue flowers all summer. Sow in place; the taproot makes it hard to move. Self-sows freely. Days to maturity are days to first bloom.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "broccoli",
       "names": {
         "en": "Broccoli"
@@ -890,6 +958,74 @@
         }
       ],
       "notes": "Water evenly; heads split after a dry spell followed by heavy rain. Harvest when heads feel firm.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "calendula",
+      "names": {
+        "en": "Calendula"
+      },
+      "scientificName": "Calendula officinalis",
+      "wikidataId": "Q145930",
+      "family": "asteraceae",
+      "habit": "herbaceous",
+      "use": "flower",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 25,
+        "betweenRows": 40
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 5,
+        "max": 15
+      },
+      "temperatureC": {
+        "min": 5,
+        "optimal": 18,
+        "max": 27
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 0
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 0
+        }
+      },
+      "daysToMaturity": {
+        "min": 45,
+        "max": 60
+      },
+      "notes": "Pot marigold. Flowers best in cool weather and may stall in midsummer heat; cut back and it blooms again in fall. Days to maturity are days to first bloom.",
       "sources": [
         {
           "source": "wikidata",
@@ -1278,6 +1414,54 @@
         }
       ],
       "notes": "Bolts quickly in heat, so sow small batches every few weeks in spring and again in fall. The seeds are coriander. Does not like being transplanted.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "comfrey",
+      "names": {
+        "en": "Comfrey"
+      },
+      "scientificName": "Symphytum officinale",
+      "wikidataId": "Q157561",
+      "family": "boraginaceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 60,
+        "betweenRows": 90
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": 0
+        }
+      },
+      "notes": "Grown for its leaves, which are rich in potassium and break down fast, as a mulch, compost material, or soaked into a liquid feed; bumblebees work the flowers. Most gardeners plant Russian comfrey 'Bocking 14' (Symphytum × uplandicum), which sets no seed, from root cuttings. Any piece of root left in the ground regrows, so choose a permanent spot. Contains pyrrolizidine alkaloids, which harm the liver; do not eat it or drink it as tea.",
       "sources": [
         {
           "source": "wikidata",
@@ -1937,6 +2121,75 @@
       ]
     },
     {
+      "id": "marigold",
+      "names": {
+        "en": "Marigold"
+      },
+      "scientificName": "Tagetes patula",
+      "wikidataId": "Q644934",
+      "family": "asteraceae",
+      "habit": "herbaceous",
+      "use": "flower",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 20,
+        "betweenRows": 30
+      },
+      "sowingDepthCm": 0.6,
+      "germinationDays": {
+        "min": 5,
+        "max": 7
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 21,
+        "max": 32
+      },
+      "minSoilTemperatureC": 18,
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -8,
+          "weeksLatest": -6
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 2
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 60
+      },
+      "notes": "French marigold, the kind used in the companion trials. Days to maturity are days to first bloom. Frost kills it.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "melon",
       "names": {
         "en": "Melon"
@@ -2072,6 +2325,65 @@
         }
       ],
       "notes": "Spreads fast by underground runners; grow it in a container or a pot sunk in the bed. Usually planted from divisions or nursery plants, since it does not come true from seed. Tolerates part shade.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "nasturtium",
+      "names": {
+        "en": "Nasturtium"
+      },
+      "scientificName": "Tropaeolum majus",
+      "wikidataId": "Q156288",
+      "family": "tropaeolaceae",
+      "habit": "herbaceous",
+      "use": "flower",
+      "lifeCycle": "annual",
+      "frostTolerance": "tender",
+      "sun": "full",
+      "water": "low",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 30,
+        "betweenRows": 45
+      },
+      "sowingDepthCm": 1.5,
+      "germinationDays": {
+        "min": 7,
+        "max": 12
+      },
+      "temperatureC": {
+        "min": 10,
+        "optimal": 21,
+        "max": 30
+      },
+      "minSoilTemperatureC": 13,
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
+      "windows": {
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 2
+        }
+      },
+      "daysToMaturity": {
+        "min": 50,
+        "max": 60
+      },
+      "notes": "Sow where it is to grow; it resents transplanting. Rich soil gives leaves instead of flowers. Leaves and flowers are edible. Days to maturity are days to first bloom.",
       "sources": [
         {
           "source": "wikidata",
@@ -3450,6 +3762,73 @@
       ]
     },
     {
+      "id": "sweet-alyssum",
+      "names": {
+        "en": "Sweet alyssum"
+      },
+      "scientificName": "Lobularia maritima",
+      "wikidataId": "Q2094356",
+      "family": "brassicaceae",
+      "habit": "herbaceous",
+      "use": "flower",
+      "lifeCycle": "annual",
+      "frostTolerance": "half-hardy",
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 15,
+        "betweenRows": 25
+      },
+      "germinationDays": {
+        "min": 5,
+        "max": 15
+      },
+      "temperatureC": {
+        "min": 7,
+        "optimal": 18,
+        "max": 27
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7.5
+      },
+      "windows": {
+        "indoorStart": {
+          "frost": "last",
+          "weeksEarliest": -6,
+          "weeksLatest": -4
+        },
+        "directSow": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 0
+        },
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 1
+        }
+      },
+      "daysToMaturity": {
+        "min": 40,
+        "max": 50
+      },
+      "notes": "Sow on the surface; the seed needs light. Its small flowers feed hoverflies, whose larvae eat aphids. A favorite host of Bagrada bug, so skip it where that pest is building up. Days to maturity are days to first bloom.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "sweet-cherry",
       "names": {
         "en": "Sweet cherry"
@@ -3873,6 +4252,54 @@
       ]
     },
     {
+      "id": "tansy",
+      "names": {
+        "en": "Tansy"
+      },
+      "scientificName": "Tanacetum vulgare",
+      "wikidataId": "Q27079",
+      "family": "asteraceae",
+      "habit": "herbaceous",
+      "use": "herb",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "low",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 45,
+        "betweenRows": 60
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 2
+        }
+      },
+      "notes": "Its flowers draw lacewings, lady beetles, parasitic wasps, and tachinid flies, which prey on aphids, whiteflies, and caterpillars. As a companion for potatoes it did not reduce Colorado potato beetle in field trials. Invasive in much of North America and a listed noxious weed in several states; check local rules. Toxic to people and livestock. Spreads by roots and seed, so grow it contained and cut flowers before they set seed.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "thyme",
       "names": {
         "en": "Thyme"
@@ -4209,5 +4636,755 @@
       ]
     }
   ],
-  "companions": []
+  "companions": [
+    {
+      "crops": [
+        "winter-squash",
+        "summer-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "trap-crop"
+      ],
+      "evidence": "research",
+      "reason": "Blue Hubbard squash draws squash bugs, striped cucumber beetles, and squash vine borers away from other squash. Plant it around the edge and manage the pests on it.",
+      "shownIn": [
+        {
+          "where": "Missouri, USA",
+          "zones": {
+            "min": 6,
+            "max": 6
+          }
+        },
+        {
+          "where": "Minnesota, USA",
+          "zones": {
+            "min": 3,
+            "max": 5
+          }
+        },
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Pinero (2017), University of Missouri Environment & Garden; UMN; Clemson (Hubbard types are the most damaged by squash bug)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "winter-squash",
+        "cucumber"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "trap-crop"
+      ],
+      "evidence": "extension",
+      "reason": "Blue Hubbard squash pulls striped cucumber beetles away from nearby cucumbers.",
+      "shownIn": [
+        {
+          "where": "Minnesota, USA",
+          "zones": {
+            "min": 3,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "nasturtium",
+        "summer-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Nasturtium planted with squash reduced squash bugs, and in an Iowa trial reduced squash bug and cucumber beetle damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; Doughty et al. (2016), Journal of Integrated Pest Management 7(1); UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "marigold",
+        "summer-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests",
+        "attracts-beneficials"
+      ],
+      "evidence": "research",
+      "reason": "Marigold reduced squash bug and cucumber beetle damage in an Iowa trial, and marigold with sweet alyssum raised the natural enemies of aphids on squash in Florida.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        },
+        {
+          "where": "Florida, USA",
+          "zones": {
+            "min": 9,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; Lopez & Liburd (2019), SARE report GS17-171; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "sweet-alyssum",
+        "summer-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "research",
+      "reason": "Sweet alyssum with marigold raised the natural enemies of aphids on squash and slightly improved yield.",
+      "shownIn": [
+        {
+          "where": "Florida, USA",
+          "zones": {
+            "min": 9,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Lopez & Liburd (2019), SARE report GS17-171; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "thyme",
+        "broccoli"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Thyme planted with broccoli reduced cabbage looper and imported cabbageworm damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "nasturtium",
+        "broccoli"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Nasturtium planted with broccoli reduced cabbage looper and imported cabbageworm damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "onion",
+        "broccoli"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Onion planted with broccoli reduced cabbage looper and imported cabbageworm damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "marigold",
+        "cabbage"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Marigold planted with cabbage reduced cabbage looper and imported cabbageworm damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "nasturtium",
+        "cabbage"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Nasturtium planted with cabbage reduced cabbage looper and imported cabbageworm damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "onion",
+        "cabbage"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Onion planted with cabbage reduced cabbage looper and imported cabbageworm damage.",
+      "shownIn": [
+        {
+          "where": "Iowa, USA",
+          "zones": {
+            "min": 5,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "dill",
+        "cabbage"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Dill in flower draws parasitic wasps, which attack the caterpillars that feed on cabbage, such as cabbage looper and imported cabbageworm.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "dill",
+        "broccoli"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Dill in flower draws parasitic wasps, which attack the caterpillars that feed on broccoli, such as cabbage looper and imported cabbageworm.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "parsley",
+        "cabbage"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Parsley in flower draws parasitic wasps and tachinid flies, which attack the caterpillars that feed on cabbage, such as cabbage looper and imported cabbageworm.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "parsley",
+        "broccoli"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Parsley in flower draws parasitic wasps and tachinid flies, which attack the caterpillars that feed on broccoli, such as cabbage looper and imported cabbageworm.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "tansy",
+        "cabbage"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Tansy in flower draws parasitic wasps and tachinid flies, which attack the caterpillars that feed on cabbage, such as cabbage looper and imported cabbageworm.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "tansy",
+        "broccoli"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Tansy in flower draws parasitic wasps and tachinid flies, which attack the caterpillars that feed on broccoli, such as cabbage looper and imported cabbageworm.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "thyme",
+        "brussels-sprouts"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Thyme cut diamondback moth egg-laying on Brussels sprouts in a greenhouse, but only when the moths landed on the thyme; the scent alone did not mask the crop.",
+      "shownIn": [
+        {
+          "where": "Greenhouse, United Kingdom"
+        }
+      ],
+      "reference": "Dover (1986), Entomologia Experimentalis et Applicata 42; UMN; Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "marigold",
+        "tomato"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "French marigold protected tomatoes from greenhouse whitefly through the limonene it gives off, and marigold reduced thrips on tomatoes in field and greenhouse studies.",
+      "shownIn": [
+        {
+          "where": "Greenhouse, United Kingdom"
+        }
+      ],
+      "reference": "Conboy et al. (2019), PLOS ONE 14(3) e0213071; UMN",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "basil",
+        "tomato"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "deters-pests"
+      ],
+      "evidence": "research",
+      "reason": "Basil interplanted with tomatoes reduced thrips and, under net covers, whiteflies, and may help tomato growth.",
+      "shownIn": [
+        {
+          "where": "Kenya (open field)"
+        },
+        {
+          "where": "Greenhouse, Japan"
+        },
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Mutisya et al. (2016), Agronomy 6(3) 42; Ahmad et al. (2020), American Journal of Plant Sciences 11; UMN; Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "cilantro",
+        "lettuce"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Flowering coriander feeds adult hoverflies, whose larvae eat lettuce aphids. Organic growers intercrop it with lettuce for that reason.",
+      "shownIn": [
+        {
+          "where": "California Central Coast, USA",
+          "zones": {
+            "min": 9,
+            "max": 10
+          }
+        }
+      ],
+      "reference": "UC IPM",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "sweet-alyssum",
+        "lettuce"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-beneficials"
+      ],
+      "evidence": "extension",
+      "reason": "Sweet alyssum feeds adult hoverflies, whose larvae eat lettuce aphids. Skip it where Bagrada bug is building up; it is one of that pest's favorite hosts.",
+      "shownIn": [
+        {
+          "where": "California Central Coast, USA",
+          "zones": {
+            "min": 9,
+            "max": 10
+          }
+        }
+      ],
+      "reference": "UC IPM",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "sweet-corn",
+        "pole-bean"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "support",
+        "fixes-nitrogen"
+      ],
+      "evidence": "extension",
+      "reason": "Corn stalks give pole beans something to climb, and the beans fix nitrogen. Part of the three sisters planting of corn, beans, and squash.",
+      "shownIn": [
+        {
+          "where": "Minnesota, USA",
+          "zones": {
+            "min": 3,
+            "max": 5
+          }
+        },
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "UMN; Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "sweet-corn",
+        "winter-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "ground-cover",
+        "shade"
+      ],
+      "evidence": "extension",
+      "reason": "Squash vines cover and shade the soil under the corn, holding moisture and keeping weeds down. Part of the three sisters planting.",
+      "shownIn": [
+        {
+          "where": "Minnesota, USA",
+          "zones": {
+            "min": 3,
+            "max": 5
+          }
+        },
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "UMN; Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "borage",
+        "summer-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-pollinators"
+      ],
+      "evidence": "extension",
+      "reason": "Borage flowers draw bees that pollinate squash, which cannot set fruit without insect pollination.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "borage",
+        "melon"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-pollinators"
+      ],
+      "evidence": "extension",
+      "reason": "Borage flowers draw bees that pollinate melons, which cannot set fruit without insect pollination.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "calendula",
+        "summer-squash"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-pollinators"
+      ],
+      "evidence": "extension",
+      "reason": "Calendula flowers draw bees that pollinate squash, which cannot set fruit without insect pollination.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "calendula",
+        "melon"
+      ],
+      "kind": "helps",
+      "benefits": [
+        "attracts-pollinators"
+      ],
+      "evidence": "extension",
+      "reason": "Calendula flowers draw bees that pollinate melons, which cannot set fruit without insect pollination.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "tomato",
+        "potato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get late blight, and the same strains move between them. Infected potato tubers are a common way it starts. Keep them apart and rotate.",
+      "shownIn": [
+        {
+          "where": "Minnesota, USA",
+          "zones": {
+            "min": 3,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "University of Minnesota Extension, \"Late blight of tomato and potato\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "potato",
+        "eggplant"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Colorado potato beetle feeds on both. In Minnesota trials, eggplant did not work as a trap crop to protect potatoes.",
+      "shownIn": [
+        {
+          "where": "Minnesota, USA",
+          "zones": {
+            "min": 3,
+            "max": 5
+          }
+        }
+      ],
+      "reference": "University of Minnesota Extension, \"Colorado potato beetle\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "tomato",
+        "sweet-corn"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Corn earworm is also the tomato fruitworm; planting the two together makes it easier for the pest to spread between them.",
+      "shownIn": [
+        {
+          "where": "South Carolina, USA",
+          "zones": {
+            "min": 7,
+            "max": 9
+          }
+        }
+      ],
+      "reference": "Clemson",
+      "source": "hand-curation"
+    }
+  ]
 }

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { PlantDataProvider } from '@open-garden/plant-provider';
+import type { PlantDataProvider, ProviderCompanion } from '@open-garden/plant-provider';
 import type {
   PipelineMergeDecisionDto,
   PipelineRunSourceDto,
@@ -37,6 +37,8 @@ export interface PipelineRunPort {
       PlantUpsertInput & { sourceLinks: Array<{ sourceId: string; externalId: string }> }
     >;
     deprecateKeys: string[];
+    /** Replaces every catalog companion pair; written only with the plants. */
+    companions: ProviderCompanion[];
     plantsReactivated: number;
     recordsRejected: number;
     sources: PipelineRunSourceDto[];
@@ -109,11 +111,13 @@ export class CatalogPipelineService {
         plants: import('@open-garden/plant-provider').ProviderPlant[];
         skipped: number;
       }> = [];
+      const companions: ProviderCompanion[] = [];
 
       for (const provider of this.sources) {
         const sourceId = provider.id;
         try {
           const { plants, skipped } = await fetchAllFromProvider(provider);
+          companions.push(...((await provider.companions?.()) ?? []));
           sourceRows.push({
             sourceId,
             status: 'succeeded',
@@ -196,7 +200,7 @@ export class CatalogPipelineService {
 
       const plants = merge.merged.map(toUpsert);
       const recordsRejected = merge.rejected + batches.reduce((n, b) => n + b.skipped, 0);
-      const catalogHash = overall === 'succeeded' ? hashCatalog(plants) : null;
+      const catalogHash = overall === 'succeeded' ? hashCatalog(plants, companions) : null;
       // The catalog matches the last successful run and nothing needs
       // deprecating or reactivating: record the run, write no plants.
       const unchanged =
@@ -215,6 +219,7 @@ export class CatalogPipelineService {
           : errorMessage,
         plants: unchanged ? [] : plants,
         deprecateKeys,
+        companions: unchanged ? [] : companions,
         plantsReactivated: reactivated,
         recordsRejected,
         sources: sourceRows,
@@ -240,9 +245,14 @@ export class CatalogPipelineService {
 }
 
 /** A stable SHA-256 of the plants a run would publish, independent of source order. */
-export function hashCatalog(plants: Array<{ varietyKey: string }>): string {
+/** Plants and companion pairs: a release that changes only pairs is still a change. */
+export function hashCatalog(
+  plants: Array<{ varietyKey: string }>,
+  companions: ProviderCompanion[] = [],
+): string {
   const sorted = [...plants].sort((a, b) => a.varietyKey.localeCompare(b.varietyKey));
-  return createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
+  const content = companions.length ? { plants: sorted, companions } : sorted;
+  return createHash('sha256').update(JSON.stringify(content)).digest('hex');
 }
 
 function toUpsert(
@@ -270,6 +280,7 @@ function toUpsert(
     soilPh: plant.soilPh,
     cropCoefficients: plant.cropCoefficients,
     family: plant.family,
+    cropId: plant.cropId,
     sourceLinks: plant.sourceLinks,
   };
 }

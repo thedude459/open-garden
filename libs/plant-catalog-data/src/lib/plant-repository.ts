@@ -45,6 +45,7 @@ export interface PlantUpsertInput {
   soilPh?: SoilPhDto | null;
   cropCoefficients?: CropCoefficientsDto | null;
   family?: string | null;
+  cropId?: string | null;
 }
 
 export interface PlantListFilters {
@@ -171,6 +172,7 @@ export class PlantRepository {
           stageDaysMid: sql`excluded.stage_days_mid`,
           stageDaysLate: sql`excluded.stage_days_late`,
           family: sql`excluded.family`,
+          cropId: sql`excluded.crop_id`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
           status: sql`excluded.status`,
@@ -306,6 +308,7 @@ function catalogColumns(input: {
   soilPh?: SoilPhDto | null;
   cropCoefficients?: CropCoefficientsDto | null;
   family?: string | null;
+  cropId?: string | null;
 }) {
   const r = input.rootstockSpacingInches;
   const t = input.sowingTemperature;
@@ -324,6 +327,7 @@ function catalogColumns(input: {
     stageDaysMid: kc?.stageDays?.mid ?? null,
     stageDaysLate: kc?.stageDays?.late ?? null,
     family: input.family ?? null,
+    cropId: input.cropId ?? null,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,
     standardSpacingInches: r?.standard ?? null,

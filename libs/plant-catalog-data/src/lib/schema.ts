@@ -107,6 +107,8 @@ export const plants = pgTable(
     stageDaysMid: integer('stage_days_mid'),
     stageDaysLate: integer('stage_days_late'),
     family: text('family'),
+    /** The dataset crop this plant or variety belongs to; companion pairs name crops. */
+    cropId: text('crop_id'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
     indoorWeeksLatest: integer('indoor_weeks_latest'),
@@ -464,6 +466,32 @@ export const gardenPlantingHarvests = pgTable(
   (t) => [
     uniqueIndex('garden_planting_harvests_uidx').on(t.plantingId, t.harvestedOn),
     index('garden_planting_harvests_planting_id_idx').on(t.plantingId),
+  ],
+);
+
+/**
+ * Companion pairs from the dataset, between crops (not varieties). Replaced
+ * whenever a catalog import writes plants (ADR 0030). Household pairs stay in
+ * companion_pairs and win for the same two plants.
+ */
+export const catalogCompanions = pgTable(
+  'catalog_companions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    cropId: text('crop_id').notNull(),
+    otherCropId: text('other_crop_id').notNull(),
+    kind: text('kind').notNull(),
+    benefits: text('benefits').array().notNull(),
+    evidence: text('evidence').notNull(),
+    reason: text('reason').notNull(),
+    reference: text('reference'),
+    shownIn: jsonb('shown_in')
+      .$type<Array<{ where: string; zones: { min: number; max: number } | null }>>()
+      .notNull(),
+  },
+  (t) => [
+    index('catalog_companions_crop_id_idx').on(t.cropId),
+    index('catalog_companions_other_crop_id_idx').on(t.otherCropId),
   ],
 );
 

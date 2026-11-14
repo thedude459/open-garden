@@ -7,7 +7,7 @@ import type {
 } from '@open-garden/shared-types';
 import { z } from 'zod';
 import { verifyCatalogAttestation } from './catalog-attestation';
-import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
+import type { PlantDataProvider, ProviderCompanion, ProviderPlant } from './plant-data-provider';
 
 /**
  * The open-garden-data release this app ships with and was tested against.
@@ -17,10 +17,10 @@ import type { PlantDataProvider, ProviderPlant } from './plant-data-provider';
  * verify`); bump all three together.
  */
 export const BUNDLED_CATALOG = {
-  version: '0.2.1',
+  version: '0.2.2',
   /** Relative to the working directory: the repository root, or /app in the API image. */
-  file: 'libs/plant-provider/catalog/open-garden-catalog-0.2.1.json',
-  sha256: '2098922aebd732860711ee051d188d5941caf972607a13b5de8e26f7ccd54a67',
+  file: 'libs/plant-provider/catalog/open-garden-catalog-0.2.2.json',
+  sha256: 'a585f9d9602357385957b5985b36257d9016be6267b936bf9b884ceca1b75adb',
 } as const;
 
 /**
@@ -53,6 +53,11 @@ export class DatasetReleaseProvider implements PlantDataProvider {
     return { items: plants, skipped };
   }
 
+  /** The release's companion pairs. Pairs this app cannot read are left out. */
+  async companions(): Promise<ProviderCompanion[]> {
+    return (await this.load()).companions;
+  }
+
   /**
    * Read the file on every use, not at boot and not cached: a bad file fails
    * one pipeline run (recorded on the run) instead of stopping the API, and a
@@ -65,6 +70,7 @@ export class DatasetReleaseProvider implements PlantDataProvider {
 
 export interface Catalog {
   plants: ProviderPlant[];
+  companions: ProviderCompanion[];
   /** Crops this app cannot read (a newer release may add values it does not know). */
   skipped: number;
 }
@@ -111,7 +117,22 @@ export async function readCatalog(
       plants.push(...cropPlants(crop.data, families.get(crop.data.family ?? '') ?? null));
     } else skipped += 1;
   }
-  return { plants, skipped };
+  const companions: ProviderCompanion[] = [];
+  for (const raw of parsed.data.companions ?? []) {
+    const pair = companionSchema.safeParse(raw);
+    if (!pair.success) continue;
+    const { crops, kind, benefits, evidence, reason, reference, shownIn } = pair.data;
+    companions.push({
+      crops,
+      kind,
+      benefits,
+      evidence,
+      reason,
+      reference: reference ?? null,
+      shownIn: shownIn.map((place) => ({ where: place.where, zones: place.zones ?? null })),
+    });
+  }
+  return { plants, skipped, companions };
 }
 
 // Only the fields the app uses. Unknown fields are ignored, so a newer minor
@@ -126,10 +147,8 @@ const window = z
   .optional();
 const dayRange = z.object({ min: z.number().int().positive(), max: z.number().int().positive() });
 const spacing = z.object({ inRow: z.number().positive() });
-const zones = z.object({
-  min: z.number().int().min(1).max(13),
-  max: z.number().int().min(1).max(13),
-});
+const zoneNumber = z.number().int().min(1).max(13);
+const zones = z.object({ min: zoneNumber, max: zoneNumber });
 
 const cropSchema = z.object({
   id: slug,
@@ -195,8 +214,42 @@ const catalogSchema = z.object({
   families: z
     .array(z.object({ id: z.string(), name: z.string(), commonName: z.string().optional() }))
     .optional(),
-  // Crops are checked one by one in readCatalog.
+  // Crops and companion pairs are checked one by one in readCatalog.
   crops: z.array(z.unknown()),
+  companions: z.array(z.unknown()).optional(),
+});
+
+const companionSchema = z.object({
+  crops: z.tuple([slug, slug]),
+  kind: z.enum(['helps', 'hinders']),
+  benefits: z
+    .array(
+      z.enum([
+        'deters-pests',
+        'trap-crop',
+        'attracts-beneficials',
+        'attracts-pollinators',
+        'fixes-nitrogen',
+        'support',
+        'shade',
+        'ground-cover',
+        'competes',
+        'suppresses-growth',
+        'shares-pests',
+      ]),
+    )
+    .min(1),
+  evidence: z.enum(['research', 'extension', 'traditional']),
+  reason: z.string().min(1),
+  reference: z.string().optional(),
+  shownIn: z
+    .array(
+      z.object({
+        where: z.string().min(1),
+        zones: z.object({ min: zoneNumber, max: zoneNumber }).optional(),
+      }),
+    )
+    .min(1),
 });
 
 type Crop = z.infer<typeof cropSchema>;
@@ -250,6 +303,7 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
         }
       : null,
     family,
+    cropId: crop.id,
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),

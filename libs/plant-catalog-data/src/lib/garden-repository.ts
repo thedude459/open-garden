@@ -82,6 +82,16 @@ export class GardenRepository {
     return row ?? null;
   }
 
+  /** The hardiness zones of every property the member belongs to that has one. */
+  async zonesForUser(userId: string): Promise<number[]> {
+    const rows = await this.db
+      .selectDistinct({ zone: gardens.hardinessZone })
+      .from(gardenMemberships)
+      .innerJoin(gardens, eq(gardenMemberships.gardenId, gardens.id))
+      .where(eq(gardenMemberships.userId, userId));
+    return rows.flatMap((row) => (row.zone == null ? [] : [row.zone]));
+  }
+
   async listForUser(userId: string, page: number, pageSize: number) {
     const offset = (page - 1) * pageSize;
     const rows = await this.db

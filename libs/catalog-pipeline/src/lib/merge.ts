@@ -28,6 +28,7 @@ const MERGE_FIELDS = [
   'soilPh',
   'cropCoefficients',
   'family',
+  'cropId',
 ] as const;
 
 export type MergeField = (typeof MERGE_FIELDS)[number];
@@ -52,6 +53,7 @@ export interface MergedPlant {
   soilPh: SoilPhDto | null;
   cropCoefficients: CropCoefficientsDto | null;
   family: string | null;
+  cropId: string | null;
   provider: string;
   providerExternalId: string;
   contributingSources: string[];
@@ -158,6 +160,7 @@ export function mergeCatalogRecords(
       soilPh: row.values.soilPh ?? null,
       cropCoefficients: row.values.cropCoefficients ?? null,
       family: row.values.family ?? null,
+      cropId: row.values.cropId ?? null,
       provider: last?.sourceId ?? row.contributingSources[row.contributingSources.length - 1] ?? '',
       providerExternalId: last?.externalId ?? '',
       contributingSources: row.contributingSources,
@@ -189,6 +192,7 @@ function applyFields(row: Acc, plant: ProviderPlant, sourceId: string) {
     soilPh: plant.soilPh ?? null,
     cropCoefficients: plant.cropCoefficients ?? null,
     family: plant.family ?? null,
+    cropId: plant.cropId ?? null,
   };
   for (const field of MERGE_FIELDS) {
     const value = incoming[field];

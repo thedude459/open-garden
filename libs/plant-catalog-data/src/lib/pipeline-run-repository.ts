@@ -8,6 +8,10 @@ import type {
   PipelineTriggeredBy,
 } from '@open-garden/shared-types';
 import type { PlantUpsertInput } from './plant-repository';
+import {
+  CatalogCompanionRepository,
+  type CatalogCompanionInput,
+} from './catalog-companion-repository';
 import { PlantRepository } from './plant-repository';
 import { PlantSourceRepository } from './plant-source-repository';
 import { isUniqueViolation, type AppDatabase } from './db';
@@ -27,6 +31,8 @@ export interface PublishCatalogInput {
   errorMessage: string | null;
   plants: PublishPlantInput[];
   deprecateKeys: string[];
+  /** Replaces the catalog's companion pairs, but only when plants are written. */
+  companions?: CatalogCompanionInput[];
   plantsReactivated: number;
   recordsRejected: number;
   sources: PipelineRunSourceDto[];
@@ -232,6 +238,10 @@ export class PipelineRunRepository {
         await sourceRepo.replaceForPlant(row.id, plant.sourceLinks);
       }
       const deprecated = await plantRepo.deprecateByVarietyKeys(input.deprecateKeys);
+      // An unchanged run writes no plants and must not wipe the pairs.
+      if (input.plants.length > 0) {
+        await new CatalogCompanionRepository(tx).replaceAll(input.companions ?? []);
+      }
       if (input.sources.length > 0) {
         await tx.insert(catalogPipelineRunSources).values(
           input.sources.map((source) => ({

@@ -1,4 +1,8 @@
-import type { PlantDataProvider, ProviderPlant } from '@open-garden/plant-provider';
+import type {
+  PlantDataProvider,
+  ProviderCompanion,
+  ProviderPlant,
+} from '@open-garden/plant-provider';
 import type {
   PipelineMergeDecisionDto,
   PipelineRunSourceDto,
@@ -51,6 +55,7 @@ type MemoryRun = PipelineRunSummaryDto & {
 export class MemoryPipeline {
   runs: MemoryRun[] = [];
   plants = new Map<string, MemoryPlant>();
+  companions: ProviderCompanion[] = [];
   private seq = 0;
 
   readonly runsPort: PipelineRunPort = {
@@ -110,6 +115,7 @@ export class MemoryPipeline {
     publish: async (input) => {
       const run = this.runs.find((row) => row.id === input.runId);
       if (!run) return;
+      if (input.plants.length > 0) this.companions = input.companions;
       for (const plant of input.plants) {
         const existing = this.plants.get(plant.varietyKey);
         this.plants.set(plant.varietyKey, {

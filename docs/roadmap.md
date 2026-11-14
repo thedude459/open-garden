@@ -282,12 +282,12 @@ names the dataset version it needs:
 | Catalog importer, sowing windows from data | v0.1 | Schema v1 and the first 50 crops |
 | Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
 | Crop rotation advice by family | v0.1 | Every crop has a family |
-| Companion advice from data (principle VIII change) | v0.2 | Companion pairs with reasons and sources |
+| Companion advice from data (principle VIII change) — **done, [ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)** | v0.2 | Companion pairs with reasons and sources |
 | Soil-test advice (pH against each crop's range) | v0.2 | `soilPh` per crop (imported and shown since v0.2.0) |
 | Watering by water balance | v0.2 | Crop coefficients (Kc) per growth stage |
 | Judging sensor readings | v0.3 | Soil moisture, light, and temperature ranges per crop |
 | Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
-| `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties: the first feature that needs crop-level rows |
+| `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties. Met with a `crop_id` column on plants instead ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)); a table waits for a feature that needs crop rows of their own |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
 | Named rootstocks: pick M.9, Bud 9, G.41…; bed sized from its spacing; zone check uses the less hardy of variety and rootstock | v0.3 | Named rootstocks per tree crop, each with size, spacing, hardiness zones, and staking |
 | Worldwide sowing (Phase 2) | Later | Frost-free windows |
@@ -481,7 +481,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 6 | The bed is a small rectangle in a large empty canvas. | Fit-to-content on open; remember zoom per property. |
 | 7 | Explicit Save layout with an "Unsaved changes" badge and a leave guard. | Autosave with undo (keeps the offline queue). |
 | 8 | Configuration mixes season close, companions, name, size, address, zone, frost (month numbers 1–12), members, delete. | Sections or tabs: Property · Location & climate · Members · Seasons · Danger zone. **Month names done.** Climate auto-filled from location with "override" toggle. |
-| 9 | Companions are entered by hand per garden. | Shown automatically from the catalog in the planner and plant page, with each pair's benefits (deters pests, attracts beneficials, fixes nitrogen, …) and evidence level (research, extension, traditional) so lore is labelled as lore; household overrides stay possible. |
+| 9 | Companions are entered by hand per garden. | **Done ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)):** the dataset's pairs show in the planner beside household pairs (a household pair wins) and on plant pages with benefits, evidence, and where each was shown, nearest the member's property zones first. Shown automatically from the catalog in the planner and plant page, with each pair's benefits (deters pests, attracts beneficials, fixes nitrogen, …) and evidence level (research, extension, traditional) so lore is labelled as lore; household overrides stay possible. |
 | 10 | Catalog shows letter-in-a-square avatars, no images, thin detail page (type, zones, sun, water, maturity, spacing), only action is favorite. | Crop icons, filters (season, family, "can sow now"), detail page with sowing timeline for **your** location, companions, varieties, and "Add to a bed / plan". |
 | 11 | Property cards say "0 placements" and show only zone. | Small map or layout thumbnail, plant count, next task. Plain words ("plants", not "placements"). |
 | 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | **Header done:** on mobile a sticky top bar holds Menu and the property name, in the page flow, so it never covers a heading. Phase 3: the canvas becomes view-first with a bottom sheet for actions. |
@@ -639,7 +639,10 @@ anywhere from 30 years of data, the Southern Hemisphere, frost-free windows
 by temperature, 1-in-10 frost dates, NASA POWER as second source, and the
 units setting ([ADR 0023](adr/0023-climate-from-open-meteo-history.md)–[0028](adr/0028-nasa-power-climate-source.md));
 English only, with translations by contribution
-([ADR 0029](adr/0029-english-only-translations-by-contribution.md)).
+([ADR 0029](adr/0029-english-only-translations-by-contribution.md)); dataset
+v0.2 read by the app: soil pH, fall sowing, crop coefficients, and companion
+advice from data in the planner and on plant pages (step 6,
+[ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)).
 
 | Order | Work | Why this order |
 |---|---|---|
@@ -648,7 +651,7 @@ English only, with translations by contribution
 | **3 (next, data repo)** | Dataset v0.2 in small releases: (a) **done (v0.2.0):** `soilPh`, fall sowing, hot pepper; (b) **done (v0.2.1):** crop coefficients; (c) companion plants as crops and companion pairs with benefits, evidence, and sources | Unblocks soil-test advice, watering by water balance, and companion advice. Small releases keep each review short. |
 | 4 | The app reads each v0.2 release as it lands. **v0.2.0 done:** the bundled catalog is v0.2.0; soil pH is stored and shown on plant pages; a fall sowing window shows on the calendar and Today where the property has frost dates. **v0.2.1 done:** crop coefficients (Kc) and growth-stage days stored and shown on plant pages, ready for watering by water balance (step 8). Still to come: the `crops` table with companions | The data is only useful once the app reads it. |
 | 5 | Make the web app testable: Angular component tests under Vitest (test item 2), then split the 700–1,200-line pages (Layout, Plan canvas, Settings, Bed View, Plantings) along the way | Polish (step 7) rewrites these pages; tests first keep that safe. |
-| 6 | Companion advice from data, in the planner and on plant pages (Phase 3 item 9), ranked by where each pair was shown relative to the property's zone | Needs v0.2 (c); pairs carry `shownIn` with USDA hardiness zones. |
+| 6 | **Done ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)).** Companion advice from data, in the planner and on plant pages (Phase 3 item 9), ranked by where each pair was shown relative to the zones of the member's properties | Needs v0.2 (c); pairs carry `shownIn` with USDA hardiness zones. |
 | 7 | Phase 3 polish, desktop first: Settings in sections (8), autosave with undo (7), fit-to-content and remembered zoom (6), catalog icons and filters (10), property cards (11), brand mark (14); onboarding for a new household; accessibility checks (test item 7) | The redesign's remaining items, now that pages have tests. |
 | 8 | Care features: weather alerts (Phase 4 item 3), soil tests per bed (5), watering by water balance (4), succession planting (7), harvest totals (10) | Gardening depth; each builds on reminders and v0.2 data. |
 | 9 | Account basics (Phase 4 item 17): change password, reset by email (SMTP is already there), delete account | Needed before more households join; small at household scale. |

@@ -5,15 +5,53 @@ import {
   formatTemperature,
   formatTemperatureRange,
 } from '@open-garden/garden-layout';
-import type { PlantDetailDto } from '@open-garden/shared-types';
+import type { CatalogCompanionDto, PlantDetailDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { NoticeService } from '../ui/notice.service';
 
+const EVIDENCE_LABELS: Record<CatalogCompanionDto['evidence'], string> = {
+  research: 'Research',
+  extension: 'Extension guidance',
+  traditional: 'Traditional',
+};
+
+const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = {
+  'deters-pests': 'deters pests',
+  'trap-crop': 'trap crop',
+  'attracts-beneficials': 'draws beneficial insects',
+  'attracts-pollinators': 'draws pollinators',
+  'fixes-nitrogen': 'fixes nitrogen',
+  support: 'support to climb',
+  shade: 'shade',
+  'ground-cover': 'ground cover',
+  competes: 'competes',
+  'suppresses-growth': 'suppresses growth',
+  'shares-pests': 'shares pests',
+};
+
 @Component({
   standalone: true,
   imports: [RouterLink],
+  styles: `
+    .companion-list {
+      list-style: none;
+      padding: 0;
+    }
+    .companion-list li {
+      margin-block: 0.75rem;
+    }
+    .companion-list .badge {
+      margin-inline-start: 0.5rem;
+    }
+    .companion-list p {
+      margin: 0.25rem 0 0;
+    }
+    .small {
+      font-size: 0.875rem;
+    }
+  `,
   template: `
     <p class="back-link"><a routerLink="/plants">Back to catalog</a></p>
     @if (loading()) {
@@ -80,6 +118,36 @@ import { NoticeService } from '../ui/notice.service';
       @if (pending()) {
         <span class="badge">Pending sync</span>
       }
+      @if (p.companions?.length) {
+        <section class="companions" aria-labelledby="companions-heading">
+          <h2 id="companions-heading">Companions</h2>
+          <p class="muted">
+            Advice from research trials and extension guidance; it never stops you planting.
+            @if (p.companionZones?.length) {
+              Pairs shown near zone {{ p.companionZones.join(', ') }} (your properties) come first.
+            }
+          </p>
+          @for (group of companionGroups(p); track group.title) {
+            <h3>{{ group.title }}</h3>
+            <ul class="companion-list">
+              @for (c of group.pairs; track c.cropId) {
+                <li>
+                  <strong>{{ c.name }}</strong>
+                  <span class="badge">{{ evidenceLabel(c.evidence) }}</span>
+                  <span class="muted"> · {{ benefitsLabel(c.benefits) }}</span>
+                  <p>{{ c.reason }}</p>
+                  <p class="muted small">
+                    Shown in {{ placesLabel(c) }}.
+                    @if (c.reference) {
+                      Source: {{ c.reference }}.
+                    }
+                  </p>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
     } @else {
       <p class="muted">Plant unavailable offline or not found.</p>
     }
@@ -111,6 +179,32 @@ export class PlantDetailPage implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  companionGroups(p: PlantDetailDto) {
+    const all = p.companions ?? [];
+    return [
+      { title: 'Grows well with', pairs: all.filter((c) => c.kind === 'helps') },
+      { title: 'Keep apart from', pairs: all.filter((c) => c.kind === 'hinders') },
+    ].filter((group) => group.pairs.length > 0);
+  }
+
+  evidenceLabel(evidence: CatalogCompanionDto['evidence']): string {
+    return EVIDENCE_LABELS[evidence];
+  }
+
+  benefitsLabel(benefits: CatalogCompanionDto['benefits']): string {
+    return benefits.map((b) => BENEFIT_LABELS[b]).join(', ');
+  }
+
+  placesLabel(c: CatalogCompanionDto): string {
+    return c.shownIn
+      .map((place) =>
+        place.zones
+          ? `${place.where} (zone${place.zones.min === place.zones.max ? ` ${place.zones.min}` : `s ${place.zones.min}–${place.zones.max}`})`
+          : place.where,
+      )
+      .join('; ');
   }
 
   async toggleFavorite() {
