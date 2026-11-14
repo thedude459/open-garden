@@ -2,6 +2,7 @@ import { evaluateLayout } from '@open-garden/garden-layout';
 import type {
   BedCreateDto,
   GardenLayoutDto,
+  LayoutPlantingDto,
   LayoutPutDto,
   PlantingCreateDto,
 } from '@open-garden/shared-types';
@@ -58,6 +59,21 @@ export function draftIsDirty(
     tracking.newDirectSeedIds.size > 0 ||
     tracking.pendingDirectSeedDeletes.size > 0
   );
+}
+
+/** Merge API waiting transplants into a draft planting list without dropping placements. */
+export function mergeWaitingTransplants(
+  draft: LayoutPlantingDto[],
+  waiting: LayoutPlantingDto[],
+): LayoutPlantingDto[] {
+  const waitingIds = new Set(waiting.map((p) => p.id));
+  const kept = draft.filter(
+    (p) => p.placement !== null || p.startMethod !== 'transplant' || waitingIds.has(p.id),
+  );
+  const existingIds = new Set(kept.map((p) => p.id));
+  const added = waiting.filter((p) => !existingIds.has(p.id));
+  if (added.length === 0 && kept.length === draft.length) return draft;
+  return [...added, ...kept];
 }
 
 /**

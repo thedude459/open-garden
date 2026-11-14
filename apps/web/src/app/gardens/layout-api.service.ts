@@ -27,6 +27,12 @@ export class LayoutApiService {
     return this.cache.get(userId, gardenId);
   }
 
+  /** Drop the cached layout after plantings change outside Save layout. */
+  async invalidate(gardenId: string): Promise<void> {
+    const userId = this.userId();
+    if (userId) await this.cache.delete(userId, gardenId);
+  }
+
   async get(gardenId: string): Promise<GardenLayoutDto | null> {
     const userId = this.userId();
     try {

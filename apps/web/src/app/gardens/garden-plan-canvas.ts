@@ -50,6 +50,8 @@ const NO_NAMES: Array<{ name: string; count: number }> = [];
 
 type Gesture =
   | { type: 'pan'; lastX: number; lastY: number }
+  /** Catalog/transplant is armed: pointerup places, pan is deferred until Escape. */
+  | { type: 'place-catalog' }
   | {
       type: 'move-planting';
       plantingId: string;
@@ -499,8 +501,9 @@ export class GardenPlanCanvas {
 
   containsPoint(clientX: number, clientY: number): boolean {
     const svg = this.svgRef()?.nativeElement;
-    if (!svg) return false;
-    const r = svg.getBoundingClientRect();
+    const host = (svg?.closest('.plan-viewport') as HTMLElement | null) ?? svg;
+    if (!host) return false;
+    const r = host.getBoundingClientRect();
     return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
   }
 
@@ -624,6 +627,17 @@ export class GardenPlanCanvas {
     }
     const plan = this.clientToPlan(ev.clientX, ev.clientY);
     this.pointerStart = { x: ev.clientX, y: ev.clientY };
+    // An armed Place/transplant click must not start a pan: a few pixels of
+    // finger slip used to swallow the place with no notice.
+    if (this.probeSpacing() != null && this.allowPlantingDrag() && this.canEdit()) {
+      if (!this.online()) {
+        this.offlineRequired.emit();
+        this.gesture = null;
+        return;
+      }
+      this.gesture = { type: 'place-catalog' };
+      return;
+    }
     const hit = hitTestPlan(
       this.drawnBeds(),
       this.plantings(),
@@ -853,6 +867,10 @@ export class GardenPlanCanvas {
     this.gesture = null;
     const click =
       Math.hypot(ev.clientX - this.pointerStart.x, ev.clientY - this.pointerStart.y) < 8;
+    if (g?.type === 'place-catalog') {
+      this.planPointer.emit({ clientX: ev.clientX, clientY: ev.clientY });
+      return;
+    }
     if (!g || g.type === 'pan' || g.type === 'pinch') {
       this.previewPlant.set(null);
       this.previewInvalid.set(false);

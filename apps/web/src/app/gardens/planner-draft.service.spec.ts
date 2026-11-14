@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { GardenLayoutDto } from '@open-garden/shared-types';
+import type { GardenLayoutDto, LayoutPlantingDto } from '@open-garden/shared-types';
 import {
   freshLayoutApplies,
+  mergeWaitingTransplants,
   savePlannerDraft,
   type PlannerSaveDeps,
   type PlannerSaveTracking,
@@ -187,5 +188,41 @@ describe('freshLayoutApplies', () => {
     expect(freshLayoutApplies(cached, cached, false)).toBe(true);
     expect(freshLayoutApplies(cached, renamed, false)).toBe(false);
     expect(freshLayoutApplies(cached, cached, true)).toBe(false);
+  });
+});
+
+describe('mergeWaitingTransplants', () => {
+  const waiting = (id: string): LayoutPlantingDto => ({
+    id,
+    plantId: 'plant',
+    commonName: 'Tomato',
+    species: 'Solanum',
+    cultivar: 'Cherry',
+    plantType: 'vegetable',
+    status: 'active',
+    bedId: null,
+    spacingInches: 24,
+    startMethod: 'transplant',
+    indoorStartedOn: '2026-03-01',
+    placement: null,
+  });
+
+  it('adds new waiting transplants and drops ones removed on the server', () => {
+    const draft = [
+      layout().plantings[0]!,
+      waiting('old'),
+      {
+        ...waiting('placed'),
+        bedId: 'bed-new',
+        placement: { plantingId: 'placed', bedId: 'bed-new', xInches: 12, yInches: 12 },
+      },
+    ];
+    const next = mergeWaitingTransplants(draft, [waiting('new')]);
+    expect(next.map((p) => p.id)).toEqual(['new', 'seed-new', 'placed']);
+  });
+
+  it('returns the same array when nothing changed', () => {
+    const draft = [layout().plantings[0]!, waiting('t1')];
+    expect(mergeWaitingTransplants(draft, [waiting('t1')])).toBe(draft);
   });
 });

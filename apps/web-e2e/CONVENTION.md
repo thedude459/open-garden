@@ -6,6 +6,7 @@ Layering, session, waits, and isolation for `apps/web-e2e`. Live HTTP proofs liv
 
 | File | Decision | Notes |
 |------|----------|--------|
+| `gardener-core-journey.spec.ts` | keep | Chained smoke: UI login → property → bed → direct seed → transplant → place |
 | `ui-visual-smoke.spec.ts` | keep | Accessible names still visible |
 | `ui-feedback-auth.spec.ts` | keep | Login busy (seeded gardener) + signed-in create/catalog |
 | `ui-feedback-planner.spec.ts` | keep | Save/drop notices |

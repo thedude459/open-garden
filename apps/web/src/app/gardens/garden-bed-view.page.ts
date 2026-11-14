@@ -168,7 +168,7 @@ import { EmptyState } from '../ui/empty-state';
                   <p class="muted">The tree's bed takes its spacing on this rootstock.</p>
                 }
                 @if (!armedPlant()) {
-                  <p class="muted">Choose Place, then click the bed. Or drag the plant onto it.</p>
+                  <p class="muted">Drag Place onto the bed, or tap Place then tap the bed.</p>
                 }
                 @if (!inBed().length) {
                   <div class="empty-actions">
@@ -500,6 +500,7 @@ export class GardenBedViewPage implements OnInit {
       this.planner.load(this.gardenId, { reuseDirty: true }),
       this.gardensApi.detail(this.gardenId),
     ]);
+    await this.planner.syncWaitingTransplants();
     if (detail) {
       this.gardenName.set(detail.name);
       this.gardenZone.set(detail.hardinessZone ?? undefined);
@@ -542,7 +543,10 @@ export class GardenBedViewPage implements OnInit {
 
   onArmPointerDown(ev: PointerEvent, plant: PlantSummaryDto) {
     if (!this.guardMutate()) return;
+    if (ev.button !== 0 && ev.pointerType === 'mouse') return;
     ev.preventDefault();
+    // Capture so drag-from-Place reaches the bed (same pattern as waiting transplants).
+    (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
     this.panelDrag = { plant, x: ev.clientX, y: ev.clientY };
   }
 

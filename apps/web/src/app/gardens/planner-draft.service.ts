@@ -7,6 +7,7 @@ import { PlantingsApiService } from './plantings-api.service';
 import {
   draftIsDirty,
   freshLayoutApplies,
+  mergeWaitingTransplants,
   putBodyFromDraft,
   savePlannerDraft,
   type PlannerSaveTracking,
@@ -87,6 +88,22 @@ export class PlannerDraftService {
 
   setDraft(next: GardenLayoutDto) {
     this.draft.set({ ...next, areas: next.areas ?? [] });
+  }
+
+  /**
+   * Waiting transplants are written on the Transplants page (immediate POST),
+   * not in the layout draft. Pull them into the in-memory tray so Bed View can
+   * place them even when the draft was kept across that navigation.
+   */
+  async syncWaitingTransplants(): Promise<void> {
+    const d = this.draft();
+    if (!d || !this.gardenId) return;
+    const list = await this.api.getTransplants(this.gardenId);
+    if (!list) return;
+    const next = mergeWaitingTransplants(d.plantings, list.plantings);
+    if (next === d.plantings) return;
+    this.setDraft({ ...d, plantings: next });
+    this.refreshFlags();
   }
 
   discard() {

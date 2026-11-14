@@ -10,6 +10,7 @@ import type {
   PlantingPatchDto,
 } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
+import { GardenLayoutCacheService } from './garden-layout-cache.service';
 import { GardenPlantingsCacheService } from './garden-plantings-cache.service';
 import {
   PlantingsOfflineQueue,
@@ -24,6 +25,7 @@ const API = '/api';
 export class PlantingsApiService {
   private readonly http = inject(HttpClient);
   private readonly cache = inject(GardenPlantingsCacheService);
+  private readonly layoutCache = inject(GardenLayoutCacheService);
   private readonly queue = inject(PlantingsOfflineQueue);
   private readonly auth = inject(AuthApiService);
 
@@ -76,6 +78,7 @@ export class PlantingsApiService {
           withCredentials: true,
         }),
       );
+      await this.invalidateLayout(gardenId);
       return this.listOrThrow(gardenId);
     } catch (err) {
       this.rethrowClientError(err);
@@ -89,6 +92,7 @@ export class PlantingsApiService {
         clientMutationId: payload.clientMutationId!,
         updatedAt: Date.now(),
       });
+      await this.invalidateLayout(gardenId);
       return this.listOrThrow(gardenId);
     }
   }
@@ -127,6 +131,7 @@ export class PlantingsApiService {
           withCredentials: true,
         }),
       );
+      await this.invalidateLayout(gardenId);
     } catch (err) {
       this.rethrowClientError(err);
       await this.enqueue({
@@ -137,6 +142,7 @@ export class PlantingsApiService {
         clientMutationId: crypto.randomUUID(),
         updatedAt: Date.now(),
       });
+      await this.invalidateLayout(gardenId);
     }
   }
 
@@ -335,6 +341,11 @@ export class PlantingsApiService {
 
   private userId(): string | null {
     return this.auth.currentUserId();
+  }
+
+  private async invalidateLayout(gardenId: string): Promise<void> {
+    const userId = this.userId();
+    if (userId) await this.layoutCache.delete(userId, gardenId);
   }
 
   private rethrowClientError(err: unknown): void {
