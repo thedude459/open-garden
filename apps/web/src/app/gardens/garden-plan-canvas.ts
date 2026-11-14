@@ -819,6 +819,11 @@ export class GardenPlanCanvas {
       });
       return;
     }
+    if (g.type === 'place-catalog') {
+      this.probePoint.set(plan);
+      return;
+    }
+    if (g.type !== 'move-bed' && g.type !== 'resize-bed') return;
     const bed = this.beds().find((b) => b.id === g.bedId);
     if (!bed?.geometry) return;
     if (g.type === 'move-bed') {
