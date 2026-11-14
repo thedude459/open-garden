@@ -64,22 +64,11 @@ test('gardener journey: login, property, bed, direct seed, transplant, plant tra
   expect((await saveLayout(page)).status()).toBe(200);
   await expect(page.locator('[data-bed-name="North"]')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Open bed North' }).click();
-  await expect(page.getByRole('heading', { name: 'Bed View' })).toBeVisible();
-  // Direct seed: drag Place from the catalog onto the bed.
-  await applyPlantSearch(page, 'Basil (Genovese)');
-  await page
-    .getByRole('button', { name: 'Place Basil (Genovese)' })
-    .dragTo(page.locator('[data-bed-name="North"]'));
-  await expect(page.getByRole('img', { name: 'Basil (Genovese)' })).toBeVisible();
-  expect((await saveLayout(page)).status()).toBe(200);
-
-  await page.getByRole('link', { name: 'Back to overview' }).click();
+  // Create the waiting transplant first, then place it on the empty bed.
   await page
     .locator('nav[aria-label="Garden"]')
     .getByRole('link', { name: 'Transplants', exact: true })
     .click();
-  // Create the waiting transplant (indoor start date + Add), then place it by drag.
   await addTransplant(page, 'Tomato (Cherry)');
   await expect(page.getByText(/Tomato \(Cherry\) · started/)).toBeVisible();
 
@@ -88,6 +77,7 @@ test('gardener journey: login, property, bed, direct seed, transplant, plant tra
     .getByRole('link', { name: 'Plan', exact: true })
     .click();
   await page.getByRole('button', { name: 'Open bed North' }).click();
+  await expect(page.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await expect(
     page.getByLabel('Waiting transplants').getByRole('button', { name: 'Tomato (Cherry)' }),
   ).toBeVisible();
@@ -99,5 +89,15 @@ test('gardener journey: login, property, bed, direct seed, transplant, plant tra
   await expect(
     page.getByLabel('Waiting transplants').getByRole('button', { name: 'Tomato (Cherry)' }),
   ).toHaveCount(0);
+
+  // Direct seed beside it (not on the same drop point — spacing would reject).
+  await applyPlantSearch(page, 'Basil (Genovese)');
+  const bed = page.locator('[data-bed-name="North"]');
+  const box = await bed.boundingBox();
+  expect(box).toBeTruthy();
+  await page.getByRole('button', { name: 'Place Basil (Genovese)' }).dragTo(bed, {
+    targetPosition: { x: Math.round(box!.width * 0.2), y: Math.round(box!.height * 0.5) },
+  });
+  await expect(page.getByRole('img', { name: 'Basil (Genovese)' })).toBeVisible();
   expect((await saveLayout(page)).status()).toBe(200);
 });
