@@ -11,11 +11,17 @@ type SignedInUser = { id: string; email: string; role: string; units?: Units };
 export class AuthApiService {
   private readonly http = inject(HttpClient);
   private user: SignedInUser | null = null;
+  /** Counts sign-ins, so a reply to a request sent before one can be told apart. */
+  private signIns = 0;
   /** How the signed-in member sees lengths; saved on their account. */
   readonly units = signal<Units>(storedUnits());
 
   get currentUser() {
     return this.user;
+  }
+
+  get signInCount() {
+    return this.signIns;
   }
 
   async login(email: string, password: string) {
@@ -46,6 +52,11 @@ export class AuthApiService {
     await firstValueFrom(this.http.post(`${API}/auth/logout`, {}, { withCredentials: true })).catch(
       () => undefined,
     );
+    this.forget();
+  }
+
+  /** Forget the signed-in member in this browser, as when the server ended the session. */
+  forget() {
     this.user = null;
     sessionStorage.removeItem('og_user_id');
     sessionStorage.removeItem('og_role');
@@ -80,6 +91,7 @@ export class AuthApiService {
   }
 
   private persistUser(user: SignedInUser) {
+    this.signIns += 1;
     this.user = user;
     sessionStorage.setItem('og_user_id', user.id);
     sessionStorage.setItem('og_role', user.role);

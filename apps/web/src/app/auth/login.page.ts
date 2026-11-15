@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AuthApiService } from './auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { SOURCE_CODE_URL } from '../source-link';
+import { safeReturnUrl } from './session-expiry';
 
 @Component({
   standalone: true,
@@ -16,6 +17,9 @@ import { SOURCE_CODE_URL } from '../source-link';
         <p class="muted">Household garden planner</p>
       </div>
       <h2>{{ mode() === 'login' ? 'Sign in' : 'Create account' }}</h2>
+      @if (expired) {
+        <p class="banner" role="status">Your session ended. Sign in again to carry on.</p>
+      }
       <form class="authform card" (ngSubmit)="submit()">
         @if (mode() === 'register') {
           <input [(ngModel)]="displayName" name="displayName" placeholder="Display name" required />
@@ -63,6 +67,8 @@ export class LoginPage {
     this.route.snapshot.queryParamMap.get('register') === '1' ? 'register' : 'login',
   );
   error = signal('');
+  /** Sent here because the server ended the session (see sessionExpiredInterceptor). */
+  readonly expired = this.route.snapshot.queryParamMap.get('expired') === '1';
 
   toggle() {
     this.mode.update((m) => (m === 'login' ? 'register' : 'login'));
@@ -78,7 +84,9 @@ export class LoginPage {
           await this.auth.register(this.email, this.password, this.displayName.trim() || undefined);
         }
         this.auth.markAuthenticated();
-        await this.router.navigateByUrl('/today');
+        await this.router.navigateByUrl(
+          safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl')),
+        );
       } catch (err) {
         // Sign-in keeps one generic message. Sign-up says when the email is
         // already registered, so people know to sign in instead, and both say
