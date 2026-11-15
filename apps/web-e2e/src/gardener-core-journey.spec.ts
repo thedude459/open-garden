@@ -1,4 +1,4 @@
-import { expect, test, type Browser } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import {
   addTransplant,
   applyPlantSearch,
@@ -7,49 +7,18 @@ import {
   openOverview,
   saveLayout,
 } from './planner-helpers';
-import { TEST_PASSWORD, uniqueEmail } from './session';
-
-const ORIGIN = 'http://localhost:4200';
+import { signedInViaLoginForm, uniqueEmail } from './session';
 
 /**
  * One linear gardener smoke: UI login → property → bed → direct seed →
  * waiting transplant → place transplant. Granular coverage of each step lives
  * in the other web-e2e specs; this file only proves the chained happy path.
  */
-async function loginPage(browser: Browser, email: string) {
-  const context = await browser.newContext({
-    baseURL: ORIGIN,
-    serviceWorkers: 'block',
-    locale: 'en-US',
-  });
-  await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'text/html',
-      body: '<!doctype html><title>map</title>',
-    }),
-  );
-
-  const registered = await context.request.post('/api/auth/register', {
-    data: { email, password: TEST_PASSWORD, displayName: 'E2E Journey' },
-  });
-  expect(registered.ok(), await registered.text()).toBeTruthy();
-  await context.clearCookies();
-
-  const page = await context.newPage();
-  await page.goto('/login');
-  await page.getByPlaceholder('Email').fill(email);
-  await page.getByPlaceholder('Password').fill(TEST_PASSWORD);
-  await page.getByRole('button', { name: 'Login' }).click();
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
-  return page;
-}
-
 test('gardener journey: login, property, bed, direct seed, transplant, plant transplant', async ({
   browser,
 }) => {
   test.setTimeout(120_000);
-  const page = await loginPage(browser, uniqueEmail('journey'));
+  const page = await signedInViaLoginForm(browser, uniqueEmail('journey'));
 
   await page.getByRole('link', { name: 'Properties' }).click();
   await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();

@@ -86,3 +86,25 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
       .getByText(/^Harvested /),
   ).toBeVisible();
 });
+
+test('completing a harvest can be undone from its notice', async ({ browser }) => {
+  test.setTimeout(90_000);
+  const page = await newUser(browser, `rem-undo-${Date.now()}@example.com`);
+  await setupGardenWithTomato(page, 'Undo plot');
+  const harvest = page.locator('li').filter({ hasText: 'Harvest' });
+  await expect(harvest).toBeVisible();
+
+  await harvest.getByRole('button', { name: 'Complete' }).click();
+  const notice = page.getByLabel('Notification');
+  await expect(notice).toContainText('Date saved');
+  await expect(harvest).toHaveCount(0);
+
+  await notice.getByRole('button', { name: 'Undo' }).click();
+  // The task is due again, and the planting has no harvest date.
+  await expect(harvest).toBeVisible();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Plantings', exact: true }).click();
+  const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' });
+  await expect(tomato).toBeVisible();
+  await expect(tomato.getByText(/^Harvested /)).toHaveCount(0);
+});

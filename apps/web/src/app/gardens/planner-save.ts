@@ -67,8 +67,14 @@ export function mergeWaitingTransplants(
   waiting: LayoutPlantingDto[],
 ): LayoutPlantingDto[] {
   const waitingIds = new Set(waiting.map((p) => p.id));
+  // `waiting` is the loose list (no bed, no tray); a seedling in a greenhouse
+  // tray is still waiting, so keep it rather than treat it as deleted.
   const kept = draft.filter(
-    (p) => p.placement !== null || p.startMethod !== 'transplant' || waitingIds.has(p.id),
+    (p) =>
+      p.placement !== null ||
+      p.startMethod !== 'transplant' ||
+      Boolean(p.trayId) ||
+      waitingIds.has(p.id),
   );
   const existingIds = new Set(kept.map((p) => p.id));
   const added = waiting.filter((p) => !existingIds.has(p.id));

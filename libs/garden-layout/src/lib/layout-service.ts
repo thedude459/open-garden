@@ -211,6 +211,7 @@ export class LayoutService {
         startMethod: ((row as { startMethod?: string }).startMethod ??
           'direct_seed') as StartMethod,
         indoorStartedOn: (row as { indoorStartedOn?: string | null }).indoorStartedOn ?? null,
+        trayId: (row as { trayId?: string | null }).trayId ?? null,
         placement: placed
           ? {
               plantingId: row.id,

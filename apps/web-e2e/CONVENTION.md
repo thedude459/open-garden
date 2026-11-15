@@ -54,6 +54,9 @@ Layering, session, waits, and isolation for `apps/web-e2e`. Live HTTP proofs liv
 | `care-reminders-api.spec.ts` | move → `reminders-http.spec.ts` | HTTP only |
 | `pipeline-api.spec.ts` | move → `pipeline-http.spec.ts` | HTTP only |
 | `pipeline-merge.spec.ts` | move → `pipeline-http.spec.ts` | HTTP only |
+| `auth-signout.spec.ts` | keep | Sign out ends the session server-side; signs in through the form |
+| `greenhouse-trays.spec.ts` | keep | Start a seedling in a tray, then plant it out in a bed |
+| `season-close.spec.ts` | keep | Close a season: perennials carry over, annuals stay in the review |
 
 ## Layer placement
 
@@ -70,6 +73,7 @@ Two page journeys that assert the **same visible outcome** collapse to one. Dist
 - Ordinary checks: `signedInPage` / `signedInContext` (`apps/web-e2e/src/session.ts`) — unique email, `POST /api/auth/register` on the page origin, no registration screen.
 - Extra person (viewer/stranger): another context, same helper. After Invite, wait until the member email is visible before that person opens the garden. After Remove, wait until the email is gone.
 - Seeded `gardener@example.com` only when the behavior **is** the login screen.
+- `signedInViaLoginForm` (`session.ts`) signs in through the login form with nothing re-set on reload. Use it when the behavior depends on a real sign-in, such as signing out; `signedInPage` writes the signed-in flag back on every page load.
 - Seeded `admin@example.com` only when the behavior **is** the admin-identity screen.
 - `registerViaUi` in `planner-helpers.ts` is auth-screen only.
 - Keep `pipeline-helpers.ts` (`waitForPipelineIdleOnPage`) for pipeline **UI** idle waits.

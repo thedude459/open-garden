@@ -180,6 +180,30 @@ describe('PlantingRepository', () => {
     expect(await plantings.listUnplacedTransplants(garden.id)).toEqual([]);
   });
 
+  it('the layout says which seedlings are in a tray; planting one out takes it out', async () => {
+    const { garden, plant, bed } = await setup();
+    const greenhouse = await areas.ensure(garden.id, 'greenhouse');
+    const tray = await trays.open(garden.id, greenhouse.id, 'Tray');
+    const seedling = await plantings.insert({
+      gardenId: garden.id,
+      plantId: plant.id,
+      bedId: null,
+      plantedOn: null,
+      harvestedOn: null,
+      startMethod: 'transplant',
+      trayId: tray.id,
+    });
+    const listed = await plantings.listAllForLayout(garden.id);
+    expect(listed.find((p) => p.id === seedling.id)).toMatchObject({ trayId: tray.id });
+
+    await plantings.setPlacement(garden.id, seedling.id, {
+      bedId: bed.id,
+      xInches: 12,
+      yInches: 6,
+    });
+    expect(await plantings.getById(seedling.id)).toMatchObject({ bedId: bed.id, trayId: null });
+  });
+
   it('while a season is open, hides annuals from other years but keeps perennials', async () => {
     const { garden, plant } = await setup();
     const lastYear = await plantings.insert({
