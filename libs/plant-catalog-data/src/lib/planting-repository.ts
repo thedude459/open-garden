@@ -237,6 +237,7 @@ export class PlantingRepository {
         layoutYInches: gardenPlantings.layoutYInches,
         startMethod: gardenPlantings.startMethod,
         indoorStartedOn: gardenPlantings.indoorStartedOn,
+        trayId: gardenPlantings.trayId,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
         commonName: plants.commonName,
@@ -267,6 +268,8 @@ export class PlantingRepository {
         bedId: placement.bedId,
         layoutXInches: placement.xInches,
         layoutYInches: placement.yInches,
+        // Planted out: the seedling has left its tray.
+        trayId: null,
         updatedAt: new Date(),
       })
       .where(and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.id, id)))

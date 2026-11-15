@@ -75,3 +75,36 @@ export async function signedInPage(
   await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
   return page;
 }
+
+/**
+ * Registers over the API, then signs in through the login form like a person.
+ * Unlike signedInPage, nothing re-sets the signed-in flag on each load, so
+ * signing out behaves as it does for real users.
+ */
+export async function signedInViaLoginForm(browser: Browser, email = uniqueEmail()): Promise<Page> {
+  const context = await browser.newContext({
+    baseURL: ORIGIN,
+    serviceWorkers: 'block',
+    locale: 'en-US',
+  });
+  await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<!doctype html><title>map</title>',
+    }),
+  );
+  const registered = await context.request.post('/api/auth/register', {
+    data: { email, password: TEST_PASSWORD, displayName: 'E2E' },
+  });
+  expect(registered.ok(), await registered.text()).toBeTruthy();
+  await context.clearCookies();
+
+  const page = await context.newPage();
+  await page.goto('/login');
+  await page.getByPlaceholder('Email').fill(email);
+  await page.getByPlaceholder('Password').fill(TEST_PASSWORD);
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  return page;
+}

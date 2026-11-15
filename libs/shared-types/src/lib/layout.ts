@@ -47,6 +47,8 @@ export interface LayoutPlantingDto {
   startMethod: StartMethod;
   indoorStartedOn: IsoDate | null;
   placement: LayoutPlacementDto | null;
+  /** A seedling growing in a greenhouse tray; still a waiting transplant until placed. */
+  trayId?: string | null;
   sunRequirements?: string | null;
   family?: string | null;
   life?: 'annual' | 'perennial' | 'tree';

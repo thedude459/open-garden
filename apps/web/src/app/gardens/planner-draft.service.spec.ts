@@ -221,6 +221,11 @@ describe('mergeWaitingTransplants', () => {
     expect(next.map((p) => p.id)).toEqual(['new', 'seed-new', 'placed']);
   });
 
+  it('keeps a seedling in a greenhouse tray, which the loose list leaves out', () => {
+    const draft = [waiting('loose'), { ...waiting('in-tray'), trayId: 'tray-1' }];
+    expect(mergeWaitingTransplants(draft, [waiting('loose')])).toBe(draft);
+  });
+
   it('returns the same array when nothing changed', () => {
     const draft = [layout().plantings[0]!, waiting('t1')];
     expect(mergeWaitingTransplants(draft, [waiting('t1')])).toBe(draft);
