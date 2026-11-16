@@ -135,7 +135,10 @@ function foldersWithNextMigration(): string {
   return dir;
 }
 
-describe.skipIf(!databaseUrl)('migrations run once per database', () => {
+// Each test creates a database and runs real DDL. On a busy shared CI runner
+// that has taken over 5 s (Vitest's default, sized for unit tests), though it
+// is usually well under 1 s (#199).
+describe.skipIf(!databaseUrl)('migrations run once per database', { timeout: 30_000 }, () => {
   afterAll(async () => {
     for (const dir of tempDirs) rmSync(dir, { recursive: true, force: true });
     await admin(async (c) => {
