@@ -1,0 +1,120 @@
+import { TestBed } from '@angular/core/testing';
+import type { LayoutBedDto } from '@open-garden/shared-types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { frameAround, visibleArea } from '@open-garden/garden-layout';
+import { GardenPlanCanvas } from './garden-plan-canvas';
+
+const bed: LayoutBedDto = {
+  id: 'b1',
+  name: 'North',
+  geometry: {
+    originXInches: 120,
+    originYInches: 60,
+    lengthInches: 96,
+    widthInches: 48,
+    orientation: 0,
+  },
+};
+
+/** jsdom lays nothing out, so give the plan's viewport a size: 800 × 400 px. */
+beforeEach(() => {
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(800);
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(400);
+  localStorage.clear();
+});
+afterEach(() => vi.restoreAllMocks());
+
+async function render(viewKey: string | null = 'og-plan-view:g1') {
+  const fixture = TestBed.createComponent(GardenPlanCanvas);
+  fixture.componentRef.setInput('beds', [bed]);
+  // A 100 × 50 ft property: the bed is small in it.
+  fixture.componentRef.setInput('plotLengthInches', 1200);
+  fixture.componentRef.setInput('plotWidthInches', 600);
+  fixture.componentRef.setInput('viewKey', viewKey);
+  fixture.autoDetectChanges();
+  await fixture.whenStable();
+  const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
+  const scale = () => Number(/scale\(([\d.]+)\)/.exec(svg.style.transform)![1]);
+  return { fixture, canvas: fixture.componentInstance, scale };
+}
+
+describe('GardenPlanCanvas view', () => {
+  it('opens fitted to the beds, not the whole property', async () => {
+    const view = await render();
+    // The bed and its margin fill the view, well past the property-wide 1×.
+    expect(view.scale()).toBeGreaterThan(4);
+  });
+
+  it('remembers the zoom per property and opens there next time', async () => {
+    const first = await render();
+    first.canvas.zoomOut();
+    first.canvas.zoomOut();
+    await first.fixture.whenStable();
+    const zoomed = first.scale();
+    expect(localStorage.getItem('og-plan-view:g1')).not.toBeNull();
+    first.fixture.destroy();
+
+    const again = await render();
+    expect(again.scale()).toBeCloseTo(zoomed, 5);
+  });
+
+  it('opens fitted when the remembered view no longer shows any bed', async () => {
+    localStorage.setItem('og-plan-view:g1', JSON.stringify({ x: 900, y: 400, w: 100, h: 50 }));
+    const view = await render();
+    const fitted = (await render(null)).scale();
+    expect(view.scale()).toBeCloseTo(fitted, 5);
+  });
+
+  it('fits again when the property size arrives after the plan is drawn', async () => {
+    const fixture = TestBed.createComponent(GardenPlanCanvas);
+    fixture.componentRef.setInput('beds', [bed]);
+    fixture.autoDetectChanges();
+    await fixture.whenStable();
+    const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
+    const scale = () => Number(/scale\(([\d.]+)\)/.exec(svg.style.transform)![1]);
+    // Before the size arrives the plan frames the bed itself.
+    expect(scale()).toBeCloseTo(1, 0);
+    fixture.componentRef.setInput('plotLengthInches', 1200);
+    fixture.componentRef.setInput('plotWidthInches', 600);
+    await fixture.whenStable();
+    expect(scale()).toBeGreaterThan(4);
+  });
+
+  it('keeps the same part of the plan in view when the size arrives after a zoom', async () => {
+    const fixture = TestBed.createComponent(GardenPlanCanvas);
+    fixture.componentRef.setInput('beds', [bed]);
+    fixture.autoDetectChanges();
+    await fixture.whenStable();
+    const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
+    const view = () => {
+      const m = /translate\(([-\d.e]+)px, ([-\d.e]+)px\) scale\(([\d.e]+)\)/.exec(
+        svg.style.transform,
+      )!;
+      return { panX: Number(m[1]), panY: Number(m[2]), scale: Number(m[3]) };
+    };
+    const size = { width: 800, height: 400 };
+    fixture.componentInstance.zoomOut();
+    await fixture.whenStable();
+    // Before the size arrives the plot frames the bed (with its margin).
+    const camera = frameAround([{ x0: 120, y0: 60, x1: 216, y1: 108 }]);
+    const before = visibleArea(size, camera, view());
+    fixture.componentRef.setInput('plotLengthInches', 1200);
+    fixture.componentRef.setInput('plotWidthInches', 600);
+    await fixture.whenStable();
+    const after = visibleArea(size, { x: 0, y: 0, w: 1200, h: 600 }, view());
+    expect(after.x).toBeCloseTo(before.x, 3);
+    expect(after.y).toBeCloseTo(before.y, 3);
+    expect(after.w).toBeCloseTo(before.w, 3);
+  });
+
+  it('Fit returns to the beds after zooming', async () => {
+    const view = await render(null);
+    const fitted = view.scale();
+    view.canvas.zoomOut();
+    await view.fixture.whenStable();
+    expect(view.scale()).toBeLessThan(fitted);
+    view.canvas.fit();
+    await view.fixture.whenStable();
+    expect(view.scale()).toBeCloseTo(fitted, 5);
+  });
+});

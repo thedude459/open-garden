@@ -106,3 +106,70 @@ export function rectAtPlotEdge(
 export function formatPlanFrame(frame: PlanFrame): string {
   return `${frame.x} ${frame.y} ${frame.w} ${frame.h}`;
 }
+
+/** How the plan is zoomed and moved on screen: screen = pan + scale × drawn position. */
+export type PlanView = { scale: number; panX: number; panY: number };
+
+export const MIN_PLAN_SCALE = 0.5;
+export const MAX_PLAN_SCALE = 16;
+
+/** Where the whole plot is drawn before any zoom: fitted and centred (SVG "meet"). */
+function baseFit(viewport: { width: number; height: number }, plot: PlanFrame) {
+  const k = Math.min(viewport.width / plot.w, viewport.height / plot.h);
+  return {
+    k,
+    ox: (viewport.width - plot.w * k) / 2,
+    oy: (viewport.height - plot.h * k) / 2,
+  };
+}
+
+/**
+ * The zoom and pan that show `area` (in plan inches) centred and as large as
+ * fits, within the scale limits. With no room to draw in, the plan is shown
+ * as is.
+ */
+export function fitView(
+  viewport: { width: number; height: number },
+  plot: PlanFrame,
+  area: PlanFrame,
+): PlanView {
+  if (viewport.width <= 0 || viewport.height <= 0 || area.w <= 0 || area.h <= 0) {
+    return { scale: 1, panX: 0, panY: 0 };
+  }
+  const { k, ox, oy } = baseFit(viewport, plot);
+  const scale = Math.min(
+    MAX_PLAN_SCALE,
+    Math.max(
+      MIN_PLAN_SCALE,
+      Math.min(viewport.width / (area.w * k), viewport.height / (area.h * k)),
+    ),
+  );
+  const cx = ox + (area.x + area.w / 2 - plot.x) * k;
+  const cy = oy + (area.y + area.h / 2 - plot.y) * k;
+  return { scale, panX: viewport.width / 2 - scale * cx, panY: viewport.height / 2 - scale * cy };
+}
+
+/** The part of the plan (in inches) a view shows: what to remember and restore. */
+export function visibleArea(
+  viewport: { width: number; height: number },
+  plot: PlanFrame,
+  view: PlanView,
+): PlanFrame {
+  const { k, ox, oy } = baseFit(viewport, plot);
+  const toPlanX = (screenX: number) => (screenX - view.panX) / view.scale / k - ox / k + plot.x;
+  const toPlanY = (screenY: number) => (screenY - view.panY) / view.scale / k - oy / k + plot.y;
+  const x = toPlanX(0);
+  const y = toPlanY(0);
+  return { x, y, w: toPlanX(viewport.width) - x, h: toPlanY(viewport.height) - y };
+}
+
+/** Zooms by `factor` about a screen point, keeping that point still. */
+export function zoomAbout(view: PlanView, factor: number, at: { x: number; y: number }): PlanView {
+  const scale = Math.min(MAX_PLAN_SCALE, Math.max(MIN_PLAN_SCALE, view.scale * factor));
+  const ratio = scale / view.scale;
+  return {
+    scale,
+    panX: at.x - (at.x - view.panX) * ratio,
+    panY: at.y - (at.y - view.panY) * ratio,
+  };
+}
