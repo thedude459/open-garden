@@ -4,10 +4,8 @@ import {
   Component,
   HostListener,
   OnInit,
-  effect,
   inject,
   signal,
-  untracked,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -15,16 +13,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   originFromCenter,
   drawableBeds,
-  convertLength,
-  formatPlanSize,
-  inchesFromInput,
-  lengthInput,
-  lengthStep,
-  lengthUnit,
-  snapHalfFoot,
   clampSizeToPlot,
   clampOriginToPlot,
-  HALF_FOOT_INCHES,
   bedPlanSize,
 } from '@open-garden/garden-layout';
 import { rotateBed90 } from '@open-garden/garden-layout/rotate';
@@ -33,26 +23,42 @@ import type {
   BedSite,
   LayoutAreaDto,
   LayoutBedDto,
-  Mulch,
   PropertyAreaDto,
   TrayDto,
-  Units,
 } from '@open-garden/shared-types';
-import { MULCH_LABELS, mulchOrNone } from '@open-garden/shared-types';
+import { mulchOrNone } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
+import {
+  LayoutNewBedForm,
+  LayoutNewWalkwayForm,
+  type NewBed,
+  type NewPlot,
+} from './layout-add-forms';
+import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspector';
+import { LayoutBedsList, LayoutWalkwaysList } from './layout-lists';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
-import { AuthApiService } from '../auth/auth-api.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, GardenPlanCanvas, PlaceMarker, EmptyState],
+  imports: [
+    FormsModule,
+    RouterLink,
+    GardenPlanCanvas,
+    PlaceMarker,
+    EmptyState,
+    LayoutNewBedForm,
+    LayoutNewWalkwayForm,
+    LayoutBedInspector,
+    LayoutBedsList,
+    LayoutWalkwaysList,
+  ],
   template: `
     <div class="planner">
       <header class="page-head">
@@ -185,66 +191,12 @@ import { EmptyState } from '../ui/empty-state';
           />
           <aside class="planner-rail">
             @if (canEdit() && addingNow() === 'bed') {
-              <form class="inspector" aria-label="New bed" (ngSubmit)="createBed()">
-                <h3>New bed</h3>
-                @if (!draft()!.beds.length) {
-                  <p class="muted">{{ emptyBedBody() }}</p>
-                }
-                <label>
-                  Name
-                  <input [(ngModel)]="newBedName" name="bedName" placeholder="Bed name" />
-                </label>
-                <label>
-                  Length ({{ lengthUnit(units()) }})
-                  <input
-                    type="number"
-                    [min]="lengthStep(units())"
-                    [step]="lengthStep(units())"
-                    [(ngModel)]="newLength"
-                    name="newLength"
-                  />
-                </label>
-                <label>
-                  Width ({{ lengthUnit(units()) }})
-                  <input
-                    type="number"
-                    [min]="lengthStep(units())"
-                    [step]="lengthStep(units())"
-                    [(ngModel)]="newWidth"
-                    name="newWidth"
-                  />
-                </label>
-                <label>
-                  Ground
-                  <select name="bedSite" [(ngModel)]="bedSite">
-                    <option value="in_ground">In-ground</option>
-                    <option value="raised">Raised</option>
-                  </select>
-                </label>
-                <label>
-                  Mulch
-                  <select name="bedMulch" [(ngModel)]="bedMulch">
-                    @for (choice of mulchChoices; track choice.id) {
-                      <option [value]="choice.id">{{ choice.label }}</option>
-                    }
-                  </select>
-                </label>
-                <div class="filters">
-                  <button
-                    type="submit"
-                    class="btn btn-primary"
-                    [attr.aria-busy]="notices.busyMap().has('create-bed') || null"
-                    [disabled]="notices.busyMap().has('create-bed')"
-                  >
-                    Create bed
-                  </button>
-                  @if (draft()!.beds.length) {
-                    <button type="button" class="btn btn-secondary" (click)="adding.set(null)">
-                      Cancel
-                    </button>
-                  }
-                </div>
-              </form>
+              <og-layout-new-bed
+                [note]="draft()!.beds.length ? '' : emptyBedBody()"
+                [canCancel]="draft()!.beds.length > 0"
+                (create)="createBed($event)"
+                (cancelled)="adding.set(null)"
+              />
             } @else if (canEdit() && addingNow() === 'tray') {
               <form class="inspector" aria-label="New tray" (ngSubmit)="addTray()">
                 <h3>New tray</h3>
@@ -260,293 +212,36 @@ import { EmptyState } from '../ui/empty-state';
                 </div>
               </form>
             } @else if (canEdit() && addingNow() === 'walkway') {
-              <form class="inspector" aria-label="New walkway" (ngSubmit)="createArea()">
-                <h3>New walkway</h3>
-                <label>
-                  Name
-                  <input [(ngModel)]="newAreaName" name="areaName" placeholder="Area name" />
-                </label>
-                <label>
-                  Length ({{ lengthUnit(units()) }})
-                  <input
-                    type="number"
-                    [min]="lengthStep(units())"
-                    [step]="lengthStep(units())"
-                    [(ngModel)]="newAreaLength"
-                    name="newAreaLength"
-                  />
-                </label>
-                <label>
-                  Width ({{ lengthUnit(units()) }})
-                  <input
-                    type="number"
-                    [min]="lengthStep(units())"
-                    [step]="lengthStep(units())"
-                    [(ngModel)]="newAreaWidth"
-                    name="newAreaWidth"
-                  />
-                </label>
-                <div class="filters">
-                  <button
-                    type="submit"
-                    class="btn btn-primary"
-                    aria-label="Create non-planting area"
-                  >
-                    Create walkway
-                  </button>
-                  <button type="button" class="btn btn-secondary" (click)="adding.set(null)">
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              <og-layout-new-walkway (create)="createArea($event)" (cancelled)="adding.set(null)" />
             } @else if (canEdit() && selectedBed(); as bed) {
-              <section class="inspector" aria-label="Selected bed">
-                <h3>{{ bed.name }}</h3>
-                @if (isSaved(bed)) {
-                  <form class="filters" (ngSubmit)="saveBedSettings(bed, { name: renameDraft })">
-                    <label>
-                      Name
-                      <input name="selectedName" [(ngModel)]="renameDraft" />
-                    </label>
-                    <button
-                      type="submit"
-                      class="btn btn-secondary"
-                      [attr.aria-label]="'Rename ' + bed.name"
-                    >
-                      Rename
-                    </button>
-                  </form>
-                  <label>
-                    Sun
-                    <select
-                      name="selectedSun"
-                      [ngModel]="bed.sun ?? ''"
-                      (ngModelChange)="saveBedSettings(bed, { sun: $event || null })"
-                    >
-                      <option value="">Not set</option>
-                      <option value="full">Full sun</option>
-                      <option value="part">Part sun</option>
-                      <option value="shade">Shade</option>
-                    </select>
-                  </label>
-                  <label>
-                    Ground
-                    <select
-                      name="selectedSite"
-                      [ngModel]="bed.site ?? 'in_ground'"
-                      (ngModelChange)="saveBedSettings(bed, { site: $event })"
-                    >
-                      <option value="in_ground">In-ground</option>
-                      <option value="raised">Raised</option>
-                    </select>
-                  </label>
-                  <label>
-                    Mulch
-                    <select
-                      name="selectedMulch"
-                      [ngModel]="bed.mulch ?? 'none'"
-                      (ngModelChange)="saveBedSettings(bed, { mulch: $event })"
-                    >
-                      @for (choice of mulchChoices; track choice.id) {
-                        <option [value]="choice.id">{{ choice.label }}</option>
-                      }
-                    </select>
-                  </label>
-                } @else {
-                  <p class="muted">Save the layout to set its name, sun, ground, and mulch.</p>
-                }
-                @if (bed.geometry) {
-                  <form class="filters" (ngSubmit)="save()">
-                    <label>
-                      Origin X ({{ lengthUnit(units()) }})
-                      <input
-                        type="number"
-                        [step]="lengthStep(units())"
-                        name="originX"
-                        [value]="lengthInput(bed.geometry.originXInches, units())"
-                        (input)="patchField('originXInches', $event)"
-                        (change)="patchField('originXInches', $event)"
-                      />
-                    </label>
-                    <label>
-                      Origin Y ({{ lengthUnit(units()) }})
-                      <input
-                        type="number"
-                        [step]="lengthStep(units())"
-                        name="originY"
-                        [value]="lengthInput(bed.geometry.originYInches, units())"
-                        (input)="patchField('originYInches', $event)"
-                        (change)="patchField('originYInches', $event)"
-                      />
-                    </label>
-                    <label>
-                      Length ({{ lengthUnit(units()) }})
-                      <input
-                        type="number"
-                        [min]="lengthStep(units())"
-                        [step]="lengthStep(units())"
-                        name="length"
-                        [value]="lengthInput(bed.geometry.lengthInches, units())"
-                        (input)="patchField('lengthInches', $event)"
-                        (change)="patchField('lengthInches', $event)"
-                      />
-                    </label>
-                    <label>
-                      Width ({{ lengthUnit(units()) }})
-                      <input
-                        type="number"
-                        [min]="lengthStep(units())"
-                        [step]="lengthStep(units())"
-                        name="width"
-                        [value]="lengthInput(bed.geometry.widthInches, units())"
-                        (input)="patchField('widthInches', $event)"
-                        (change)="patchField('widthInches', $event)"
-                      />
-                    </label>
-                  </form>
-                }
-                <div class="filters">
-                  <button type="button" class="btn btn-secondary" (click)="rotateSelected()">
-                    Rotate 90°
-                  </button>
-                  @if (confirmDeleteId() !== bed.id) {
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      [attr.aria-label]="'Delete bed ' + bed.name"
-                      (click)="confirmDeleteId.set(bed.id)"
-                    >
-                      Delete
-                    </button>
-                  }
-                  <button type="button" class="btn btn-secondary" (click)="selectedId.set(null)">
-                    Done
-                  </button>
-                </div>
-                @if (confirmDeleteId() === bed.id) {
-                  <p>
-                    Permanently delete {{ bed.name }}? Direct-seed plantings in this bed will be
-                    deleted. Transplants return to the tray.
-                  </p>
-                  <div class="filters">
-                    <button
-                      type="button"
-                      class="btn btn-destructive"
-                      [attr.aria-label]="'Confirm delete ' + bed.name"
-                      (click)="deleteBed(bed)"
-                      [attr.aria-busy]="notices.busyMap().has('delete-bed') || null"
-                      [disabled]="notices.busyMap().has('delete-bed')"
-                    >
-                      Confirm delete
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      (click)="confirmDeleteId.set(null)"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                }
-              </section>
+              <og-layout-bed-inspector
+                [bed]="bed"
+                [saved]="isSaved(bed)"
+                [deleting]="notices.busyMap().has('delete-bed')"
+                (settings)="saveBedSettings(bed, $event)"
+                (geometryChange)="patchSelected($event)"
+                (rotate)="rotateSelected()"
+                (remove)="deleteBed(bed)"
+                (done)="selectedId.set(null)"
+                (saveLayout)="save()"
+              />
             }
             @if (!draft()!.beds.length && !canEdit()) {
               <og-empty-state title="No beds yet" [body]="emptyBedBody()" />
             }
-            @if (sizedBeds().length) {
-              <h3>Beds</h3>
-              <ul class="card-list">
-                @for (bed of sizedBeds(); track bed.id) {
-                  <li class="row" [class.selected-row]="selectedId() === bed.id">
-                    <span>
-                      <strong>{{ bed.name }}</strong>
-                      @if (showMulch(bed)) {
-                        <span class="muted"> · {{ mulchLabel(bed.mulch) }}</span>
-                      }
-                      @if (bed.geometry; as geo) {
-                        <span class="muted">
-                          ·
-                          {{
-                            formatPlanSize(
-                              geo.lengthInches,
-                              geo.widthInches,
-                              geo.orientation,
-                              units()
-                            )
-                          }}
-                        </span>
-                      }
-                    </span>
-                    <span class="member-actions">
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        [attr.aria-label]="'Open bed ' + bed.name"
-                        (click)="openBed(bed.id)"
-                      >
-                        Open
-                      </button>
-                      @if (canEdit()) {
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          [attr.aria-label]="'Edit bed ' + bed.name"
-                          (click)="editGeometry(bed.id)"
-                        >
-                          Edit
-                        </button>
-                      }
-                    </span>
-                  </li>
-                }
-              </ul>
-            }
-            @if (draft()!.areas.length) {
-              <h3>Walkways</h3>
-              <ul class="card-list">
-                @for (area of draft()!.areas; track area.id) {
-                  <li class="stack">
-                    <span
-                      >{{ area.name }} ·
-                      {{
-                        formatPlanSize(area.lengthInches, area.widthInches, undefined, units())
-                      }}</span
-                    >
-                    @if (canEdit()) {
-                      @if (confirmDeleteAreaId() !== area.id) {
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          [attr.aria-label]="'Delete area ' + area.name"
-                          (click)="confirmDeleteAreaId.set(area.id)"
-                        >
-                          Delete
-                        </button>
-                      } @else {
-                        <p>Permanently delete {{ area.name }}?</p>
-                        <button
-                          type="button"
-                          class="btn btn-destructive"
-                          [attr.aria-label]="'Confirm delete ' + area.name"
-                          (click)="deleteArea(area)"
-                          [attr.aria-busy]="notices.busyMap().has('delete-area') || null"
-                          [disabled]="notices.busyMap().has('delete-area')"
-                        >
-                          Confirm delete
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          (click)="confirmDeleteAreaId.set(null)"
-                        >
-                          Cancel
-                        </button>
-                      }
-                    }
-                  </li>
-                }
-              </ul>
-            }
+            <og-layout-beds-list
+              [beds]="sizedBeds()"
+              [selectedId]="selectedId()"
+              [canEdit]="canEdit()"
+              (open)="openBed($event)"
+              (edit)="editGeometry($event)"
+            />
+            <og-layout-walkways-list
+              [areas]="draft()!.areas"
+              [canEdit]="canEdit()"
+              [deleting]="notices.busyMap().has('delete-area')"
+              (remove)="deleteArea($event)"
+            />
             @if (canEdit() && (areas().length || trays().length)) {
               <h3>Areas</h3>
               <ul class="card-list">
@@ -587,72 +282,12 @@ export class GardenLayoutPage implements OnInit {
   readonly addMenuOpen = signal(false);
   /** The create form open in the side panel, chosen from the Add menu. */
   readonly adding = signal<'bed' | 'tray' | 'walkway' | null>(null);
-  renameDraft = '';
-  confirmDeleteId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
-  newBedName = '';
-  readonly units = inject(AuthApiService).units;
-  /** Units the add forms are typed in; a switch converts what is typed. */
-  addUnits: Units = this.units();
-  newLength: number | null = lengthInput(96, this.addUnits);
-  newWidth: number | null = lengthInput(48, this.addUnits);
-  bedSite: BedSite = 'in_ground';
-  bedMulch: Mulch = 'none';
-  pendingStation: 'tree' | 'berry' | null = null;
   trayName = '';
   readonly areas = signal<PropertyAreaDto[]>([]);
   /** False until the first areas request settles, so "Add vegetable garden" cannot duplicate one not yet shown. */
   readonly areasLoaded = signal(false);
   readonly trays = signal<TrayDto[]>([]);
-  readonly mulchChoices: { id: Mulch; label: string }[] = [
-    { id: 'none', label: 'No mulch' },
-    { id: 'wood_chips', label: 'Wood chips' },
-    { id: 'straw', label: 'Straw' },
-    { id: 'leaves', label: 'Leaves' },
-    { id: 'compost', label: 'Compost' },
-    { id: 'paper', label: 'Paper' },
-    { id: 'plastic', label: 'Plastic' },
-  ];
-  newAreaName = '';
-  newAreaLength: number | null = lengthInput(48, this.addUnits);
-  newAreaWidth: number | null = lengthInput(48, this.addUnits);
-  private readonly followUnits = effect(() => {
-    const units = this.units();
-    untracked(() => {
-      if (units === this.addUnits) return;
-      const from = this.addUnits;
-      const convert = (value: number | null) =>
-        value == null ? null : convertLength(value, from, units);
-      this.newLength = convert(this.newLength);
-      this.newWidth = convert(this.newWidth);
-      this.newAreaLength = convert(this.newAreaLength);
-      this.newAreaWidth = convert(this.newAreaWidth);
-      this.addUnits = units;
-    });
-  });
-  confirmDeleteAreaId = signal<string | null>(null);
-  readonly formatPlanSize = formatPlanSize;
-  readonly lengthInput = lengthInput;
-  readonly lengthStep = lengthStep;
-  readonly lengthUnit = lengthUnit;
-
-  /**
-   * A selected bed's position or size field. Feet apply as they are typed;
-   * metres apply when the field is left, since the half-foot grid would
-   * rewrite a metric value mid-entry.
-   */
-  patchField(
-    key: 'originXInches' | 'originYInches' | 'lengthInches' | 'widthInches',
-    event: Event,
-  ) {
-    const metric = this.units() === 'metric';
-    if (metric !== (event.type === 'change')) return;
-    const value = (event.target as HTMLInputElement).value;
-    const inches = snapHalfFoot(inchesFromInput(value, this.units()));
-    const size = key === 'lengthInches' || key === 'widthInches';
-    this.patchSelected({ [key]: size ? Math.max(HALF_FOOT_INCHES, inches) : inches });
-  }
-
   atGardenEdge() {
     return this.canvas()?.atPlotEdge() ?? false;
   }
@@ -697,9 +332,7 @@ export class GardenLayoutPage implements OnInit {
 
   editGeometry(id: string) {
     this.adding.set(null);
-    this.confirmDeleteId.set(null);
     this.selectedId.set(id);
-    this.renameDraft = this.draft()?.beds.find((b) => b.id === id)?.name ?? '';
   }
 
   /** The open create form; an empty property opens on the bed form. */
@@ -723,10 +356,7 @@ export class GardenLayoutPage implements OnInit {
     return !this.planner.newBedIds.has(bed.id);
   }
 
-  async saveBedSettings(
-    bed: LayoutBedDto,
-    patch: { name?: string; sun?: string | null; site?: string; mulch?: string },
-  ) {
+  async saveBedSettings(bed: LayoutBedDto, patch: BedSettingsPatch) {
     this.error.set('');
     const name = (patch.name ?? bed.name).trim();
     if (!name) return;
@@ -758,7 +388,6 @@ export class GardenLayoutPage implements OnInit {
             : b,
         ),
       });
-      this.renameDraft = name;
     } catch (err) {
       this.fail(err);
     }
@@ -832,14 +461,6 @@ export class GardenLayoutPage implements OnInit {
     await this.loadAreas();
   }
 
-  mulchLabel(mulch: Mulch | null | undefined) {
-    return mulch ? MULCH_LABELS[mulch] : '';
-  }
-
-  showMulch(bed: LayoutBedDto) {
-    return !!bed.mulch && bed.mulch !== 'none';
-  }
-
   async loadAreas() {
     try {
       const [areas, trays] = await Promise.all([
@@ -867,16 +488,17 @@ export class GardenLayoutPage implements OnInit {
     }
   }
 
+  /** A tree bed (8 × 8 ft), or a row of canes in a bramble patch (10 × 3 ft). */
   addStation(station: 'tree' | 'berry') {
     this.addMenuOpen.set(false);
-    this.newBedName = station === 'tree' ? 'Tree' : 'Canes';
-    // A tree bed (8 × 8 ft), or a row of canes in a bramble patch (10 × 3 ft).
-    this.newLength = lengthInput(station === 'tree' ? 96 : 120, this.addUnits);
-    this.newWidth = lengthInput(station === 'tree' ? 96 : 36, this.addUnits);
-    this.pendingStation = station;
-    void this.createBed().finally(() => {
-      this.newLength = lengthInput(96, this.addUnits);
-      this.newWidth = lengthInput(48, this.addUnits);
+    const tree = station === 'tree';
+    this.createBed({
+      name: tree ? 'Tree' : 'Canes',
+      lengthInches: tree ? 96 : 120,
+      widthInches: tree ? 96 : 36,
+      site: 'in_ground',
+      mulch: 'none',
+      station,
     });
   }
 
@@ -894,18 +516,13 @@ export class GardenLayoutPage implements OnInit {
     }
   }
 
-  async createBed() {
-    const station = this.pendingStation;
-    this.pendingStation = null;
+  createBed(bed: NewBed & { station?: 'tree' | 'berry' }) {
     const d = this.draft();
     if (!d) return;
     this.error.set('');
     this.status.set('');
     if (!this.guardMutate()) return;
-    const name = this.newBedName.trim();
-    const length = inchesFromInput(this.newLength ?? 0, this.addUnits);
-    const width = inchesFromInput(this.newWidth ?? 0, this.addUnits);
-    if (!name || length < 1 || width < 1) return;
+    const { name, lengthInches: length, widthInches: width, site, mulch, station } = bed;
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
     const origin = originFromCenter(center.x, center.y, length, width);
@@ -928,25 +545,21 @@ export class GardenLayoutPage implements OnInit {
           id,
           name,
           geometry,
-          site: this.bedSite,
-          mulch: this.bedMulch,
+          site,
+          mulch,
           ...(station ? { station } : {}),
         },
       ],
     });
     this.adding.set(null);
     this.editGeometry(id);
-    this.newBedName = '';
     this.refreshFlags();
   }
 
-  async createArea() {
+  createArea(plot: NewPlot) {
     const d = this.draft();
     if (!d || !this.guardMutate()) return;
-    const name = this.newAreaName.trim();
-    const length = inchesFromInput(this.newAreaLength ?? 0, this.addUnits);
-    const width = inchesFromInput(this.newAreaWidth ?? 0, this.addUnits);
-    if (!name || length < 1 || width < 1) return;
+    const { name, lengthInches: length, widthInches: width } = plot;
     const id = crypto.randomUUID();
     const center = this.canvas()?.viewportCenterPlan() ?? { x: 0, y: 0 };
     const origin = originFromCenter(center.x, center.y, length, width);
@@ -959,7 +572,6 @@ export class GardenLayoutPage implements OnInit {
       widthInches: width,
     });
     this.planner.setDraft({ ...d, areas: [...(d.areas ?? []), placed] });
-    this.newAreaName = '';
     this.adding.set(null);
   }
 
@@ -971,14 +583,12 @@ export class GardenLayoutPage implements OnInit {
     const inSaved = this.planner.savedPutJson.includes(area.id);
     if (!inSaved) {
       this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
-      this.confirmDeleteAreaId.set(null);
       return;
     }
     await this.notices.run('delete-area', async () => {
       try {
         await this.api.deleteArea(this.gardenId, area.id);
         this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
-        this.confirmDeleteAreaId.set(null);
       } catch (err) {
         this.fail(err);
       }
@@ -1001,14 +611,12 @@ export class GardenLayoutPage implements OnInit {
             : p,
         ),
       });
-      this.confirmDeleteId.set(null);
       this.refreshFlags();
       return;
     }
     await this.notices.run('delete-bed', async () => {
       try {
         await this.api.deleteBed(this.gardenId, bed.id);
-        this.confirmDeleteId.set(null);
         await this.load();
       } catch (err) {
         this.fail(err);
