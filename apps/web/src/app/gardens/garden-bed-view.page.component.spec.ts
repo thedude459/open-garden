@@ -87,7 +87,8 @@ describe('GardenBedViewPage', () => {
     const view = await render();
     expect(view.el.textContent).toContain('In this bed');
     await view.remove('Basil');
-    expect(view.planner.pendingDirectSeedDeletes.has('Basil')).toBe(true);
+    expect(view.planner.draft()!.plantings.some((p) => p.id === 'Basil')).toBe(false);
+    expect(view.planner.dirty()).toBe(true);
     await view.remove('Tomato');
     const tomato = view.planner.draft()!.plantings.find((p) => p.id === 'Tomato')!;
     expect(tomato.placement).toBeNull();

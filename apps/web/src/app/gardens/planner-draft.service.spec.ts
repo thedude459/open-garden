@@ -5,7 +5,6 @@ import {
   mergeWaitingTransplants,
   savePlannerDraft,
   type PlannerSaveDeps,
-  type PlannerSaveTracking,
 } from './planner-save';
 
 function layout(overrides: Partial<GardenLayoutDto> = {}): GardenLayoutDto {
@@ -47,13 +46,12 @@ function layout(overrides: Partial<GardenLayoutDto> = {}): GardenLayoutDto {
   };
 }
 
-function tracking(extra: Partial<PlannerSaveTracking> = {}): PlannerSaveTracking {
-  return {
-    newBedIds: new Set(['bed-new']),
-    newDirectSeedIds: new Set(['seed-new']),
-    pendingDirectSeedDeletes: new Set(['old-seed']),
-    ...extra,
-  };
+/** The layout as last saved: no beds yet, and a sown plant the draft has removed. */
+function before(): GardenLayoutDto {
+  return layout({
+    beds: [],
+    plantings: [{ ...layout().plantings[0]!, id: 'old-seed', bedId: null, placement: null }],
+  });
 }
 
 function deps(overrides: Partial<PlannerSaveDeps> = {}): PlannerSaveDeps & {
@@ -77,7 +75,7 @@ function deps(overrides: Partial<PlannerSaveDeps> = {}): PlannerSaveDeps & {
 }
 
 describe('savePlannerDraft', () => {
-  it('posts beds then direct seeds then PUT then pending deletes', async () => {
+  it('posts new beds, then new direct seeds, then PUT, then deletes removed seeds', async () => {
     const order: string[] = [];
     const d = deps({
       createBed: vi.fn(async () => {
@@ -94,12 +92,9 @@ describe('savePlannerDraft', () => {
         order.push('del');
       }),
     });
-    const t = tracking();
-    await savePlannerDraft(layout(), t, d);
+    await savePlannerDraft(layout(), before(), d);
     expect(order).toEqual(['bed', 'seed', 'put', 'del']);
-    expect(t.newBedIds.size).toBe(0);
-    expect(t.newDirectSeedIds.size).toBe(0);
-    expect(t.pendingDirectSeedDeletes.size).toBe(0);
+    expect(d.deletePlanting).toHaveBeenCalledWith('old-seed');
   });
 
   it('creates every new bed before any direct seed', async () => {
@@ -117,11 +112,7 @@ describe('savePlannerDraft', () => {
     const draft = layout({
       beds: [layout().beds[0]!, { ...layout().beds[0]!, id: 'bed-2', name: 'West' }],
     });
-    const pending = savePlannerDraft(
-      draft,
-      tracking({ newBedIds: new Set(['bed-new', 'bed-2']) }),
-      d,
-    );
+    const pending = savePlannerDraft(draft, before(), d);
     await vi.waitFor(() => {
       expect(bedsStarted).toBe(2);
     });
@@ -139,7 +130,7 @@ describe('savePlannerDraft', () => {
         throw new Error('PUT failed');
       }),
     });
-    await expect(savePlannerDraft(layout(), tracking(), d)).rejects.toThrow('PUT failed');
+    await expect(savePlannerDraft(layout(), before(), d)).rejects.toThrow('PUT failed');
     expect(d.deletePlanting).toHaveBeenCalledWith('seed-new');
     expect(d.deleteBed).toHaveBeenCalledWith('bed-new');
     expect(d.deletePlanting).not.toHaveBeenCalledWith('old-seed');
@@ -157,7 +148,7 @@ describe('savePlannerDraft', () => {
       ],
     });
     const d = deps();
-    await expect(savePlannerDraft(crowded, tracking(), d)).rejects.toMatchObject({
+    await expect(savePlannerDraft(crowded, before(), d)).rejects.toMatchObject({
       message: 'Layout has spacing or fit problems',
     });
     expect(d.createBed).not.toHaveBeenCalled();
@@ -176,7 +167,7 @@ describe('savePlannerDraft', () => {
       ],
     });
     const d = deps();
-    await savePlannerDraft(crowded, tracking(), d, crowded);
+    await savePlannerDraft(crowded, crowded, d);
     expect(d.putLayout).toHaveBeenCalledTimes(1);
   });
 });

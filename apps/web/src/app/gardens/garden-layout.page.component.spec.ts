@@ -79,7 +79,8 @@ describe('GardenLayoutPage', () => {
     view.el.querySelector('form[aria-label="New bed"]')!.dispatchEvent(new Event('submit'));
     await view.fixture.whenStable();
     const south = view.planner.draft()!.beds.find((b) => b.name === 'South')!;
-    expect(view.planner.newBedIds.has(south.id)).toBe(true);
+    expect(view.planner.isSavedBed(south.id)).toBe(false);
+    expect(view.planner.isSavedBed('b1')).toBe(true);
     expect(view.el.textContent).toContain('Unsaved changes');
     expect(view.el.textContent).toContain('Save the layout to set its name');
   });
@@ -101,6 +102,39 @@ describe('GardenLayoutPage', () => {
     await view.fixture.whenStable();
     expect(view.planner.draft()!.beds.map((b) => b.name)).toEqual(['North']);
     expect(view.el.textContent).not.toContain('Unsaved changes');
+  });
+
+  it('plants sown in a bed that was never saved go with it', async () => {
+    const view = await render();
+    await view.openAdd('Add tree');
+    const d = view.planner.draft()!;
+    const tree = d.beds.find((b) => b.name === 'Tree')!;
+    view.planner.setDraft({
+      ...d,
+      plantings: [
+        {
+          id: 'apple',
+          plantId: 'apple',
+          commonName: 'Apple',
+          species: 'Malus',
+          cultivar: null,
+          plantType: 'tree',
+          status: 'active',
+          bedId: tree.id,
+          spacingInches: 96,
+          startMethod: 'direct_seed',
+          indoorStartedOn: null,
+          placement: { plantingId: 'apple', bedId: tree.id, xInches: 48, yInches: 48 },
+        },
+      ],
+    });
+    await view.fixture.whenStable();
+    view.byLabel('Delete bed Tree')!.click();
+    await view.fixture.whenStable();
+    view.byLabel('Confirm delete Tree')!.click();
+    await view.fixture.whenStable();
+    expect(view.planner.draft()!.plantings).toEqual([]);
+    expect(view.planner.dirty()).toBe(false);
   });
 
   it('a viewer sees the beds without Add, Edit, or Save', async () => {

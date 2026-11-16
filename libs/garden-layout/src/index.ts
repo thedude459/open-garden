@@ -6,6 +6,12 @@ export { hitTestPlan, classifyGesture, isClickNotDrag } from './lib/hit-test';
 export { applyPlantingDrop, plantingDropOutcome } from './lib/drop';
 export { layoutPlantingLabels, shortenPlantingMarkName } from './lib/planting-labels';
 export { drawableBeds } from './lib/drawable-beds';
+export {
+  hasLayoutChanges,
+  layoutChanges,
+  layoutPutBody,
+  type LayoutChanges,
+} from './lib/layout-changes';
 export { overviewPlantingLabels } from './lib/overview-labels';
 export { originFromCenter, originFromGrabOffset } from './lib/origin';
 export {

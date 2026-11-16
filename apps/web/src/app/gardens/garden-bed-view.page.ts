@@ -406,7 +406,6 @@ export class GardenBedViewPage implements OnInit {
         yInches: local.y,
       },
     };
-    this.planner.newDirectSeedIds.add(id);
     this.planner.setDraft({ ...d, plantings: [planting, ...d.plantings] });
     this.armedPlant.set(null);
     this.refreshFlags();
@@ -448,7 +447,6 @@ export class GardenBedViewPage implements OnInit {
       indoorStartedOn: null,
       placement: { plantingId: id, bedId: bed.id, xInches: size / 2, yInches: size / 2 },
     };
-    this.planner.newDirectSeedIds.add(id);
     this.planner.setDraft({
       ...d,
       beds: d.beds.map((b) => (b.id === bed.id ? { ...b, geometry: sized.geometry } : b)),
@@ -501,11 +499,6 @@ export class GardenBedViewPage implements OnInit {
     if (planting.startMethod === 'direct_seed') {
       const d = this.draft();
       if (!d) return;
-      if (this.planner.newDirectSeedIds.has(planting.id)) {
-        this.planner.newDirectSeedIds.delete(planting.id);
-      } else {
-        this.planner.pendingDirectSeedDeletes.add(planting.id);
-      }
       this.planner.setDraft({
         ...d,
         plantings: d.plantings.filter((p) => p.id !== planting.id),

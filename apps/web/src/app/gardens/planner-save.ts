@@ -1,4 +1,4 @@
-import { evaluateLayout } from '@open-garden/garden-layout';
+import { evaluateLayout, layoutChanges, layoutPutBody } from '@open-garden/garden-layout';
 import type {
   BedCreateDto,
   GardenLayoutDto,
@@ -6,12 +6,6 @@ import type {
   LayoutPutDto,
   PlantingCreateDto,
 } from '@open-garden/shared-types';
-
-export interface PlannerSaveTracking {
-  newBedIds: Set<string>;
-  newDirectSeedIds: Set<string>;
-  pendingDirectSeedDeletes: Set<string>;
-}
 
 export interface PlannerSaveDeps {
   createBed: (body: BedCreateDto) => Promise<void>;
@@ -21,23 +15,6 @@ export interface PlannerSaveDeps {
   putLayout: (body: LayoutPutDto) => Promise<GardenLayoutDto>;
 }
 
-export function putBodyFromDraft(d: GardenLayoutDto): LayoutPutDto {
-  return {
-    beds: d.beds
-      .filter((b) => b.geometry)
-      .map((b) => ({
-        id: b.id,
-        originXInches: b.geometry!.originXInches,
-        originYInches: b.geometry!.originYInches,
-        lengthInches: b.geometry!.lengthInches,
-        widthInches: b.geometry!.widthInches,
-        orientation: b.geometry!.orientation,
-      })),
-    areas: d.areas ?? [],
-    placements: d.plantings.filter((p) => p.placement).map((p) => p.placement!),
-  };
-}
-
 /**
  * Whether a freshly fetched layout may replace the one on screen: not over
  * unsaved edits, and not over a change made while it loaded (a bed renamed),
@@ -45,20 +22,6 @@ export function putBodyFromDraft(d: GardenLayoutDto): LayoutPutDto {
  */
 export function freshLayoutApplies<T>(shownBefore: T, shownNow: T, dirty: boolean): boolean {
   return !dirty && shownNow === shownBefore;
-}
-
-export function draftIsDirty(
-  d: GardenLayoutDto | null,
-  savedPutJson: string,
-  tracking: PlannerSaveTracking,
-) {
-  if (!d) return false;
-  return (
-    JSON.stringify(putBodyFromDraft(d)) !== savedPutJson ||
-    tracking.newBedIds.size > 0 ||
-    tracking.newDirectSeedIds.size > 0 ||
-    tracking.pendingDirectSeedDeletes.size > 0
-  );
 }
 
 /** Merge API waiting transplants into a draft planting list without dropping placements. */
@@ -83,32 +46,32 @@ export function mergeWaitingTransplants(
 }
 
 /**
- * `saved`: the layout as last loaded or saved; problems it already had (a
- * catalog update widened spacing) do not block. See evaluateLayout.
+ * Saves a draft against `saved`, the layout as last loaded or saved: what to
+ * create, move, and delete comes from comparing the two (layoutChanges).
+ * Problems the saved layout already had (a catalog update widened spacing) do
+ * not block. See evaluateLayout.
  *
- * evaluate → POST beds → POST direct seeds → PUT layout → DELETE pending direct seeds.
+ * evaluate → POST beds → POST direct seeds → PUT layout → DELETE removed direct seeds.
  * Creates in a phase run together. Beds finish before plantings, and both finish before PUT.
  * On PUT failure, compensating DELETE of new direct-seed plantings, then new beds.
  */
 export async function savePlannerDraft(
   draft: GardenLayoutDto,
-  tracking: PlannerSaveTracking,
+  saved: GardenLayoutDto,
   deps: PlannerSaveDeps,
-  saved?: GardenLayoutDto | null,
 ): Promise<GardenLayoutDto> {
-  const flags = evaluateLayout(draft.beds, draft.plantings, saved ?? undefined);
+  const flags = evaluateLayout(draft.beds, draft.plantings, saved);
   if (flags.some((f) => f.blocking)) {
     const err = new Error('Layout has spacing or fit problems') as Error & { code: string };
     err.code = 'SPACING';
     throw err;
   }
+  const changes = layoutChanges(saved, draft);
   const postedBeds: string[] = [];
   const postedPlantings: string[] = [];
   try {
     await Promise.all(
-      [...tracking.newBedIds].map(async (id) => {
-        const bed = draft.beds.find((b) => b.id === id);
-        if (!bed) return;
+      changes.newBeds.map(async (bed) => {
         await deps.createBed({
           id: bed.id,
           name: bed.name,
@@ -120,13 +83,11 @@ export async function savePlannerDraft(
           ...(bed.station ? { station: bed.station } : {}),
           ...(bed.mulch ? { mulch: bed.mulch } : {}),
         });
-        postedBeds.push(id);
+        postedBeds.push(bed.id);
       }),
     );
     await Promise.all(
-      [...tracking.newDirectSeedIds].map(async (id) => {
-        const planting = draft.plantings.find((p) => p.id === id);
-        if (!planting) return;
+      changes.newDirectSeeds.map(async (planting) => {
         await deps.createPlanting({
           id: planting.id,
           plantId: planting.plantId,
@@ -135,15 +96,12 @@ export async function savePlannerDraft(
           ...(planting.spacingFeet ? { spacingFeet: planting.spacingFeet } : {}),
           ...(planting.rootstock ? { rootstock: planting.rootstock } : {}),
         });
-        postedPlantings.push(id);
+        postedPlantings.push(planting.id);
       }),
     );
-    const saved = await deps.putLayout(putBodyFromDraft(draft));
-    await Promise.all([...tracking.pendingDirectSeedDeletes].map((id) => deps.deletePlanting(id)));
-    tracking.newBedIds.clear();
-    tracking.newDirectSeedIds.clear();
-    tracking.pendingDirectSeedDeletes.clear();
-    return { ...saved, areas: saved.areas ?? [] };
+    const result = await deps.putLayout(layoutPutBody(draft));
+    await Promise.all(changes.removedDirectSeedIds.map((id) => deps.deletePlanting(id)));
+    return { ...result, areas: result.areas ?? [] };
   } catch (err) {
     await Promise.all(
       postedPlantings.map(async (id) => {
