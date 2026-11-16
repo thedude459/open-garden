@@ -118,12 +118,12 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
       @if (pending()) {
         <span class="badge">Pending sync</span>
       }
-      @if (p.companions?.length) {
+      @if (p.companions.length) {
         <section class="companions" aria-labelledby="companions-heading">
           <h2 id="companions-heading">Companions</h2>
           <p class="muted">
             Advice from research trials and extension guidance; it never stops you planting.
-            @if (p.companionZones?.length) {
+            @if (p.companionZones.length) {
               Pairs shown near zone {{ p.companionZones.join(', ') }} (your properties) come first.
             }
           </p>

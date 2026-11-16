@@ -13,6 +13,7 @@ export default defineConfig({
       'apps/web/src/app/gardens/unsaved-layout.spec.ts',
       'apps/web/src/app/today/today-groups.spec.ts',
       'apps/web/src/app/auth/session-expiry.spec.ts',
+      'apps/web/src/app/plants/cached-detail.spec.ts',
     ],
     coverage: {
       provider: 'v8',
