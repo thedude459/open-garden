@@ -1,0 +1,112 @@
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import type { GardenLayoutDto, GardenRole } from '@open-garden/shared-types';
+import { describe, expect, it, vi } from 'vitest';
+import { GardenLayoutPage } from './garden-layout.page';
+import { GardenPlanCanvas } from './garden-plan-canvas';
+import { GardensApiService } from './gardens-api.service';
+import { PlannerDraftService } from './planner-draft.service';
+
+const layout = (myRole: GardenRole): GardenLayoutDto => ({
+  gardenId: 'g1',
+  myRole,
+  beds: [
+    {
+      id: 'b1',
+      name: 'North',
+      geometry: {
+        originXInches: 0,
+        originYInches: 0,
+        lengthInches: 96,
+        widthInches: 48,
+        orientation: 0,
+      },
+    },
+  ],
+  areas: [],
+  plantings: [],
+  flags: [],
+});
+
+async function render(myRole: GardenRole = 'owner') {
+  TestBed.configureTestingModule({
+    providers: [
+      provideRouter([]),
+      {
+        provide: GardensApiService,
+        useValue: {
+          detail: async () => ({ name: 'Home', frostFree: true }),
+          areas: async () => [],
+          trays: async () => [],
+        },
+      },
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { paramMap: convertToParamMap({ id: 'g1' }) } },
+      },
+    ],
+  });
+  // jsdom has no SVG screen matrix, so the plan's visible centre is the origin.
+  vi.spyOn(GardenPlanCanvas.prototype, 'viewportCenterPlan').mockReturnValue({ x: 0, y: 0 });
+  const planner = TestBed.inject(PlannerDraftService);
+  vi.spyOn(planner, 'load').mockImplementation(async () => {
+    planner.hydrate(layout(myRole));
+    planner.loading.set(false);
+    return planner.draft();
+  });
+  const fixture = TestBed.createComponent(GardenLayoutPage);
+  fixture.autoDetectChanges();
+  await fixture.whenStable();
+  const el: HTMLElement = fixture.nativeElement;
+  const byLabel = (label: string) =>
+    el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+  const openAdd = async (label: string) => {
+    [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Add')!.click();
+    await fixture.whenStable();
+    byLabel(label)!.click();
+    await fixture.whenStable();
+  };
+  return { fixture, el, byLabel, openAdd, planner };
+}
+
+describe('GardenLayoutPage', () => {
+  it('a new bed joins the draft unsaved and opens in the inspector', async () => {
+    const view = await render();
+    await view.openAdd('Add bed');
+    const name = view.el.querySelector<HTMLInputElement>('[name="bedName"]')!;
+    name.value = 'South';
+    name.dispatchEvent(new Event('input'));
+    view.el.querySelector('form[aria-label="New bed"]')!.dispatchEvent(new Event('submit'));
+    await view.fixture.whenStable();
+    const south = view.planner.draft()!.beds.find((b) => b.name === 'South')!;
+    expect(view.planner.newBedIds.has(south.id)).toBe(true);
+    expect(view.el.textContent).toContain('Unsaved changes');
+    expect(view.el.textContent).toContain('Save the layout to set its name');
+  });
+
+  it('Add tree makes an 8 by 8 ft tree bed', async () => {
+    const view = await render();
+    await view.openAdd('Add tree');
+    const tree = view.planner.draft()!.beds.find((b) => b.station === 'tree')!;
+    expect(tree.name).toBe('Tree');
+    expect(tree.geometry).toMatchObject({ lengthInches: 96, widthInches: 96 });
+  });
+
+  it('deleting a bed not yet saved drops it from the draft', async () => {
+    const view = await render();
+    await view.openAdd('Add tree');
+    view.byLabel('Delete bed Tree')!.click();
+    await view.fixture.whenStable();
+    view.byLabel('Confirm delete Tree')!.click();
+    await view.fixture.whenStable();
+    expect(view.planner.draft()!.beds.map((b) => b.name)).toEqual(['North']);
+    expect(view.el.textContent).not.toContain('Unsaved changes');
+  });
+
+  it('a viewer sees the beds without Add, Edit, or Save', async () => {
+    const view = await render('viewer');
+    expect(view.byLabel('Open bed North')).not.toBeNull();
+    expect(view.byLabel('Edit bed North')).toBeNull();
+    expect(view.el.textContent).not.toContain('Save layout');
+  });
+});
