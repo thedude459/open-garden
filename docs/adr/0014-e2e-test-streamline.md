@@ -24,4 +24,21 @@ Spec 012 requires a faster, non-flaky gated e2e job that still covers gardener-f
 - Live HTTP is skipped in the coverage run inside `verify` (must run `e2e` to execute it).
 - Global catalog remains one table; isolation is naming + restore, not a second database.
 - `apps/web-e2e/src/pipeline-helpers.ts` stays for pipeline **UI** idle waits; HTTP pipeline proofs live in `api-e2e`.
-- CI Playwright uses 2 workers so one Postgres is not overrun. Local workers stay 4. Expect timeout is 15s.
+- CI Playwright used 2 workers so one Postgres would not be overrun. Expect timeout is 15s.
+
+## Update (November 2026)
+
+CI now runs Playwright on 4 workers, as locally (#194). Measured on the e2e job:
+
+| | 2 workers (#191) | 4 workers (#194) |
+|---|---|---|
+| Playwright (85 tests) | 4.4 min | 3.1 min |
+| Sum of test times | 509 s | 727 s |
+| Whole e2e job | 7 min 8 s | 4 min 27 s |
+
+Each test is slower on 4 workers (median 6.7 s to 8.8 s) because the 4-CPU
+runner is shared with the API, the web server, and Postgres, but none failed,
+and every test makes its own user and property, so they share no rows. The
+same change dropped the per-run `apt` install (only optional fonts were
+missing) and the second unit-test run for the coverage table. If the suite
+grows flaky under load, try 3 workers before going back to 2.
