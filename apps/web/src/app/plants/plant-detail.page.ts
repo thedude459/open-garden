@@ -10,6 +10,7 @@ import { AuthApiService } from '../auth/auth-api.service';
 import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { NoticeService } from '../ui/notice.service';
+import { SowingTimeline } from './sowing-timeline';
 
 const EVIDENCE_LABELS: Record<CatalogCompanionDto['evidence'], string> = {
   research: 'Research',
@@ -33,7 +34,7 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
 
 @Component({
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, SowingTimeline],
   styles: `
     .companion-list {
       list-style: none;
@@ -118,6 +119,7 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
       @if (pending()) {
         <span class="badge">Pending sync</span>
       }
+      <og-sowing-timeline [plant]="p" />
       @if (p.companions.length) {
         <section class="companions" aria-labelledby="companions-heading">
           <h2 id="companions-heading">Companions</h2>

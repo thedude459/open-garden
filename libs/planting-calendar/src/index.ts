@@ -7,5 +7,6 @@ export {
   windowsAvailable,
   type WarmClimate,
 } from './lib/windows';
+export { plantTimeline, type TimelineRow } from './lib/plant-timeline';
 export { overlapsThisWeek, localWeekDays } from './lib/this-week';
 export { CalendarService } from './lib/calendar-service';
