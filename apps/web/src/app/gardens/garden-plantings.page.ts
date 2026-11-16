@@ -1,6 +1,4 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { formatDay } from '@open-garden/web-ui';
-import { plantName } from '@open-garden/shared-types';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -9,18 +7,21 @@ import {
   groupPlantings,
   type PlantingGroup,
 } from '@open-garden/seasonal-plantings/group-plantings';
-import type { FavoriteListItemDto, PlantSummaryDto, Units } from '@open-garden/shared-types';
-import { feetFromTreeSpacing, lengthUnit, treeSpacingInput } from '@open-garden/garden-layout';
-import { AuthApiService } from '../auth/auth-api.service';
-import { allowsPlant } from '@open-garden/shared-types';
-import { FavoritesApiService } from '../favorites/favorites-api.service';
-import { PlantPicker } from '../plants/plant-picker';
-import { PlantingsApiService } from './plantings-api.service';
+import {
+  plantName,
+  type PlantingCreateDto,
+  type PlantingPatchDto,
+} from '@open-garden/shared-types';
+import { formatDay } from '@open-garden/web-ui';
 import { NoticeService } from '../ui/notice.service';
+import { PlantingAddSection, type PlantToAdd } from './planting-add.section';
+import { PlantingEditor } from './planting-editor';
+import { PlantingsApiService } from './plantings-api.service';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
+
 @Component({
   standalone: true,
-  imports: [FormsModule, PlantPicker],
+  imports: [FormsModule, PlantingAddSection, PlantingEditor],
   template: `
     <h2>Plantings</h2>
     @if (error()) {
@@ -35,73 +36,11 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
       <p class="muted">Garden unavailable or not found.</p>
     } @else {
       @if (canEdit()) {
-        <og-plant-picker
-          inputName="plantingSearch"
-          searchLabel="Search catalog to add"
-          placeholder="Search catalog to add"
-          submitLabel="Search catalog"
-          (results)="onCatalog($event)"
-          (failed)="onSearchFailed($event)"
-        >
-          <button type="button" class="btn btn-secondary" (click)="loadFavorites()">
-            Show favorites
-          </button>
-        </og-plant-picker>
-        @if (manyTrays()) {
-          <label>
-            Tray
-            <select name="startTray" [(ngModel)]="startTrayId">
-              @for (tray of trays(); track tray.id) {
-                <option [value]="tray.id">{{ tray.name }}</option>
-              }
-            </select>
-          </label>
-        }
-        @if (catalogHits().length) {
-          <ul class="card-list">
-            @for (p of catalogHits(); track p.id) {
-              <li class="row">
-                <span>{{ plantName(p) }}</span>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-label]="'Add ' + plantName(p)"
-                  (click)="add(p)"
-                >
-                  Add
-                </button>
-                @if (hasTrays()) {
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    [attr.aria-label]="'Start ' + plantName(p) + ' in a tray'"
-                    (click)="startInTray(p)"
-                  >
-                    Start in tray
-                  </button>
-                }
-              </li>
-            }
-          </ul>
-        }
-        @if (favorites().length) {
-          <h3>Your favorites</h3>
-          <ul class="card-list">
-            @for (f of favorites(); track f.favoriteId) {
-              <li class="row">
-                <span>{{ plantName(f.plant) }}</span>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-label]="'Add favorite ' + plantName(f.plant)"
-                  (click)="add(f.plant)"
-                >
-                  Add
-                </button>
-              </li>
-            }
-          </ul>
-        }
+        <og-planting-add
+          [trays]="trays()"
+          (add)="add($event)"
+          (startInTray)="startInTray($event.plant, $event.trayId)"
+        />
         <p class="muted">Create beds and change their settings on Plan.</p>
       }
       <div class="filters">
@@ -197,127 +136,15 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                     }
                   </div>
                   @if (canEdit() && editingId() === p.id) {
-                    <div class="planting-editor">
-                      <label>
-                        Planted
-                        <input #plantedInput type="date" [attr.name]="'planted-' + p.id" />
-                      </label>
-                      <label>
-                        Harvest
-                        <input #harvestInput type="date" [attr.name]="'harvested-' + p.id" />
-                      </label>
-                      <label>
-                        Bed
-                        <select #bedSelect [attr.name]="'bed-' + p.id">
-                          <option value="" [selected]="!p.bedId">Unassigned</option>
-                          @for (b of list()!.beds; track b.id) {
-                            <option [value]="b.id" [selected]="p.bedId === b.id">
-                              {{ b.name }}
-                            </option>
-                          }
-                        </select>
-                      </label>
-                      <label>
-                        Note
-                        <textarea
-                          rows="2"
-                          [attr.name]="'note-' + p.id"
-                          [ngModel]="noteDraft[p.id] ?? p.note ?? ''"
-                          (ngModelChange)="noteDraft[p.id] = $event"
-                          [ngModelOptions]="{ standalone: true }"
-                        ></textarea>
-                      </label>
-                      <label>
-                        Photo
-                        <input type="file" accept="image/*" (change)="onPhoto(p.id, $event)" />
-                      </label>
-                      @if (photos[p.id] || p.photo) {
-                        <img [src]="photos[p.id] || p.photo" alt="" width="96" />
-                      }
-                      <label>
-                        Life
-                        <select
-                          [attr.name]="'life-' + p.id"
-                          [ngModel]="lifeDraft[p.id] ?? p.life ?? 'annual'"
-                          (ngModelChange)="lifeDraft[p.id] = $event"
-                          [ngModelOptions]="{ standalone: true }"
-                        >
-                          <option value="annual">Annual</option>
-                          <option value="perennial">Perennial</option>
-                          <option value="tree">Tree</option>
-                        </select>
-                      </label>
-                      @if ((lifeDraft[p.id] ?? p.life) === 'tree') {
-                        <input
-                          [attr.name]="'rootstock-' + p.id"
-                          placeholder="Rootstock"
-                          [ngModel]="rootstockDraft[p.id] ?? p.rootstock ?? ''"
-                          (ngModelChange)="rootstockDraft[p.id] = $event"
-                          [ngModelOptions]="{ standalone: true }"
-                        />
-                        <input
-                          type="number"
-                          min="0"
-                          [attr.name]="'years-' + p.id"
-                          placeholder="Years to fruit"
-                          [ngModel]="yearsDraft[p.id] ?? p.yearsToFruit"
-                          (ngModelChange)="yearsDraft[p.id] = $event"
-                          [ngModelOptions]="{ standalone: true }"
-                        />
-                        <input
-                          type="number"
-                          min="1"
-                          [attr.name]="'feet-' + p.id"
-                          [placeholder]="'Spacing (' + lengthUnit(units()) + ')'"
-                          [ngModel]="spacingDraft[p.id]?.value ?? treeSpacing(p.spacingFeet)"
-                          (ngModelChange)="spacingDraft[p.id] = { value: $event, units: units() }"
-                          [ngModelOptions]="{ standalone: true }"
-                        />
-                      }
-                      <div class="filters">
-                        <button
-                          type="button"
-                          class="btn btn-primary"
-                          [attr.aria-busy]="notices.busyMap().has('save-planting-' + p.id) || null"
-                          [disabled]="notices.busyMap().has('save-planting-' + p.id)"
-                          (click)="save(p, plantedInput.value, harvestInput.value, bedSelect.value)"
-                        >
-                          Save planting
-                        </button>
-                        <button type="button" class="btn btn-secondary" (click)="sowAgain(p)">
-                          Sow again
-                        </button>
-                        @if (confirmRemoveId() !== p.id) {
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            [attr.aria-label]="'Remove ' + plantName(p)"
-                            (click)="confirmRemoveId.set(p.id)"
-                          >
-                            Remove
-                          </button>
-                        }
-                      </div>
-                      @if (confirmRemoveId() === p.id) {
-                        <p>Permanently remove this planting? This cannot be undone.</p>
-                        <div class="filters">
-                          <button
-                            type="button"
-                            class="btn btn-destructive"
-                            (click)="confirmRemove(p)"
-                          >
-                            Confirm remove
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            (click)="confirmRemoveId.set(null)"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      }
-                    </div>
+                    <og-planting-editor
+                      [planting]="p"
+                      [beds]="list()!.beds"
+                      [saving]="notices.busyMap().has('save-planting-' + p.id)"
+                      (save)="save(p, $event)"
+                      (sowAgain)="sowAgain(p)"
+                      (remove)="confirmRemove(p)"
+                      (failed)="error.set($event)"
+                    />
                   }
                 </article>
               }
@@ -333,49 +160,15 @@ export class GardenPlantingsPage implements OnInit {
   private readonly api = inject(PlantingsApiService);
   readonly notices = inject(NoticeService);
   readonly formatDay = formatDay;
-  private readonly favoritesApi = inject(FavoritesApiService);
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
   list = signal<ClientPlantingList | null>(null);
   loading = signal(true);
   error = signal('');
-  confirmRemoveId = signal<string | null>(null);
   /** The planting whose editor is open; one at a time. */
   editingId = signal<string | null>(null);
   failures = signal<QueueItem[]>([]);
   bedFilter = '';
-  catalogHits = signal<PlantSummaryDto[]>([]);
-  startTrayId = '';
-
-  trays() {
-    return this.list()?.trays ?? [];
-  }
-
-  inTray(planting: { trayId?: string | null; bedId?: string | null }) {
-    return !!planting.trayId && !planting.bedId;
-  }
-
-  showPlantOut(planting: { trayId?: string | null; bedId?: string | null }) {
-    return this.canEdit() && this.inTray(planting);
-  }
-
-  hasTrays() {
-    return this.trays().length > 0;
-  }
-
-  manyTrays() {
-    return this.trays().length > 1;
-  }
-  noteDraft: Record<string, string> = {};
-  photos: Record<string, string> = {};
-  lifeDraft: Record<string, 'annual' | 'perennial' | 'tree'> = {};
-  rootstockDraft: Record<string, string> = {};
-  yearsDraft: Record<string, number | null> = {};
-  /** Tree spacing as typed, with the units it was typed in. */
-  spacingDraft: Record<string, { value: number | null; units: Units }> = {};
-  readonly units = inject(AuthApiService).units;
-  readonly lengthUnit = lengthUnit;
-  favorites = signal<FavoriteListItemDto[]>([]);
   /** Drops a list response that lost the race with a newer load or edit. */
   private listEpoch = 0;
 
@@ -388,6 +181,18 @@ export class GardenPlantingsPage implements OnInit {
   ngOnInit() {
     this.gardenId = this.route.snapshot.paramMap.get('id') ?? '';
     if (this.gardenId) void this.load();
+  }
+
+  trays() {
+    return this.list()?.trays ?? [];
+  }
+
+  inTray(planting: { trayId?: string | null; bedId?: string | null }) {
+    return !!planting.trayId && !planting.bedId;
+  }
+
+  showPlantOut(planting: { trayId?: string | null; bedId?: string | null }) {
+    return this.canEdit() && this.inTray(planting);
   }
 
   canEdit() {
@@ -422,85 +227,41 @@ export class GardenPlantingsPage implements OnInit {
       const list = await this.api.list(this.gardenId);
       if (epoch !== this.listEpoch) return;
       this.list.set(list);
-      const tray = list?.trays?.[0];
-      if (!this.startTrayId && tray) this.startTrayId = tray.id;
       this.failures.set(await this.api.syncFailures(this.gardenId));
-      if (!silent && epoch === this.listEpoch) this.loading.set(false);
-      this.syncDateInputs();
     } catch (err) {
       if (epoch === this.listEpoch) this.error.set(messageFrom(err));
     }
     if (!silent && epoch === this.listEpoch) this.loading.set(false);
   }
 
-  onCatalog(items: PlantSummaryDto[]) {
-    this.error.set('');
-    this.catalogHits.set(items.filter((plant) => allowsPlant('vegetable', plant.plantType)));
+  add(plant: PlantToAdd) {
+    return this.create(plant, { plantId: plant.id });
   }
 
-  onSearchFailed(err: unknown) {
-    this.error.set(messageFrom(err));
+  startInTray(plant: PlantToAdd, trayId: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    return this.create(plant, {
+      plantId: plant.id,
+      startMethod: 'transplant',
+      indoorStartedOn: today,
+      trayId,
+    });
   }
 
-  async loadFavorites() {
-    this.error.set('');
-    const page = await this.favoritesApi.list();
-    this.favorites.set(page.items);
-  }
-
-  async add(
-    plant: Pick<PlantSummaryDto, 'id' | 'commonName' | 'species' | 'cultivar' | 'plantType'> & {
-      status?: string;
-    },
-  ) {
+  private async create(plant: PlantToAdd, body: PlantingCreateDto) {
     this.error.set('');
     const epoch = ++this.listEpoch;
     try {
-      const created = await this.api.create(
-        this.gardenId,
-        { plantId: plant.id },
-        {
-          commonName: plant.commonName,
-          species: plant.species,
-          cultivar: plant.cultivar,
-          plantType: plant.plantType,
-          status: plant.status === 'deprecated' ? 'deprecated' : 'active',
-        },
-      );
+      const created = await this.api.create(this.gardenId, body, {
+        commonName: plant.commonName,
+        species: plant.species,
+        cultivar: plant.cultivar,
+        plantType: plant.plantType,
+        status: plant.status === 'deprecated' ? 'deprecated' : 'active',
+      });
       if (epoch !== this.listEpoch) return;
       this.list.set(created);
       this.failures.set(await this.api.syncFailures(this.gardenId));
-      this.syncDateInputs();
-    } catch (err) {
-      this.error.set(messageFrom(err));
-    }
-  }
-
-  async startInTray(
-    plant: Pick<PlantSummaryDto, 'id' | 'commonName' | 'species' | 'cultivar' | 'plantType'> & {
-      status?: string;
-    },
-  ) {
-    const trayId = this.startTrayId || this.list()?.trays?.[0]?.id;
-    if (!trayId) return;
-    const today = new Date().toISOString().slice(0, 10);
-    this.error.set('');
-    const epoch = ++this.listEpoch;
-    try {
-      const created = await this.api.create(
-        this.gardenId,
-        { plantId: plant.id, startMethod: 'transplant', indoorStartedOn: today, trayId },
-        {
-          commonName: plant.commonName,
-          species: plant.species,
-          cultivar: plant.cultivar,
-          plantType: plant.plantType,
-          status: plant.status === 'deprecated' ? 'deprecated' : 'active',
-        },
-      );
-      if (epoch !== this.listEpoch) return;
-      this.list.set(created);
-      this.syncDateInputs();
     } catch (err) {
       this.error.set(messageFrom(err));
     }
@@ -516,20 +277,6 @@ export class GardenPlantingsPage implements OnInit {
     } catch (err) {
       this.error.set(messageFrom(err));
     }
-  }
-
-  onPhoto(plantingId: string, event: Event) {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    if (file.size > 280_000) {
-      this.error.set('Photo must be under 280 KB');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.photos[plantingId] = typeof reader.result === 'string' ? reader.result : '';
-    };
-    reader.readAsDataURL(file);
   }
 
   async sowAgain(planting: ClientPlanting) {
@@ -558,50 +305,16 @@ export class GardenPlantingsPage implements OnInit {
    * finished could reload the list before the first reached the server, then
    * drop the first's result as stale, leaving a rejected date on screen.
    */
-  treeSpacing(feet: number | null | undefined): number | null {
-    return feet == null ? null : treeSpacingInput(feet, this.units());
+  async save(planting: ClientPlanting, patch: PlantingPatchDto) {
+    await this.notices.run(`save-planting-${planting.id}`, () => this.saveNow(planting, patch));
   }
 
-  private spacingFeet(planting: ClientPlanting): number | null {
-    const draft = this.spacingDraft[planting.id];
-    return draft ? typedFeet(draft) : (planting.spacingFeet ?? null);
-  }
-
-  async save(planting: ClientPlanting, plantedOn: string, harvestedOn: string, bedId: string) {
-    await this.notices.run(`save-planting-${planting.id}`, () =>
-      this.saveNow(planting, plantedOn, harvestedOn, bedId),
-    );
-  }
-
-  private async saveNow(
-    planting: ClientPlanting,
-    plantedOn: string,
-    harvestedOn: string,
-    bedId: string,
-  ) {
+  private async saveNow(planting: ClientPlanting, patch: PlantingPatchDto) {
     this.error.set('');
-    const planted = plantedOn || null;
-    const harvested = harvestedOn || null;
-    const bed = bedId || null;
     const epoch = ++this.listEpoch;
     try {
-      assertDatePair(planted, harvested);
-      const life = this.lifeDraft[planting.id] ?? planting.life;
-      const saved = await this.api.update(this.gardenId, planting.id, {
-        plantedOn: planted,
-        harvestedOn: harvested,
-        bedId: bed,
-        note: this.noteDraft[planting.id] ?? planting.note ?? null,
-        photo: this.photos[planting.id] ?? planting.photo ?? null,
-        life,
-        rootstock: this.rootstockDraft[planting.id] ?? planting.rootstock ?? null,
-        yearsToFruit: numberOrNull(this.yearsDraft[planting.id] ?? planting.yearsToFruit),
-        spacingFeet: this.spacingFeet(planting),
-        plantedYear:
-          life === 'tree'
-            ? (planting.plantedYear ?? new Date().getFullYear())
-            : planting.plantedYear,
-      });
+      assertDatePair(patch.plantedOn ?? null, patch.harvestedOn ?? null);
+      const saved = await this.api.update(this.gardenId, planting.id, patch);
       if (epoch !== this.listEpoch) return;
       const list = this.list();
       if (list) {
@@ -621,33 +334,8 @@ export class GardenPlantingsPage implements OnInit {
     }
   }
 
-  private syncDateInputs() {
-    // The date inputs are inside the loaded branch, so they are not in the DOM
-    // until the turn after loading flips. A microtask still runs before that.
-    setTimeout(() => {
-      for (const planting of this.list()?.plantings ?? []) {
-        const planted = document.querySelector<HTMLInputElement>(
-          `input[name="planted-${planting.id}"]`,
-        );
-        const harvested = document.querySelector<HTMLInputElement>(
-          `input[name="harvested-${planting.id}"]`,
-        );
-        // A late reload must not wipe a date typed before the model has it.
-        if (planted && shouldSyncDate(planted, planting.plantedOn)) {
-          planted.value = planting.plantedOn ?? '';
-        }
-        if (harvested && shouldSyncDate(harvested, planting.harvestedOn)) {
-          harvested.value = planting.harvestedOn ?? '';
-        }
-      }
-    });
-  }
-
   toggleEdit(id: string) {
-    const opening = this.editingId() !== id;
-    this.editingId.set(opening ? id : null);
-    this.confirmRemoveId.set(null);
-    if (opening) this.syncDateInputs();
+    this.editingId.set(this.editingId() === id ? null : id);
   }
 
   lifeLabel(life: ClientPlanting['life']) {
@@ -658,29 +346,11 @@ export class GardenPlantingsPage implements OnInit {
     this.error.set('');
     try {
       await this.api.remove(this.gardenId, planting.id);
-      this.confirmRemoveId.set(null);
       await this.load(true);
     } catch (err) {
       this.error.set(messageFrom(err));
     }
   }
-}
-
-function typedFeet(draft: { value: number | null; units: Units }): number | null {
-  if (draft.value == null || String(draft.value) === '') return null;
-  return feetFromTreeSpacing(draft.value, draft.units) || null;
-}
-
-function numberOrNull(value: unknown): number | null {
-  if (value == null || value === '') return null;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
-
-function shouldSyncDate(input: HTMLInputElement, modelValue: string | null): boolean {
-  if (document.activeElement === input) return false;
-  const next = modelValue ?? '';
-  return Boolean(next) || !input.value;
 }
 
 function messageFrom(err: unknown): string {
