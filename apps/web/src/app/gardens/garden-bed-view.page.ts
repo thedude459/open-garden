@@ -1,5 +1,4 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
 import { plantName } from '@open-garden/shared-types';
 import {
   ChangeDetectionStrategy,
@@ -24,40 +23,28 @@ import {
 import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/drop';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
-import type {
-  FavoriteListItemDto,
-  LayoutPlantingDto,
-  PlantSummaryDto,
-} from '@open-garden/shared-types';
-import {
-  allowsPlant,
-  areaKindFor,
-  ROOTSTOCK_LABELS,
-  ROOTSTOCKS,
-  type Rootstock,
-} from '@open-garden/shared-types';
+import type { LayoutPlantingDto, PlantSummaryDto } from '@open-garden/shared-types';
+import { ROOTSTOCK_LABELS, type Rootstock } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
 import { PlannerDraftService } from './planner-draft.service';
-import { FavoritesApiService } from '../favorites/favorites-api.service';
-import { PlantPicker } from '../plants/plant-picker';
+import { BedPlantPanel } from './bed-plant-panel';
+import { BedPlantingsList } from './bed-plantings-list';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { PlaceMarker } from '../ui/place-marker';
-import { EmptyState } from '../ui/empty-state';
 
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     RouterLink,
     GardenPlanCanvas,
     PlantingTray,
     PlaceMarker,
-    EmptyState,
-    PlantPicker,
+    BedPlantPanel,
+    BedPlantingsList,
   ],
   template: `
     <p class="back-link"><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
@@ -89,9 +76,6 @@ import { EmptyState } from '../ui/empty-state';
           </div>
         }
       </header>
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
-      }
       @if (status()) {
         <p role="status">{{ status() }}</p>
       }
@@ -154,156 +138,23 @@ import { EmptyState } from '../ui/empty-state';
           />
           <aside class="planner-rail bed-rail">
             <section id="plant-panel" class="plant-panel" aria-label="Plant panel">
-              @if (canEdit()) {
-                <h3>Add a plant</h3>
-                @if (bed()?.station === 'tree') {
-                  <label>
-                    Rootstock
-                    <select name="rootstock" [(ngModel)]="rootstock">
-                      @for (r of rootstocks; track r) {
-                        <option [value]="r">{{ rootstockLabels[r] }}</option>
-                      }
-                    </select>
-                  </label>
-                  <p class="muted">The tree's bed takes its spacing on this rootstock.</p>
-                }
-                @if (!armedPlant()) {
-                  <p class="muted">Drag Place onto the bed, or tap Place then tap the bed.</p>
-                }
-                @if (!inBed().length) {
-                  <div class="empty-actions">
-                    <button type="button" class="btn btn-secondary" (click)="focusPlantPanel()">
-                      Direct seed
-                    </button>
-                    <a
-                      class="btn btn-secondary"
-                      [routerLink]="['/gardens', gardenId, 'transplants']"
-                    >
-                      Transplants
-                    </a>
-                  </div>
-                }
-                @if (favorites().length) {
-                  <h3>Favorites</h3>
-                  <ul class="card-list">
-                    @for (f of shownFavorites(); track f.favoriteId) {
-                      @if (!f.unavailable) {
-                        @if (catalogPlant(f.plant); as p) {
-                          <li class="row">
-                            <span>
-                              <strong>{{ plantName(p) }}</strong>
-                              <span class="muted"> · {{ p.plantType }}</span>
-                            </span>
-                            <button
-                              type="button"
-                              class="btn btn-primary"
-                              [attr.aria-label]="'Place ' + plantName(p)"
-                              [attr.aria-pressed]="armedPlant()?.id === p.id"
-                              (pointerdown)="onArmPointerDown($event, p)"
-                            >
-                              Place
-                            </button>
-                          </li>
-                        }
-                      }
-                    }
-                  </ul>
-                }
-                <og-plant-picker
-                  [filters]="true"
-                  [live]="true"
-                  [zone]="gardenZone()"
-                  (results)="onCatalog($event)"
-                  (searched)="searched.set(true)"
-                  (zoneChange)="activeZone.set($event)"
-                  (failed)="onSearchFailed($event)"
-                />
-              } @else if (!inBed().length) {
-                <og-empty-state title="This bed is empty" [body]="emptyPlantingBody()" />
-              }
-              @if (searched() && catalogHits().length === 0 && canEdit()) {
-                <og-empty-state title="No plants match" body="Try another name or clear filters." />
-              }
-              @if (catalogHits().length) {
-                <ul class="card-list plant-panel-list">
-                  @for (p of catalogHits(); track p.id) {
-                    <li class="row">
-                      @if (p.illustrationUrl) {
-                        <img
-                          [src]="p.illustrationUrl"
-                          alt=""
-                          width="32"
-                          height="32"
-                          decoding="async"
-                        />
-                      } @else {
-                        <span class="plant-stand-in" [attr.data-plant-type]="p.plantType">{{
-                          p.plantType.slice(0, 1)
-                        }}</span>
-                      }
-                      <span>
-                        <strong>{{ plantName(p) }}</strong>
-                        <span class="muted"> · {{ p.plantType }}</span>
-                        @if (activeZone() !== undefined) {
-                          <span class="muted"> · Fits zone {{ activeZone() }}</span>
-                        }
-                      </span>
-                      @if (canEdit()) {
-                        <button
-                          type="button"
-                          class="btn btn-primary"
-                          [attr.aria-label]="'Place ' + plantName(p)"
-                          [attr.aria-pressed]="armedPlant()?.id === p.id"
-                          (pointerdown)="onArmPointerDown($event, p)"
-                        >
-                          Place
-                        </button>
-                      }
-                    </li>
-                  }
-                </ul>
-              }
+              <og-bed-plant-panel
+                [gardenId]="gardenId"
+                [station]="bed()?.station"
+                [canEdit]="canEdit()"
+                [armedId]="armedPlant()?.id ?? null"
+                [zone]="gardenZone()"
+                [bedEmpty]="!inBed().length"
+                [emptyBody]="emptyPlantingBody()"
+                [(rootstock)]="rootstock"
+                (armDown)="onArmPointerDown($event.event, $event.plant)"
+              />
             </section>
-            @if (inBed().length) {
-              <h3>In this bed</h3>
-              <ul class="card-list">
-                @for (p of inBed(); track p.id) {
-                  <li class="row">
-                    <span>{{ plantingLabel(p) }}</span>
-                    @if (canEdit()) {
-                      @if (confirmRemoveId() !== p.id) {
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          [attr.aria-label]="'Remove from bed ' + plantName(p)"
-                          (click)="confirmRemoveId.set(p.id)"
-                        >
-                          Remove
-                        </button>
-                      } @else {
-                        <span class="member-actions">
-                          <button
-                            type="button"
-                            class="btn btn-primary"
-                            [attr.aria-label]="'Confirm remove ' + plantName(p)"
-                            (click)="removeFromBed(p)"
-                          >
-                            Confirm
-                          </button>
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            (click)="confirmRemoveId.set(null)"
-                          >
-                            Cancel
-                          </button>
-                        </span>
-                      }
-                    }
-                  </li>
-                }
-              </ul>
-            }
+            <og-bed-plantings-list
+              [plantings]="inBed()"
+              [canEdit]="canEdit()"
+              (remove)="removeFromBed($event)"
+            />
             <og-planting-tray
               [plantings]="trayPlantings()"
               [canEdit]="canEdit()"
@@ -320,13 +171,11 @@ import { EmptyState } from '../ui/empty-state';
 export class GardenBedViewPage implements OnInit {
   readonly plantName = plantName;
   private readonly planner = inject(PlannerDraftService);
-  private readonly favoritesApi = inject(FavoritesApiService);
   private readonly gardensApi = inject(GardensApiService);
   readonly notices = inject(NoticeService);
   readonly units = inject(AuthApiService).units;
   private readonly route = inject(ActivatedRoute);
   private readonly canvas = viewChild(GardenPlanCanvas);
-  private readonly picker = viewChild(PlantPicker);
 
   gardenId = '';
   bedId = '';
@@ -334,21 +183,13 @@ export class GardenBedViewPage implements OnInit {
   readonly draft = this.planner.draft;
   readonly loading = this.planner.loading;
   readonly flags = this.planner.flags;
-  error = signal('');
   status = signal('');
   selectedPlantingId = signal<string | null>(null);
   online = signal(typeof navigator === 'undefined' || navigator.onLine);
   gardenZone = signal<number | undefined>(undefined);
-  activeZone = signal<number | undefined>(undefined);
-  catalogHits = signal<PlantSummaryDto[]>([]);
-  favorites = signal<FavoriteListItemDto[]>([]);
   /** The rootstock a tree placed in this bed grows on; it sets the bed's size. */
-  rootstock: Rootstock = 'semiDwarf';
-  readonly rootstocks = ROOTSTOCKS;
-  readonly rootstockLabels = ROOTSTOCK_LABELS;
-  searched = signal(false);
+  rootstock = signal<Rootstock>('semiDwarf');
   armedPlant = signal<PlantSummaryDto | null>(null);
-  confirmRemoveId = signal<string | null>(null);
   private trayDrag: { plantingId: string; before: LayoutPlantingDto } | null = null;
   private panelDrag: { plant: PlantSummaryDto; x: number; y: number } | null = null;
 
@@ -463,10 +304,6 @@ export class GardenBedViewPage implements OnInit {
     );
   }
 
-  plantingLabel(p: LayoutPlantingDto) {
-    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
-  }
-
   selectedPlantingName() {
     const id = this.selectedPlantingId();
     if (!id) return '';
@@ -505,40 +342,6 @@ export class GardenBedViewPage implements OnInit {
       this.gardenName.set(detail.name);
       this.gardenZone.set(detail.hardinessZone ?? undefined);
     }
-    if (this.canEdit()) {
-      void this.favoritesApi
-        .list()
-        .then((page) => this.favorites.set(page.items))
-        .catch(() => undefined);
-    }
-  }
-
-  focusPlantPanel() {
-    this.picker()?.focus();
-  }
-
-  onCatalog(items: PlantSummaryDto[]) {
-    this.catalogHits.set(
-      items.filter((plant) => allowsPlant(areaKindFor(this.bed()?.station), plant.plantType)),
-    );
-  }
-
-  shownFavorites() {
-    return this.favorites().filter((favorite) => {
-      const plant = this.catalogPlant(favorite.plant);
-      return plant ? allowsPlant(areaKindFor(this.bed()?.station), plant.plantType) : false;
-    });
-  }
-
-  onSearchFailed(err: unknown) {
-    this.catalogHits.set([]);
-    this.error.set(messageFrom(err));
-  }
-
-  catalogPlant(plant: FavoriteListItemDto['plant']): PlantSummaryDto | null {
-    const spacingInches = plant.spacingInches;
-    if (spacingInches == null) return null;
-    return { ...plant, spacingInches };
   }
 
   onArmPointerDown(ev: PointerEvent, plant: PlantSummaryDto) {
@@ -633,7 +436,7 @@ export class GardenBedViewPage implements OnInit {
       this.notices.error('A tree bed holds one tree');
       return;
     }
-    const spacing = treeSpacingInches(plant, this.rootstock);
+    const spacing = treeSpacingInches(plant, this.rootstock());
     if (spacing === null) return;
     const sized = sizeTreeBed(bed.geometry, spacing);
     const id = crypto.randomUUID();
@@ -650,7 +453,7 @@ export class GardenBedViewPage implements OnInit {
       bedId: bed.id,
       spacingInches: sized.spacingFeet * 12,
       spacingFeet: sized.spacingFeet,
-      rootstock: ROOTSTOCK_LABELS[this.rootstock],
+      rootstock: ROOTSTOCK_LABELS[this.rootstock()],
       life: 'tree',
       startMethod: 'direct_seed',
       indoorStartedOn: null,
@@ -721,7 +524,6 @@ export class GardenBedViewPage implements OnInit {
     } else {
       this.applyDrop(planting.id, planting, { kind: 'tray' });
     }
-    this.confirmRemoveId.set(null);
     this.refreshFlags();
   }
 
@@ -752,7 +554,6 @@ export class GardenBedViewPage implements OnInit {
   async save() {
     await this.notices.run('save-layout', async () => {
       if (!this.guardMutate()) return;
-      this.error.set('');
       this.planner.refreshFlags();
       try {
         await this.planner.save();
