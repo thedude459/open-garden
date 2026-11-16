@@ -73,6 +73,16 @@
         "command": "eslint \"apps/web/**/*.ts\" \"apps/web/**/*.html\"",
         "cwd": "{workspaceRoot}"
       }
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {
+        "buildTarget": "web:build:development",
+        "tsConfig": "apps/web/tsconfig.spec.json",
+        "runner": "vitest",
+        "include": ["**/*.component.spec.ts"],
+        "watch": false
+      }
     }
   }
 }
