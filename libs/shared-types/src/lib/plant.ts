@@ -142,6 +142,12 @@ export interface PlantListQueryDto {
   q?: string;
   zone?: number;
   plantType?: PlantType;
+  /** Botanical family, as the catalog names it. */
+  family?: string;
+  /** A property: only crops whose sowing or planting window there is open this week. */
+  sowNowFor?: string;
+  /** The member's local date (YYYY-MM-DD) that "this week" starts from. */
+  asOf?: string;
   page?: number;
   pageSize?: number;
 }

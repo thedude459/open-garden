@@ -1,9 +1,12 @@
 import { Controller, Get, Inject, Logger, Param, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
+import { CalendarService } from '@open-garden/planting-calendar';
 import {
+  CalendarEntryRepository,
   CatalogCompanionRepository,
   FavoriteRepository,
+  GardenMembershipRepository,
   GardenRepository,
   PlantRepository,
   type AppDatabase,
@@ -18,12 +21,19 @@ export class PlantsController {
   private readonly logger = new Logger(PlantsController.name);
   private readonly catalog: CatalogService;
   private readonly details: PlantDetailService;
+  private readonly calendar: CalendarService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     const plants = new PlantRepository(bundle.db);
     const favorites = new FavoriteRepository(bundle.db);
     this.catalog = new CatalogService(plants);
     const gardens = new GardenRepository(bundle.db);
+    this.calendar = new CalendarService(
+      gardens,
+      new GardenMembershipRepository(bundle.db),
+      plants,
+      new CalendarEntryRepository(bundle.db),
+    );
     this.details = new PlantDetailService(plants, favorites, {
       pairs: new CatalogCompanionRepository(bundle.db),
       zonesForUser: (userId) => gardens.zonesForUser(userId),
@@ -32,16 +42,23 @@ export class PlantsController {
 
   @Get()
   async list(
+    @CurrentUser() user: AuthUser,
     @Query('q') q?: string,
     @Query('zone') zoneRaw?: string,
     @Query('plantType') plantType?: string,
+    @Query('family') family?: string,
+    @Query('sowNowFor') sowNowFor?: string,
+    @Query('asOf') asOf?: string,
     @Query('page') pageRaw?: string,
     @Query('pageSize') pageSizeRaw?: string,
   ) {
     const parsed = plantListQuerySchema.safeParse({
       q,
-      zone: zoneRaw === undefined || zoneRaw === '' ? undefined : zoneRaw,
-      plantType: plantType === undefined || plantType === '' ? undefined : plantType,
+      zone: blankToUndefined(zoneRaw),
+      plantType: blankToUndefined(plantType),
+      family: blankToUndefined(family),
+      sowNowFor: blankToUndefined(sowNowFor),
+      asOf: blankToUndefined(asOf),
       page: pageRaw,
       pageSize: pageSizeRaw,
     });
@@ -53,9 +70,18 @@ export class PlantsController {
       throw err;
     }
     const started = Date.now();
-    const result = await this.catalog.list(parsed.data);
+    const { sowNowFor: gardenId, asOf: asOfDate } = parsed.data;
+    const keep = gardenId
+      ? await this.calendar.sowableNow(user.id, gardenId, localDate(asOfDate))
+      : undefined;
+    const result = await this.catalog.list(parsed.data, keep);
     this.logger.log(`plants.list.assembly_ms=${Date.now() - started}`);
     return result;
+  }
+
+  @Get('families')
+  families() {
+    return this.catalog.families();
   }
 
   @Get(':id')
@@ -68,4 +94,15 @@ export class PlantsController {
     }
     return plant;
   }
+}
+
+function blankToUndefined(value: string | undefined): string | undefined {
+  return value === undefined || value === '' ? undefined : value;
+}
+
+/** The member's local date, or the server's when the client sent none. */
+function localDate(asOf: string | undefined): Date {
+  if (!asOf) return new Date();
+  const [year, month, day] = asOf.split('-').map(Number);
+  return new Date(year!, month! - 1, day);
 }

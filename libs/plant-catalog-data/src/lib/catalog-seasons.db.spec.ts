@@ -110,7 +110,12 @@ describe('PlantRepository', () => {
   it('lists with search, zone, type, and paging; hides deprecated and spacing-less plants', async () => {
     await plantsRepo.upsertManyByVarietyKey([
       variety('list-tomato', { commonName: 'Listing Tomato' }),
-      variety('list-palm', { commonName: 'Listing Palm', zoneMin: 10, zoneMax: 11 }),
+      variety('list-palm', {
+        commonName: 'Listing Palm',
+        zoneMin: 10,
+        zoneMax: 11,
+        family: 'Listingfamily',
+      }),
       variety('list-basil', { commonName: 'Listing Basil', plantType: 'herb' }),
       variety('list-nospace', { commonName: 'Listing Nospace', spacingInches: null }),
       variety('list-old', { commonName: 'Listing Old' }),
@@ -123,6 +128,10 @@ describe('PlantRepository', () => {
     expect(await names({})).toEqual(['Listing Basil', 'Listing Palm', 'Listing Tomato']);
     expect(await names({ zone: 6 })).toEqual(['Listing Basil', 'Listing Tomato']);
     expect(await names({ plantType: 'herb' })).toEqual(['Listing Basil']);
+    expect(await names({ family: 'Listingfamily' })).toEqual(['Listing Palm']);
+    const families = await plantsRepo.families();
+    expect(families).toContain('Listingfamily');
+    expect(families).toEqual([...families].sort());
     expect(await names({ includeDeprecated: true })).toContain('Listing Old');
     expect(await names({ q: 'lycopersicum' })).toContain('Listing Tomato');
     const paged = await plantsRepo.list({ page: 2, pageSize: 2, q: 'Listing' });

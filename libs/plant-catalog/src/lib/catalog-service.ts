@@ -10,7 +10,18 @@ import { PLANT_TYPES, rootstockSpacing } from '@open-garden/shared-types';
 export class CatalogService {
   constructor(private readonly plants: PlantRepository) {}
 
-  async list(query: PlantListQueryDto): Promise<PageDto<PlantSummaryDto>> {
+  /**
+   * A page of the catalog. `keep`, when given, narrows it further by a check
+   * the database cannot run (a sowing window at one property).
+   */
+  families(): Promise<string[]> {
+    return this.plants.families();
+  }
+
+  async list(
+    query: PlantListQueryDto,
+    keep?: (row: PlantRow) => boolean,
+  ): Promise<PageDto<PlantSummaryDto>> {
     const page = Math.max(1, query.page ?? 1);
     const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
     const zone = query.zone;
@@ -22,13 +33,25 @@ export class CatalogService {
     }
 
     const q = query.q?.trim() ?? '';
-    const result = await this.plants.list({
+    const filters = {
       q: q || undefined,
       zone,
       plantType: query.plantType,
-      page,
-      pageSize,
-    });
+      family: query.family?.trim() || undefined,
+    };
+    if (keep) {
+      // ponytail: reads the whole filtered catalog to check each crop's window;
+      // fine at a few hundred crops. Past that, store windows per property.
+      const all = await this.plants.list({ ...filters, page: 1, pageSize: 100_000 });
+      const kept = all.items.filter(keep);
+      return {
+        items: kept.slice((page - 1) * pageSize, page * pageSize).map(toSummary),
+        page,
+        pageSize,
+        totalCount: kept.length,
+      };
+    }
+    const result = await this.plants.list({ ...filters, page, pageSize });
 
     return {
       items: result.items.filter((row) => row.spacingInches != null).map(toSummary),
@@ -38,6 +61,8 @@ export class CatalogService {
     };
   }
 }
+
+type PlantRow = Awaited<ReturnType<PlantRepository['list']>>['items'][number];
 
 export function matchesZone(zoneMin: number, zoneMax: number, zone: number): boolean {
   return zoneMin <= zone && zone <= zoneMax;
