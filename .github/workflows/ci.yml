@@ -351,11 +351,21 @@ jobs:
         if: steps.e2e-gate.outputs.run == 'run'
         run: bash scripts/ci/e2e.sh
       - name: Coverage with live tests
+        # Unit coverage comes from verify's coverage-all artifact (same commit,
+        # uploaded minutes earlier) instead of running every unit test again.
+        # The table is a report only; if verify has not uploaded yet, say so.
         if: steps.e2e-gate.outputs.run == 'run'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           node scripts/ci/coverage-e2e.mjs selfcheck
-          npx vitest run --coverage --config vitest.coverage-all.config.ts
-          node scripts/ci/coverage-summary.js --e2e coverage/e2e/coverage-final.json
+          if gh run download "${RUN_ID}" --name coverage-all --dir coverage/all; then
+            node scripts/ci/coverage-summary.js --e2e coverage/e2e/coverage-final.json
+          else
+            echo "verify's unit coverage is not available yet; skipping the unit + live table."
+          fi
       - name: Upload live-test coverage
         if: steps.e2e-gate.outputs.run == 'run'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

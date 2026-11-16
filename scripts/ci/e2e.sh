@@ -143,10 +143,13 @@ if ! port_open 5432; then
 fi
 ensure_postgres
 
-if [[ "$(uname -s)" == "Linux" ]]; then
-  npx playwright install --with-deps chromium
-else
-  npx playwright install chromium
+npx playwright install chromium
+# The system libraries Chromium needs are usually present already (GitHub's
+# Ubuntu image lacks only optional fonts), and apt costs ~40 s. Install them
+# only when the browser cannot start without them.
+if [[ "$(uname -s)" == "Linux" ]] &&
+  ! node -e "require('@playwright/test').chromium.launch().then((b) => b.close())" 2>/dev/null; then
+  npx playwright install-deps chromium
 fi
 
 node scripts/ci/ensure-database.js

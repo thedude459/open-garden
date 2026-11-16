@@ -148,7 +148,7 @@ is a required check on `main`.
 | `workflows` | actionlint and zizmor on the GitHub Actions workflows |
 | `analyze` | CodeQL for JavaScript/TypeScript |
 | `images (api)`, `images (web)` | hadolint, image build, and Trivy image scan (fixable HIGH/CRITICAL fail); skipped for documentation-only changes |
-| `e2e` | Live HTTP, then Playwright (2 workers, no retries) against a seeded API (run from the same bundle the Docker image ships) and web app; reports unit + live coverage |
+| `e2e` | Live HTTP, then Playwright (4 workers, no retries) against a seeded API (run from the same bundle the Docker image ships) and web app; reports unit + live coverage |
 
 The `e2e` job passes without running browsers when a pull request only changes
 documentation, editor or formatter config, the lockfile, development
