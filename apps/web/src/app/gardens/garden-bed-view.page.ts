@@ -65,6 +65,7 @@ import { PlaceMarker } from '../ui/place-marker';
           <div class="planner-toolbar">
             <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
             <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
+            <button type="button" class="btn btn-secondary" (click)="fit()">Fit</button>
             @if (canEdit()) {
               <og-plan-save-status />
             }
@@ -297,6 +298,10 @@ export class GardenBedViewPage implements OnInit {
 
   zoomOut() {
     this.canvas()?.zoomOut();
+  }
+
+  fit() {
+    this.canvas()?.fit();
   }
 
   emptyPlantingBody() {

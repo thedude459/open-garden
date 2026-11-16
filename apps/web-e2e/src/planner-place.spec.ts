@@ -59,9 +59,10 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await owner.getByRole('button', { name: 'Edit bed North' }).click();
   const ox = await originX.inputValue();
+  // Aim inside the visible plan: the drawing itself may be zoomed past its edges.
   await owner
     .locator('[data-bed-name="North"]')
-    .dragTo(plan, { targetPosition: { x: 100, y: 60 } });
+    .dragTo(owner.locator('.plan-viewport'), { targetPosition: { x: 100, y: 60 } });
   await expect(originX).not.toHaveValue(ox);
   const movedX = await originX.inputValue();
   const movedY = await originY.inputValue();

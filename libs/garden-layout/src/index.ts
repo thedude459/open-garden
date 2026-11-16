@@ -53,6 +53,12 @@ export {
   clampOriginToPlot,
   rectAtPlotEdge,
   formatPlanFrame,
+  fitView,
+  visibleArea,
+  zoomAbout,
+  MIN_PLAN_SCALE,
+  MAX_PLAN_SCALE,
+  type PlanView,
 } from './lib/plan-frame';
 export type { PlanFrame, PlanRect } from './lib/plan-frame';
 export { evaluateLayout } from './lib/evaluate-layout';

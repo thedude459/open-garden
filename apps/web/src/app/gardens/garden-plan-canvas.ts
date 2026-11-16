@@ -2,6 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  DestroyRef,
+  afterNextRender,
+  afterRenderEffect,
   computed,
   inject,
   input,
@@ -26,6 +29,12 @@ import {
   clampOriginToPlot,
   rectAtPlotEdge,
   type PlanFrame,
+  fitView,
+  visibleArea,
+  zoomAbout,
+  MIN_PLAN_SCALE,
+  MAX_PLAN_SCALE,
+  type PlanView,
   pairRequiredSpacing,
 } from '@open-garden/garden-layout';
 import { classifyGesture, hitTestPlan, isClickNotDrag } from '@open-garden/garden-layout/hit-test';
@@ -341,6 +350,11 @@ export class GardenPlanCanvas {
   /** Garden length and width. When both are set, the plot is that rectangle. */
   readonly plotLengthInches = input<number | null>(null);
   readonly plotWidthInches = input<number | null>(null);
+  /**
+   * Where to remember this plan's zoom and position in this browser, or null
+   * to always open fitted to the beds.
+   */
+  readonly viewKey = input<string | null>(null);
 
   readonly focusBed = output<string>();
   readonly plantingDrop = output<{
@@ -361,6 +375,42 @@ export class GardenPlanCanvas {
   private readonly panX = signal(0);
   private readonly panY = signal(0);
   private readonly scale = signal(1);
+
+  /** Set once the member zooms, pans, or fits; until then the view follows the plot. */
+  private viewTouched = false;
+
+  constructor() {
+    // The plan can draw before the property's size arrives (cached layout
+    // first), so open the view again when the plot changes, until touched.
+    // After the member has zoomed or panned, a new plot keeps the same part
+    // of the plan in view rather than the same pixels.
+    let shownPlot: PlanFrame | null = null;
+    afterRenderEffect(() => {
+      const plot = this.plot();
+      untracked(() => {
+        const before = shownPlot;
+        shownPlot = plot;
+        if (!this.viewTouched) return this.openView();
+        if (!before || formatPlanFrame(before) === formatPlanFrame(plot)) return;
+        const size = this.viewportSize();
+        const view = { scale: this.scale(), panX: this.panX(), panY: this.panY() };
+        this.applyView(fitView(size, plot, visibleArea(size, before, view)));
+      });
+    });
+    // The page around the plan can still settle after it first draws (the
+    // side panel fills in), and windows get resized: keep the view until touched.
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const host = this.svgRef()?.nativeElement.closest('.plan-viewport');
+      if (!host || typeof ResizeObserver === 'undefined') return;
+      const observer = new ResizeObserver(() => {
+        if (!this.viewTouched) this.openView();
+      });
+      observer.observe(host);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
+
   private readonly previewPlant = signal<{ id: string; x: number; y: number } | null>(null);
   readonly probePoint = signal<{ x: number; y: number } | null>(null);
   private readonly previewInvalid = signal(false);
@@ -470,11 +520,88 @@ export class GardenPlanCanvas {
   );
 
   zoomIn() {
-    this.scale.update((s) => Math.min(4, s + 0.25));
+    this.zoomBy(1.25);
   }
 
   zoomOut() {
-    this.scale.update((s) => Math.max(0.5, s - 0.25));
+    this.zoomBy(0.8);
+  }
+
+  /** Shows every bed and walkway, as large as fits. */
+  fit() {
+    this.viewTouched = true;
+    this.setView(this.fittedView());
+  }
+
+  private fittedView(): PlanView {
+    const rects = contentRects(this.beds(), this.areas());
+    return fitView(
+      this.viewportSize(),
+      this.plot(),
+      rects.length ? frameAround(rects) : this.plot(),
+    );
+  }
+
+  /** Opens on the view remembered for this plan, or fitted to the beds. */
+  private openView() {
+    const remembered = this.rememberedArea();
+    const rects = contentRects(this.beds(), this.areas());
+    const shows = (a: PlanFrame) =>
+      rects.some((r) => r.x1 > a.x && r.x0 < a.x + a.w && r.y1 > a.y && r.y0 < a.y + a.h);
+    if (remembered && (rects.length === 0 || shows(remembered))) {
+      this.applyView(fitView(this.viewportSize(), this.plot(), remembered));
+    } else {
+      this.applyView(this.fittedView());
+    }
+  }
+
+  private zoomBy(factor: number) {
+    this.viewTouched = true;
+    const { width, height } = this.viewportSize();
+    const view = { scale: this.scale(), panX: this.panX(), panY: this.panY() };
+    this.setView(zoomAbout(view, factor, { x: width / 2, y: height / 2 }));
+  }
+
+  private setView(view: PlanView) {
+    this.applyView(view);
+    this.rememberView();
+  }
+
+  private applyView(view: PlanView) {
+    this.scale.set(view.scale);
+    this.panX.set(view.panX);
+    this.panY.set(view.panY);
+  }
+
+  private viewportSize() {
+    const host = this.svgRef()?.nativeElement.closest('.plan-viewport') as HTMLElement | null;
+    return { width: host?.clientWidth ?? 0, height: host?.clientHeight ?? 0 };
+  }
+
+  /** The visible part of the plan, kept per property in this browser only. */
+  private rememberView() {
+    const key = this.viewKey();
+    const size = this.viewportSize();
+    if (!key || size.width <= 0 || size.height <= 0) return;
+    const view = { scale: this.scale(), panX: this.panX(), panY: this.panY() };
+    try {
+      localStorage.setItem(key, JSON.stringify(visibleArea(size, this.plot(), view)));
+    } catch {
+      /* storage blocked or full: the plan still works, it just opens fitted next time */
+    }
+  }
+
+  private rememberedArea(): PlanFrame | null {
+    const key = this.viewKey();
+    if (!key) return null;
+    try {
+      const area = JSON.parse(localStorage.getItem(key) ?? 'null') as PlanFrame | null;
+      const valid =
+        area && [area.x, area.y, area.w, area.h].every(Number.isFinite) && area.w > 0 && area.h > 0;
+      return valid ? area : null;
+    } catch {
+      return null;
+    }
   }
 
   viewportCenterPlan(): { x: number; y: number } {
@@ -737,7 +864,9 @@ export class GardenPlanCanvas {
       if (pts.length < 2) return;
       const dist = Math.hypot(pts[1]!.x - pts[0]!.x, pts[1]!.y - pts[0]!.y);
       if (g.startDist > 0) {
-        this.scale.set(Math.min(4, Math.max(0.5, g.startScale * (dist / g.startDist))));
+        this.scale.set(
+          Math.min(MAX_PLAN_SCALE, Math.max(MIN_PLAN_SCALE, g.startScale * (dist / g.startDist))),
+        );
       }
       return;
     }
@@ -845,6 +974,10 @@ export class GardenPlanCanvas {
     if (g?.type === 'place-catalog') {
       this.planPointer.emit({ clientX: ev.clientX, clientY: ev.clientY });
       return;
+    }
+    if (g?.type === 'pan' || g?.type === 'pinch') {
+      this.viewTouched = true;
+      this.rememberView();
     }
     if (!g || g.type === 'pan' || g.type === 'pinch') {
       this.previewPlant.set(null);

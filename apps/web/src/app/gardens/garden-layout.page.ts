@@ -77,6 +77,7 @@ import { EmptyState } from '../ui/empty-state';
           <div class="planner-toolbar">
             <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
             <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
+            <button type="button" class="btn btn-secondary" (click)="fit()">Fit</button>
             @if (canEdit()) {
               <div class="add-menu">
                 <button
@@ -173,6 +174,7 @@ import { EmptyState } from '../ui/empty-state';
             [showPlantingMarks]="false"
             [allowBedGeometry]="true"
             [planLabel]="'Garden plan'"
+            [viewKey]="'og-plan-view:' + gardenId"
             [plotLengthInches]="plotLength()"
             [plotWidthInches]="plotWidth()"
             (focusBed)="editGeometry($event)"
@@ -387,6 +389,10 @@ export class GardenLayoutPage implements OnInit {
 
   zoomOut() {
     this.canvas()?.zoomOut();
+  }
+
+  fit() {
+    this.canvas()?.fit();
   }
 
   patchSelected(patch: Partial<BedGeometryDto>) {
