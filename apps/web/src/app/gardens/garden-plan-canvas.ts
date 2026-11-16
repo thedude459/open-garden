@@ -26,9 +26,7 @@ import {
   clampOriginToPlot,
   rectAtPlotEdge,
   type PlanFrame,
-  fitClearance,
   pairRequiredSpacing,
-  type PlanRect,
 } from '@open-garden/garden-layout';
 import { classifyGesture, hitTestPlan, isClickNotDrag } from '@open-garden/garden-layout/hit-test';
 import { plantingFootprintRadius } from '@open-garden/garden-layout/footprint';
@@ -36,6 +34,15 @@ import { drawableBeds } from '@open-garden/garden-layout/drawable-beds';
 import { overviewPlantingLabels } from '@open-garden/garden-layout/overview-labels';
 import { bedPlanSize, localToPlan } from '@open-garden/garden-layout/rotate';
 import type { DropTarget } from '@open-garden/garden-layout/drop';
+import {
+  bedAt,
+  bedGridLines,
+  contentRects,
+  dropTargetAt,
+  marginBands,
+  soilSize,
+  type PlanBox,
+} from '@open-garden/garden-layout/plan-drawing';
 import type {
   BedGeometryDto,
   LayoutAreaDto,
@@ -395,10 +402,8 @@ export class GardenPlanCanvas {
     return map;
   });
 
-  soilSize(geo: BedGeometryDto): { width: number; height: number } {
-    const size = bedPlanSize(geo);
-    return { width: Math.max(1, size.width - 6), height: Math.max(1, size.height - 6) };
-  }
+  readonly soilSize = soilSize;
+  readonly gridLines = bedGridLines;
 
   /** Ids and sizes only, so a move does not refit the camera under the pointer. */
   private readonly structureKey = computed(() => {
@@ -417,7 +422,7 @@ export class GardenPlanCanvas {
   private readonly camera = linkedSignal<string, PlanFrame>({
     source: () => this.structureKey(),
     computation: (_source, previous) => {
-      const rects = untracked(() => this.contentRects());
+      const rects = untracked(() => contentRects(this.beds(), this.areas()));
       const next = frameAround(rects);
       if (previous && rectsFit(previous.value, rects)) return previous.value;
       return next;
@@ -511,21 +516,9 @@ export class GardenPlanCanvas {
     return bed.geometry;
   }
 
-  marginBands(geo: BedGeometryDto): { x: number; y: number; w: number; h: number }[] {
-    const size = bedPlanSize(geo);
-    const bed = { x: geo.originXInches, y: geo.originYInches, w: size.width, h: size.height };
-    const inset = this.insetRect(geo);
-    if (!inset) return [bed];
-    const bands: { x: number; y: number; w: number; h: number }[] = [];
-    const top = inset.y - bed.y;
-    const left = inset.x - bed.x;
-    const bottom = bed.y + bed.h - (inset.y + inset.h);
-    const right = bed.x + bed.w - (inset.x + inset.w);
-    if (top > 0) bands.push({ x: bed.x, y: bed.y, w: bed.w, h: top });
-    if (bottom > 0) bands.push({ x: bed.x, y: inset.y + inset.h, w: bed.w, h: bottom });
-    if (left > 0) bands.push({ x: bed.x, y: inset.y, w: left, h: inset.h });
-    if (right > 0) bands.push({ x: inset.x + inset.w, y: inset.y, w: right, h: inset.h });
-    return bands;
+  marginBands(geo: BedGeometryDto): PlanBox[] {
+    const spacing = this.probeSpacing();
+    return spacing == null ? [] : marginBands(geo, spacing);
   }
 
   blockMark(
@@ -545,34 +538,11 @@ export class GardenPlanCanvas {
     const spacing = this.probeSpacing();
     const point = this.probePoint();
     if (spacing == null || !point) return null;
-    const bed = this.bedAt(point.x, point.y);
+    const bed = bedAt(this.drawnBeds(), point.x, point.y);
     const ok = bed
       ? catalogDropOutcome(bed, this.plantings(), point.x, point.y, spacing) === 'ok'
       : false;
     return { x: point.x, y: point.y, r: plantingFootprintRadius(spacing), ok };
-  }
-
-  gridLines(geo: BedGeometryDto): { x1: number; y1: number; x2: number; y2: number }[] {
-    const size = bedPlanSize(geo);
-    const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
-    const inset = 3;
-    for (let x = 12; x < size.width - inset; x += 12) {
-      lines.push({
-        x1: geo.originXInches + x,
-        y1: geo.originYInches + inset,
-        x2: geo.originXInches + x,
-        y2: geo.originYInches + size.height - inset,
-      });
-    }
-    for (let y = 12; y < size.height - inset; y += 12) {
-      lines.push({
-        x1: geo.originXInches + inset,
-        y1: geo.originYInches + y,
-        x2: geo.originXInches + size.width - inset,
-        y2: geo.originYInches + y,
-      });
-    }
-    return lines;
   }
 
   placedIn(bedId: string) {
@@ -906,7 +876,9 @@ export class GardenPlanCanvas {
         document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.unplaced-tray'),
       );
       const hit = hitTestPlan(this.drawnBeds(), this.plantings(), plan.x, plan.y, HANDLE_INCHES);
-      const target: DropTarget = overTray ? { kind: 'tray' } : this.dropTarget(hit, plan);
+      const target: DropTarget = overTray
+        ? { kind: 'tray' }
+        : dropTargetAt(hit, this.plantings(), plan);
       this.plantingDrop.emit({ plantingId: g.plantingId, before: g.before, target });
       if (target.kind === 'empty') this.missedBed.emit();
       this.gestureEnd.emit();
@@ -925,86 +897,11 @@ export class GardenPlanCanvas {
     this.gestureEnd.emit();
   }
 
-  private contentRects(): PlanRect[] {
-    const rects: PlanRect[] = [];
-    for (const bed of drawableBeds(this.beds())) {
-      const geo = bed.geometry!;
-      const size = bedPlanSize(geo);
-      rects.push({
-        x0: geo.originXInches,
-        y0: geo.originYInches,
-        x1: geo.originXInches + size.width,
-        y1: geo.originYInches + size.height,
-      });
-    }
-    for (const area of this.areas()) {
-      rects.push({
-        x0: area.originXInches,
-        y0: area.originYInches,
-        x1: area.originXInches + area.lengthInches,
-        y1: area.originYInches + area.widthInches,
-      });
-    }
-    return rects;
-  }
-
-  private insetRect(geo: BedGeometryDto): { x: number; y: number; w: number; h: number } | null {
-    const spacing = this.probeSpacing();
-    if (spacing == null) return null;
-    const clearance = fitClearance(spacing);
-    if (geo.lengthInches < spacing || geo.widthInches < spacing) return null;
-    const corners = [
-      localToPlan(geo, clearance, clearance),
-      localToPlan(geo, geo.lengthInches - clearance, clearance),
-      localToPlan(geo, clearance, geo.widthInches - clearance),
-      localToPlan(geo, geo.lengthInches - clearance, geo.widthInches - clearance),
-    ];
-    const xs = corners.map((point) => point.x);
-    const ys = corners.map((point) => point.y);
-    const x = Math.min(...xs);
-    const y = Math.min(...ys);
-    const w = Math.max(...xs) - x;
-    const h = Math.max(...ys) - y;
-    if (w <= 0 || h <= 0) return null;
-    return { x, y, w, h };
-  }
-
-  private bedAt(planX: number, planY: number): LayoutBedDto | null {
-    return (
-      this.drawnBeds().find((bed) => {
-        if (!bed.geometry) return false;
-        const size = bedPlanSize(bed.geometry);
-        return (
-          planX >= bed.geometry.originXInches &&
-          planX <= bed.geometry.originXInches + size.width &&
-          planY >= bed.geometry.originYInches &&
-          planY <= bed.geometry.originYInches + size.height
-        );
-      }) ?? null
-    );
-  }
-
-  private dropTarget(
-    hit: ReturnType<typeof hitTestPlan>,
-    plan: { x: number; y: number },
-  ): DropTarget {
-    if (hit.kind === 'empty' || hit.kind === 'area' || hit.kind === 'area-handle') {
-      return { kind: 'empty' };
-    }
-    if (hit.kind === 'bed' || hit.kind === 'bed-handle') {
-      return { kind: 'bed', bedId: hit.bedId, planX: plan.x, planY: plan.y };
-    }
-    const planting = this.plantings().find((p) => p.id === hit.plantingId);
-    const bedId = planting?.placement?.bedId;
-    if (!bedId) return { kind: 'empty' };
-    return { kind: 'bed', bedId, planX: plan.x, planY: plan.y };
-  }
-
   private previewWouldBlock(plantingId: string, planX: number, planY: number): boolean {
     const planting = this.plantings().find((p) => p.id === plantingId);
     if (!planting) return false;
     const others = this.plantings().filter((p) => p.id !== plantingId);
-    const bed = this.bedAt(planX, planY);
+    const bed = bedAt(this.drawnBeds(), planX, planY);
     if (!bed) return true;
     return catalogDropOutcome(bed, others, planX, planY, planting.spacingInches ?? 12) !== 'ok';
   }
