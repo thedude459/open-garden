@@ -353,7 +353,7 @@ export class GardenLayoutPage implements OnInit {
 
   /** A bed the server has, so its name and settings can be changed now. */
   isSaved(bed: LayoutBedDto) {
-    return !this.planner.newBedIds.has(bed.id);
+    return this.planner.isSavedBed(bed.id);
   }
 
   async saveBedSettings(bed: LayoutBedDto, patch: BedSettingsPatch) {
@@ -536,7 +536,6 @@ export class GardenLayoutPage implements OnInit {
       },
       true,
     );
-    this.planner.newBedIds.add(id);
     this.planner.setDraft({
       ...d,
       beds: [
@@ -580,7 +579,7 @@ export class GardenLayoutPage implements OnInit {
     if (!this.guardMutate()) return;
     const d = this.draft();
     if (!d) return;
-    const inSaved = this.planner.savedPutJson.includes(area.id);
+    const inSaved = this.planner.isSavedArea(area.id);
     if (!inSaved) {
       this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
       return;
@@ -598,18 +597,19 @@ export class GardenLayoutPage implements OnInit {
   async deleteBed(bed: LayoutBedDto) {
     this.error.set('');
     if (!this.guardMutate()) return;
-    if (this.planner.newBedIds.has(bed.id)) {
+    if (!this.planner.isSavedBed(bed.id)) {
       const d = this.draft();
       if (!d) return;
-      this.planner.newBedIds.delete(bed.id);
+      const inBed = (p: { bedId: string | null; placement: { bedId: string } | null }) =>
+        p.bedId === bed.id || p.placement?.bedId === bed.id;
       this.planner.setDraft({
         ...d,
         beds: d.beds.filter((b) => b.id !== bed.id),
-        plantings: d.plantings.map((p) =>
-          p.bedId === bed.id || p.placement?.bedId === bed.id
-            ? { ...p, bedId: null, placement: null }
-            : p,
-        ),
+        // Plants sown in a bed that was never saved go with it; transplants
+        // go back to waiting.
+        plantings: d.plantings
+          .filter((p) => !(p.startMethod === 'direct_seed' && inBed(p)))
+          .map((p) => (inBed(p) ? { ...p, bedId: null, placement: null } : p)),
       });
       this.refreshFlags();
       return;
