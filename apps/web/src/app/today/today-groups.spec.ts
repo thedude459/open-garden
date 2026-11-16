@@ -1,6 +1,6 @@
 import type { TodayTaskDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
-import { groupTodayTasks, localIso } from './today-groups';
+import { groupTodayTasks, localIso, nextTaskByGarden } from './today-groups';
 
 const task = (gardenId: string, kind: TodayTaskDto['kind'], title: string): TodayTaskDto => ({
   gardenId,
@@ -26,5 +26,21 @@ describe('groupTodayTasks', () => {
 
   it('formats the local day', () => {
     expect(localIso(new Date(2026, 0, 5))).toBe('2026-01-05');
+  });
+});
+
+describe('nextTaskByGarden', () => {
+  it("picks each property's most urgent task: overdue, then today, then this week", () => {
+    const next = nextTaskByGarden([
+      task('a', 'thisWeek', 'Sow peas'),
+      task('a', 'overdue', 'Water tomato'),
+      task('a', 'dueToday', 'Feed squash'),
+      task('b', 'thisWeek', 'Sow kale'),
+      task('b', 'thisWeek', 'Sow beans'),
+    ]);
+    expect(next.get('a')?.title).toBe('Water tomato');
+    // Within a kind, Today's order stands.
+    expect(next.get('b')?.title).toBe('Sow kale');
+    expect(next.has('c')).toBe(false);
   });
 });

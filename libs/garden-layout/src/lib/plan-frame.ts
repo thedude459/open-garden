@@ -173,3 +173,19 @@ export function zoomAbout(view: PlanView, factor: number, at: { x: number; y: nu
     panY: at.y - (at.y - view.panY) * ratio,
   };
 }
+
+/**
+ * The frame for a small picture of a property: its own size from the corner,
+ * widened to any bed drawn past it.
+ */
+export function planOutlineFrame(plan: {
+  lengthInches: number;
+  widthInches: number;
+  beds: { x: number; y: number; w: number; h: number }[];
+}): PlanFrame {
+  const x0 = Math.min(0, ...plan.beds.map((b) => b.x));
+  const y0 = Math.min(0, ...plan.beds.map((b) => b.y));
+  const x1 = Math.max(plan.lengthInches, ...plan.beds.map((b) => b.x + b.w));
+  const y1 = Math.max(plan.widthInches, ...plan.beds.map((b) => b.y + b.h));
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}

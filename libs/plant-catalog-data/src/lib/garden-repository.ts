@@ -119,20 +119,44 @@ export class GardenRepository {
     };
   }
 
-  async countsForGardenIds(
-    ids: string[],
-  ): Promise<Map<string, { bedCount: number; placementCount: number }>> {
-    const map = new Map<string, { bedCount: number; placementCount: number }>();
+  /**
+   * Bed and plant counts per property, and each sized bed's outline (turned
+   * as drawn), for the property list: one query each, however many properties.
+   */
+  async countsForGardenIds(ids: string[]): Promise<
+    Map<
+      string,
+      {
+        bedCount: number;
+        placementCount: number;
+        beds: { x: number; y: number; w: number; h: number }[];
+      }
+    >
+  > {
+    const map = new Map<
+      string,
+      {
+        bedCount: number;
+        placementCount: number;
+        beds: { x: number; y: number; w: number; h: number }[];
+      }
+    >();
     if (ids.length === 0) return map;
     for (const id of ids) {
-      map.set(id, { bedCount: 0, placementCount: 0 });
+      map.set(id, { bedCount: 0, placementCount: 0, beds: [] });
     }
 
     const bedRows = await this.db
-      .select({ gardenId: gardenBeds.gardenId, n: count() })
+      .select({
+        gardenId: gardenBeds.gardenId,
+        x: gardenBeds.originXInches,
+        y: gardenBeds.originYInches,
+        length: gardenBeds.lengthInches,
+        width: gardenBeds.widthInches,
+        orientation: gardenBeds.orientation,
+      })
       .from(gardenBeds)
-      .where(inArray(gardenBeds.gardenId, ids))
-      .groupBy(gardenBeds.gardenId);
+      .where(inArray(gardenBeds.gardenId, ids));
 
     const placementRows = await this.db
       .select({ gardenId: gardenPlantings.gardenId, n: count() })
@@ -149,7 +173,16 @@ export class GardenRepository {
 
     for (const row of bedRows) {
       const cur = map.get(row.gardenId);
-      if (cur) cur.bedCount = Number(row.n);
+      if (!cur) continue;
+      cur.bedCount += 1;
+      if (row.x == null || row.y == null || row.length == null || row.width == null) continue;
+      const turned = row.orientation === 90 || row.orientation === 270;
+      cur.beds.push({
+        x: row.x,
+        y: row.y,
+        w: turned ? row.width : row.length,
+        h: turned ? row.length : row.width,
+      });
     }
     for (const row of placementRows) {
       const cur = map.get(row.gardenId);

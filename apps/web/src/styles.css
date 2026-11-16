@@ -1371,3 +1371,32 @@ legend {
     transition: none !important;
   }
 }
+
+/* A small picture of the property's plan on its card. */
+.garden-thumb {
+  display: block;
+  width: 100%;
+  height: 4.5rem;
+  border-radius: 6px;
+  background: #6f8f5c;
+}
+
+.garden-thumb-plot {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1px;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+
+/* The plan's bed colours (.layout-bed-frame). */
+.garden-thumb-bed {
+  fill: #8a6239;
+  stroke: #5a3d22;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+
+.garden-next {
+  font-size: 0.92rem;
+}

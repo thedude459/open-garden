@@ -62,7 +62,7 @@ export class GardenService {
     const counts = await this.gardens.countsForGardenIds(result.items.map((g) => g.id));
     return {
       items: result.items.map((g) => {
-        const c = counts.get(g.id) ?? { bedCount: 0, placementCount: 0 };
+        const c = counts.get(g.id) ?? { bedCount: 0, placementCount: 0, beds: [] };
         return {
           id: g.id,
           name: g.name,
@@ -70,6 +70,7 @@ export class GardenService {
           myRole: g.myRole,
           bedCount: c.bedCount,
           placementCount: c.placementCount,
+          plan: { lengthInches: g.lengthInches, widthInches: g.widthInches, beds: c.beds },
         };
       }),
       page: result.page,
@@ -198,7 +199,7 @@ export class GardenService {
     const mine = members.find((m) => m.userId === actorId);
     if (!mine) throw domainError('NOT_FOUND', 'Garden not found');
     const counts = await this.gardens.countsForGardenIds([garden.id]);
-    const c = counts.get(garden.id) ?? { bedCount: 0, placementCount: 0 };
+    const c = counts.get(garden.id) ?? { bedCount: 0, placementCount: 0, beds: [] };
     return {
       id: garden.id,
       name: garden.name,
