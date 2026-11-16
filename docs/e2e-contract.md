@@ -2,7 +2,7 @@
 
 **Feature**: `012-e2e-test-streamline`
 
-Layering and helper rules. Product REST shapes are unchanged (see existing feature contracts). Accessible **names** used by Playwright stay as in 008–011 (`Save layout`, the `Garden Overview` heading, `Create bed`, `Notification`, `Drop missed a bed`, etc.). The property nav links are `Plan`, `Calendar`, `Tasks`, and `Settings`, with `Plantings` and `Transplants` beneath; match them with `exact: true`, since `Plan` is a prefix of `Plantings`.
+Layering and helper rules. Product REST shapes are unchanged (see existing feature contracts). Accessible **names** used by Playwright stay as in 008–011 (the `Garden Overview` heading, `Create bed`, `Notification`, `Drop missed a bed`, etc.). The property nav links are `Plan`, `Calendar`, `Tasks`, and `Settings`, with `Plantings` and `Transplants` beneath; match them with `exact: true`, since `Plan` is a prefix of `Plantings`. The plan saves itself ([ADR 0031](adr/0031-plan-autosave-with-undo.md)): `saveLayout(page)` waits for **All changes saved** after an edit, and `Undo` stands in for the old Save button where a test checks that a viewer cannot edit.
 
 ## Layer placement
 

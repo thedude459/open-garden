@@ -10,6 +10,7 @@ export {
   hasLayoutChanges,
   layoutChanges,
   layoutPutBody,
+  restoreLayout,
   type LayoutChanges,
 } from './lib/layout-changes';
 export { overviewPlantingLabels } from './lib/overview-labels';

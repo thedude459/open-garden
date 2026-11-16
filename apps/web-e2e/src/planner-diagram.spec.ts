@@ -26,7 +26,7 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
   await owner.locator('input[name="newAreaLength"]').fill('4');
   await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   const overview = owner.getByLabel('Garden plan');
   await expect(overview).toContainText('Raised bed 1');
@@ -43,7 +43,7 @@ test('planner diagram: names, distinct areas, grid in Bed View, no in-bed marks 
     .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await expect(owner.getByRole('img', { name: 'Tomato (Cherry)' })).toBeVisible();
   await expect(owner.getByLabel('Bed plan').locator('.layout-plant-label')).toBeVisible();
   await expect(owner.locator('.layout-grid')).not.toHaveCount(0);

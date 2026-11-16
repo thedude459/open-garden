@@ -20,7 +20,7 @@ test('a tree gets its own mulched bed and stays out of a vegetable bed search', 
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
 
   await openAdd(page, 'Add tree');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
   // The new tree bed is selected; once saved, its settings are in the side panel.
   await page.locator('select[name="selectedMulch"]').selectOption('wood_chips');
   await page.getByRole('button', { name: 'Done' }).click();
@@ -29,7 +29,7 @@ test('a tree gets its own mulched bed and stays out of a vegetable bed search', 
   ).toBeVisible();
 
   await createSizedBed(page, 'Veg');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
   await page.getByRole('button', { name: 'Open bed Veg' }).click();
   await expect(page.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await page.getByLabel('Zone').selectOption({ label: 'Any zone' });
@@ -52,7 +52,7 @@ test('a bramble patch takes cane fruit and keeps vegetables out', async ({ brows
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
 
   await openAdd(page, 'Add bramble patch');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
   await page.reload();
   await expect(page.locator('[data-area-kind="bramble"]')).toHaveText('Bramble patch');
   await page.getByRole('button', { name: 'Open bed Canes' }).click();
@@ -75,7 +75,7 @@ test('a tree bed takes the tree’s spacing on its rootstock', async ({ browser 
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Apple place/ }).click();
   await openAdd(page, 'Add tree');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
   await expect(page.locator('li').filter({ hasText: 'Tree' }).getByText('8 × 8 ft')).toBeVisible();
 
   await page.getByRole('button', { name: 'Open bed Tree' }).click();
@@ -87,7 +87,7 @@ test('a tree bed takes the tree’s spacing on its rootstock', async ({ browser 
     .getByRole('button', { name: 'Place Apple (Honeycrisp)' })
     .dragTo(page.locator('[data-bed-name="Tree"]'));
   await expect(page.getByRole('img', { name: 'Apple (Honeycrisp)' })).toHaveCount(1);
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
 
   // A standard apple needs about 25 ft; the planting records its rootstock.
   await page.getByRole('link', { name: 'Back to overview' }).click();

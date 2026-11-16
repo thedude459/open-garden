@@ -20,6 +20,7 @@ import {
 import { rotateBed90 } from '@open-garden/garden-layout/rotate';
 import type {
   BedGeometryDto,
+  GardenLayoutDto,
   BedSite,
   LayoutAreaDto,
   LayoutBedDto,
@@ -36,6 +37,7 @@ import {
 } from './layout-add-forms';
 import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspector';
 import { LayoutBedsList, LayoutWalkwaysList } from './layout-lists';
+import { PlanSaveStatus } from './plan-save-status';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 import { PlantingsApiService } from './plantings-api.service';
@@ -58,6 +60,7 @@ import { EmptyState } from '../ui/empty-state';
     LayoutBedInspector,
     LayoutBedsList,
     LayoutWalkwaysList,
+    PlanSaveStatus,
   ],
   template: `
     <div class="planner">
@@ -117,15 +120,7 @@ import { EmptyState } from '../ui/empty-state';
                   </div>
                 }
               </div>
-              <button
-                type="button"
-                class="btn btn-primary"
-                (click)="save()"
-                [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
-                [disabled]="notices.busyMap().has('save-layout')"
-              >
-                Save layout
-              </button>
+              <og-plan-save-status />
             }
           </div>
         }
@@ -148,9 +143,6 @@ import { EmptyState } from '../ui/empty-state';
         <p class="muted">Garden unavailable or not found.</p>
       } @else {
         <div class="planner-alerts">
-          @if (dirty()) {
-            <p role="status">Unsaved changes</p>
-          }
           @if (atGardenEdge()) {
             <p role="status">At the garden edge</p>
           }
@@ -223,7 +215,7 @@ import { EmptyState } from '../ui/empty-state';
                 (rotate)="rotateSelected()"
                 (remove)="deleteBed(bed)"
                 (done)="selectedId.set(null)"
-                (saveLayout)="save()"
+                (saveLayout)="planner.flush()"
               />
             }
             @if (!draft()!.beds.length && !canEdit()) {
@@ -263,7 +255,7 @@ export class GardenLayoutPage implements OnInit {
   private readonly api = inject(LayoutApiService);
   private readonly gardensApi = inject(GardensApiService);
   private readonly bedsApi = inject(PlantingsApiService);
-  private readonly planner = inject(PlannerDraftService);
+  readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -315,10 +307,6 @@ export class GardenLayoutPage implements OnInit {
   canEdit() {
     const role = this.draft()?.myRole;
     return role === 'owner' || role === 'collaborator';
-  }
-
-  dirty() {
-    return this.planner.dirty();
   }
 
   sizedBeds() {
@@ -411,7 +399,7 @@ export class GardenLayoutPage implements OnInit {
     const d = this.draft();
     if (!id || !d) return;
     const snapSize = patch.lengthInches !== undefined || patch.widthInches !== undefined;
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       beds: d.beds.map((b) =>
         b.id === id && b.geometry
@@ -427,7 +415,7 @@ export class GardenLayoutPage implements OnInit {
     const id = this.selectedId();
     const d = this.draft();
     if (!id || !d) return;
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       beds: d.beds.map((b) =>
         // false: keep length and width. Only the origin shifts to stay inside the plot.
@@ -536,7 +524,7 @@ export class GardenLayoutPage implements OnInit {
       },
       true,
     );
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       beds: [
         ...d.beds,
@@ -570,7 +558,7 @@ export class GardenLayoutPage implements OnInit {
       lengthInches: length,
       widthInches: width,
     });
-    this.planner.setDraft({ ...d, areas: [...(d.areas ?? []), placed] });
+    this.planner.edit({ ...d, areas: [...(d.areas ?? []), placed] });
     this.adding.set(null);
   }
 
@@ -580,14 +568,19 @@ export class GardenLayoutPage implements OnInit {
     const d = this.draft();
     if (!d) return;
     const inSaved = this.planner.isSavedArea(area.id);
+    const without = (l: GardenLayoutDto) => ({
+      ...l,
+      areas: (l.areas ?? []).filter((a) => a.id !== area.id),
+    });
     if (!inSaved) {
-      this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
+      this.planner.edit(without(d));
       return;
     }
     await this.notices.run('delete-area', async () => {
       try {
+        await this.planner.flush();
         await this.api.deleteArea(this.gardenId, area.id);
-        this.planner.setDraft({ ...d, areas: (d.areas ?? []).filter((a) => a.id !== area.id) });
+        this.planner.applyServerDelete(without);
       } catch (err) {
         this.fail(err);
       }
@@ -599,25 +592,14 @@ export class GardenLayoutPage implements OnInit {
     if (!this.guardMutate()) return;
     if (!this.planner.isSavedBed(bed.id)) {
       const d = this.draft();
-      if (!d) return;
-      const inBed = (p: { bedId: string | null; placement: { bedId: string } | null }) =>
-        p.bedId === bed.id || p.placement?.bedId === bed.id;
-      this.planner.setDraft({
-        ...d,
-        beds: d.beds.filter((b) => b.id !== bed.id),
-        // Plants sown in a bed that was never saved go with it; transplants
-        // go back to waiting.
-        plantings: d.plantings
-          .filter((p) => !(p.startMethod === 'direct_seed' && inBed(p)))
-          .map((p) => (inBed(p) ? { ...p, bedId: null, placement: null } : p)),
-      });
-      this.refreshFlags();
+      if (d) this.planner.edit(withoutBed(d, bed.id));
       return;
     }
     await this.notices.run('delete-bed', async () => {
       try {
+        await this.planner.flush();
         await this.api.deleteBed(this.gardenId, bed.id);
-        await this.load();
+        this.planner.applyServerDelete((l) => withoutBed(l, bed.id));
       } catch (err) {
         this.fail(err);
       }
@@ -633,7 +615,7 @@ export class GardenLayoutPage implements OnInit {
       !current ||
       current.lengthInches !== ev.geometry.lengthInches ||
       current.widthInches !== ev.geometry.widthInches;
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       beds: d.beds.map((b) =>
         b.id === ev.bedId ? { ...b, geometry: this.placeBed(ev.geometry, snapSize) } : b,
@@ -645,7 +627,7 @@ export class GardenLayoutPage implements OnInit {
     if (!this.guardMutate()) return;
     const d = this.draft();
     if (!d) return;
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       areas: (d.areas ?? []).map((a) => (a.id === ev.area.id ? this.placeArea(ev.area) : a)),
     });
@@ -657,21 +639,6 @@ export class GardenLayoutPage implements OnInit {
 
   refreshFlags() {
     this.planner.refreshFlags();
-  }
-
-  async save() {
-    this.error.set('');
-    this.status.set('');
-    await this.notices.run('save-layout', async () => {
-      if (!this.guardMutate()) return;
-      this.planner.refreshFlags();
-      try {
-        await this.planner.save();
-        this.notices.success('Layout saved');
-      } catch (err) {
-        this.fail(err);
-      }
-    });
   }
 
   /** Garden length and width, when the gardener set them. The camera is not a boundary. */
@@ -769,4 +736,20 @@ function messageFrom(err: unknown): string {
   }
   if (err instanceof Error) return err.message;
   return 'Could not update layout';
+}
+
+/**
+ * A layout without a bed, as deleting it leaves things: plants sown in it go
+ * with it, and transplants in it go back to waiting.
+ */
+function withoutBed(layout: GardenLayoutDto, bedId: string): GardenLayoutDto {
+  const inBed = (p: GardenLayoutDto['plantings'][number]) =>
+    p.bedId === bedId || p.placement?.bedId === bedId;
+  return {
+    ...layout,
+    beds: layout.beds.filter((b) => b.id !== bedId),
+    plantings: layout.plantings
+      .filter((p) => !(p.startMethod === 'direct_seed' && inBed(p)))
+      .map((p) => (inBed(p) ? { ...p, bedId: null, placement: null } : p)),
+  };
 }

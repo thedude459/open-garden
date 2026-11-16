@@ -6,7 +6,9 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
 import { GardenBedViewPage } from './garden-bed-view.page';
 import { GardensApiService } from './gardens-api.service';
+import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
+import { PlantingsApiService } from './plantings-api.service';
 
 const planting = (
   id: string,
@@ -47,10 +49,14 @@ const layout = (myRole: GardenRole): GardenLayoutDto => ({
   flags: [],
 });
 
-async function render(myRole: GardenRole = 'owner') {
+async function render(myRole: GardenRole = 'owner', autosaveDelayMs = 60_000) {
+  const plantingsApi = { remove: vi.fn(async () => undefined) };
+  const layoutApi = { put: vi.fn(async () => planner.draft()!) };
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
+      { provide: PlantingsApiService, useValue: plantingsApi },
+      { provide: LayoutApiService, useValue: layoutApi },
       { provide: GardensApiService, useValue: { detail: async () => ({ name: 'Home' }) } },
       { provide: FavoritesApiService, useValue: { list: async () => ({ items: [] }) } },
       { provide: PlantsApiService, useValue: { list: async () => ({ items: [] }) } },
@@ -61,7 +67,9 @@ async function render(myRole: GardenRole = 'owner') {
     ],
   });
   const planner = TestBed.inject(PlannerDraftService);
+  planner.autosaveDelayMs = autosaveDelayMs;
   vi.spyOn(planner, 'load').mockImplementation(async () => {
+    planner.gardenId = 'g1';
     planner.hydrate(layout(myRole));
     planner.loading.set(false);
     return planner.draft();
@@ -79,27 +87,30 @@ async function render(myRole: GardenRole = 'owner') {
     byLabel(`Confirm remove ${name}`)!.click();
     await fixture.whenStable();
   };
-  return { fixture, el, byLabel, remove, planner };
+  return { fixture, el, byLabel, remove, planner, plantingsApi, layoutApi };
 }
 
 describe('GardenBedViewPage', () => {
-  it('removing a direct seed deletes it on save; a transplant goes back to waiting', async () => {
-    const view = await render();
+  it('removing a saved direct seed deletes it now; a transplant goes back to waiting and autosaves', async () => {
+    const view = await render('owner', 10);
     expect(view.el.textContent).toContain('In this bed');
     await view.remove('Basil');
+    await vi.waitFor(() => expect(view.plantingsApi.remove).toHaveBeenCalledWith('g1', 'Basil'));
     expect(view.planner.draft()!.plantings.some((p) => p.id === 'Basil')).toBe(false);
-    expect(view.planner.dirty()).toBe(true);
+    expect(view.planner.canUndo()).toBe(false);
     await view.remove('Tomato');
     const tomato = view.planner.draft()!.plantings.find((p) => p.id === 'Tomato')!;
     expect(tomato.placement).toBeNull();
-    expect(view.el.textContent).toContain('Unsaved changes');
     expect(view.byLabel('Remove from bed Tomato')).toBeNull();
+    await vi.waitFor(() => expect(view.el.textContent).toContain('All changes saved'));
+    expect(view.layoutApi.put).toHaveBeenCalledTimes(1);
+    expect(view.planner.canUndo()).toBe(true);
   });
 
-  it('a viewer sees the bed without the plant panel or Save', async () => {
+  it('a viewer sees the bed without the plant panel or Undo', async () => {
     const view = await render('viewer');
     expect(view.el.textContent).toContain('Basil');
     expect(view.el.textContent).not.toContain('Add a plant');
-    expect(view.el.textContent).not.toContain('Save layout');
+    expect(view.el.textContent).not.toContain('Undo');
   });
 });

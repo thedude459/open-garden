@@ -42,7 +42,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await openOverview(owner);
   await expect(owner.getByText('Spinach')).toHaveCount(0);
   await createSizedBed(owner, 'Raised bed 1');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
@@ -52,7 +52,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
     .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="Raised bed 1"]'));
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByLabel('Search plants').fill('Tomato');
   await owner.getByRole('button', { name: 'Apply' }).click();
@@ -75,7 +75,7 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await expect(
     owner.getByLabel('Waiting transplants').getByRole('button', { name: 'Basil (Genovese)' }),
   ).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await inviteViewer(owner, `layout-place-friend-${stamp}@example.com`);
   await friend.goto('/gardens');
@@ -83,5 +83,5 @@ test('place plantings in Bed View, spacing/fit save gate, viewer cannot place', 
   await openOverview(friend);
   await friend.getByRole('button', { name: 'Open bed Raised bed 1' }).click();
   await expect(friend.getByRole('button', { name: 'Direct seed' })).toHaveCount(0);
-  await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(friend.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });

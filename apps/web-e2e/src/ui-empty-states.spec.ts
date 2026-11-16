@@ -28,7 +28,7 @@ test('empty gardens, overview, and bed view next steps; viewer has no Create bed
   await expect(owner.getByRole('button', { name: 'Create bed' })).toBeVisible();
   await expect(owner.getByRole('link', { name: 'Set your site' })).toHaveCount(0);
   await createSizedBed(owner, 'North');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.getByRole('button', { name: 'Open bed North' }).click();
   await expect(owner.getByRole('button', { name: 'Direct seed' })).toBeVisible();
   await owner.getByRole('button', { name: 'Direct seed' }).click();

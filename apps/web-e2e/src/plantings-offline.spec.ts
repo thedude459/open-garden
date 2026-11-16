@@ -21,7 +21,7 @@ async function openPlantings(page: Page, name: string) {
   await page.getByRole('link', { name: new RegExp(name) }).click();
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await createSizedBed(page, 'Raised bed 1');
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
   await clickPlantings(page);
 }
 

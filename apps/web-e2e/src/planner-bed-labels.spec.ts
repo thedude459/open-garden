@@ -25,7 +25,7 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
   await openOverview(owner);
   await createSizedBed(owner, 'North');
   await createSizedBed(owner, 'South');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByRole('button', { name: 'Open bed South' }).click();
   await expect(owner.getByLabel('Bed plan')).not.toContainText('Bed ·');
@@ -67,7 +67,7 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
   await owner.mouse.click(planBox!.x + 8, planBox!.y + 8);
   await expect(owner.getByRole('status').filter({ hasText: 'Basil (Genovese)' })).toHaveCount(0);
 
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await inviteViewer(owner, `bed-labels-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Quiet bed/ }).click();
@@ -83,5 +83,7 @@ test('Bed View on-mark prefixes, no bed size caption, select shows full name', a
     steps: 6,
   });
   await viewer.mouse.up();
-  await expect(viewer.getByText('Unsaved changes')).toHaveCount(0);
+  // A viewer's drag changes nothing, so there is nothing to save or undo.
+  await expect(viewer.getByRole('button', { name: 'Undo' })).toHaveCount(0);
+  await expect(viewer.getByText('Saving…')).toHaveCount(0);
 });

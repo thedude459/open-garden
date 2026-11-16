@@ -23,7 +23,7 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   await owner.getByRole('link', { name: /Planner pan/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'East');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByRole('button', { name: 'Edit bed East' }).click();
   const origin = owner.locator('input[name="originX"]');
@@ -51,7 +51,7 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   await expect(origin).not.toHaveValue(startOrigin);
   const moved = await origin.inputValue();
   expect(moved).toMatch(/^-?\d+(\.5)?$/);
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await expect(origin).toHaveValue(moved);
 
   const planSvg = owner.locator('.layout-plan');
@@ -67,13 +67,13 @@ test('planner pan: empty space pans, bed drag moves origin, zoom, viewer pans on
   await owner.getByRole('button', { name: 'Zoom in' }).click();
   await owner.getByRole('button', { name: 'Zoom out' }).click();
   await expect(plan).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await inviteViewer(owner, `planner-pan-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Planner pan/ }).click();
   await openOverview(viewer);
-  await expect(viewer.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(viewer.getByRole('button', { name: 'Undo' })).toHaveCount(0);
   const vPlan = viewer.getByLabel('Garden plan');
   const vBox = await vPlan.boundingBox();
   expect(vBox).toBeTruthy();

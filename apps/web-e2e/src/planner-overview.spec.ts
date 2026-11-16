@@ -23,7 +23,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await owner.getByRole('link', { name: /Planner overview/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
@@ -34,7 +34,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
     .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.getByRole('link', { name: 'Back to overview' }).click();
 
   const plan = owner.getByLabel('Garden plan');
@@ -51,7 +51,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   await expect(owner.locator('[data-area-name="Path"]')).toBeVisible();
   await expect(plan).toContainText('Path');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await inviteViewer(owner, `planner-ov-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');
@@ -60,7 +60,7 @@ test('planner overview: beds, areas, labels, no planting drag', async ({ browser
   await expect(viewer.locator('[data-bed-name="North"]')).toBeVisible();
   await expect(viewer.getByLabel('Garden plan')).toContainText('Tomato'); // the overview names crops, not varieties
   await expect(viewer.getByRole('button', { name: 'Create bed' })).toHaveCount(0);
-  await expect(viewer.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(viewer.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
 test('planner overview: transplants with no beds stay off the map until a bed exists', async ({
@@ -81,7 +81,7 @@ test('planner overview: transplants with no beds stay off the map until a bed ex
   await expect(owner.getByLabel('Waiting transplants')).toHaveCount(0);
 
   await createSizedBed(owner, 'First');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.getByRole('button', { name: 'Open bed First' }).click();
   await expect(
     owner.getByLabel('Waiting transplants').getByRole('button', { name: 'Tomato (Cherry)' }),

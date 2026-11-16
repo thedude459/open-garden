@@ -25,7 +25,7 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
   await owner.locator('input[name="newAreaLength"]').fill('4');
   await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   const plan = owner.getByLabel('Garden plan');
   await expect(plan).toContainText('Bed · North');
@@ -54,7 +54,7 @@ test('place marker, Open bed keyboard, click vs drag, Bed/Area labels', async ({
     await owner.mouse.up();
   }
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
-  await expect(owner.getByText('Unsaved changes')).toBeVisible();
+  await expect(owner.getByRole('button', { name: 'Undo' })).toBeEnabled();
 
   await owner.setViewportSize({ width: 390, height: 844 });
   await expect(owner.getByRole('button', { name: 'Open bed North' })).toBeVisible();

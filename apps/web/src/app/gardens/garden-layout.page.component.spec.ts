@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { GardenLayoutPage } from './garden-layout.page';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { GardensApiService } from './gardens-api.service';
+import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 
 const layout = (myRole: GardenRole): GardenLayoutDto => ({
@@ -28,10 +29,16 @@ const layout = (myRole: GardenRole): GardenLayoutDto => ({
   flags: [],
 });
 
-async function render(myRole: GardenRole = 'owner') {
+async function render(myRole: GardenRole = 'owner', autosaveDelayMs = 60_000) {
+  const layoutApi = {
+    put: vi.fn(async () => planner.draft()!),
+    createBed: vi.fn(async () => undefined),
+    deleteBed: vi.fn(async () => undefined),
+  };
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
+      { provide: LayoutApiService, useValue: layoutApi },
       {
         provide: GardensApiService,
         useValue: {
@@ -49,7 +56,9 @@ async function render(myRole: GardenRole = 'owner') {
   // jsdom has no SVG screen matrix, so the plan's visible centre is the origin.
   vi.spyOn(GardenPlanCanvas.prototype, 'viewportCenterPlan').mockReturnValue({ x: 0, y: 0 });
   const planner = TestBed.inject(PlannerDraftService);
+  planner.autosaveDelayMs = autosaveDelayMs;
   vi.spyOn(planner, 'load').mockImplementation(async () => {
+    planner.gardenId = 'g1';
     planner.hydrate(layout(myRole));
     planner.loading.set(false);
     return planner.draft();
@@ -66,12 +75,12 @@ async function render(myRole: GardenRole = 'owner') {
     byLabel(label)!.click();
     await fixture.whenStable();
   };
-  return { fixture, el, byLabel, openAdd, planner };
+  return { fixture, el, byLabel, openAdd, planner, layoutApi };
 }
 
 describe('GardenLayoutPage', () => {
-  it('a new bed joins the draft unsaved and opens in the inspector', async () => {
-    const view = await render();
+  it('a new bed saves itself, then its name and settings can be changed', async () => {
+    const view = await render('owner', 10);
     await view.openAdd('Add bed');
     const name = view.el.querySelector<HTMLInputElement>('[name="bedName"]')!;
     name.value = 'South';
@@ -79,10 +88,11 @@ describe('GardenLayoutPage', () => {
     view.el.querySelector('form[aria-label="New bed"]')!.dispatchEvent(new Event('submit'));
     await view.fixture.whenStable();
     const south = view.planner.draft()!.beds.find((b) => b.name === 'South')!;
-    expect(view.planner.isSavedBed(south.id)).toBe(false);
-    expect(view.planner.isSavedBed('b1')).toBe(true);
-    expect(view.el.textContent).toContain('Unsaved changes');
-    expect(view.el.textContent).toContain('Save the layout to set its name');
+    expect(south).toBeDefined();
+    await vi.waitFor(() => expect(view.el.textContent).toContain('All changes saved'));
+    expect(view.layoutApi.createBed).toHaveBeenCalledTimes(1);
+    expect(view.planner.isSavedBed(south.id)).toBe(true);
+    expect(view.byLabel('Rename South')).not.toBeNull();
   });
 
   it('Add tree makes an 8 by 8 ft tree bed', async () => {
@@ -101,7 +111,7 @@ describe('GardenLayoutPage', () => {
     view.byLabel('Confirm delete Tree')!.click();
     await view.fixture.whenStable();
     expect(view.planner.draft()!.beds.map((b) => b.name)).toEqual(['North']);
-    expect(view.el.textContent).not.toContain('Unsaved changes');
+    expect(view.planner.dirty()).toBe(false);
   });
 
   it('plants sown in a bed that was never saved go with it', async () => {
@@ -137,10 +147,10 @@ describe('GardenLayoutPage', () => {
     expect(view.planner.dirty()).toBe(false);
   });
 
-  it('a viewer sees the beds without Add, Edit, or Save', async () => {
+  it('a viewer sees the beds without Add, Edit, or Undo', async () => {
     const view = await render('viewer');
     expect(view.byLabel('Open bed North')).not.toBeNull();
     expect(view.byLabel('Edit bed North')).toBeNull();
-    expect(view.el.textContent).not.toContain('Save layout');
+    expect(view.el.textContent).not.toContain('Undo');
   });
 });

@@ -17,7 +17,7 @@ test('a crop of last year’s family in the same bed gets a rotation hint', asyn
   await page.getByRole('button', { name: 'Create property' }).click();
   await page.getByRole('link', { name: /Rotation plot/ }).click();
   await createSizedBed(page, 'North');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
 
   const place = async (search: string, name: string) => {
     // Bed View shows the cached layout first; wait for the fresh one, which no
@@ -37,7 +37,7 @@ test('a crop of last year’s family in the same bed gets a rotation hint', asyn
   };
 
   await place('Kale', 'Kale (Lacinato)');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
 
   await openConfiguration(page);
   await page.getByRole('button', { name: 'Close season' }).click();
@@ -49,5 +49,5 @@ test('a crop of last year’s family in the same bed gets a rotation hint', asyn
   await expect(
     page.getByText('Broccoli: Kale (cabbage family) grew in this bed last year'),
   ).toBeVisible();
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
 });
