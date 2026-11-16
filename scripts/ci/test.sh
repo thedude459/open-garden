@@ -9,6 +9,9 @@ cd "$ROOT"
 
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
   npm run test:coverage
+  # Angular component tests compile through Angular's own Vitest runner, so
+  # the coverage run above does not execute them.
+  npx nx test web
   exit 0
 fi
 

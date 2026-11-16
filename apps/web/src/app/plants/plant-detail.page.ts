@@ -132,8 +132,8 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
             <ul class="companion-list">
               @for (c of group.pairs; track c.cropId) {
                 <li>
-                  <strong>{{ c.name }}</strong>
-                  <span class="badge">{{ evidenceLabel(c.evidence) }}</span>
+                  <strong>{{ c.name }}</strong
+                  >&ngsp;<span class="badge">{{ evidenceLabel(c.evidence) }}</span>
                   <span class="muted"> · {{ benefitsLabel(c.benefits) }}</span>
                   <p>{{ c.reason }}</p>
                   <p class="muted small">

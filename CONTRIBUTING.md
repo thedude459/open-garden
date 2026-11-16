@@ -95,6 +95,12 @@ Expectations for new code (from [AGENTS.md](AGENTS.md)):
   in-process PostgreSQL (PGlite) with every migration applied, no Docker.
 - Logic with a clear invariant (geometry, dates, ranges) gets a
   `*.property.spec.ts` with [fast-check](https://fast-check.dev/).
+- Angular components and anything that needs Angular's injector get a
+  `*.component.spec.ts` next to the file. These run under Angular's own Vitest
+  runner in a simulated browser (`npx nx test web`), with `TestBed` and
+  `HttpTestingController`; see `apps/web/src/app/auth/login.page.component.spec.ts`.
+  Plain functions in `apps/web` keep ordinary `*.spec.ts` files, listed in
+  `vitest.config.ts`.
 - Once a feature has UI and API, add live HTTP (`apps/api-e2e`) and Playwright
   (`apps/web-e2e`) tests. See [apps/web-e2e/CONVENTION.md](apps/web-e2e/CONVENTION.md).
 - Prefer role-based Playwright locators, and never fixed sleeps.
@@ -105,6 +111,7 @@ Expectations for new code (from [AGENTS.md](AGENTS.md)):
 npx nx show projects
 npx nx graph
 npx nx test plant-catalog
+npx nx test web                 # Angular component tests
 npx nx run-many -t lint --all
 npm run migrate                 # apply migrations with drizzle-kit
 npm run api:sync-plants         # migrate, seed, and import the bundled plant catalog
