@@ -64,7 +64,7 @@ test.describe('plant catalog', () => {
     await expect(timeline.getByRole('combobox', { name: 'Property' })).toHaveValue(/.+/);
     // Eight to six weeks before the last frost (15 April).
     await expect(timeline.getByText(/Start indoors\s+Feb 1[89] – Mar 4/)).toBeVisible();
-    await expect(timeline.getByText(/^Harvest/)).toBeVisible();
+    await expect(timeline.getByText(/Harvest\s+\w{3} \d/)).toBeVisible();
 
     await timeline.getByRole('button', { name: 'Add to plan' }).click();
     await expect(page.getByText('Added to the Timeline plot calendar')).toBeVisible();
