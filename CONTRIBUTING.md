@@ -105,6 +105,14 @@ Expectations for new code (from [AGENTS.md](AGENTS.md)):
   (`apps/web-e2e`) tests. See [apps/web-e2e/CONVENTION.md](apps/web-e2e/CONVENTION.md).
 - Prefer role-based Playwright locators, and never fixed sleeps.
 
+**Bugs and flaky tests found along the way.** A bug you find while working on
+something else gets a GitHub issue (label `bug`), even when you fix it in the
+same pull request, so the list of known problems lives in one place; a fix in
+the pull request closes the issue with `Fixes #n`. A test that passes and
+fails on the same code also gets the `flaky-test` label: say how often it
+failed (`--repeat-each`), and whether it also fails on `main`. Never skip or
+retry a flaky test to get green; fix the cause.
+
 ## Useful commands
 
 ```bash
