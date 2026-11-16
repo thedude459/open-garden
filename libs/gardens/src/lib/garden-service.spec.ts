@@ -89,6 +89,9 @@ describe('GardenService', () => {
     const page = await mem.service.list(mem.ownerId);
     expect(page.items[0]?.bedCount).toBe(0);
     expect(page.items[0]?.placementCount).toBe(0);
+    // The card's small plan: the property's size and its beds' outlines.
+    expect(page.items[0]?.plan).toMatchObject({ beds: [] });
+    expect(page.items[0]?.plan?.lengthInches).toBeGreaterThan(0);
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy.mock.calls[0]?.[0]).toEqual([empty.id]);
 

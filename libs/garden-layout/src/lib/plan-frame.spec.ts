@@ -6,6 +6,7 @@ import {
   frameAround,
   MAX_PLAN_SCALE,
   MIN_PLAN_SCALE,
+  planOutlineFrame,
   rectAtPlotEdge,
   rectsFit,
   snapHalfFoot,
@@ -76,5 +77,22 @@ describe('zoomAbout', () => {
     // The drawn point under `at` is the same before and after.
     expect((at.x - next.panX) / next.scale).toBeCloseTo((at.x - view.panX) / view.scale);
     expect((at.y - next.panY) / next.scale).toBeCloseTo((at.y - view.panY) / view.scale);
+  });
+});
+
+describe('planOutlineFrame', () => {
+  it('frames the property from its corner, widened to a bed drawn past it', () => {
+    expect(planOutlineFrame({ lengthInches: 240, widthInches: 120, beds: [] })).toEqual({
+      x: 0,
+      y: 0,
+      w: 240,
+      h: 120,
+    });
+    const frame = planOutlineFrame({
+      lengthInches: 240,
+      widthInches: 120,
+      beds: [{ x: -12, y: 100, w: 96, h: 48 }],
+    });
+    expect(frame).toEqual({ x: -12, y: 0, w: 252, h: 148 });
   });
 });

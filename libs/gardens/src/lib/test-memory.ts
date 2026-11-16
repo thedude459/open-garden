@@ -94,9 +94,16 @@ export function createGardenMemory(opts?: { climate?: ClimateLookup | null }) {
       }
     },
     async countsForGardenIds(ids: string[]) {
-      const map = new Map<string, { bedCount: number; placementCount: number }>();
+      const map = new Map<
+        string,
+        {
+          bedCount: number;
+          placementCount: number;
+          beds: { x: number; y: number; w: number; h: number }[];
+        }
+      >();
       for (const id of ids) {
-        map.set(id, { bedCount: 0, placementCount: 0 });
+        map.set(id, { bedCount: 0, placementCount: 0, beds: [] });
       }
       return map;
     },

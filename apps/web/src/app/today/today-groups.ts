@@ -32,3 +32,15 @@ export function localIso(date = new Date()): string {
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
 }
+
+const URGENCY: Record<TodayTaskDto['kind'], number> = { overdue: 0, dueToday: 1, thisWeek: 2 };
+
+/** Each property's most urgent task: overdue first, then due today, then this week. */
+export function nextTaskByGarden(tasks: TodayTaskDto[]): Map<string, TodayTaskDto> {
+  const next = new Map<string, TodayTaskDto>();
+  for (const task of tasks) {
+    const held = next.get(task.gardenId);
+    if (!held || URGENCY[task.kind] < URGENCY[held.kind]) next.set(task.gardenId, task);
+  }
+  return next;
+}

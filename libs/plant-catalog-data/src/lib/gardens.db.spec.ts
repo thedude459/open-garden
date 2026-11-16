@@ -89,9 +89,29 @@ describe('GardenRepository and GardenMembershipRepository', () => {
       lengthInches: 96,
       widthInches: 48,
     });
+    await beds.insert({
+      gardenId: g1.id,
+      name: 'Turned',
+      nameNormalized: 'turned',
+      originXInches: 120,
+      originYInches: 12,
+      lengthInches: 96,
+      widthInches: 36,
+      orientation: 90,
+    });
+    await beds.insert({ gardenId: g1.id, name: 'No size', nameNormalized: 'no size' });
     const counts = await gardens.countsForGardenIds([g1.id, g2.id]);
-    expect(counts.get(g1.id)).toEqual({ bedCount: 1, placementCount: 0 });
-    expect(counts.get(g2.id)).toEqual({ bedCount: 0, placementCount: 0 });
+    // Every bed counts; only sized ones have an outline, turned as drawn.
+    const one = counts.get(g1.id)!;
+    expect(one).toMatchObject({ bedCount: 3, placementCount: 0 });
+    expect(one.beds).toHaveLength(2);
+    expect(one.beds).toEqual(
+      expect.arrayContaining([
+        { x: 0, y: 0, w: 96, h: 48 },
+        { x: 120, y: 12, w: 36, h: 96 },
+      ]),
+    );
+    expect(counts.get(g2.id)).toEqual({ bedCount: 0, placementCount: 0, beds: [] });
     expect((await gardens.countsForGardenIds([])).size).toBe(0);
   });
 

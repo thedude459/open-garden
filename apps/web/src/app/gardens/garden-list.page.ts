@@ -8,16 +8,22 @@ import {
   lengthInput,
   lengthStep,
   lengthUnit,
+  planOutlineFrame,
   snapHalfFoot,
 } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type { GardenSummaryDto, PlaceCandidateDto, Units } from '@open-garden/shared-types';
+import type {
+  GardenSummaryDto,
+  PlaceCandidateDto,
+  TodayTaskDto,
+  Units,
+} from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { EmptyState } from '../ui/empty-state';
-import { localIso } from '../today/today-groups';
+import { localIso, nextTaskByGarden } from '../today/today-groups';
 
 @Component({
   standalone: true,
@@ -109,6 +115,31 @@ import { localIso } from '../today/today-groups';
               <strong>{{ g.name }}</strong>
               <span class="role">{{ g.myRole }}</span>
             </span>
+            @if (g.plan; as plan) {
+              <svg
+                class="garden-thumb"
+                [attr.viewBox]="thumbViewBox(plan)"
+                preserveAspectRatio="xMidYMid meet"
+                aria-hidden="true"
+              >
+                <rect
+                  class="garden-thumb-plot"
+                  x="0"
+                  y="0"
+                  [attr.width]="plan.lengthInches"
+                  [attr.height]="plan.widthInches"
+                />
+                @for (b of plan.beds; track $index) {
+                  <rect
+                    class="garden-thumb-bed"
+                    [attr.x]="b.x"
+                    [attr.y]="b.y"
+                    [attr.width]="b.w"
+                    [attr.height]="b.h"
+                  />
+                }
+              </svg>
+            }
             <span class="garden-facts">
               <span>{{ g.bedCount }} {{ g.bedCount === 1 ? 'bed' : 'beds' }}</span>
               <span
@@ -129,6 +160,14 @@ import { localIso } from '../today/today-groups';
                 <span>{{ g.thisWeekCount }} this week</span>
               }
             </span>
+            @if (nextTasks().get(g.id); as task) {
+              <span class="garden-next">
+                {{ nextLabel(task) }}: {{ task.title }}
+                @if (task.bedName) {
+                  · {{ task.bedName }}
+                }
+              </span>
+            }
           </a>
         }
       </div>
@@ -168,6 +207,8 @@ export class GardenListPage implements OnInit, OnDestroy {
   readonly lookingUp = signal(false);
   readonly lookupError = signal('');
   items = signal<GardenSummaryDto[]>([]);
+  /** Each property's most urgent task from Today, for its card. */
+  nextTasks = signal(new Map<string, TodayTaskDto>());
   readonly creating = signal(false);
   loading = signal(true);
   error = signal('');
@@ -269,6 +310,15 @@ export class GardenListPage implements OnInit, OnDestroy {
     return 'Create one to start planning with your household.';
   }
 
+  thumbViewBox(plan: NonNullable<GardenSummaryDto['plan']>): string {
+    const f = planOutlineFrame(plan);
+    return `${f.x} ${f.y} ${f.w} ${f.h}`;
+  }
+
+  nextLabel(task: TodayTaskDto): string {
+    return task.kind === 'overdue' ? 'Overdue' : task.kind === 'dueToday' ? 'Today' : 'This week';
+  }
+
   async load() {
     const gen = ++this.loadGen;
     this.loading.set(true);
@@ -279,6 +329,7 @@ export class GardenListPage implements OnInit, OnDestroy {
       const today = await this.api.today(localIso());
       if (gen !== this.loadGen) return;
       counts = new Map(today.gardens.map((garden) => [garden.id, garden]));
+      this.nextTasks.set(nextTaskByGarden(today.tasks));
     } catch {
       /* the counts are optional on the property cards */
     }
@@ -320,7 +371,15 @@ export class GardenListPage implements OnInit, OnDestroy {
         this.widthValue = lengthInput(120, this.sizeUnits);
         this.loadGen++;
         this.items.update((list) => [
-          withCounts(created),
+          // A new property has no beds yet; its card still shows its outline.
+          withCounts({
+            ...created,
+            plan: {
+              lengthInches: created.lengthInches,
+              widthInches: created.widthInches,
+              beds: [],
+            },
+          }),
           ...list.filter((g) => g.id !== created.id),
         ]);
         this.creating.set(false);

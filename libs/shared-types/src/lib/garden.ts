@@ -25,6 +25,22 @@ export interface GardenSummaryDto {
   placementCount: number;
   overdueCount?: number;
   thisWeekCount?: number;
+  /** The property's size and each sized bed's outline, in inches, for a small plan on its card. */
+  plan?: GardenPlanOutlineDto;
+}
+
+/** A bed as drawn on the plan: its corner and its size once turned. */
+export interface PlanOutlineRectDto {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface GardenPlanOutlineDto {
+  lengthInches: number;
+  widthInches: number;
+  beds: PlanOutlineRectDto[];
 }
 
 export interface TodayTaskDto {

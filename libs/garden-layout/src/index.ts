@@ -54,6 +54,7 @@ export {
   rectAtPlotEdge,
   formatPlanFrame,
   fitView,
+  planOutlineFrame,
   visibleArea,
   zoomAbout,
   MIN_PLAN_SCALE,
