@@ -113,6 +113,10 @@ export default defineConfig({
         __dirname,
         'libs/garden-layout/src/lib/footprint.ts',
       ),
+      '@open-garden/garden-layout/plan-drawing': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/lib/plan-drawing.ts',
+      ),
       '@open-garden/garden-layout/drop': path.resolve(
         __dirname,
         'libs/garden-layout/src/lib/drop.ts',

@@ -21,6 +21,7 @@ import {
   treeSpacingInches,
 } from '@open-garden/garden-layout';
 import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/drop';
+import { dropTargetAt } from '@open-garden/garden-layout/plan-drawing';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
 import type { LayoutPlantingDto, PlantSummaryDto } from '@open-garden/shared-types';
@@ -236,20 +237,8 @@ export class GardenBedViewPage implements OnInit {
       if (canvas?.containsPoint(ev.clientX, ev.clientY)) {
         const plan = canvas.clientToPlan(ev.clientX, ev.clientY);
         const hit = hitTestPlan([this.bed()!].filter(Boolean), d.plantings, plan.x, plan.y, 8);
-        let target: DropTarget;
-        if (hit.kind === 'empty') {
-          target = { kind: 'empty' };
-          this.onMissedBed();
-        } else if (hit.kind === 'bed' || hit.kind === 'bed-handle') {
-          target = { kind: 'bed', bedId: hit.bedId, planX: plan.x, planY: plan.y };
-        } else if (hit.kind === 'planting') {
-          const bedId = d.plantings.find((p) => p.id === hit.plantingId)?.placement?.bedId;
-          target = bedId ? { kind: 'bed', bedId, planX: plan.x, planY: plan.y } : { kind: 'empty' };
-          if (target.kind === 'empty') this.onMissedBed();
-        } else {
-          target = { kind: 'empty' };
-          this.onMissedBed();
-        }
+        const target = dropTargetAt(hit, d.plantings, plan);
+        if (target.kind === 'empty') this.onMissedBed();
         this.applyDrop(drag.plantingId, drag.before, target);
         return;
       }
