@@ -7,10 +7,11 @@ import { PlantsApiService } from './plants-api.service';
 import { GardensApiService } from '../gardens/gardens-api.service';
 import { localIso } from '../today/today-groups';
 import { EmptyState } from '../ui/empty-state';
+import { PlantIcon } from '../ui/plant-icon';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, RouterLink, EmptyState],
+  imports: [FormsModule, RouterLink, EmptyState, PlantIcon],
   template: `
     <h2>Plant catalog</h2>
     <div class="filters">
@@ -90,9 +91,7 @@ import { EmptyState } from '../ui/empty-state';
             @if (p.illustrationUrl) {
               <img [src]="p.illustrationUrl" alt="" width="32" height="32" decoding="async" />
             } @else {
-              <span class="plant-stand-in" [attr.data-plant-type]="p.plantType">{{
-                p.plantType.slice(0, 1)
-              }}</span>
+              <og-plant-icon [plantType]="p.plantType" [family]="p.family" />
             }
             <span>
               <strong>{{ plantName(p) }}</strong>

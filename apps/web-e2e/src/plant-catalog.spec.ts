@@ -15,6 +15,10 @@ test.describe('plant catalog', () => {
     });
     await expect(page.getByRole('button', { name: /sync|refresh from api/i })).toHaveCount(0);
     await expect(page.getByText(/sync from api/i)).toHaveCount(0);
+    // A tomato is drawn as one: its family has an icon of its own.
+    await expect(
+      page.getByRole('link', { name: /Tomato \(Cherry\)/i }).locator('[data-icon="nightshade"]'),
+    ).toBeVisible();
     await page.getByRole('link', { name: /Tomato \(Cherry\)/i }).click();
     await expect(page.getByText(/Zones|Sun|Water/i).first()).toBeVisible();
     await expect(page.getByText('Soil pH')).toBeVisible();

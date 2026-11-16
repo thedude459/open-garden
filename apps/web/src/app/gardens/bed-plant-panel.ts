@@ -15,6 +15,7 @@ import {
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { EmptyState } from '../ui/empty-state';
+import { PlantIcon } from '../ui/plant-icon';
 import { NoticeService } from '../ui/notice.service';
 import { gardenErrorMessage } from './garden-error-message';
 
@@ -25,7 +26,7 @@ import { gardenErrorMessage } from './garden-error-message';
 @Component({
   selector: 'og-bed-plant-panel',
   standalone: true,
-  imports: [FormsModule, RouterLink, PlantPicker, EmptyState],
+  imports: [FormsModule, RouterLink, PlantPicker, EmptyState, PlantIcon],
   template: `
     @if (canEdit()) {
       <h3>Add a plant</h3>
@@ -94,9 +95,7 @@ import { gardenErrorMessage } from './garden-error-message';
               @if (p.illustrationUrl) {
                 <img [src]="p.illustrationUrl" alt="" width="32" height="32" decoding="async" />
               } @else {
-                <span class="plant-stand-in" [attr.data-plant-type]="p.plantType">{{
-                  p.plantType.slice(0, 1)
-                }}</span>
+                <og-plant-icon [plantType]="p.plantType" [family]="p.family" />
               }
               <span>
                 <strong>{{ plantName(p) }}</strong>

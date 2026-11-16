@@ -36,7 +36,7 @@ export interface PlantSummaryDto {
   zoneMax: number;
   /** Present on list items; catalog admission requires a known value. */
   spacingInches: number;
-  /** Null until a later art feature; clients use the CSS stand-in. */
+  /** Null: clients draw the plant's icon from its type and family instead. */
   illustrationUrl: string | null;
   /** Trees only: spacing by rootstock, which sizes a tree's bed. */
   rootstockSpacingInches?: RootstockSpacingDto | null;

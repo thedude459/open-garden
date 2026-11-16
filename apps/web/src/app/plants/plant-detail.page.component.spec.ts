@@ -71,7 +71,7 @@ async function render(plant: PlantDetailDto | null) {
 describe('PlantDetailPage', () => {
   it('shows the plant’s facts', async () => {
     const el = await render(tomato());
-    expect(el.querySelector('h2')!.textContent).toBe('Tomato');
+    expect(el.querySelector('h2')!.textContent.trim()).toBe('Tomato');
     expect(el.textContent).toContain('6.0–7.0');
     expect(el.querySelector('section.companions')).toBeNull();
   });
@@ -125,7 +125,7 @@ describe('PlantDetailPage', () => {
     delete (old as Partial<PlantDetailDto>).companionZones;
     // The offline cache fills in what older details lack (cached-detail.ts).
     const el = await render(withCompanionDefaults(old));
-    expect(el.querySelector('h2')!.textContent).toBe('Tomato');
+    expect(el.querySelector('h2')!.textContent.trim()).toBe('Tomato');
     expect(el.querySelector('.companions')).toBeNull();
   });
 

@@ -1207,6 +1207,9 @@ legend {
 .plant-stand-in[data-plant-type='fruit'] {
   background: #b85c38;
 }
+.plant-stand-in[data-plant-type='cane'] {
+  background: #7a3550;
+}
 .plant-stand-in[data-plant-type='shrub'] {
   background: #5a6b3f;
 }
