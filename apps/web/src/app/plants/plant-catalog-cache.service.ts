@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
+import { withCompanionDefaults } from './cached-detail';
 
 interface CatalogCacheDb extends DBSchema {
   lists: {
@@ -51,7 +52,8 @@ export class PlantCatalogCacheService {
 
   async getDetail(id: string): Promise<PlantDetailDto | null> {
     const db = await this.db();
-    return (await db.get('details', id)) ?? null;
+    const detail = await db.get('details', id);
+    return detail ? withCompanionDefaults(detail) : null;
   }
 
   /** Offline filters apply only to an already-cached browse page. */

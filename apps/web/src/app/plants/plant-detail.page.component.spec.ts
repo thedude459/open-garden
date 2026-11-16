@@ -5,6 +5,7 @@ import type { CatalogCompanionDto, PlantDetailDto } from '@open-garden/shared-ty
 import { AuthApiService } from '../auth/auth-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantDetailPage } from './plant-detail.page';
+import { withCompanionDefaults } from './cached-detail';
 import { PlantsApiService } from './plants-api.service';
 import { signal } from '@angular/core';
 
@@ -120,7 +121,9 @@ describe('PlantDetailPage', () => {
     const old = tomato();
     delete (old as Partial<PlantDetailDto>).companions;
     delete (old as Partial<PlantDetailDto>).companionZones;
-    const el = await render(old);
+    // The offline cache fills in what older details lack (cached-detail.ts).
+    const el = await render(withCompanionDefaults(old));
     expect(el.querySelector('h2')!.textContent).toBe('Tomato');
+    expect(el.querySelector('.companions')).toBeNull();
   });
 });
