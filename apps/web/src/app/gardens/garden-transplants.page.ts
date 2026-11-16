@@ -28,6 +28,11 @@ import { PlaceMarker } from '../ui/place-marker';
     }
     @if (loading()) {
       <p class="muted">Loading…</p>
+    } @else if (loadError()) {
+      <p class="muted" role="status">{{ loadError() }}</p>
+      @if (online()) {
+        <button type="button" class="btn btn-secondary" (click)="load()">Try again</button>
+      }
     } @else if (!list()) {
       <p class="muted">Garden unavailable or not found.</p>
     } @else {
@@ -145,6 +150,8 @@ export class GardenTransplantsPage implements OnInit {
   list = signal<TransplantListDto | null>(null);
   loading = signal(true);
   error = signal('');
+  /** Why the list could not load; distinct from a property that does not exist. */
+  loadError = signal('');
   catalogHits = signal<PlantSummaryDto[]>([]);
   indoorDate: Record<string, string> = {};
   confirmDeleteId = signal<string | null>(null);
@@ -158,6 +165,7 @@ export class GardenTransplantsPage implements OnInit {
   @HostListener('window:online')
   onWindowOnline() {
     this.online.set(true);
+    if (this.loadError()) void this.load();
   }
 
   @HostListener('window:offline')
@@ -176,6 +184,7 @@ export class GardenTransplantsPage implements OnInit {
 
   async load() {
     this.loading.set(true);
+    this.loadError.set('');
     try {
       const [list, detail] = await Promise.all([
         this.layoutApi.getTransplants(this.gardenId),
@@ -185,7 +194,11 @@ export class GardenTransplantsPage implements OnInit {
       if (detail) this.gardenName.set(detail.name);
     } catch (err) {
       this.list.set(null);
-      this.fail(err);
+      this.loadError.set(
+        isNetworkError(err)
+          ? 'Could not load transplants while offline. They load again when you are back online.'
+          : `Could not load transplants: ${messageFrom(err)}`,
+      );
     } finally {
       this.loading.set(false);
     }
@@ -302,4 +315,10 @@ function messageFrom(err: unknown): string {
     return body?.error?.message ?? err.message;
   }
   return 'Something went wrong';
+}
+
+/** No response at all: offline, or the server could not be reached. */
+function isNetworkError(err: unknown): boolean {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  return err instanceof HttpErrorResponse && err.status === 0;
 }
