@@ -7,9 +7,9 @@ export default defineConfig({
   retries: 0,
   timeout: 90_000,
   expect: { timeout: 15_000 },
-  // ponytail: CI stays at 2 workers. One API and one Postgres; 4 workers pile up
-  // on that single database. Local keeps 4.
-  workers: process.env['CI'] ? 2 : 4,
+  // Every test makes its own user and property, so tests do not share rows.
+  // GitHub's runners for public repositories have 4 CPUs.
+  workers: 4,
   outputDir: 'test-results',
   reporter: process.env['CI']
     ? [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
