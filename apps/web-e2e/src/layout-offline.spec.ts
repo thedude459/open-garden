@@ -185,8 +185,11 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   if (await dismiss.isVisible()) await dismiss.click();
   await page.getByRole('link', { name: 'Transplants' }).click();
   await expect(page.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
+  // The heading shows before the list loads; going offline mid-load leaves no search form.
+  const search = page.locator('input[name="transplantSearch"]');
+  await expect(search).toBeVisible();
   await page.context().setOffline(true);
-  await page.locator('input[name="transplantSearch"]').fill('Tomato');
+  await search.fill('Tomato');
   await page.getByRole('button', { name: 'Search catalog' }).click();
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
   await page.context().setOffline(false);
