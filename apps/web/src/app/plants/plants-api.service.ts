@@ -29,7 +29,7 @@ export class PlantsApiService {
     }
     const idb = await this.fromIdb(query, key);
     if (idb?.items.length) {
-      if (!query.q) this.remember(idb, query, key);
+      if (isBrowse(query)) this.remember(idb, query, key);
       void this.fetchList(query, key);
       return idb;
     }
@@ -38,14 +38,12 @@ export class PlantsApiService {
 
   private fromMemory(query: PlantListQueryDto): PageDto<PlantSummaryDto> | null {
     if (!this.memory || !this.memoryCovers(query)) return null;
-    return this.cache.filterCached(this.memory, {
-      zone: query.zone,
-      plantType: query.plantType,
-      q: query.q,
-    });
+    return this.cache.filterCached(this.memory, query);
   }
 
   private memoryCovers(query: PlantListQueryDto): boolean {
+    // Sowing windows are worked out by the server; a cached page cannot answer.
+    if (query.sowNowFor) return false;
     if (this.memoryMeta.plantType && this.memoryMeta.plantType !== query.plantType) return false;
     if (this.memoryMeta.zone !== undefined && this.memoryMeta.zone !== query.zone) return false;
     return true;
@@ -63,16 +61,13 @@ export class PlantsApiService {
   ): Promise<PageDto<PlantSummaryDto> | null> {
     const exact = await this.cache.getList(key);
     if (exact?.items.length) return exact;
+    if (query.sowNowFor) return null;
     const browseKeys = [this.lastBrowseKey, this.browseKey(query, 100), this.browseKey(query, 20)];
     for (const browseKey of browseKeys) {
       if (!browseKey) continue;
       const browse = await this.cache.getList(browseKey);
       if (!browse) continue;
-      const filtered = this.cache.filterCached(browse, {
-        zone: query.zone,
-        plantType: query.plantType,
-        q: query.q,
-      });
+      const filtered = this.cache.filterCached(browse, query);
       if (filtered.items.length) return filtered;
     }
     return null;
@@ -96,6 +91,9 @@ export class PlantsApiService {
       if (query.q) params = params.set('q', query.q);
       if (query.zone !== undefined) params = params.set('zone', String(query.zone));
       if (query.plantType) params = params.set('plantType', query.plantType);
+      if (query.family) params = params.set('family', query.family);
+      if (query.sowNowFor) params = params.set('sowNowFor', query.sowNowFor);
+      if (query.asOf) params = params.set('asOf', query.asOf);
       if (query.page) params = params.set('page', String(query.page));
       if (query.pageSize) params = params.set('pageSize', String(query.pageSize));
       const page = await firstValueFrom(
@@ -105,19 +103,24 @@ export class PlantsApiService {
         }),
       );
       void this.cache.saveList(key, page);
-      if (!query.q) this.remember(page, query, key);
+      if (isBrowse(query)) this.remember(page, query, key);
       return page;
     } catch {
       const cached = await this.fromIdb(query, key);
       if (cached) return cached;
-      if (this.memory) {
-        return this.cache.filterCached(this.memory, {
-          zone: query.zone,
-          plantType: query.plantType,
-          q: query.q,
-        });
-      }
+      if (this.memory && !query.sowNowFor) return this.cache.filterCached(this.memory, query);
       return { items: [], page: 1, pageSize: query.pageSize ?? 20, totalCount: 0 };
+    }
+  }
+
+  /** Families in the catalog, for its family filter; none while offline. */
+  async families(): Promise<string[]> {
+    try {
+      return await firstValueFrom(
+        this.http.get<string[]>(`${API}/plants/families`, { withCredentials: true }),
+      );
+    } catch {
+      return [];
     }
   }
 
@@ -132,4 +135,9 @@ export class PlantsApiService {
       return this.cache.getDetail(id);
     }
   }
+}
+
+/** A page worth keeping in memory to filter offline: no search or narrowing filter. */
+function isBrowse(query: PlantListQueryDto): boolean {
+  return !query.q && !query.family && !query.sowNowFor;
 }

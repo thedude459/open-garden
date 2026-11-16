@@ -18,6 +18,7 @@ import type {
 } from '@open-garden/plant-catalog-data';
 import { allowsPlant, homeFor } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
+import { overlapsThisWeek } from './this-week';
 import { computeWindows, seasonYear, windowsAvailable, type WarmClimate } from './windows';
 
 export class CalendarService {
@@ -66,6 +67,38 @@ export class CalendarService {
     };
   }
 
+  /**
+   * A check for "can sow now" at a property the member belongs to: whether a
+   * crop's indoor start, sowing, planting, or fall sowing window there is
+   * open in the week from `asOf` (the member's local date).
+   */
+  async sowableNow(
+    userId: string,
+    gardenId: string,
+    asOf: Date,
+  ): Promise<(row: GuidanceRow) => boolean> {
+    const membership = await this.memberships.get(gardenId, userId);
+    if (!membership) throw CALENDAR_ERRORS.gardenNotFound();
+    const garden = await this.gardens.getById(gardenId);
+    if (!garden) throw CALENDAR_ERRORS.gardenNotFound();
+    const frost = {
+      lastFrost: pair(garden.lastFrostMonth, garden.lastFrostDay),
+      firstFrost: pair(garden.firstFrostMonth, garden.firstFrostDay),
+    };
+    const monthlyMeanC = garden.monthlyMeanC ?? null;
+    const year = seasonYear(frost, asOf);
+    return (row) => {
+      const w = computeWindows(
+        frost,
+        guidanceFromRow(row),
+        row.daysToMaturity,
+        year,
+        warmClimate(row, monthlyMeanC),
+      );
+      return overlapsThisWeek([w.indoorStart, w.outdoorSow, w.transplant, w.fallSow], asOf);
+    };
+  }
+
   async add(
     userId: string,
     gardenId: string,
@@ -96,15 +129,8 @@ export class CalendarService {
   }
 }
 
-type EntryRow = {
-  plantId: string;
-  commonName: string;
-  species: string;
-  cultivar: string | null;
-  plantType: string;
-  status: string;
-  zoneMin: number;
-  zoneMax: number;
+/** A crop's sowing guidance as the catalog stores it. */
+type GuidanceRow = {
   daysToMaturity: number | null;
   indoorFrostAnchor: string | null;
   indoorWeeksEarliest: number | null;
@@ -120,6 +146,17 @@ type EntryRow = {
   growMinC?: number | null;
   growMaxC?: number | null;
   sowSoilMinC?: number | null;
+};
+
+type EntryRow = GuidanceRow & {
+  plantId: string;
+  commonName: string;
+  species: string;
+  cultivar: string | null;
+  plantType: string;
+  status: string;
+  zoneMin: number;
+  zoneMax: number;
   planned?: boolean;
   planted?: boolean;
 };
@@ -156,7 +193,7 @@ function toEntry(
   };
 }
 
-function warmClimate(row: EntryRow, monthlyMeanC: number[] | null): WarmClimate {
+function warmClimate(row: GuidanceRow, monthlyMeanC: number[] | null): WarmClimate {
   const sowingTemperature =
     row.growMinC != null && row.growMaxC != null
       ? { minC: row.growMinC, maxC: row.growMaxC, minSoilC: row.sowSoilMinC ?? null }
@@ -164,7 +201,7 @@ function warmClimate(row: EntryRow, monthlyMeanC: number[] | null): WarmClimate 
   return { monthlyMeanC, sowingTemperature };
 }
 
-function guidanceFromRow(row: EntryRow): GrowingGuidanceDto {
+function guidanceFromRow(row: GuidanceRow): GrowingGuidanceDto {
   return {
     indoorStart: triplet(row.indoorFrostAnchor, row.indoorWeeksEarliest, row.indoorWeeksLatest),
     outdoorSow: triplet(row.sowFrostAnchor, row.sowWeeksEarliest, row.sowWeeksLatest),

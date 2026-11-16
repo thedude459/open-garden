@@ -111,6 +111,45 @@ describe.skipIf(!liveEnabled)('calendar http', () => {
     });
   });
 
+  test('the catalog filters by family and by what can be sown now at a property', async () => {
+    const stamp = Date.now();
+    const owner = new LiveClient();
+    const stranger = new LiveClient();
+    await register(owner, `sow-now-${stamp}@example.com`);
+    await register(stranger, `sow-now-stranger-${stamp}@example.com`);
+    const garden = await createGarden(owner, 'Sow now');
+    const tomato = (await findPlant(owner, 'Tomato')) as { id: string; family?: string | null };
+    type Page = { items: Array<{ id: string; family?: string | null }>; totalCount: number };
+    const list = async (client: LiveClient, query: string) => {
+      const res = await client.get(`/api/plants?pageSize=100&${query}`);
+      return { status: res.status(), body: (await res.json()) as Page };
+    };
+
+    const families = (await (await owner.get('/api/plants/families')).json()) as string[];
+    expect(families).toContain(tomato.family);
+    const byFamily = await list(owner, `family=${encodeURIComponent(tomato.family!)}`);
+    expect(byFamily.body.items.map((p) => p.id)).toContain(tomato.id);
+    expect(byFamily.body.items.every((p) => p.family === tomato.family)).toBe(true);
+
+    // Tomato transplants from a week after last frost (15 April).
+    const added = await owner.post(`/api/gardens/${garden.id}/calendar`, {
+      data: { plantId: tomato.id },
+    });
+    const transplant = ((await added.json()) as CalendarDto).entries[0]!.windows.transplant as {
+      earliest: { month: number; day: number };
+    };
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const opens = `2025-${pad(transplant.earliest.month)}-${pad(transplant.earliest.day)}`;
+    const now = await list(owner, `sowNowFor=${garden.id}&asOf=${opens}&q=Tomato`);
+    expect(now.status).toBe(200);
+    expect(now.body.items.map((p) => p.id)).toContain(tomato.id);
+    const winter = await list(owner, `sowNowFor=${garden.id}&asOf=2025-12-15&q=Tomato`);
+    expect(winter.body.items.map((p) => p.id)).not.toContain(tomato.id);
+
+    expect((await list(stranger, `sowNowFor=${garden.id}`)).status).toBe(404);
+    expect((await list(owner, `sowNowFor=${garden.id}&asOf=15-12-2025`)).status).toBe(400);
+  });
+
   test('unauthenticated calendar routes return 401', async () => {
     const request = new LiveClient();
     const get = await request.get('/api/gardens/11111111-1111-4111-8111-111111111111/calendar');

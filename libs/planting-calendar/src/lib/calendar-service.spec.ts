@@ -147,6 +147,25 @@ describe('CalendarService', () => {
     expect(list.entries[0]?.windows.indoorStart).toBeNull();
   });
 
+  it('says which crops can be sown or planted in the week from a local date', async () => {
+    const mem = createMemory();
+    // Last frost 15 April: tomato starts indoors 19 Feb – 4 Mar, transplants 22–29 Apr.
+    const february = await mem.service.sowableNow(mem.ownerId, mem.gardenId, new Date(2024, 1, 14));
+    expect(february(tomato)).toBe(true);
+    expect(february(papaya)).toBe(false);
+    const april = await mem.service.sowableNow(mem.viewerId, mem.gardenId, new Date(2024, 3, 22));
+    expect(april(tomato)).toBe(true);
+    const june = await mem.service.sowableNow(mem.ownerId, mem.gardenId, new Date(2024, 5, 15));
+    expect(june(tomato)).toBe(false);
+  });
+
+  it('keeps "can sow now" to members of the property', async () => {
+    const mem = createMemory();
+    await expect(
+      mem.service.sowableNow(mem.strangerId, mem.gardenId, new Date(2024, 1, 14)),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
   it('flags zone mismatch and leaves Honeycrisp-like in-range plants unmatched', async () => {
     const mem = createMemory();
     await mem.service.add(mem.ownerId, mem.gardenId, papaya.id);

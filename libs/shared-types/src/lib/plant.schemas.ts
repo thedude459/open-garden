@@ -14,6 +14,12 @@ export const plantListQuerySchema = z.object({
   q: z.string().optional(),
   zone: z.coerce.number().int().min(1).max(13).optional(),
   plantType: plantTypeSchema.optional(),
+  family: z.string().trim().min(1).max(80).optional(),
+  sowNowFor: z.uuid().optional(),
+  asOf: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });

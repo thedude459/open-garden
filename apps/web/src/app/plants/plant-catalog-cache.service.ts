@@ -59,9 +59,12 @@ export class PlantCatalogCacheService {
   /** Offline filters apply only to an already-cached browse page. */
   filterCached(
     page: PageDto<PlantSummaryDto>,
-    opts: { zone?: number; plantType?: string; q?: string },
+    opts: { zone?: number; plantType?: string; family?: string; q?: string },
   ): PageDto<PlantSummaryDto> {
     let items = page.items;
+    if (opts.family) {
+      items = items.filter((p) => p.family === opts.family);
+    }
     if (opts.plantType) {
       items = items.filter((p) => p.plantType === opts.plantType);
     }

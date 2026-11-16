@@ -52,6 +52,7 @@ export interface PlantListFilters {
   q?: string;
   zone?: number;
   plantType?: PlantType;
+  family?: string;
   page: number;
   pageSize: number;
   includeDeprecated?: boolean;
@@ -208,6 +209,9 @@ export class PlantRepository {
     if (filters.plantType) {
       conditions.push(eq(plants.plantType, filters.plantType));
     }
+    if (filters.family) {
+      conditions.push(eq(plants.family, filters.family));
+    }
     if (filters.zone !== undefined) {
       conditions.push(lte(plants.zoneMin, filters.zone));
       conditions.push(gte(plants.zoneMax, filters.zone));
@@ -242,6 +246,16 @@ export class PlantRepository {
       page: filters.page,
       pageSize: filters.pageSize,
     };
+  }
+
+  /** Families of the active catalog, A to Z, for the catalog's family filter. */
+  async families(): Promise<string[]> {
+    const rows = await this.db
+      .selectDistinct({ family: plants.family })
+      .from(plants)
+      .where(and(eq(plants.status, 'active'), isNotNull(plants.family)))
+      .orderBy(asc(plants.family));
+    return rows.map((r) => r.family).filter((f): f is string => !!f);
   }
 
   async listSnapshots() {
