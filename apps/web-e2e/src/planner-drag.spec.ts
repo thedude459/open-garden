@@ -24,7 +24,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await owner.getByRole('link', { name: /Planner drag/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await expect(owner.getByLabel('Waiting transplants')).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Transplants' }).click();
@@ -37,13 +37,13 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await tray
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
-  await expect(owner.getByText('Unsaved changes')).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await expect(owner.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  await saveLayout(owner);
 
   await owner.getByRole('button', { name: 'Remove from bed Tomato (Cherry)' }).click();
   await owner.getByRole('button', { name: 'Confirm remove Tomato (Cherry)' }).click();
   await expect(tray.getByRole('button', { name: 'Tomato (Cherry)' })).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByRole('button', { name: 'Direct seed' }).click();
   await owner.getByLabel('Search plants').fill('Basil');
@@ -71,7 +71,7 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
     .dragTo(owner.locator('[data-bed-name="North"]'));
   await expect(owner.getByLabel('Notification')).toContainText('Too close to another plant');
   await expect(tray.getByRole('button', { name: 'Tomato (Cherry)' })).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await inviteViewer(owner, `planner-drag-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

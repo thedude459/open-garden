@@ -1,6 +1,6 @@
 import type { GardenLayoutDto, LayoutPlantingDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
-import { hasLayoutChanges, layoutChanges, layoutPutBody } from './layout-changes';
+import { hasLayoutChanges, layoutChanges, layoutPutBody, restoreLayout } from './layout-changes';
 
 const geometry = {
   originXInches: 0,
@@ -96,6 +96,41 @@ describe('layoutChanges', () => {
   it('ignores a rename, which is saved on its own', () => {
     const renamed = { ...saved, beds: [{ ...saved.beds[0]!, name: 'Herbs' }] };
     expect(hasLayoutChanges(layoutChanges(saved, renamed))).toBe(false);
+  });
+});
+
+describe('layoutChanges after an undo', () => {
+  it('deletes a saved bed the draft no longer has', () => {
+    const draft = { ...saved, beds: [], plantings: [] };
+    const changes = layoutChanges(saved, draft);
+    expect(changes.removedBedIds).toEqual(['b1']);
+    expect(changes.removedDirectSeedIds).toEqual(['basil']);
+    expect(hasLayoutChanges(changes)).toBe(true);
+  });
+});
+
+describe('restoreLayout', () => {
+  it('brings back earlier shapes and plants but keeps current bed names', () => {
+    const earlier = {
+      ...saved,
+      beds: [{ ...saved.beds[0]!, geometry: { ...geometry, originXInches: 24 } }],
+    };
+    const current = {
+      ...saved,
+      beds: [{ ...saved.beds[0]!, name: 'Herbs', mulch: 'straw' as const }],
+    };
+    const restored = restoreLayout(current, earlier);
+    expect(restored.beds[0]).toMatchObject({
+      name: 'Herbs',
+      mulch: 'straw',
+      geometry: { originXInches: 24 },
+    });
+    expect(restored.plantings).toBe(earlier.plantings);
+  });
+
+  it('keeps an earlier bed that is gone now, as it was', () => {
+    const earlier = { ...saved, beds: [...saved.beds, { id: 'b2', name: 'South', geometry }] };
+    expect(restoreLayout(saved, earlier).beds.map((b) => b.name)).toEqual(['North', 'South']);
   });
 });
 

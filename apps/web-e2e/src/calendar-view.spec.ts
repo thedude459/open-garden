@@ -55,7 +55,7 @@ test('calendar ranges follow last vs first frost and keep unavailable plants', a
   await addFromCatalog(owner, 'Garlic (Music)');
   await openOverview(owner);
   await openAdd(owner, 'Add tree');
-  expect((await saveLayout(owner)).ok()).toBeTruthy();
+  await saveLayout(owner);
   await owner.locator('nav[aria-label="Garden"]').getByRole('link', { name: 'Calendar' }).click();
   await expect(owner.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
   await addFromCatalog(owner, 'Apple (Honeycrisp)');

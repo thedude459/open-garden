@@ -19,7 +19,7 @@ test('cached layout stays readable when layout API is aborted', async ({ browser
   await page.getByRole('link', { name: /Cached layout/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'Raised bed 1');
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
   await expect(page.getByText('8 × 4 ft · 0°')).toBeVisible();
 
   await page.route('**/api/gardens/**/layout**', (route) => route.abort());
@@ -30,7 +30,7 @@ test('cached layout stays readable when layout API is aborted', async ({ browser
   await page.getByRole('button', { name: 'Edit bed Raised bed 1' }).click();
   await page.locator('input[name="originX"]').fill('1');
   await expect(page.getByText(/need to be online/i)).toBeVisible({ timeout: 5000 });
-  await expect(page.getByText('Unsaved changes')).toHaveCount(0);
+  await expect(page.getByText('All changes saved')).toBeVisible();
 
   await openAdd(page, 'Add bed');
   await page.getByPlaceholder('Bed name').fill('Offline bed');
@@ -53,7 +53,7 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   await owner.getByRole('link', { name: /Stale layout/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'East', '4', '2');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await expect(owner.getByText('4 × 2 ft · 0°')).toBeVisible();
 
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();
@@ -66,13 +66,13 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   await friend.getByRole('link', { name: /Stale layout/ }).click();
   await openOverview(friend);
   await expect(friend.getByText('4 × 2 ft · 0°')).toBeVisible();
-  await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(friend.getByRole('button', { name: 'Undo' })).toHaveCount(0);
   const layoutUrl = friend.url();
 
   await friend.route('**/api/gardens/**/layout**', (route) => route.abort());
   await friend.reload({ waitUntil: 'domcontentloaded' });
   await expect(friend.getByText('4 × 2 ft · 0°')).toBeVisible();
-  await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(friend.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 
   await owner.getByRole('button', { name: 'Remove' }).click();
   await expect(owner.getByText(`layout-stale-friend-${stamp}@example.com`)).toHaveCount(0);
@@ -80,7 +80,7 @@ test('viewer offline reads cache; removed member drops stale layout cache', asyn
   await friend.unroute('**/api/gardens/**/layout**');
   await friend.goto(layoutUrl);
   await expect(friend.getByText(/Garden unavailable or not found/i)).toBeVisible();
-  await expect(friend.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(friend.getByRole('button', { name: 'Undo' })).toHaveCount(0);
 });
 
 test('422 PUT does not overwrite the last valid layout cache', async ({ browser }) => {
@@ -93,7 +93,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await page.getByRole('link', { name: /Gate cache/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'East');
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
 
   await page.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(page, 'Tomato (Cherry)');
@@ -103,7 +103,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
     .getByLabel('Waiting transplants')
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(page.locator('[data-bed-name="East"]'));
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
 
   await page.getByRole('link', { name: 'Back to overview' }).click();
   await page.getByRole('link', { name: 'Transplants' }).click();
@@ -138,7 +138,7 @@ test('422 PUT does not overwrite the last valid layout cache', async ({ browser 
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width / 2 + 24, box!.y + box!.height / 2, { steps: 8 });
   await page.mouse.up();
-  await page.getByRole('button', { name: 'Save layout' }).click();
+  // The autosave is refused by the server and says why.
   await expect(page.getByText('Layout has spacing or fit problems')).toBeVisible();
 
   await page.unroute('**/api/gardens/**/layout**');
@@ -163,7 +163,7 @@ test('offline Overview/Bed/Transplant mutations stay unchanged', async ({ browse
   await page.getByRole('link', { name: /Offline mutate/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'East');
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
 
   await page.context().setOffline(true);
   await openAdd(page, 'Add bed');

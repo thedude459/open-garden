@@ -29,7 +29,6 @@ test('primary actions keep green fill and white label', async ({ page, browser }
   await owner.getByRole('link', { name: /Visual/ }).click();
   await openOverview(owner);
   await expectPrimaryPaint(owner.getByRole('button', { name: 'Create bed' }));
-  await expectPrimaryPaint(owner.getByRole('button', { name: 'Save layout' }));
 
   await owner.goto('/plants');
   await expectPrimaryPaint(owner.getByRole('button', { name: 'Apply' }));

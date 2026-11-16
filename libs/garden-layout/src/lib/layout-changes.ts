@@ -13,6 +13,8 @@ export interface LayoutChanges {
   newDirectSeeds: LayoutPlantingDto[];
   /** Saved direct-sown plants removed from the plan since. */
   removedDirectSeedIds: string[];
+  /** Saved beds no longer in the draft (an undo past their creation). */
+  removedBedIds: string[];
   /** Bed shapes, walkways, or placements differ from the last save. */
   layoutChanged: boolean;
 }
@@ -47,12 +49,14 @@ export function layoutChanges(saved: GardenLayoutDto, draft: GardenLayoutDto): L
     saved.plantings.filter((p) => p.startMethod === 'direct_seed').map((p) => p.id),
   );
   const draftIds = new Set(draft.plantings.map((p) => p.id));
+  const draftBeds = new Set(draft.beds.map((b) => b.id));
   return {
     newBeds: draft.beds.filter((b) => !savedBeds.has(b.id)),
     newDirectSeeds: draft.plantings.filter(
       (p) => p.startMethod === 'direct_seed' && !savedSeeds.has(p.id),
     ),
     removedDirectSeedIds: [...savedSeeds].filter((id) => !draftIds.has(id)),
+    removedBedIds: [...savedBeds].filter((id) => !draftBeds.has(id)),
     layoutChanged: JSON.stringify(layoutPutBody(saved)) !== JSON.stringify(layoutPutBody(draft)),
   };
 }
@@ -63,6 +67,23 @@ export function hasLayoutChanges(changes: LayoutChanges): boolean {
     changes.layoutChanged ||
     changes.newBeds.length > 0 ||
     changes.newDirectSeeds.length > 0 ||
-    changes.removedDirectSeedIds.length > 0
+    changes.removedDirectSeedIds.length > 0 ||
+    changes.removedBedIds.length > 0
   );
+}
+
+/**
+ * An earlier draft to go back to, keeping each bed's current name and
+ * settings: those are saved as they change, outside the layout, so an undo of
+ * a move must not bring back an old name.
+ */
+export function restoreLayout(current: GardenLayoutDto, earlier: GardenLayoutDto): GardenLayoutDto {
+  const now = new Map(current.beds.map((b) => [b.id, b]));
+  return {
+    ...earlier,
+    beds: earlier.beds.map((b) => {
+      const bed = now.get(b.id);
+      return bed ? { ...bed, geometry: b.geometry } : b;
+    }),
+  };
 }

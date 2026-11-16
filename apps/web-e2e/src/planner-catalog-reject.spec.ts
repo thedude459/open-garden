@@ -19,7 +19,7 @@ test('invalid catalog drops reject with a specific notice and no planting', asyn
   await openOverview(owner);
   // 8 × 3 ft: room for basil and tomato, not for a pumpkin vine (47 in).
   await createSizedBed(owner, 'North', '8', '3');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.getByRole('button', { name: 'Open bed North' }).click();
 
   await applyPlantSearch(owner, 'Basil (Genovese)');

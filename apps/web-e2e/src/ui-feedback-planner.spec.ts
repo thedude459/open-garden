@@ -8,9 +8,7 @@ import {
   confirmFixtureAddress,
 } from './planner-helpers';
 
-test('Save layout busy + success notice; offline Save persists until Dismiss', async ({
-  browser,
-}) => {
+test('the plan saves itself, says why a save failed, retries, and undoes', async ({ browser }) => {
   test.setTimeout(90_000);
   const page = await newUser(browser, `ui-save-${Date.now()}@example.com`);
   await page.goto('/gardens');
@@ -20,35 +18,35 @@ test('Save layout busy + success notice; offline Save persists until Dismiss', a
   await page.getByRole('link', { name: /Notice garden/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'North');
-  await page.route('**/api/gardens/**/layout**', async (route) => {
-    if (route.request().method() === 'PUT') {
-      await new Promise((r) => setTimeout(r, 400));
-    }
+  await saveLayout(page);
+
+  const layout = '**/api/gardens/**/layout**';
+  await page.route(layout, async (route) => {
+    if (route.request().method() === 'PUT') await new Promise((r) => setTimeout(r, 400));
     await route.continue();
   });
-  const save = page.getByRole('button', { name: 'Save layout' });
-  const pending = page.waitForResponse(
-    (res) => res.url().includes('/layout') && res.request().method() === 'PUT',
-  );
-  await save.click();
-  await expect(save).toHaveAttribute('aria-busy', 'true');
-  expect((await pending).status()).toBe(200);
-  await expect(page.getByLabel('Notification')).toContainText('Layout saved');
-
   await page.getByRole('button', { name: 'Edit bed North' }).click();
-  await page.locator('input[name="originX"]').fill('1');
-  await page.context().setOffline(true);
-  await save.click();
-  const notice = page.getByLabel('Notification');
-  await expect(notice).toBeVisible();
-  await expect(notice).toHaveAttribute('role', 'alert');
-  await expect(page.getByRole('button', { name: 'Dismiss' })).toBeVisible();
-  await page.getByRole('button', { name: 'Dismiss' }).click();
-  await expect(notice).toHaveCount(0);
-  await page.context().setOffline(false);
+  const originX = page.locator('input[name="originX"]');
+  await originX.fill('1');
+  await expect(page.getByText('Saving…')).toBeVisible();
+  await saveLayout(page);
+  await page.unroute(layout);
+
+  await page.route(layout, (route) =>
+    route.request().method() === 'PUT' ? route.abort() : route.continue(),
+  );
+  await originX.fill('2');
+  await expect(page.getByText(/^Not saved:/)).toBeVisible();
+  await page.unroute(layout);
+  await page.getByRole('button', { name: 'Retry' }).click();
+  await saveLayout(page);
+
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(originX).toHaveValue('1');
+  await saveLayout(page);
 });
 
-test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismiss', async ({
+test('Add transplant notice; a valid drop can be undone; miss stays until Dismiss', async ({
   browser,
 }) => {
   test.setTimeout(120_000);
@@ -60,7 +58,7 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   await owner.getByRole('link', { name: /Drop garden/ }).click();
   await openOverview(owner);
   await createSizedBed(owner, 'North');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.getByRole('link', { name: 'Transplants' }).click();
   await addTransplant(owner, 'Tomato (Cherry)');
   await expect(owner.getByLabel('Notification')).toContainText('Transplant added');
@@ -79,6 +77,6 @@ test('Add transplant notice; valid drop Unsaved changes; miss stays until Dismis
   await tray
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
-  await expect(owner.getByText('Unsaved changes')).toBeVisible();
+  await expect(owner.getByRole('button', { name: 'Undo' })).toBeEnabled();
   await expect(owner.getByLabel('Notification')).toHaveCount(0);
 });

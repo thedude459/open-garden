@@ -25,7 +25,7 @@ test('start a seedling in a greenhouse tray, then plant it out in a bed', async 
   await page.getByRole('button', { name: 'Create tray' }).click();
   await expect(page.getByRole('listitem').filter({ hasText: 'Seed tray A' })).toBeVisible();
   await createSizedBed(page, 'North');
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
 
   // Start a tomato in the tray.
   await openPlantingsFromGarden(page);
@@ -44,7 +44,7 @@ test('start a seedling in a greenhouse tray, then plant it out in a bed', async 
     .getByRole('button', { name: 'Tomato (Cherry)' })
     .dragTo(page.locator('[data-bed-name="North"]'));
   await expect(page.getByRole('img', { name: 'Tomato (Cherry)' })).toBeVisible();
-  expect((await saveLayout(page)).ok()).toBeTruthy();
+  await saveLayout(page);
 
   await openPlantingsFromGarden(page);
   await expect(tomato.getByText('In a tray', { exact: true })).toHaveCount(0);

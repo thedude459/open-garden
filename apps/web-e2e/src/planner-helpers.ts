@@ -32,15 +32,16 @@ export async function registerViaUi(page: Page, email: string) {
   await expect(page.getByRole('heading', { name: 'Properties' })).toBeVisible();
 }
 
+/**
+ * The plan saves itself after each edit; wait until it says it has. An edit
+ * marks the plan unsaved at once, but Angular renders that a moment later, so
+ * let one frame paint first or a stale "All changes saved" would match.
+ */
 export async function saveLayout(page: Page) {
-  const pending = page.waitForResponse(
-    (res) => res.url().includes('/layout') && res.request().method() === 'PUT',
+  await page.evaluate(
+    () => new Promise<void>((done) => requestAnimationFrame(() => setTimeout(done))),
   );
-  await page.getByRole('button', { name: 'Save layout' }).click();
-  const response = await pending;
-  // The notice is posted after the draft is marked clean. Leaving earlier races the unsaved guard.
-  await expect(page.getByText('Layout saved')).toBeVisible();
-  return response;
+  await expect(page.getByText('All changes saved')).toBeVisible();
 }
 
 /** Wait for the garden PATCH to finish before navigating away. */

@@ -29,7 +29,7 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
   await saveGarden(owner);
   await openOverview(owner);
   await createSizedBed(owner, 'North');
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.getByRole('button', { name: 'Open bed North' }).click();
 
   await expect(owner.getByLabel('Plant panel')).toBeVisible();
@@ -54,9 +54,9 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
   await expect(arm).toBeVisible();
 
   await arm.dragTo(owner.locator('[data-bed-name="North"]'));
-  await expect(owner.getByText('Unsaved changes')).toBeVisible();
+  await expect(owner.getByRole('button', { name: 'Undo' })).toBeEnabled();
   await expect(owner.getByRole('img', { name: 'Basil (Genovese)' })).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   const gardenId = owner.url().match(/gardens\/([^/]+)/)?.[1];
   const layoutRes = await owner.request.get(`/api/gardens/${gardenId}/layout`);
@@ -89,7 +89,7 @@ test('Bed View catalog search, drag, arm-click, Save; Overview has no in-bed mar
     position: { x: Math.round(bedBox!.width * 0.25), y: Math.round(bedBox!.height * 0.5) },
   });
   await expect(owner.getByRole('img', { name: 'Tomato (Cherry)' })).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await inviteViewer(owner, `planner-cat-viewer-${stamp}@example.com`);
   await viewer.goto('/gardens');

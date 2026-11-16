@@ -30,7 +30,7 @@ test('gardener journey: login, property, bed, direct seed, transplant, plant tra
   await page.getByRole('link', { name: /Journey garden/ }).click();
   await openOverview(page);
   await createSizedBed(page, 'North');
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
   await expect(page.locator('[data-bed-name="North"]')).toBeVisible();
 
   // Create the waiting transplant first, then place it on the empty bed.
@@ -68,5 +68,5 @@ test('gardener journey: login, property, bed, direct seed, transplant, plant tra
     targetPosition: { x: Math.round(box!.width * 0.2), y: Math.round(box!.height * 0.5) },
   });
   await expect(page.getByRole('img', { name: 'Basil (Genovese)' })).toBeVisible();
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
 });

@@ -31,6 +31,7 @@ import { PlantingTray } from './planting-tray';
 import { PlannerDraftService } from './planner-draft.service';
 import { BedPlantPanel } from './bed-plant-panel';
 import { BedPlantingsList } from './bed-plantings-list';
+import { PlanSaveStatus } from './plan-save-status';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from '../auth/auth-api.service';
@@ -46,6 +47,7 @@ import { PlaceMarker } from '../ui/place-marker';
     PlaceMarker,
     BedPlantPanel,
     BedPlantingsList,
+    PlanSaveStatus,
   ],
   template: `
     <p class="back-link"><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
@@ -64,15 +66,7 @@ import { PlaceMarker } from '../ui/place-marker';
             <button type="button" class="btn btn-secondary" (click)="zoomIn()">Zoom in</button>
             <button type="button" class="btn btn-secondary" (click)="zoomOut()">Zoom out</button>
             @if (canEdit()) {
-              <button
-                type="button"
-                class="btn btn-primary"
-                (click)="save()"
-                [attr.aria-busy]="notices.busyMap().has('save-layout') || null"
-                [disabled]="notices.busyMap().has('save-layout')"
-              >
-                Save layout
-              </button>
+              <og-plan-save-status />
             }
           </div>
         }
@@ -98,9 +92,6 @@ import { PlaceMarker } from '../ui/place-marker';
                 fit at {{ spacing(picked.spacingInches) }}.
               }
             </p>
-          }
-          @if (dirty()) {
-            <p role="status">Unsaved changes</p>
           }
           @for (flag of flags(); track $index) {
             <p class="needs-attention" role="status">
@@ -256,10 +247,6 @@ export class GardenBedViewPage implements OnInit {
     return role === 'owner' || role === 'collaborator';
   }
 
-  dirty() {
-    return this.planner.dirty();
-  }
-
   trayPlantings() {
     return (
       this.draft()?.plantings.filter(
@@ -406,7 +393,7 @@ export class GardenBedViewPage implements OnInit {
         yInches: local.y,
       },
     };
-    this.planner.setDraft({ ...d, plantings: [planting, ...d.plantings] });
+    this.planner.edit({ ...d, plantings: [planting, ...d.plantings] });
     this.armedPlant.set(null);
     this.refreshFlags();
   }
@@ -447,7 +434,7 @@ export class GardenBedViewPage implements OnInit {
       indoorStartedOn: null,
       placement: { plantingId: id, bedId: bed.id, xInches: size / 2, yInches: size / 2 },
     };
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       beds: d.beds.map((b) => (b.id === bed.id ? { ...b, geometry: sized.geometry } : b)),
       plantings: [
@@ -494,15 +481,19 @@ export class GardenBedViewPage implements OnInit {
     return 'Too close to the bed edge. Move it further in';
   }
 
-  removeFromBed(planting: LayoutPlantingDto) {
+  async removeFromBed(planting: LayoutPlantingDto) {
     if (!this.guardMutate()) return;
-    if (planting.startMethod === 'direct_seed') {
+    if (planting.startMethod === 'direct_seed' && this.planner.isSavedPlanting(planting.id)) {
+      // A confirmed delete happens now; Undo does not bring it back.
+      try {
+        await this.planner.deletePlantingNow(planting.id);
+      } catch (err) {
+        this.notices.error(messageFrom(err));
+      }
+    } else if (planting.startMethod === 'direct_seed') {
       const d = this.draft();
       if (!d) return;
-      this.planner.setDraft({
-        ...d,
-        plantings: d.plantings.filter((p) => p.id !== planting.id),
-      });
+      this.planner.edit({ ...d, plantings: d.plantings.filter((p) => p.id !== planting.id) });
     } else {
       this.applyDrop(planting.id, planting, { kind: 'tray' });
     }
@@ -533,19 +524,6 @@ export class GardenBedViewPage implements OnInit {
     this.planner.refreshFlags();
   }
 
-  async save() {
-    await this.notices.run('save-layout', async () => {
-      if (!this.guardMutate()) return;
-      this.planner.refreshFlags();
-      try {
-        await this.planner.save();
-        this.notices.success('Layout saved');
-      } catch (err) {
-        this.notices.error(messageFrom(err));
-      }
-    });
-  }
-
   private applyDrop(plantingId: string, before: LayoutPlantingDto, target: DropTarget) {
     const d = this.draft();
     if (!d) return;
@@ -564,7 +542,7 @@ export class GardenBedViewPage implements OnInit {
         return;
       }
     }
-    this.planner.setDraft({
+    this.planner.edit({
       ...d,
       plantings,
     });

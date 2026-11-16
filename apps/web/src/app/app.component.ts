@@ -191,7 +191,8 @@ export class AppComponent {
 
   @HostListener('window:beforeunload', ['$event'])
   keepUnsavedLayout(event: BeforeUnloadEvent) {
-    if (!this.planner.dirty()) return;
+    // Closing the tab cannot wait for a save, so warn while one is outstanding.
+    if (!this.planner.unsaved()) return;
     event.preventDefault();
     event.returnValue = '';
   }
@@ -247,7 +248,8 @@ export class AppComponent {
   }
 
   private dropDraftIfLeft(url: string) {
-    if (!this.planner.dirty()) return;
+    // Closing the tab cannot wait for a save, so warn while one is outstanding.
+    if (!this.planner.unsaved()) return;
     const id = gardenIdFrom(url);
     if (id && staysOnPlanner(id, url)) return;
     this.planner.discard();

@@ -53,7 +53,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   expect(Number(await originX.inputValue()) === 0 && Number(await originY.inputValue()) === 0).toBe(
     false,
   );
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
@@ -73,7 +73,7 @@ test('Overview create uses visible viewport center; grab-offset move; viewer can
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   await expect(owner.locator('[data-area-name="Path"]')).toBeVisible();
 
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await owner.getByRole('button', { name: 'Edit bed North' }).click();

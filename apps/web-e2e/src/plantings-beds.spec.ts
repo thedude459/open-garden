@@ -18,7 +18,7 @@ async function openPlantings(page: Page, name: string) {
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await createSizedBed(page, 'Raised bed 1');
   await createSizedBed(page, 'Patio pots');
-  expect((await saveLayout(page)).status()).toBe(200);
+  await saveLayout(page);
   await openPlantingsFromGarden(page);
 }
 

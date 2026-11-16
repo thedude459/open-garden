@@ -51,7 +51,8 @@ export function mergeWaitingTransplants(
  * Problems the saved layout already had (a catalog update widened spacing) do
  * not block. See evaluateLayout.
  *
- * evaluate → POST beds → POST direct seeds → PUT layout → DELETE removed direct seeds.
+ * evaluate → POST beds → POST direct seeds → PUT layout → DELETE removed direct seeds, then
+ * removed beds (only an undo past a bed's creation removes a saved bed here).
  * Creates in a phase run together. Beds finish before plantings, and both finish before PUT.
  * On PUT failure, compensating DELETE of new direct-seed plantings, then new beds.
  */
@@ -101,6 +102,7 @@ export async function savePlannerDraft(
     );
     const result = await deps.putLayout(layoutPutBody(draft));
     await Promise.all(changes.removedDirectSeedIds.map((id) => deps.deletePlanting(id)));
+    await Promise.all(changes.removedBedIds.map((id) => deps.deleteBed(id)));
     return { ...result, areas: result.areas ?? [] };
   } catch (err) {
     await Promise.all(

@@ -30,26 +30,21 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await owner.locator('input[name="newWidth"]').fill('');
   await owner.getByRole('button', { name: 'Create bed' }).click();
   await expect(owner.getByRole('button', { name: 'Open bed No size' })).toHaveCount(0);
-  await expect(owner.getByText('Unsaved changes')).toHaveCount(0);
+  await expect(owner.getByText('All changes saved')).toBeVisible();
 
-  await createSizedBed(owner, 'East');
-  await expect(owner.getByText('Unsaved changes')).toBeVisible();
-  await expect(owner.locator('[data-bed-name="East"]')).toBeVisible();
-  owner.once('dialog', (dialog) => dialog.dismiss());
-  await owner.getByRole('link', { name: 'Settings', exact: true }).click();
-  await expect(owner.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
-  await expect(owner.locator('[data-bed-name="East"]')).toBeVisible();
-  owner.once('dialog', (dialog) => {
-    expect(dialog.message()).toBe('Leave without saving this layout?');
-    return dialog.accept();
+  // Leaving straight after an edit sends it; nothing asks first.
+  let asked = false;
+  owner.on('dialog', (dialog) => {
+    asked = true;
+    return dialog.dismiss();
   });
+  await createSizedBed(owner, 'East');
+  await expect(owner.getByRole('button', { name: 'Undo' })).toBeEnabled();
   await openConfiguration(owner);
   await openOverview(owner);
-  await expect(owner.locator('[data-bed-name="East"]')).toHaveCount(0);
-
-  await createSizedBed(owner, 'East');
-  expect((await saveLayout(owner)).status()).toBe(200);
-  await expect(owner.getByText('Unsaved changes')).toHaveCount(0);
+  await expect(owner.locator('[data-bed-name="East"]')).toBeVisible();
+  expect(asked).toBe(false);
+  await saveLayout(owner);
 
   await openAdd(owner, 'Add walkway');
   await owner.getByPlaceholder('Area name').fill('Compost');
@@ -57,7 +52,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await owner.locator('input[name="newAreaWidth"]').fill('2');
   await owner.getByRole('button', { name: 'Create non-planting area' }).click();
   await expect(owner.locator('[data-area-name="Compost"]')).toBeVisible();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
 
   await owner.getByRole('button', { name: 'Delete area Compost' }).click();
   await owner.getByRole('button', { name: 'Cancel' }).click();
@@ -75,7 +70,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
 
   await owner.getByRole('button', { name: 'Edit bed East' }).click();
   await owner.getByRole('button', { name: 'Rotate 90°' }).click();
-  expect((await saveLayout(owner)).status()).toBe(200);
+  await saveLayout(owner);
   await expect(owner.getByText('8 × 4 ft · 90°')).toBeVisible();
 
   await inviteViewer(owner, `planner-bed-viewer-${stamp}@example.com`);
@@ -84,7 +79,7 @@ test('planner beds: create bed and area, select opens Bed View, viewer cannot mu
   await openOverview(viewer);
   await expect(viewer.locator('[data-bed-name="East"]')).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Create bed' })).toHaveCount(0);
-  await expect(viewer.getByRole('button', { name: 'Save layout' })).toHaveCount(0);
+  await expect(viewer.getByRole('button', { name: 'Undo' })).toHaveCount(0);
   await viewer.getByRole('button', { name: 'Open bed East' }).click();
   await expect(viewer.getByRole('heading', { name: 'Bed View' })).toBeVisible();
   await expect(viewer.getByRole('button', { name: 'Direct seed' })).toHaveCount(0);
