@@ -129,6 +129,17 @@ export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   companions: CatalogCompanionDto[];
   /** The zones of the member's properties the order was ranked for. */
   companionZones: number[];
+  /** The other catalog entries of the same crop (the crop itself and its varieties), A to Z. */
+  varieties: PlantVarietyDto[];
+}
+
+/** A catalog entry of the same crop, with what tells it apart. */
+export interface PlantVarietyDto {
+  id: string;
+  commonName: string;
+  cultivar: string | null;
+  daysToMaturity: number | null;
+  spacingInches: number | null;
 }
 
 export interface PageDto<T> {

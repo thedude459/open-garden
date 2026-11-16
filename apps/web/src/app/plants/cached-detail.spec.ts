@@ -5,7 +5,11 @@ import { withCompanionDefaults } from './cached-detail';
 describe('withCompanionDefaults', () => {
   it('gives a detail cached before companion pairs empty lists', () => {
     const old = { id: 'basil', commonName: 'Basil' } as PlantDetailDto;
-    expect(withCompanionDefaults(old)).toMatchObject({ companions: [], companionZones: [] });
+    expect(withCompanionDefaults(old)).toMatchObject({
+      companions: [],
+      companionZones: [],
+      varieties: [],
+    });
   });
 
   it('keeps the pairs and zones of a current detail', () => {

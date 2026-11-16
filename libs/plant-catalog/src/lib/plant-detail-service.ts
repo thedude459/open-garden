@@ -28,7 +28,11 @@ export class PlantDetailService {
     const row = await this.plants.getById(plantId);
     if (!row) return null;
     const isFavorite = await this.favorites.isFavorite(userId, plantId);
-    const { companions, companionZones } = await this.companionsFor(row.cropId ?? null, userId);
+    const cropId = row.cropId ?? null;
+    const [{ companions, companionZones }, sameCrop] = await Promise.all([
+      this.companionsFor(cropId, userId),
+      cropId ? this.plants.listByCrop(cropId) : [],
+    ]);
     return {
       id: row.id,
       commonName: row.commonName,
@@ -58,6 +62,7 @@ export class PlantDetailService {
       cropCoefficients: cropCoefficientsFromRow(row),
       companions,
       companionZones,
+      varieties: sameCrop.filter((v) => v.id !== row.id),
     };
   }
 
