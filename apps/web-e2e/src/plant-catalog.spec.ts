@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fixturePlace } from './fixture-place';
 import { signedInPage } from './session';
 
 test.describe('plant catalog', () => {
@@ -35,5 +36,39 @@ test.describe('plant catalog', () => {
     await page.getByPlaceholder('Search name / species / variety').fill('zzzxnotaplant999');
     await page.getByRole('button', { name: 'Apply' }).click();
     await expect(page.getByText('No plants match')).toBeVisible();
+  });
+
+  test('the plant page shows when to sow at a property and adds the crop to its plan', async ({
+    browser,
+  }) => {
+    const page = await signedInPage(browser, `catalog-timeline-${Date.now()}@example.com`);
+    const created = await page.request.post('/api/gardens', {
+      data: { name: 'Timeline plot', place: fixturePlace },
+    });
+    expect(created.status()).toBe(201);
+    const { id } = (await created.json()) as { id: string };
+    const saved = await page.request.patch(`/api/gardens/${id}`, {
+      data: {
+        hardinessZone: 7,
+        lastFrost: { month: 4, day: 15 },
+        firstFrost: { month: 10, day: 20 },
+      },
+    });
+    expect(saved.ok()).toBeTruthy();
+
+    await page.goto('/plants');
+    await page.getByPlaceholder('Search name / species / variety').fill('Tomato');
+    await page.getByRole('button', { name: 'Apply' }).click();
+    await page.getByRole('link', { name: /Tomato \(Cherry\)/i }).click();
+    const timeline = page.getByRole('region', { name: 'When to sow' });
+    await expect(timeline.getByRole('combobox', { name: 'Property' })).toHaveValue(/.+/);
+    // Eight to six weeks before the last frost (15 April).
+    await expect(timeline.getByText(/Start indoors\s+Feb 1[89] – Mar 4/)).toBeVisible();
+    await expect(timeline.getByText(/Harvest\s+\w{3} \d/)).toBeVisible();
+
+    await timeline.getByRole('button', { name: 'Add to plan' }).click();
+    await expect(page.getByText('Added to the Timeline plot calendar')).toBeVisible();
+    await page.goto(`/gardens/${id}/calendar`);
+    await expect(page.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   });
 });
