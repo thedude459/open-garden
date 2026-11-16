@@ -104,6 +104,7 @@ describe('PlantDetailService', () => {
     const svc = new PlantDetailService(
       {
         getById: vi.fn().mockResolvedValue({ id: 't', status: 'active', cropId: 'tomato' }),
+        listByCrop: vi.fn().mockResolvedValue([]),
       } as never,
       { isFavorite: vi.fn().mockResolvedValue(false) } as never,
       { pairs: { listForCrops }, zonesForUser: vi.fn().mockResolvedValue([6, 4]) },
@@ -121,6 +122,37 @@ describe('PlantDetailService', () => {
       { pairs: { listForCrops }, zonesForUser: vi.fn() },
     ).getById('c', 'u');
     expect(custom).toMatchObject({ companions: [], companionZones: [] });
+  });
+
+  it('lists the other entries of the same crop, and none for a plant outside the dataset', async () => {
+    const entry = (id: string, cultivar: string | null) => ({
+      id,
+      commonName: 'Tomato',
+      cultivar,
+      daysToMaturity: 60,
+      spacingInches: 24,
+    });
+    const listByCrop = vi
+      .fn()
+      .mockResolvedValue([entry('t', null), entry('c', 'Cherry'), entry('r', 'Roma')]);
+    const plants = {
+      getById: vi.fn(async (id: string) => ({
+        id,
+        status: 'active',
+        cropId: id === 'x' ? null : 'tomato',
+      })),
+      listByCrop,
+    };
+    const svc = new PlantDetailService(
+      plants as never,
+      { isFavorite: vi.fn().mockResolvedValue(false) } as never,
+    );
+    const cherry = await svc.getById('c', 'u');
+    expect(listByCrop).toHaveBeenCalledWith('tomato');
+    expect(cherry?.varieties.map((v) => v.id)).toEqual(['t', 'r']);
+    listByCrop.mockClear();
+    expect((await svc.getById('x', 'u'))?.varieties).toEqual([]);
+    expect(listByCrop).not.toHaveBeenCalled();
   });
 
   it('returns leftover null spacing on getById', async () => {

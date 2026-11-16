@@ -71,4 +71,24 @@ test.describe('plant catalog', () => {
     await page.goto(`/gardens/${id}/calendar`);
     await expect(page.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toBeVisible();
   });
+
+  test('a variety links to its crop and the crop’s other varieties', async ({ browser }) => {
+    const page = await signedInPage(browser, `catalog-varieties-${Date.now()}@example.com`);
+    await page.goto('/plants');
+    await page.getByPlaceholder('Search name / species / variety').fill('Tomato');
+    await page.getByRole('button', { name: 'Apply' }).click();
+    await page.getByRole('link', { name: /Tomato \(Cherry\)/i }).click();
+    const varieties = page.getByRole('region', { name: 'Other varieties' });
+    await expect(varieties.getByRole('link', { name: 'Tomato', exact: true })).toBeVisible();
+    await expect(varieties.getByRole('link', { name: /Cherry/ })).toHaveCount(0);
+
+    await varieties.getByRole('link', { name: 'Tomato', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Tomato', exact: true })).toBeVisible();
+    await expect(page.getByText(/Variety Cherry/)).toHaveCount(0);
+    await expect(
+      page
+        .getByRole('region', { name: 'Varieties' })
+        .getByRole('link', { name: 'Tomato (Cherry)' }),
+    ).toBeVisible();
+  });
 });

@@ -200,6 +200,21 @@ export class PlantRepository {
     return row ?? null;
   }
 
+  /** Active catalog entries of one crop, the crop itself first, then varieties A to Z. */
+  async listByCrop(cropId: string) {
+    return this.db
+      .select({
+        id: plants.id,
+        commonName: plants.commonName,
+        cultivar: plants.cultivar,
+        daysToMaturity: plants.daysToMaturity,
+        spacingInches: plants.spacingInches,
+      })
+      .from(plants)
+      .where(and(eq(plants.cropId, cropId), eq(plants.status, 'active')))
+      .orderBy(sql`${plants.cultivar} nulls first`, asc(plants.cultivar));
+  }
+
   async list(filters: PlantListFilters) {
     const conditions: SQL[] = [];
     if (!filters.includeDeprecated) {

@@ -1,11 +1,17 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   formatSpacing,
   formatTemperature,
   formatTemperatureRange,
 } from '@open-garden/garden-layout';
-import type { CatalogCompanionDto, PlantDetailDto } from '@open-garden/shared-types';
+import type {
+  CatalogCompanionDto,
+  PlantDetailDto,
+  PlantVarietyDto,
+} from '@open-garden/shared-types';
+import { plantName } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
@@ -120,6 +126,21 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
         <span class="badge">Pending sync</span>
       }
       <og-sowing-timeline [plant]="p" />
+      @if (p.varieties.length) {
+        <section class="varieties" aria-labelledby="varieties-heading">
+          <h2 id="varieties-heading">{{ p.cultivar ? 'Other varieties' : 'Varieties' }}</h2>
+          <ul class="card-list">
+            @for (v of p.varieties; track v.id) {
+              <li class="row">
+                <a [routerLink]="['/plants', v.id]">{{ plantName(v) }}</a>
+                @if (varietyFacts(v); as facts) {
+                  <span class="muted">{{ facts }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
       @if (p.companions.length) {
         <section class="companions" aria-labelledby="companions-heading">
           <h2 id="companions-heading">Companions</h2>
@@ -157,30 +178,50 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
 })
 export class PlantDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(PlantsApiService);
   private readonly favorites = inject(FavoritesApiService);
   readonly notices = inject(NoticeService);
   readonly units = inject(AuthApiService).units;
   readonly formatSpacing = formatSpacing;
+  readonly plantName = plantName;
   readonly formatTemperature = formatTemperature;
   readonly formatTemperatureRange = formatTemperatureRange;
   plant = signal<PlantDetailDto | null>(null);
   pending = signal(false);
   loading = signal(true);
+  /** The plant being shown; a slower earlier load must not replace it. */
+  private current = '';
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) void this.load(id);
-    else this.loading.set(false);
+    // A variety link opens another plant on this same page.
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const id = params.get('id');
+      if (id) void this.load(id);
+      else this.loading.set(false);
+    });
   }
 
   async load(id: string) {
+    this.current = id;
     this.loading.set(true);
+    this.pending.set(false);
     try {
-      this.plant.set(await this.api.detail(id));
+      const detail = await this.api.detail(id);
+      if (this.current === id) this.plant.set(detail);
     } finally {
-      this.loading.set(false);
+      if (this.current === id) this.loading.set(false);
     }
+  }
+
+  /** What tells a variety apart at a glance: days to maturity and spacing. */
+  varietyFacts(v: PlantVarietyDto): string {
+    return [
+      v.daysToMaturity != null ? `${v.daysToMaturity} days` : null,
+      v.spacingInches != null ? `${formatSpacing(v.spacingInches, this.units())} apart` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
   }
 
   companionGroups(p: PlantDetailDto) {

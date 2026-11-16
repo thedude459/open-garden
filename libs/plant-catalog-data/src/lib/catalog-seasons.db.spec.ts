@@ -139,6 +139,26 @@ describe('PlantRepository', () => {
     expect(paged.totalCount).toBe(3);
   });
 
+  it('lists one crop’s active entries, the crop itself first', async () => {
+    await plantsRepo.upsertManyByVarietyKey([
+      variety('crop-bean-roma', { commonName: 'Crop Bean', cultivar: 'Roma', cropId: 'crop-bean' }),
+      variety('crop-bean', { commonName: 'Crop Bean', cultivar: null, cropId: 'crop-bean' }),
+      variety('crop-bean-blue', {
+        commonName: 'Crop Bean',
+        cultivar: 'Blue Lake',
+        cropId: 'crop-bean',
+      }),
+      variety('crop-bean-old', { commonName: 'Crop Bean', cultivar: 'Old', cropId: 'crop-bean' }),
+      variety('crop-pea', { commonName: 'Crop Pea', cultivar: null, cropId: 'crop-pea' }),
+    ]);
+    await plantsRepo.deprecateByVarietyKeys(['crop-bean-old']);
+    const rows = await plantsRepo.listByCrop('crop-bean');
+    expect(rows.map((r) => r.cultivar)).toEqual([null, 'Blue Lake', 'Roma']);
+    expect(rows[0]).toEqual(
+      expect.objectContaining({ commonName: 'Crop Bean', daysToMaturity: expect.anything() }),
+    );
+  });
+
   it("stores a tree's spacing by rootstock, on insert and on update", async () => {
     const spacing = { dwarf: 94, semiDwarf: 165, standard: null };
     await plantsRepo.upsertByVarietyKey(variety('rs-apple', { rootstockSpacingInches: spacing }));

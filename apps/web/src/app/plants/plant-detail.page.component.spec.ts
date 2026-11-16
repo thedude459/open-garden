@@ -8,6 +8,7 @@ import { PlantDetailPage } from './plant-detail.page';
 import { withCompanionDefaults } from './cached-detail';
 import { PlantsApiService } from './plants-api.service';
 import { signal } from '@angular/core';
+import { of } from 'rxjs';
 
 const companion = (over: Partial<CatalogCompanionDto>): CatalogCompanionDto => ({
   cropId: 'basil',
@@ -44,6 +45,7 @@ const tomato = (over: Partial<PlantDetailDto> = {}): PlantDetailDto => ({
   cropCoefficients: null,
   companions: [],
   companionZones: [],
+  varieties: [],
   ...over,
 });
 
@@ -53,7 +55,7 @@ async function render(plant: PlantDetailDto | null) {
       provideRouter([]),
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { paramMap: convertToParamMap({ id: 't1' }) } },
+        useValue: { paramMap: of(convertToParamMap({ id: 't1' })) },
       },
       { provide: PlantsApiService, useValue: { detail: async () => plant } },
       { provide: FavoritesApiService, useValue: {} },
@@ -125,5 +127,33 @@ describe('PlantDetailPage', () => {
     const el = await render(withCompanionDefaults(old));
     expect(el.querySelector('h2')!.textContent).toBe('Tomato');
     expect(el.querySelector('.companions')).toBeNull();
+  });
+
+  it('links to the crop’s other varieties, with what tells them apart', async () => {
+    const el = await render(
+      tomato({
+        varieties: [
+          {
+            id: 'r',
+            commonName: 'Tomato',
+            cultivar: 'Roma',
+            daysToMaturity: 75,
+            spacingInches: 24,
+          },
+          {
+            id: 'b',
+            commonName: 'Tomato',
+            cultivar: null,
+            daysToMaturity: null,
+            spacingInches: null,
+          },
+        ],
+      }),
+    );
+    const items = [...el.querySelectorAll('section.varieties li')].map((li) =>
+      li.textContent.replace(/\s+/g, ' ').trim(),
+    );
+    expect(items).toEqual(['Tomato (Roma)75 days · 24 in apart', 'Tomato']);
+    expect(el.querySelector('section.varieties a')!.getAttribute('href')).toBe('/plants/r');
   });
 });
