@@ -1,9 +1,8 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { formatDay, formatMonthDay, formatMonthName } from '@open-garden/web-ui';
+import { formatMonthDay, formatMonthName } from '@open-garden/web-ui';
 import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import {
   convertLength,
   formatTemperature,
@@ -14,21 +13,18 @@ import {
   snapHalfFoot,
 } from '@open-garden/garden-layout';
 import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
-import type {
-  GardenDetailDto,
-  GardenRole,
-  PlaceCandidateDto,
-  SeasonDto,
-  Units,
-} from '@open-garden/shared-types';
-import { CalendarApiService } from './calendar-api.service';
+import type { GardenDetailDto, PlaceCandidateDto, Units } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
+import { GardenDangerSection } from './garden-danger.section';
+import { gardenErrorMessage } from './garden-error-message';
+import { GardenMembersSection } from './garden-members.section';
+import { GardenSeasonSection } from './garden-season.section';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 @Component({
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, GardenSeasonSection, GardenMembersSection, GardenDangerSection],
   template: `
     @if (garden(); as g) {
       <header class="page-head">
@@ -37,76 +33,8 @@ import { PlannerDraftService } from './planner-draft.service';
           <p class="muted">You are {{ g.myRole }} of this garden.</p>
         </div>
       </header>
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
-      }
       <h3>Settings</h3>
-      @if (season(); as season) {
-        <section>
-          <h3>Season {{ season.openYear }}</h3>
-          @if (canEdit()) {
-            <button type="button" class="btn btn-secondary" (click)="closeSeason()">
-              Close season
-            </button>
-          }
-          @if (season.closedYear != null) {
-            <h4>{{ season.closedYear }}</h4>
-            @for (row of season.review; track row.id) {
-              <p>
-                {{ row.commonName }}
-                @if (row.bedName) {
-                  · {{ row.bedName }}
-                }
-                @if (row.harvestedOn) {
-                  · harvested {{ formatDay(row.harvestedOn) }}
-                }
-                @if (row.note) {
-                  · {{ row.note }}
-                }
-              </p>
-            }
-            @for (again of season.plantAgain; track again.bedId + again.plantId) {
-              <p>
-                {{ again.bedName }} · {{ again.commonName }}
-                @if (canEdit()) {
-                  <button
-                    type="button"
-                    class="btn btn-secondary"
-                    (click)="plantAgain(again.plantId)"
-                  >
-                    Plant again
-                  </button>
-                }
-              </p>
-            }
-          }
-          <h4>Companions</h4>
-          @for (pair of season.pairs; track pair.id) {
-            <p>{{ pair.plantName }} {{ pair.kind }} {{ pair.otherName }} — {{ pair.reason }}</p>
-          }
-          @if (canEdit() && season.householdPlants.length > 1) {
-            <form class="filters" (ngSubmit)="addPair()">
-              <select name="pairLeft" [(ngModel)]="pairLeft">
-                @for (plant of season.householdPlants; track plant.id) {
-                  <option [value]="plant.id">{{ plant.commonName }}</option>
-                }
-              </select>
-              <select name="pairKind" [(ngModel)]="pairKind">
-                <option value="helps">helps</option>
-                <option value="hinders">hinders</option>
-                <option value="pollinates">pollinates</option>
-              </select>
-              <select name="pairRight" [(ngModel)]="pairRight">
-                @for (plant of season.householdPlants; track plant.id) {
-                  <option [value]="plant.id">{{ plant.commonName }}</option>
-                }
-              </select>
-              <input name="pairReason" [(ngModel)]="pairReason" placeholder="Reason" />
-              <button type="submit" class="btn btn-secondary">Add pair</button>
-            </form>
-          }
-        </section>
-      }
+      <og-garden-season [gardenId]="g.id" [canEdit]="canEdit()" />
       <form class="stack" (ngSubmit)="save()">
         <label>
           Name
@@ -285,119 +213,8 @@ import { PlannerDraftService } from './planner-draft.service';
         }
       </form>
 
-      <h3>Members</h3>
-      <ul class="card-list">
-        @for (m of g.members; track m.userId) {
-          <li class="row">
-            <span>{{ m.displayName || m.email }} · {{ m.email }} · {{ m.role }}</span>
-            @if (g.myRole === 'owner' && m.userId !== g.ownerUserId) {
-              <span class="member-actions">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-busy]="memberBusy(m.userId) || null"
-                  [disabled]="memberBusy(m.userId)"
-                  (click)="setRole(m.userId, 'viewer')"
-                >
-                  Make viewer
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-busy]="memberBusy(m.userId) || null"
-                  [disabled]="memberBusy(m.userId)"
-                  (click)="setRole(m.userId, 'collaborator')"
-                >
-                  Make collaborator
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-busy]="memberBusy(m.userId) || null"
-                  [disabled]="memberBusy(m.userId)"
-                  (click)="setRole(m.userId, 'owner')"
-                >
-                  Transfer ownership
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  [attr.aria-busy]="memberBusy(m.userId) || null"
-                  [disabled]="memberBusy(m.userId)"
-                  (click)="removeMember(m.userId)"
-                >
-                  Remove
-                </button>
-              </span>
-            }
-          </li>
-        }
-      </ul>
-      @if (g.myRole === 'owner') {
-        <form class="filters" (ngSubmit)="invite()">
-          <input
-            [(ngModel)]="inviteEmail"
-            name="inviteEmail"
-            type="email"
-            placeholder="Member email"
-          />
-          <select [(ngModel)]="inviteRole" name="inviteRole">
-            <option value="collaborator">collaborator</option>
-            <option value="viewer">viewer</option>
-          </select>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            [attr.aria-busy]="notices.busyMap().has('invite') || null"
-            [disabled]="notices.busyMap().has('invite')"
-          >
-            Invite
-          </button>
-        </form>
-        <p class="muted">
-          They need an account. If they don't have one yet, copy a join link for this email.
-        </p>
-        <button
-          type="button"
-          class="btn btn-secondary"
-          [disabled]="!inviteEmail.trim()"
-          (click)="copyJoinLink()"
-        >
-          Copy join link
-        </button>
-      }
-      @if (g.myRole !== 'owner') {
-        <button
-          type="button"
-          class="btn btn-secondary"
-          [attr.aria-busy]="notices.busyMap().has('leave-garden') || null"
-          [disabled]="notices.busyMap().has('leave-garden')"
-          (click)="leave()"
-        >
-          Leave garden
-        </button>
-      }
-      @if (g.myRole === 'owner') {
-        @if (!confirmDelete()) {
-          <button type="button" class="btn btn-secondary" (click)="confirmDelete.set(true)">
-            Delete garden
-          </button>
-        } @else {
-          <p>Permanently delete this garden? This cannot be undone.</p>
-          <button
-            type="button"
-            class="btn btn-destructive"
-            [attr.aria-busy]="notices.busyMap().has('delete-garden') || null"
-            [disabled]="notices.busyMap().has('delete-garden')"
-            (click)="deleteGarden()"
-          >
-            Confirm delete
-          </button>
-          <button type="button" class="btn btn-secondary" (click)="confirmDelete.set(false)">
-            Cancel
-          </button>
-        }
-      }
+      <og-garden-members [garden]="g" (changed)="load(g.id)" />
+      <og-garden-danger [garden]="g" />
     } @else if (loading()) {
       <p class="muted">Loading…</p>
     } @else {
@@ -407,24 +224,14 @@ import { PlannerDraftService } from './planner-draft.service';
 })
 export class GardenDetailPage implements OnInit, OnDestroy {
   private readonly api = inject(GardensApiService);
-  private readonly calendarApi = inject(CalendarApiService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly auth = inject(AuthApiService);
   private readonly planner = inject(PlannerDraftService);
   readonly notices = inject(NoticeService);
-  readonly formatDay = formatDay;
   readonly formatMonthDay = formatMonthDay;
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   garden = signal<GardenDetailDto | null>(null);
-  readonly season = signal<SeasonDto | null>(null);
-  pairLeft = '';
-  pairRight = '';
-  pairKind = 'helps';
-  pairReason = '';
   loading = signal(true);
-  error = signal('');
-  confirmDelete = signal(false);
   name = '';
   notes = '';
   readonly lengthUnit = lengthUnit;
@@ -467,8 +274,6 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   readonly lookingUp = signal(false);
   readonly lookupError = signal('');
   readonly seasonNotice = signal<string | null>(null);
-  inviteEmail = '';
-  inviteRole: 'collaborator' | 'viewer' = 'collaborator';
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
   /** Month names in the app's language; the saved value stays 1–12. */
   months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: formatMonthName(i + 1) }));
@@ -515,7 +320,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
       if (result.candidates.length === 1 && !result.truncated) this.choose(result.candidates[0]!);
       else this.refreshMap();
     } catch (err) {
-      this.lookupError.set(messageFrom(err));
+      this.lookupError.set(gardenErrorMessage(err));
       this.refreshMap();
     } finally {
       this.lookingUp.set(false);
@@ -579,22 +384,11 @@ export class GardenDetailPage implements OnInit, OnDestroy {
     return role === 'owner' || role === 'collaborator';
   }
 
-  memberBusy(userId: string): boolean {
-    return this.notices.busyMap().has(`member:${userId}`);
-  }
-
   async load(id: string) {
     this.loading.set(true);
     const detail = await this.api.detail(id);
     this.garden.set(detail);
-    // Apply before the season request. The form paints while that request is in
-    // flight, and a late applyForm would wipe a frost date just typed.
     if (detail) this.applyForm(detail);
-    try {
-      this.season.set(await this.api.season(id));
-    } catch {
-      this.season.set(null);
-    }
     this.pending.set(null);
     this.candidates.set([]);
     this.truncated.set(false);
@@ -602,59 +396,10 @@ export class GardenDetailPage implements OnInit, OnDestroy {
     this.loading.set(false);
   }
 
-  async closeSeason() {
-    const id = this.garden()?.id;
-    if (!id) return;
-    try {
-      this.season.set(await this.api.closeSeason(id));
-      this.notices.success('Season closed');
-    } catch (err) {
-      this.error.set(
-        err instanceof HttpErrorResponse
-          ? 'Could not close the season'
-          : 'Could not close the season',
-      );
-    }
-  }
-
-  async plantAgain(plantId: string) {
-    const id = this.garden()?.id;
-    if (!id) return;
-    try {
-      await this.calendarApi.add(id, { plantId });
-      this.notices.success('Added to this year’s calendar');
-    } catch (err) {
-      this.error.set(
-        err instanceof HttpErrorResponse ? 'Could not add that plant' : 'Could not add that plant',
-      );
-    }
-  }
-
-  async addPair() {
-    const id = this.garden()?.id;
-    if (!id || !this.pairLeft || !this.pairRight || !this.pairReason.trim()) return;
-    try {
-      this.season.set(
-        await this.api.addCompanion(id, {
-          plantId: this.pairLeft,
-          otherPlantId: this.pairRight,
-          kind: this.pairKind,
-          reason: this.pairReason.trim(),
-        }),
-      );
-      this.pairReason = '';
-    } catch (err) {
-      this.error.set(
-        err instanceof HttpErrorResponse ? 'Could not save that pair' : 'Could not save that pair',
-      );
-    }
-  }
-
   async save() {
     const g = this.garden();
     const pending = this.pending();
     if (!g || (pending && !this.canSave())) return;
-    this.error.set('');
     await this.notices.run('save-garden', async () => {
       try {
         const updated = await this.api.patch(g.id, {
@@ -679,92 +424,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
         this.refreshMap();
         this.notices.success(updated.seasonNotice ?? 'Garden saved');
       } catch (err) {
-        this.notices.error(messageFrom(err));
-      }
-    });
-  }
-
-  async invite() {
-    const g = this.garden();
-    if (!g) return;
-    this.error.set('');
-    await this.notices.run('invite', async () => {
-      try {
-        await this.api.invite(g.id, { email: this.inviteEmail, role: this.inviteRole });
-        this.inviteEmail = '';
-        await this.load(g.id);
-        this.notices.success('Member invited');
-      } catch (err) {
-        this.notices.error(messageFrom(err));
-      }
-    });
-  }
-
-  async copyJoinLink() {
-    const email = this.inviteEmail.trim();
-    if (!email || typeof location === 'undefined') return;
-    const url = `${location.origin}/login?email=${encodeURIComponent(email)}&register=1`;
-    try {
-      await navigator.clipboard.writeText(url);
-      this.notices.success('Join link copied');
-    } catch {
-      this.notices.error(url);
-    }
-  }
-
-  async setRole(userId: string, role: GardenRole) {
-    const g = this.garden();
-    if (!g) return;
-    this.error.set('');
-    await this.notices.run(`member:${userId}`, async () => {
-      try {
-        await this.api.patchMember(g.id, userId, { role });
-        await this.load(g.id);
-        this.notices.success(role === 'owner' ? 'Ownership transferred' : 'Role updated');
-      } catch (err) {
-        this.notices.error(messageFrom(err));
-      }
-    });
-  }
-
-  async removeMember(userId: string) {
-    const g = this.garden();
-    if (!g) return;
-    await this.notices.run(`member:${userId}`, async () => {
-      try {
-        await this.api.removeMember(g.id, userId);
-        await this.load(g.id);
-        this.notices.success('Member removed');
-      } catch (err) {
-        this.notices.error(messageFrom(err));
-      }
-    });
-  }
-
-  async leave() {
-    const g = this.garden();
-    const userId = this.auth.currentUserId();
-    if (!g || !userId) return;
-    await this.notices.run('leave-garden', async () => {
-      try {
-        await this.api.removeMember(g.id, userId);
-        await this.router.navigateByUrl('/gardens');
-      } catch (err) {
-        this.notices.error(messageFrom(err));
-      }
-    });
-  }
-
-  async deleteGarden() {
-    const g = this.garden();
-    if (!g) return;
-    this.error.set('');
-    await this.notices.run('delete-garden', async () => {
-      try {
-        await this.api.remove(g.id);
-        await this.router.navigateByUrl('/gardens');
-      } catch (err) {
-        this.notices.error(messageFrom(err));
+        this.notices.error(gardenErrorMessage(err));
       }
     });
   }
@@ -795,13 +455,4 @@ function toFrost(month: number | null, day: number | null) {
   if (month == null && (day == null || Number.isNaN(Number(day)))) return null;
   if (month == null || day == null) return null;
   return { month: Number(month), day: Number(day) };
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
-  }
-  return 'Could not update garden';
 }
