@@ -81,8 +81,11 @@
         "tsConfig": "apps/web/tsconfig.spec.json",
         "runner": "vitest",
         "include": ["**/*.component.spec.ts"],
-        "watch": false
-      }
+        "watch": false,
+        "coverage": true,
+        "coverageReporters": ["json"]
+      },
+      "outputs": ["{workspaceRoot}/coverage/web"]
     }
   }
 }

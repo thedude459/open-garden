@@ -223,11 +223,18 @@ function isOfflineFetch(err: unknown): boolean {
 }
 
 function errorMessage(err: unknown): string | undefined {
-  if (err instanceof HttpErrorResponse) {
-    const body: unknown = err.error;
-    if (body && typeof body === 'object' && 'error' in body) {
-      return (body as { error?: { message?: string } }).error?.message;
+  if (!(err instanceof HttpErrorResponse)) return undefined;
+  // The chore requests ask for text, so the API's JSON error arrives as a string.
+  let body: unknown = err.error;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return undefined;
     }
+  }
+  if (body && typeof body === 'object' && 'error' in body) {
+    return (body as { error?: { message?: string } }).error?.message;
   }
   return undefined;
 }
