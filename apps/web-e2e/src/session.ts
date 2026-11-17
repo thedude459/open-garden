@@ -13,6 +13,14 @@ const opened = new Set<BrowserContext>();
 async function newContext(browser: Browser, locale: string): Promise<BrowserContext> {
   const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block', locale });
   opened.add(context);
+  // The property map is an OpenStreetMap page; tests never load the real site.
+  await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<!doctype html><title>map</title>',
+    }),
+  );
   return context;
 }
 
@@ -81,13 +89,6 @@ export async function signedInPage(
   locale = 'en-US',
 ): Promise<Page> {
   const context = await newContext(browser, locale);
-  await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'text/html',
-      body: '<!doctype html><title>map</title>',
-    }),
-  );
   await registerContext(context, email);
   const page = await context.newPage();
   await page.goto('/gardens');
@@ -102,13 +103,6 @@ export async function signedInPage(
  */
 export async function signedInViaLoginForm(browser: Browser, email = uniqueEmail()): Promise<Page> {
   const context = await newContext(browser, 'en-US');
-  await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'text/html',
-      body: '<!doctype html><title>map</title>',
-    }),
-  );
   const registered = await context.request.post('/api/auth/register', {
     data: { email, password: TEST_PASSWORD, displayName: 'E2E' },
   });
