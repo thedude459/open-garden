@@ -248,6 +248,8 @@ export class PlantingRepository {
         spacingInches: plants.spacingInches,
         sunRequirements: plants.sunRequirements,
         family: plants.family,
+        soilPhMin: plants.soilPhMin,
+        soilPhMax: plants.soilPhMax,
         life: gardenPlantings.life,
         spacingFeet: gardenPlantings.spacingFeet,
       })

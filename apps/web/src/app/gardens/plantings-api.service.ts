@@ -8,6 +8,8 @@ import type {
   PlantingDto,
   PlantingListDto,
   PlantingPatchDto,
+  SoilTestCreateDto,
+  SoilTestDto,
 } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardenLayoutCacheService } from './garden-layout-cache.service';
@@ -337,6 +339,37 @@ export class PlantingsApiService {
 
   private async enqueue(item: QueueItem) {
     await this.queue.put(item);
+  }
+
+  /** Soil tests need the server: a lab report is entered once, not queued (ADR 0033). */
+  async recordSoilTest(
+    gardenId: string,
+    bedId: string,
+    test: SoilTestCreateDto,
+  ): Promise<SoilTestDto> {
+    const saved = await firstValueFrom(
+      this.http.post<SoilTestDto>(`${API}/gardens/${gardenId}/beds/${bedId}/soil-tests`, test, {
+        withCredentials: true,
+      }),
+    );
+    await this.invalidateLayout(gardenId);
+    return saved;
+  }
+
+  /** Deletes a test and returns the bed's latest test now. */
+  async deleteSoilTest(
+    gardenId: string,
+    bedId: string,
+    testId: string,
+  ): Promise<SoilTestDto | null> {
+    const result = await firstValueFrom(
+      this.http.delete<{ latest: SoilTestDto | null }>(
+        `${API}/gardens/${gardenId}/beds/${bedId}/soil-tests/${testId}`,
+        { withCredentials: true },
+      ),
+    );
+    await this.invalidateLayout(gardenId);
+    return result.latest;
   }
 
   private userId(): string | null {

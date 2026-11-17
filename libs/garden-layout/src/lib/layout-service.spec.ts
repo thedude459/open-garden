@@ -309,3 +309,35 @@ describe('LayoutService load path', () => {
     );
   });
 });
+
+describe('LayoutService soil', () => {
+  it('gives each bed its latest soil test and each planting its crop pH range', async () => {
+    const mem = createLayoutMemory();
+    const north = mem.addBed('North bed');
+    const south = mem.addBed('South bed');
+    mem.addPlanting(mem.tomato.id, north.id);
+    mem.addPlanting(mem.basil.id, north.id);
+    const test = {
+      id: 't1',
+      bedId: north.id,
+      testedOn: '2026-04-01',
+      lab: null,
+      ph: 7.4,
+      organicMatterPct: null,
+      nitrogen: null,
+      phosphorus: null,
+      potassium: null,
+      recommendations: null,
+    };
+    mem.soilTests.set(north.id, test);
+    const layout = await mem.service.get(mem.ownerId, mem.gardenId);
+    expect(layout.beds.find((b) => b.id === north.id)?.soilTest).toEqual(test);
+    expect(layout.beds.find((b) => b.id === south.id)?.soilTest).toBeNull();
+    expect(layout.plantings.map((p) => [p.commonName, p.soilPh])).toEqual(
+      expect.arrayContaining([
+        ['Cherry Tomato', { min: 6.2, max: 6.8 }],
+        ['Sweet Basil', null],
+      ]),
+    );
+  });
+});

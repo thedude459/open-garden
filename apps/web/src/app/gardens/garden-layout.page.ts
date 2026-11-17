@@ -25,6 +25,8 @@ import type {
   LayoutAreaDto,
   LayoutBedDto,
   PropertyAreaDto,
+  SoilTestCreateDto,
+  SoilTestDto,
   TrayDto,
 } from '@open-garden/shared-types';
 import { mulchOrNone } from '@open-garden/shared-types';
@@ -212,6 +214,8 @@ import { EmptyState } from '../ui/empty-state';
                 [bed]="bed"
                 [saved]="isSaved(bed)"
                 [deleting]="notices.busyMap().has('delete-bed')"
+                [saveSoilTest]="saveSoilTest"
+                [deleteSoilTest]="deleteSoilTest"
                 (settings)="saveBedSettings(bed, $event)"
                 (geometryChange)="patchSelected($event)"
                 (rotate)="rotateSelected()"
@@ -381,6 +385,43 @@ export class GardenLayoutPage implements OnInit {
     } catch (err) {
       this.fail(err);
     }
+  }
+
+  /** Records a soil test; the bed shows it once it is the latest. */
+  readonly saveSoilTest = async (bedId: string, test: SoilTestCreateDto): Promise<boolean> => {
+    try {
+      const saved = await this.bedsApi.recordSoilTest(this.gardenId, bedId, test);
+      this.setSoilTest(bedId, (current) =>
+        !current || saved.testedOn >= current.testedOn ? saved : current,
+      );
+      this.notices.success('Soil test saved');
+      return true;
+    } catch (err) {
+      this.fail(err);
+      return false;
+    }
+  };
+
+  readonly deleteSoilTest = async (bedId: string, test: SoilTestDto): Promise<boolean> => {
+    try {
+      const latest = await this.bedsApi.deleteSoilTest(this.gardenId, bedId, test.id);
+      this.setSoilTest(bedId, () => latest);
+      return true;
+    } catch (err) {
+      this.fail(err);
+      return false;
+    }
+  };
+
+  /** Soil tests are not part of the layout save, so this keeps the draft clean. */
+  private setSoilTest(bedId: string, next: (current: SoilTestDto | null) => SoilTestDto | null) {
+    const d = this.draft();
+    if (!d) return;
+    this.planner.setDraft({
+      ...d,
+      beds: d.beds.map((b) => (b.id === bedId ? { ...b, soilTest: next(b.soilTest ?? null) } : b)),
+    });
+    this.refreshFlags();
   }
 
   zoomIn() {

@@ -23,7 +23,9 @@ import {
   type BedGeometryDto,
   type LayoutBedDto,
 } from '@open-garden/shared-types';
+import type { SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
+import { BedSoilTest } from './bed-soil-test';
 
 export interface BedSettingsPatch {
   name?: string;
@@ -42,7 +44,7 @@ type GeometryField = 'originXInches' | 'originYInches' | 'lengthInches' | 'width
 @Component({
   selector: 'og-layout-bed-inspector',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, BedSoilTest],
   template: `
     @let b = bed();
     <section class="inspector" aria-label="Selected bed">
@@ -97,6 +99,12 @@ type GeometryField = 'originXInches' | 'originYInches' | 'lengthInches' | 'width
             }
           </select>
         </label>
+        <og-bed-soil-test
+          [bed]="b"
+          [canEdit]="true"
+          [save]="saveSoilTest()"
+          [remove]="deleteSoilTest()"
+        />
       } @else {
         <p class="muted">Save the layout to set its name, sun, ground, and mulch.</p>
       }
@@ -200,6 +208,8 @@ export class LayoutBedInspector {
   /** The server has this bed, so its name and settings can change now. */
   saved = input(false);
   deleting = input(false);
+  saveSoilTest = input.required<(bedId: string, test: SoilTestCreateDto) => Promise<boolean>>();
+  deleteSoilTest = input.required<(bedId: string, test: SoilTestDto) => Promise<boolean>>();
   settings = output<BedSettingsPatch>();
   geometryChange = output<Partial<BedGeometryDto>>();
   rotate = output<void>();

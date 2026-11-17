@@ -9,6 +9,8 @@ import {
   type LayoutPutDto,
   type PlantStatus,
   type PlantType,
+  type SoilPhDto,
+  type SoilTestDto,
   type StartMethod,
 } from '@open-garden/shared-types';
 import type {
@@ -16,6 +18,7 @@ import type {
   BedRepository,
   GardenMembershipRepository,
   PlantingRepository,
+  SoilTestRepository,
   YearRecordRepository,
 } from '@open-garden/plant-catalog-data';
 import { LAYOUT_ERRORS } from './domain-error';
@@ -37,6 +40,7 @@ export class LayoutService {
     private readonly beds: BedRepository,
     private readonly areas: AreaRepository,
     private readonly years?: YearRecordRepository,
+    private readonly soilTests?: Pick<SoilTestRepository, 'latestByGarden'>,
   ) {}
 
   async get(userId: string, gardenId: string): Promise<GardenLayoutDto> {
@@ -179,7 +183,10 @@ export class LayoutService {
       this.plantings.listAllForLayout(gardenId),
       this.areas.listByGarden(gardenId),
     ]);
-    const advice = this.years ? await this.years.layoutAdvice(gardenId) : { prior: [], pairs: [] };
+    const [advice, soilTests] = await Promise.all([
+      this.years ? this.years.layoutAdvice(gardenId) : { prior: [], pairs: [] },
+      this.soilTests ? this.soilTests.latestByGarden(gardenId) : new Map<string, SoilTestDto>(),
+    ]);
     const beds = bedRows.map((row): LayoutBedDto => ({
       id: row.id,
       name: row.name,
@@ -188,6 +195,7 @@ export class LayoutService {
       site: row.site === 'raised' ? 'raised' : 'in_ground',
       station: row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null,
       mulch: mulchOrNone(row.mulch),
+      soilTest: soilTests.get(row.id) ?? null,
     }));
     const plantings = plantingRows.map((row) => {
       const placed = row.layoutXInches !== null && row.layoutYInches !== null && row.bedId !== null;
@@ -207,6 +215,7 @@ export class LayoutService {
         spacingFeet: (row as { spacingFeet?: number | null }).spacingFeet ?? null,
         sunRequirements: (row as { sunRequirements?: string | null }).sunRequirements ?? null,
         family: (row as { family?: string | null }).family ?? null,
+        soilPh: soilPhOf(row),
         life: ((row as { life?: string }).life ?? 'annual') as 'annual' | 'perennial' | 'tree',
         startMethod: ((row as { startMethod?: string }).startMethod ??
           'direct_seed') as StartMethod,
@@ -242,6 +251,12 @@ export class LayoutService {
       pairs: advice.pairs,
     };
   }
+}
+
+function soilPhOf(row: { soilPhMin?: number | null; soilPhMax?: number | null }): SoilPhDto | null {
+  return row.soilPhMin != null && row.soilPhMax != null
+    ? { min: row.soilPhMin, max: row.soilPhMax }
+    : null;
 }
 
 function toGeometry(row: {
