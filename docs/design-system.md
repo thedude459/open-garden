@@ -10,7 +10,7 @@ Self-hosted household garden planner. Gardeners plan beds on a scale map, record
 
 ## Brand
 
-Name: **Open Garden**. Wordmark in Iowan Old Style. Mark: solid leaf-green circle on sage (`#2f5d3a` on `#e8efe4`) from `apps/web/src/assets/icon-512.png`. Always show the mark beside the wordmark in the nav. Never substitute OG letters, sprouts emoji, or a generic leaf SVG.
+Name: **Open Garden**. Wordmark in Iowan Old Style. Mark: a seedling growing from a raised bed, in sage and cream on a leaf-green circle (`apps/web/src/assets/mark.svg`, drawn in the crop icons' style; CC0). It keeps the earlier plain circle as its frame. The PNGs (`icon-192`, `icon-512`, the full-bleed `icon-maskable-512` for app launchers, `apple-touch-icon`) and `favicon.ico` are exported from it; re-export them when the mark changes. Always show the mark beside the wordmark in the nav. Never substitute OG letters, sprouts emoji, or a generic leaf SVG.
 
 Inspired by earthy editorial (forest/sage/cream) but **constrained to this product palette** — no Anton, no 23vw heroes, no 5rem pills, no cart badges.
 
