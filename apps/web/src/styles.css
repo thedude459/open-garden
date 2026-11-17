@@ -405,6 +405,13 @@ a.source-link {
 .area-panel {
   display: grid;
   gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.area-beds {
+  margin: 0;
+  padding-left: 1.1rem;
 }
 
 .area-panel h4,
@@ -666,6 +673,21 @@ og-garden-plan-canvas {
   stroke: #3d2914;
   stroke-width: 0.6;
   cursor: nwse-resize;
+}
+
+.area-outline {
+  fill: rgba(244, 239, 228, 0.06);
+  stroke: #f4efe4;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.area-outline-label {
+  font-size: 6px;
+  font-weight: 700;
+  fill: #f4efe4;
+  pointer-events: none;
 }
 
 .layout-label {

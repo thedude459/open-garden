@@ -145,3 +145,42 @@ export function dropTargetAt(
   const bedId = plantings.find((p) => p.id === hit.plantingId)?.placement?.bedId;
   return bedId ? { kind: 'bed', bedId, planX: plan.x, planY: plan.y } : { kind: 'empty' };
 }
+
+/** Space drawn between an area's beds and its outline, in inches. */
+export const AREA_OUTLINE_PAD_INCHES = 12;
+
+export type AreaOutline = PlanBox & { id: string; name: string };
+
+/**
+ * A box around each area's beds, so the plan shows where one area ends and
+ * the next begins. Worked out from the beds, so nothing more is stored. Only
+ * drawn when two or more areas have beds: one area's outline tells nothing.
+ * ponytail: a bounding box, so areas whose beds interleave draw overlapping
+ * boxes; an area with its own drawn shape is the upgrade if households need it.
+ */
+export function areaOutlines(
+  beds: LayoutBedDto[],
+  areas: { id: string; name: string }[],
+): AreaOutline[] {
+  const outlines: AreaOutline[] = [];
+  for (const area of areas) {
+    const rects = contentRects(
+      drawableBeds(beds).filter((bed) => bed.areaId === area.id),
+      [],
+    );
+    if (!rects.length) continue;
+    const pad = AREA_OUTLINE_PAD_INCHES;
+    // Kept inside the property: a bed at its corner would push the box past the plan's edge.
+    const x = Math.max(0, Math.min(...rects.map((r) => r.x0)) - pad);
+    const y = Math.max(0, Math.min(...rects.map((r) => r.y0)) - pad);
+    outlines.push({
+      id: area.id,
+      name: area.name,
+      x,
+      y,
+      w: Math.max(...rects.map((r) => r.x1)) + pad - x,
+      h: Math.max(...rects.map((r) => r.y1)) + pad - y,
+    });
+  }
+  return outlines.length > 1 ? outlines : [];
+}

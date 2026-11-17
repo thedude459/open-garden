@@ -44,6 +44,7 @@ import { overviewPlantingLabels } from '@open-garden/garden-layout/overview-labe
 import { bedPlanSize, localToPlan } from '@open-garden/garden-layout/rotate';
 import type { DropTarget } from '@open-garden/garden-layout/drop';
 import {
+  areaOutlines,
   bedAt,
   bedGridLines,
   contentRects,
@@ -58,6 +59,7 @@ import type {
   LayoutBedDto,
   LayoutPlantingDto,
   PriorCropDto,
+  PropertyAreaDto,
 } from '@open-garden/shared-types';
 
 const HANDLE_INCHES = 8;
@@ -147,6 +149,25 @@ type Gesture =
             [attr.height]="plot().h"
             aria-hidden="true"
           />
+        }
+        @for (outline of outlines(); track outline.id) {
+          <rect
+            class="area-outline"
+            [attr.x]="outline.x"
+            [attr.y]="outline.y"
+            [attr.width]="outline.w"
+            [attr.height]="outline.h"
+            [attr.data-outline-of]="outline.name"
+            aria-hidden="true"
+          />
+          <!-- Bottom-left: there is always a margin below the beds, not always above. -->
+          <text
+            [attr.x]="outline.x + 3"
+            [attr.y]="outline.y + outline.h - 3"
+            class="area-outline-label"
+          >
+            {{ outline.name }}
+          </text>
         }
         @for (bed of drawnBeds(); track bed.id) {
           @if (geometryOf(bed); as geo) {
@@ -339,6 +360,9 @@ export class GardenPlanCanvas {
   }
   readonly beds = input<LayoutBedDto[]>([]);
   readonly areas = input<LayoutAreaDto[]>([]);
+  /** The property's typed areas, outlined around their beds when there are two or more. */
+  readonly plantingAreas = input<PropertyAreaDto[]>([]);
+  readonly outlines = computed(() => areaOutlines(this.beds(), this.plantingAreas()));
   readonly plantings = input<LayoutPlantingDto[]>([]);
   readonly priorCrops = input<PriorCropDto[]>([]);
   readonly selectedId = input<string | null>(null);

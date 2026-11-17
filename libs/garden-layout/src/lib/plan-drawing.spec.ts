@@ -6,6 +6,7 @@ import type {
 } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import {
+  areaOutlines,
   bedAt,
   bedGridLines,
   contentRects,
@@ -120,5 +121,38 @@ describe('dropTargetAt', () => {
     expect(dropTargetAt({ kind: 'planting', plantingId: 'w' }, [waiting], at)).toEqual({
       kind: 'empty',
     });
+  });
+});
+
+describe('areaOutlines', () => {
+  const inArea = (id: string, areaId: string, g: BedGeometryDto | null): LayoutBedDto => ({
+    ...bed(id, g),
+    areaId,
+  });
+  const areas = [
+    { id: 'veg', name: 'Vegetable garden' },
+    { id: 'orchard', name: 'Orchard' },
+    { id: 'empty', name: 'Bramble patch' },
+  ];
+
+  it('boxes each area’s beds with a margin inside the property, rotated beds by their drawn size', () => {
+    const beds = [
+      inArea('north', 'veg', geo({ originXInches: 0, originYInches: 0 })),
+      inArea('south', 'veg', geo({ originXInches: 0, originYInches: 60, orientation: 90 })),
+      inArea(
+        'apple',
+        'orchard',
+        geo({ originXInches: 200, originYInches: 0, lengthInches: 96, widthInches: 96 }),
+      ),
+      inArea('unsized', 'orchard', null),
+    ];
+    expect(areaOutlines(beds, areas)).toEqual([
+      { id: 'veg', name: 'Vegetable garden', x: 0, y: 0, w: 60, h: 120 },
+      { id: 'orchard', name: 'Orchard', x: 188, y: 0, w: 120, h: 108 },
+    ]);
+  });
+
+  it('draws nothing when only one area has beds', () => {
+    expect(areaOutlines([inArea('north', 'veg', geo())], areas)).toEqual([]);
   });
 });
