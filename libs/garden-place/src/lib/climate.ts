@@ -31,7 +31,11 @@ function validDay(value: MonthDay): boolean {
 
 export class FixtureClimateLookup implements ClimateLookup {
   async lookup(place: PlaceCandidateDto): Promise<ClimateFacts> {
-    if (place.countryCode === 'US' && place.postalCode === '20500') {
+    // A saved address keeps its place id but not its postal code.
+    if (
+      (place.countryCode === 'US' && place.postalCode === '20500') ||
+      place.placeId === 'fixture-washington'
+    ) {
       return {
         hardinessZone: 8,
         lastFrost: { month: 4, day: 15 },

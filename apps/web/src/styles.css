@@ -1378,3 +1378,20 @@ legend {
 .garden-next {
   font-size: 0.92rem;
 }
+
+/* Settings: links to each section at the top, and room between sections. */
+.settings-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-block: var(--space-3) var(--space-5);
+}
+.settings-nav a {
+  color: var(--leaf);
+  font-weight: 600;
+}
+.settings-section {
+  scroll-margin-top: calc(var(--bar) + var(--space-3));
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--line);
+}

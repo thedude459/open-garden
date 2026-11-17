@@ -2,7 +2,7 @@ import { formatMonthDay, formatMonthName } from '@open-garden/web-ui';
 import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   convertLength,
   formatTemperature,
@@ -24,7 +24,13 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 @Component({
   standalone: true,
-  imports: [FormsModule, GardenSeasonSection, GardenMembersSection, GardenDangerSection],
+  imports: [
+    FormsModule,
+    RouterLink,
+    GardenSeasonSection,
+    GardenMembersSection,
+    GardenDangerSection,
+  ],
   template: `
     @if (garden(); as g) {
       <header class="page-head">
@@ -33,174 +39,198 @@ import { PlannerDraftService } from './planner-draft.service';
           <p class="muted">You are {{ g.myRole }} of this garden.</p>
         </div>
       </header>
-      <h3>Settings</h3>
-      <og-garden-season [gardenId]="g.id" [canEdit]="canEdit()" />
+      <nav class="settings-nav" aria-label="Settings sections">
+        @for (s of sections; track s.id) {
+          <a [routerLink]="[]" [fragment]="s.id">{{ s.label }}</a>
+        }
+      </nav>
       <form class="stack" (ngSubmit)="save()">
-        <label>
-          Name
-          <input [(ngModel)]="name" name="name" [disabled]="!canEdit()" />
-        </label>
-        <label>
-          Notes
-          <textarea [(ngModel)]="notes" name="notes" rows="3" [disabled]="!canEdit()"></textarea>
-        </label>
-        <label>
-          Length ({{ lengthUnit(units()) }})
-          <input
-            type="number"
-            [min]="lengthStep(units())"
-            [step]="lengthStep(units())"
-            name="gardenLength"
-            [(ngModel)]="lengthValue"
-            [disabled]="!canEdit()"
-            required
-          />
-        </label>
-        <label>
-          Width ({{ lengthUnit(units()) }})
-          <input
-            type="number"
-            [min]="lengthStep(units())"
-            [step]="lengthStep(units())"
-            name="gardenWidth"
-            [(ngModel)]="widthValue"
-            [disabled]="!canEdit()"
-            required
-          />
-        </label>
-        <section>
-          <h4>Address</h4>
-          <p>{{ g.place?.formattedAddress || 'No address is set' }}</p>
-          @if (canEdit()) {
-            <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
-            <button
-              type="button"
-              class="btn btn-secondary"
-              (click)="lookup()"
-              [disabled]="lookingUp()"
-            >
-              Look up address
-            </button>
-          }
-          @if (lookupError()) {
-            <p class="error">{{ lookupError() }}</p>
-          }
-          @if (truncated()) {
-            <p>Type a more specific address.</p>
-          }
-          @for (candidate of candidates(); track candidate.placeId) {
+        <section id="property" class="stack settings-section" aria-labelledby="property-heading">
+          <h3 id="property-heading">Property</h3>
+          <label>
+            Name
+            <input [(ngModel)]="name" name="name" [disabled]="!canEdit()" />
+          </label>
+          <label>
+            Notes
+            <textarea [(ngModel)]="notes" name="notes" rows="3" [disabled]="!canEdit()"></textarea>
+          </label>
+          <label>
+            Length ({{ lengthUnit(units()) }})
+            <input
+              type="number"
+              [min]="lengthStep(units())"
+              [step]="lengthStep(units())"
+              name="gardenLength"
+              [(ngModel)]="lengthValue"
+              [disabled]="!canEdit()"
+              required
+            />
+          </label>
+          <label>
+            Width ({{ lengthUnit(units()) }})
+            <input
+              type="number"
+              [min]="lengthStep(units())"
+              [step]="lengthStep(units())"
+              name="gardenWidth"
+              [(ngModel)]="widthValue"
+              [disabled]="!canEdit()"
+              required
+            />
+          </label>
+        </section>
+        <section id="climate" class="stack settings-section" aria-labelledby="climate-heading">
+          <h3 id="climate-heading">Location &amp; climate</h3>
+          <p class="muted">
+            Choosing an address fills in the zone, frost dates, and monthly temperatures from 30
+            years of weather there. Change them below if your garden differs.
+          </p>
+          <div>
+            <h4>Address</h4>
+            <p>{{ g.place?.formattedAddress || 'No address is set' }}</p>
             @if (canEdit()) {
-              <button type="button" class="btn btn-secondary" (click)="choose(candidate)">
-                {{ candidate.formattedAddress }}
+              <input [(ngModel)]="addressQuery" name="gardenAddress" placeholder="Garden address" />
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="lookup()"
+                [disabled]="lookingUp()"
+              >
+                Look up address
               </button>
             }
+            @if (lookupError()) {
+              <p class="error">{{ lookupError() }}</p>
+            }
+            @if (truncated()) {
+              <p>Type a more specific address.</p>
+            }
+            @for (candidate of candidates(); track candidate.placeId) {
+              @if (canEdit()) {
+                <button type="button" class="btn btn-secondary" (click)="choose(candidate)">
+                  {{ candidate.formattedAddress }}
+                </button>
+              }
+            }
+            @if (mapSrc(); as src) {
+              <iframe
+                class="garden-map"
+                style="width: 100%; height: 220px; border: 0"
+                [src]="src"
+                title="Garden map"
+                (error)="onMapError()"
+              ></iframe>
+            }
+            @if (mapUnavailable()) {
+              <p>The map is unavailable.</p>
+            }
+            @if (seasonNotice()) {
+              <p>{{ seasonNotice() }}</p>
+            }
+            @if (canEdit() && g.place && !pending()) {
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="useAddressClimate()"
+                [attr.aria-busy]="notices.busyMap().has('save-garden') || null"
+                [disabled]="notices.busyMap().has('save-garden')"
+              >
+                Use this address's climate
+              </button>
+            }
+          </div>
+          <label>
+            Hardiness zone
+            <select
+              name="zone"
+              [ngModel]="emptyIfNull(zone)"
+              (ngModelChange)="zone = toOptionalNumber($event)"
+              [disabled]="!canEdit()"
+            >
+              <option value="">Not set</option>
+              @for (z of zones; track z) {
+                <option [value]="z">Zone {{ z }}</option>
+              }
+            </select>
+          </label>
+          @if (g.monthlyMeanC?.length === 12) {
+            <p class="muted">
+              Monthly average temperature: coldest {{ formatTemperature(coldest(g), units()) }},
+              warmest {{ formatTemperature(warmest(g), units()) }}.
+            </p>
           }
-          @if (mapSrc(); as src) {
-            <iframe
-              class="garden-map"
-              style="width: 100%; height: 220px; border: 0"
-              [src]="src"
-              title="Garden map"
-              (error)="onMapError()"
-            ></iframe>
+          @if (g.frostRisk; as risk) {
+            <p class="muted">
+              From 30 years of weather: frost after
+              {{ formatMonthDay(risk.lateLastFrost) }} comes in 1 spring in 10, and frost before
+              {{ formatMonthDay(risk.earlyFirstFrost) }} in 1 autumn in 10. For tender crops, plan
+              around these dates instead of the median ones.
+            </p>
           }
-          @if (mapUnavailable()) {
-            <p>The map is unavailable.</p>
+          @if (g.frostFree && !lastMonth && !firstMonth) {
+            <p class="muted">
+              It rarely frosts here, so sowing times follow the monthly temperatures. Set frost
+              dates only if you get frost.
+            </p>
           }
-          @if (seasonNotice()) {
-            <p>{{ seasonNotice() }}</p>
-          }
+          <fieldset class="filters">
+            <legend>Last frost (spring)</legend>
+            @if (!g.lastFrost && !lastMonth) {
+              <span class="muted">Not set</span>
+            }
+            <select
+              name="lastMonth"
+              aria-label="Last frost month"
+              [ngModel]="emptyIfNull(lastMonth)"
+              (ngModelChange)="lastMonth = toOptionalNumber($event)"
+              [disabled]="!canEdit()"
+            >
+              <option value="">Month</option>
+              @for (m of months; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              [(ngModel)]="lastDay"
+              name="lastDay"
+              aria-label="Last frost day"
+              placeholder="Day"
+              [disabled]="!canEdit()"
+            />
+          </fieldset>
+          <fieldset class="filters">
+            <legend>First frost (fall)</legend>
+            @if (!g.firstFrost && !firstMonth) {
+              <span class="muted">Not set</span>
+            }
+            <select
+              name="firstMonth"
+              aria-label="First frost month"
+              [ngModel]="emptyIfNull(firstMonth)"
+              (ngModelChange)="firstMonth = toOptionalNumber($event)"
+              [disabled]="!canEdit()"
+            >
+              <option value="">Month</option>
+              @for (m of months; track m.value) {
+                <option [value]="m.value">{{ m.label }}</option>
+              }
+            </select>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              [(ngModel)]="firstDay"
+              name="firstDay"
+              aria-label="First frost day"
+              placeholder="Day"
+              [disabled]="!canEdit()"
+            />
+          </fieldset>
         </section>
-        <label>
-          Hardiness zone
-          <select
-            name="zone"
-            [ngModel]="emptyIfNull(zone)"
-            (ngModelChange)="zone = toOptionalNumber($event)"
-            [disabled]="!canEdit()"
-          >
-            <option value="">Not set</option>
-            @for (z of zones; track z) {
-              <option [value]="z">Zone {{ z }}</option>
-            }
-          </select>
-        </label>
-        @if (g.monthlyMeanC?.length === 12) {
-          <p class="muted">
-            Monthly average temperature: coldest {{ formatTemperature(coldest(g), units()) }},
-            warmest {{ formatTemperature(warmest(g), units()) }}.
-          </p>
-        }
-        @if (g.frostRisk; as risk) {
-          <p class="muted">
-            From 30 years of weather: frost after
-            {{ formatMonthDay(risk.lateLastFrost) }} comes in 1 spring in 10, and frost before
-            {{ formatMonthDay(risk.earlyFirstFrost) }} in 1 autumn in 10. For tender crops, plan
-            around these dates instead of the median ones.
-          </p>
-        }
-        @if (g.frostFree && !lastMonth && !firstMonth) {
-          <p class="muted">
-            It rarely frosts here, so sowing times follow the monthly temperatures. Set frost dates
-            only if you get frost.
-          </p>
-        }
-        <fieldset class="filters">
-          <legend>Last frost (spring)</legend>
-          @if (!g.lastFrost && !lastMonth) {
-            <span class="muted">Not set</span>
-          }
-          <select
-            name="lastMonth"
-            aria-label="Last frost month"
-            [ngModel]="emptyIfNull(lastMonth)"
-            (ngModelChange)="lastMonth = toOptionalNumber($event)"
-            [disabled]="!canEdit()"
-          >
-            <option value="">Month</option>
-            @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <input
-            type="number"
-            min="1"
-            max="31"
-            [(ngModel)]="lastDay"
-            name="lastDay"
-            aria-label="Last frost day"
-            placeholder="Day"
-            [disabled]="!canEdit()"
-          />
-        </fieldset>
-        <fieldset class="filters">
-          <legend>First frost (fall)</legend>
-          @if (!g.firstFrost && !firstMonth) {
-            <span class="muted">Not set</span>
-          }
-          <select
-            name="firstMonth"
-            aria-label="First frost month"
-            [ngModel]="emptyIfNull(firstMonth)"
-            (ngModelChange)="firstMonth = toOptionalNumber($event)"
-            [disabled]="!canEdit()"
-          >
-            <option value="">Month</option>
-            @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <input
-            type="number"
-            min="1"
-            max="31"
-            [(ngModel)]="firstDay"
-            name="firstDay"
-            aria-label="First frost day"
-            placeholder="Day"
-            [disabled]="!canEdit()"
-          />
-        </fieldset>
         @if (canEdit()) {
           <button
             type="submit"
@@ -213,8 +243,16 @@ import { PlannerDraftService } from './planner-draft.service';
         }
       </form>
 
-      <og-garden-members [garden]="g" (changed)="load(g.id)" />
-      <og-garden-danger [garden]="g" />
+      <section id="members" class="settings-section" aria-label="Members">
+        <og-garden-members [garden]="g" (changed)="load(g.id)" />
+      </section>
+      <section id="seasons" class="settings-section" aria-label="Seasons">
+        <og-garden-season [gardenId]="g.id" [canEdit]="canEdit()" />
+      </section>
+      <section id="danger" class="settings-section" aria-labelledby="danger-heading">
+        <h3 id="danger-heading">{{ g.myRole === 'owner' ? 'Delete' : 'Leave' }} this property</h3>
+        <og-garden-danger [garden]="g" />
+      </section>
     } @else if (loading()) {
       <p class="muted">Loading…</p>
     } @else {
@@ -275,6 +313,14 @@ export class GardenDetailPage implements OnInit, OnDestroy {
   readonly lookupError = signal('');
   readonly seasonNotice = signal<string | null>(null);
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+  /** The page's sections, for the links at the top. */
+  readonly sections = [
+    { id: 'property', label: 'Property' },
+    { id: 'climate', label: 'Location & climate' },
+    { id: 'members', label: 'Members' },
+    { id: 'seasons', label: 'Seasons' },
+    { id: 'danger', label: 'Leave or delete' },
+  ];
   /** Month names in the app's language; the saved value stays 1–12. */
   months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: formatMonthName(i + 1) }));
   private mapGen = 0;
@@ -423,6 +469,27 @@ export class GardenDetailPage implements OnInit, OnDestroy {
         this.seasonNotice.set(updated.seasonNotice);
         this.refreshMap();
         this.notices.success(updated.seasonNotice ?? 'Garden saved');
+      } catch (err) {
+        this.notices.error(gardenErrorMessage(err));
+      }
+    });
+  }
+
+  /**
+   * Fills the zone, frost dates, and monthly temperatures in again from the
+   * saved address, replacing any changed by hand.
+   */
+  async useAddressClimate() {
+    const g = this.garden();
+    if (!g?.place) return;
+    const place = g.place;
+    await this.notices.run('save-garden', async () => {
+      try {
+        const updated = await this.api.patch(g.id, { place });
+        this.garden.set(updated);
+        this.applyForm(updated);
+        this.seasonNotice.set(updated.seasonNotice);
+        this.notices.success(updated.seasonNotice ?? 'Climate filled in from the address');
       } catch (err) {
         this.notices.error(gardenErrorMessage(err));
       }
