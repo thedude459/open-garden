@@ -701,6 +701,17 @@ Measured on `main` after PR #167.
   move to TypeScript 7 (the native compiler) once Angular and Nx support it.
 - **Dependencies:** current apart from patch releases Dependabot handles.
 
+## Test workarounds
+
+Workarounds used to get tests to run, each with its issue (labels `bug` and
+`test-workaround`; see `CONTRIBUTING.md`). Remove a line when its issue is
+fixed.
+
+| Issue | Workaround | Fix |
+|---|---|---|
+| [#187](https://github.com/thedude459/open-garden/issues/187) | Locally, the "Save garden" click does not register, so local runs change `.click()` to `.dispatchEvent('click')` in `planner-helpers.ts` and `garden-site.spec.ts` (CI passes with `.click()`) | Find what receives the click (a trace shows it) and fix the layout so the button is never covered |
+| [#214](https://github.com/thedude459/open-garden/issues/214) | Local e2e runs use an untracked `playwright.local.config.ts` (browser path, OpenStreetMap blocked) and a hand-run stack start that frees ports 3000 and 4200 first | One script to start the stack and run Playwright, with the browser path from an environment variable |
+
 ## Ideas
 
 Performance gains, features, and pipeline improvements noticed while working
@@ -713,7 +724,7 @@ Size is a rough guess: S is under a day, M a few days, L longer.
 | **Pipeline:** copy crop icons from the pinned open-garden-data release in the build, instead of keeping a hand-copied set in `apps/web/src/assets/crops/` | A crop's new icon reaches the app with the catalog it belongs to; `crop-icons.ts` would read the list instead of repeating it | S |
 | **Performance:** a light catalog query for whole-catalog uses ("can sow now", the setup page's starter crops) returning only id, crop id, type, and zones | Both read every catalog row 100 at a time today; fine at 107 entries, slower at dataset v0.3's ~150 crops and their varieties | S |
 | **Tests:** find and clean up the test that leaves a second "Tomato" catalog entry with the tomato crop id in the e2e database | The starter-crops list showed Tomato twice until it learned to keep one entry per crop; leftover rows can hide or cause other test failures | S |
-| **Developer tooling:** `scripts/dev-stack.sh` to start Postgres, the API (fixture places), and the web app, freeing ports 3000 and 4200 first | A stale server still holding port 4200 made `nx serve` exit at startup during local runs; one script also documents the setup | S |
+| **Developer tooling:** `scripts/dev-stack.sh` to start Postgres, the API (fixture places), and the web app, freeing ports 3000 and 4200 first (now [#214](https://github.com/thedude459/open-garden/issues/214), under Test workarounds) | A stale server still holding port 4200 made `nx serve` exit at startup during local runs; one script also documents the setup | S |
 | **Pipeline:** generate the app icon PNGs and `favicon.ico` from `assets/mark.svg` in the web build, instead of committing exported files | The exports can drift from the SVG, as the empty `favicon.ico` showed; one source, no manual step | S |
 | **Accessibility:** move the plant to place with the arrow keys in Bed View before Enter places it | Keyboard placement today puts the plant in the middle of the visible area only | M |
 
