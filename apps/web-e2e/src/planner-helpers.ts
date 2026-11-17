@@ -44,13 +44,33 @@ export async function saveLayout(page: Page) {
   await expect(page.getByText('All changes saved')).toBeVisible();
 }
 
+/**
+ * Clicks a control that sits below the address map, after scrolling it into
+ * view and letting the browser paint. The map is a cross-origin iframe, and
+ * Chromium can route a click made in the same frame as the scroll to where
+ * the map was before it, so the click never reaches the page (#187). A person
+ * never clicks within a frame of a scroll; Playwright does.
+ */
+export async function clickBelowMap(target: Locator) {
+  await target.scrollIntoViewIfNeeded();
+  await target
+    .page()
+    .evaluate(
+      () =>
+        new Promise<void>((done) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => done())),
+        ),
+    );
+  await target.click();
+}
+
 /** Wait for the garden PATCH to finish before navigating away. */
 export async function saveGarden(page: Page) {
   const pending = page.waitForResponse((res) => {
     const path = new URL(res.url()).pathname;
     return res.request().method() === 'PATCH' && /\/api\/gardens\/[^/]+$/.test(path);
   });
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await clickBelowMap(page.getByRole('button', { name: 'Save garden' }));
   expect((await pending).ok()).toBeTruthy();
 }
 

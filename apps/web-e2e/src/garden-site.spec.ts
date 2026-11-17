@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { signedInPage } from './session';
-import { saveGarden, openConfiguration, confirmFixtureAddress } from './planner-helpers';
+import {
+  clickBelowMap,
+  confirmFixtureAddress,
+  openConfiguration,
+  saveGarden,
+} from './planner-helpers';
 
 test('site profile persists, can clear one frost, and rejects reversed pairs', async ({
   browser,
@@ -33,7 +38,7 @@ test('site profile persists, can clear one frost, and rejects reversed pairs', a
   await page.locator('input[name="lastDay"]').fill('20');
   await page.locator('select[name="firstMonth"]').selectOption('4');
   await page.locator('input[name="firstDay"]').fill('15');
-  await page.getByRole('button', { name: 'Save garden' }).click();
+  await clickBelowMap(page.getByRole('button', { name: 'Save garden' }));
   await expect(page.getByText(/last frost must be earlier/i)).toBeVisible();
 });
 

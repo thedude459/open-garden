@@ -59,7 +59,8 @@ CI runs exactly these; run them before opening a pull request.
 npm test              # every Nx test target, then the Vitest coverage gate (≥80%)
 npm run e2e           # Postgres, seed, API + production web build, live HTTP + Playwright
 npm run test:all      # both
-npm run e2e:only      # Playwright only, against an API and web you already started
+npm run e2e:stack     # Postgres, seed, API + production web, left running (Ctrl-C stops)
+npm run e2e:only      # Playwright only, against a running stack (e.g. from e2e:stack)
 npx nx affected -t test   # faster local pass over what you changed
 npm run format        # format with Prettier (CI runs npm run format:check)
 ```
@@ -72,6 +73,14 @@ The one-time Prettier reformat is listed in `.git-blame-ignore-revs`; run
 test data never lands in your app database. Set `DATABASE_URL` to override. It
 starts Docker if needed (Docker Desktop on macOS) and stops the API and web
 processes when it finishes.
+
+**Running the browser tests while you work.** Start the stack once with
+`npm run e2e:stack` and leave it running, then run specs against it with
+`npm run e2e:only -- apps/web-e2e/src/<name>.spec.ts`. Both scripts stop with a
+message if port 3000 or 4200 is already taken, usually by a server from an
+earlier run that is still going. Stop that server first, so you never test an
+old build. To use a Chromium already on your machine instead of Playwright's
+download, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` to its path.
 
 **Coverage.** Two numbers matter:
 

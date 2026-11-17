@@ -21,6 +21,7 @@
     "format:check": "prettier --check .",
     "e2e": "bash scripts/ci/e2e.sh",
     "e2e:only": "nx e2e web-e2e",
+    "e2e:stack": "E2E_STACK_ONLY=1 bash scripts/ci/e2e.sh",
     "graph": "nx graph"
   },
   "dependencies": {

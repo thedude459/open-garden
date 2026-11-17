@@ -122,6 +122,17 @@ ensure_postgres() {
   exit 1
 }
 
+# A server left from an earlier run would answer the readiness check, so the
+# tests would run against an old build; nx serve then exits as well (#214).
+ensure_port_free() {
+  local port="$1"
+  if port_open "${port}"; then
+    echo "Port ${port} is already in use, probably by an API or web app from an earlier run."
+    echo "Stop it first, for example: fuser -k ${port}/tcp   (or: lsof -ti:${port} | xargs kill)"
+    exit 1
+  fi
+}
+
 wait_for_services() {
   local web api proxy
   for _ in $(seq 1 90); do
@@ -143,17 +154,25 @@ if ! port_open 5432; then
 fi
 ensure_postgres
 
-npx playwright install chromium
-# The system libraries Chromium needs are usually present already (GitHub's
-# Ubuntu image lacks only optional fonts), and apt costs ~40 s. Install them
-# only when the browser cannot start without them.
-if [[ "$(uname -s)" == "Linux" ]] &&
-  ! node -e "require('@playwright/test').chromium.launch().then((b) => b.close())" 2>/dev/null; then
-  npx playwright install-deps chromium
+if [[ -n "${PLAYWRIGHT_CHROMIUM_EXECUTABLE:-}" ]]; then
+  # A Chromium already on this machine (playwright.config.ts launches it).
+  echo "Using Chromium at ${PLAYWRIGHT_CHROMIUM_EXECUTABLE}"
+else
+  npx playwright install chromium
+  # The system libraries Chromium needs are usually present already (GitHub's
+  # Ubuntu image lacks only optional fonts), and apt costs ~40 s. Install them
+  # only when the browser cannot start without them.
+  if [[ "$(uname -s)" == "Linux" ]] &&
+    ! node -e "require('@playwright/test').chromium.launch().then((b) => b.close())" 2>/dev/null; then
+    npx playwright install-deps chromium
+  fi
 fi
 
 node scripts/ci/ensure-database.js
 npx nx run api:sync-plants
+
+ensure_port_free 3000
+ensure_port_free 4200
 
 # Run the API from the same esbuild bundle the Docker image ships.
 node scripts/docker/build-api.mjs >/dev/null
@@ -173,6 +192,12 @@ PORT=4200 npx nx serve web --configuration=production --host=0.0.0.0 --port=4200
 WEB_PID=$!
 
 wait_for_services
+if [[ "${E2E_STACK_ONLY:-}" == "1" ]]; then
+  # `npm run e2e:stack`: keep the seeded stack running for `npm run e2e:only`.
+  echo "Stack ready: web http://localhost:4200, API http://localhost:3000. Ctrl-C stops both."
+  wait "${WEB_PID}"
+  exit 0
+fi
 # One Postgres and one pipeline lock. Live HTTP and Playwright share both,
 # so they run one after the other.
 LIVE_STATUS=0
