@@ -21,13 +21,13 @@ get an ADR.
 
 | Item | Notes |
 |---|---|
-| Retire Spec Kit | Done on branch `remove-speckit` (ADR 0017). Constitution is now `AGENTS.md`; `CLAUDE.md` imports it. |
-| Licensing | **Done:** code is `AGPL-3.0-or-later` (`LICENSE`, `package.json`, README). Follow-up for AGPL section 13: show a "Source code" link in the app (sidebar or sign-in page) pointing at the repository, so people using a hosted copy can get the source. |
+| Retire Spec Kit | **Done** (ADR 0017). Constitution is now `AGENTS.md`; `CLAUDE.md` imports it. |
+| Licensing | **Done:** code is `AGPL-3.0-or-later` (`LICENSE`, `package.json`, README). **Done:** for AGPL section 13, the sidebar has a "Source code" link to the repository, so people using a hosted copy can get the source. |
 | Docker-only install docs | **Done:** README is a four-step Docker install (generated database password, no demo users; real place data by default); `docs/deploy.md` covers configuration, network access, HTTPS, backups and restore, upgrades, and troubleshooting; `CONTRIBUTING.md` holds the development setup, tests, CI, and layout. Verified by following the README on a fresh clone, including backup and restore. **Follow-ups:** (1) **Done:** `SESSION_SECRET` dropped; sessions are random 256-bit tokens stored hashed, so no signing secret is needed. (2) **Done:** `ADMIN_EMAIL` promotes an existing account to admin when the API starts (never at sign-up, since email is unverified). (3) **Done:** Compose defaults to `PLACE_PROVIDER=live` for installs; tests, CI, and `.env.example` keep `fixture`. |
 | Publish images | **Done (release workflow):** publishing a GitHub Release builds multi-arch (amd64, arm64) `api` and `web` images, pushes them to `ghcr.io/thedude459/open-garden-*` with SBOM and provenance, attests and scans them, and attaches a version-pinned `compose.yaml` from `deploy/compose.yaml`. The README installs from it. |
-| Isolate e2e data | Done on branch `fix-stability-step-1`: `scripts/ci/e2e.sh` defaults to an `open_garden_e2e` database and creates it if missing. Existing test rows in the app database still need a one-time cleanup (or a fresh volume). |
+| Isolate e2e data | **Done:** `scripts/ci/e2e.sh` defaults to an `open_garden_e2e` database and creates it if missing. Existing test rows in the app database still need a one-time cleanup (or a fresh volume). |
 | Remove filler fixtures | **Done:** installs get only the 8 real sample plants. The test plants (Unknown Herb, Interval Herb, Pipeline Extra 01–40) and the second fixture source load only with `PLANT_TEST_FIXTURES=true`, which `scripts/ci/e2e.sh` and the CI e2e job set. Existing databases keep any filler plants already imported until the Phase 1 dataset import replaces the catalog. |
-| Migrations | **Runner fixed (branch `fix-migrations-run-once`):** `sync-cli` and the Docker entrypoint now both apply migrations with Drizzle's migrator, which records each one in `drizzle.__drizzle_migrations` and never re-runs it. Correction to the earlier finding: Docker installs were already tracked (the entrypoint ran `drizzle-kit migrate`); the run-every-file loop only ran in host mode (`npm run api:sync-plants`, including against the Docker database) and CI. Databases built by the old loop get one catch-up run, then nothing repeats. **Squashed ([ADR 0018](adr/0018-baseline-migration.md)):** `0001`–`0012` are now `0000_baseline.sql`, carrying 0012's journal timestamp so `v0.1.0` databases skip it. A database built by `v0.1.0`'s migrations and then upgraded has a schema identical to a fresh install. Migrations shipped in a release are never edited — only new ones are added. |
+| Migrations | **Done. Runner fixed:** `sync-cli` and the Docker entrypoint now both apply migrations with Drizzle's migrator, which records each one in `drizzle.__drizzle_migrations` and never re-runs it. Correction to the earlier finding: Docker installs were already tracked (the entrypoint ran `drizzle-kit migrate`); the run-every-file loop only ran in host mode (`npm run api:sync-plants`, including against the Docker database) and CI. Databases built by the old loop get one catch-up run, then nothing repeats. **Squashed ([ADR 0018](adr/0018-baseline-migration.md)):** `0001`–`0012` are now `0000_baseline.sql`, carrying 0012's journal timestamp so `v0.1.0` databases skip it. A database built by `v0.1.0`'s migrations and then upgraded has a schema identical to a fresh install. Migrations shipped in a release are never edited — only new ones are added. |
 | Repo clutter | **Done:** removed `doc/` (empty generated files), `.cursor/`, and `.superdesign/`. The design system is now `docs/design-system.md`; the `ponytail` coding-style rule is now in `AGENTS.md`. |
 
 ### Open-source project hygiene
@@ -102,7 +102,7 @@ planner load, plant search) are tested.
 | # | Finding | Change |
 |---|---|---|
 | 1 | The 80% gate measures only domain libraries. | **Done (report):** `npm run test:coverage:all` measures apps and libs without thresholds; CI posts a per-area table to the `verify` job summary and uploads the HTML report. A separate threshold for `apps/web` waits for component tests (item 2). |
-| 2 | Only 2 Angular spec files exist; no component tests. UI behaviour is tested only through slow browser runs. | **Set up:** `*.component.spec.ts` files run under Angular's own Vitest runner in jsdom (`npx nx test web`; `TestBed`, no extra testing library), in CI's `verify`. First tests: login page, session interceptor, plant page. Still to do: the large pages as they are split in Phase 3 (Settings, Plantings, Bed View, and Layout are done), and counting these tests in the `apps/web` coverage floor. |
+| 2 | Only 2 Angular spec files exist; no component tests. UI behaviour is tested only through slow browser runs. | **Done:** `*.component.spec.ts` files run under Angular's own Vitest runner in jsdom (`npx nx test web`; `TestBed`, no extra testing library), in CI's `verify`. First tests: login page, session interceptor, plant page. The large pages split in Phase 3 (Settings, Plantings, Bed View, Layout) have them, and the whole-codebase report counts them for `apps/web`, with a 46% floor (see the coverage plan). |
 | 3 | Repositories in `libs/plant-catalog-data` (all SQL) have no tests of their own and are excluded from coverage. | **Done:** `*.db.spec.ts` run every repository against PGlite (real PostgreSQL in WebAssembly, migrations applied) inside the unit run — no Docker — and count in the per-area report (14% → 81%). With the pipeline-run repository covered too, the lib is at 92% and inside the 80% gate. |
 | 4 | e2e and the Docker app share the same database (`open_garden` on `:5432`), so test users, properties, and plants appear in the running app. | **Done:** `scripts/ci/e2e.sh` uses its own `open_garden_e2e` database, created by the script, so test data never reaches the app database. |
 | 5 | Some "contract" tests assert values they constructed themselves. | **Done:** 19 self-checking tests removed from `apps/api-e2e` (3 files emptied and deleted). Each behaviour they named is covered by a live HTTP, domain unit, or Playwright test. |
@@ -128,17 +128,17 @@ Postgres), and **Growstuff** (open crop data and garden journals; Rails).
 | Practice | Immich | LiteFarm | Growstuff | Open Garden |
 |---|---|---|---|---|
 | Fast unit tests on every PR | Yes (server, web, CLI) | Yes (API with Jest, webapp unit) | Yes (RSpec) | **Yes**, 4 s |
-| Integration tests against a real database | Yes: "medium" tests (~70 files) with Testcontainers, separate Vitest config | Yes: Jest API tests with Postgres | Yes | Only through live HTTP in e2e; repositories untested (item 3) |
-| Frontend unit/component tests | Yes (~60 web spec files, plus web "medium" tests) | Yes, plus Chromatic visual tests of Storybook stories | View/feature specs | **No** (2 files, item 2) |
+| Integration tests against a real database | Yes: "medium" tests (~70 files) with Testcontainers, separate Vitest config | Yes: Jest API tests with Postgres | Yes | **Yes:** every repository against PGlite in the unit run (item 3) |
+| Frontend unit/component tests | Yes (~60 web spec files, plus web "medium" tests) | Yes, plus Chromatic visual tests of Storybook stories | View/feature specs | **Yes** (about 30 component spec files, item 2) |
 | Browser e2e | Playwright against the Docker Compose stack | Cypress (their wiki reports flakiness on hosted runners) | Feature specs split into parallel jobs by area | **Yes**, Playwright, well structured; host mode, not images (item 15) |
-| e2e against built images | Yes | — | — | No (item 15) |
+| e2e against built images | Yes | — | — | API bundle yes; web image no (item 15) |
 | Runs only what a change affects | Yes (path filters per job) | — | Split by feature area | **Yes** (Nx affected, e2e skip gate) |
-| Workflow security linting | Yes (zizmor) | — | — | No (hygiene item 10) |
+| Workflow security linting | Yes (zizmor) | — | — | **Yes** (actionlint and zizmor, hygiene item 10) |
 | API contract / migration checks | Yes (OpenAPI drift check, migration-order check) | — | — | Zod contracts shared; no OpenAPI or migration-order check |
-| Accessibility / visual checks | — | Chromatic visual review | — | No (items 7, 12) |
+| Accessibility / visual checks | — | Chromatic visual review | — | Accessibility yes (axe, item 7); no visual checks (item 12) |
 | Artifacts on failure | Playwright report + Docker logs | Cypress Cloud | — | Playwright report and traces; no server logs |
 
-**Takeaways:** Open Garden's fast unit layer, role-based Playwright tests,
+**Takeaways (November 2026; since then the real-database tests, component tests, and workflow linting have landed):** Open Garden's fast unit layer, role-based Playwright tests,
 change-aware CI, and security scanning are already at or above these
 projects. The gaps match what the leading project (Immich) does differently:
 a middle layer of real-database tests, frontend component tests, e2e against
@@ -205,22 +205,22 @@ measures the domain libraries only.
    covers sign-in, admin, and property membership (a non-member gets 404).
    `apps/api` 12% → 19% unit. Next: controller validation edge cases the live
    HTTP tests do not reach.
-5. **Web services first, components with Phase 3.** The API clients, offline
-   cache, and planner draft logic can be unit-tested now. Component tests
-   (Angular Testing Library on Vitest) land as the large pages are split in
-   Phase 3: planner inspector, plantings list, configuration sections, and the
-   Today screen, which is new code and ships with tests.
+5. **Web services first, components with Phase 3. Partly done:** component
+   tests for every split page, the planner draft logic, and the reminders
+   service with its offline queue (which found a bug, #223). Still to do: the
+   other API clients (calendar at 22%), the offline caches, and the large
+   pages' untested paths.
 6. **`seasonal-plantings` to 85%**, then hold the domain gate at 80%.
 
 **Targets**
 
-| Area | Now | After Phase 2 (data and climate) | After Phase 3 (UI) |
-|---|---|---|---|
-| `apps/api` (merged with live tests) | 13% unmerged | 70% | 80% |
-| `libs/plant-catalog-data` | 14% | 70% | 80% |
-| `apps/web` | 1% (component tests not counted) | 20% (services) | 60% (46% in CI once the component tests were counted) |
-| `libs/seasonal-plantings` | 67% | 85% | 85% |
-| Whole codebase | 31% | 50% | 70% |
+| Area | Baseline | Now (unit, CI, late Nov 2026) | After Phase 2 (data and climate) | After Phase 3 (UI) |
+|---|---|---|---|---|
+| `apps/api` (merged with live tests) | 13% unmerged | 21% unit; 76% unit + live when last measured | 70% | 80% |
+| `libs/plant-catalog-data` | 14% | **93%** — met | 70% | 80% |
+| `apps/web` | 1% | 46% (component tests counted) | 20% (services) | 60% |
+| `libs/seasonal-plantings` | 67% | 79% | 85% | 85% |
+| Whole codebase | 31% | 64% | 50% — met | 70% |
 
 ### OpenSSF
 
@@ -231,9 +231,9 @@ guidance. Status from the OpenSSF Scorecard run of November 2026 (overall
 | Check | Score | Status and plan |
 |---|---|---|
 | Pinned-Dependencies, SAST, Dangerous-Workflow, Binary-Artifacts, Dependency-Update-Tool, License, Packaging, Security-Policy, CI-Tests, Maintained | 10 | Passing. Keep them there: actions pinned by SHA (Dependabot updates them), CodeQL, zizmor, `SECURITY.md`, CI on every PR. |
-| Token-Permissions | 9 | **Fixing:** read-only defaults in `codeql.yml`; `verify` and `e2e` drop `actions: write`. Two write grants stay because the job needs them — `release.yml` (`contents: write` to upload release assets) and `dependabot-automerge.yml` (`contents: write` to enable auto-merge) — and their alerts are dismissed as *won't fix* with that reason. |
-| Vulnerabilities | 7 | **Fixing:** the three advisories were all development-only tooling. Removing the unused `@nx/angular`, `@nx/node`, `@nx/playwright`, and `@nx/vite` drops the Jest chain (`deepmerge` GHSA-gcqx-w48m-w2h4, `glob` GHSA-3g3m-2fjr-6pw4); an npm override moves `minimatch` to 11.0.5 (GHSA-g3hv-75wg-m249). `npm audit` (all dependencies) reports 0. Remove the override once Nx, ESLint, and Vitest depend on minimatch 11 themselves. **Whole-lockfile scan:** the pull request gate fails only on findings a change adds, so `osv-scanner.yml` (OSV-Scanner, weekly and on lockfile changes to `main`) reports every known vulnerability, dev tools included, under Security → Code scanning. Acceptances live in `osv-scanner.toml`, each with a reason and an `effectiveUntil` date. Accepted now: picomatch GHSA-fc5q-39xc-vjpf (ReDoS, build and test tooling only, no fix released) until 2027-01-31. |
-| Signed-Releases | 0 | **Fixing:** the release workflow signs `compose.yaml` with a Sigstore provenance attestation and attaches `compose.yaml.sigstore.json`. Scorecard looks at the last five releases, so the score rises as new releases ship. Images are already attested (SBOM + provenance). |
+| Token-Permissions | 9 | **Done:** read-only defaults in `codeql.yml`; `verify` and `e2e` drop `actions: write`. Two write grants stay because the job needs them — `release.yml` (`contents: write` to upload release assets) and `dependabot-automerge.yml` (`contents: write` to enable auto-merge) — and their alerts are dismissed as *won't fix* with that reason. |
+| Vulnerabilities | 7 | **Done:** the three advisories were all development-only tooling. Removing the unused `@nx/angular`, `@nx/node`, `@nx/playwright`, and `@nx/vite` drops the Jest chain (`deepmerge` GHSA-gcqx-w48m-w2h4, `glob` GHSA-3g3m-2fjr-6pw4); an npm override moves `minimatch` to 11.0.5 (GHSA-g3hv-75wg-m249). `npm audit` (all dependencies) reports 0. Remove the override once Nx, ESLint, and Vitest depend on minimatch 11 themselves. **Whole-lockfile scan:** the pull request gate fails only on findings a change adds, so `osv-scanner.yml` (OSV-Scanner, weekly and on lockfile changes to `main`) reports every known vulnerability, dev tools included, under Security → Code scanning. Acceptances live in `osv-scanner.toml`, each with a reason and an `effectiveUntil` date. Accepted now: picomatch GHSA-fc5q-39xc-vjpf (ReDoS, build and test tooling only, no fix released) until 2027-01-31. |
+| Signed-Releases | 0 | **Done in the workflow:** the release workflow signs `compose.yaml` with a Sigstore provenance attestation and attaches `compose.yaml.sigstore.json`. Scorecard looks at the last five releases, so the score rises as new releases ship. Images are already attested (SBOM + provenance). |
 | Branch-Protection | ? | **Done:** `scorecard.yml` passes the `SCORECARD_TOKEN` secret (fine-grained, read-only *Administration*, renew before it expires) as `repo_token`, so the check can read the rules. Expect a partial score: required checks, no force pushes, and admins included count, but zero required approvals (single maintainer) does not. |
 | CII-Best-Practices | 0 | **Registered:** [bestpractices.dev project 16466](https://www.bestpractices.dev/projects/16466), badge in the README (in progress, 18% in November 2026). **Maintainer action:** finish the *passing* questionnaire; most criteria are already met (license, `SECURITY.md`, `CONTRIBUTING.md`, CI with tests, release notes, signed releases, static analysis). Scorecard gives partial credit while in progress and full credit at *passing*. |
 | Fuzzing | 0 | **Done:** property-based tests with [fast-check](https://fast-check.dev/) (`*.property.spec.ts`), which Scorecard recognises for TypeScript: layout geometry, ISO dates, month-day arithmetic, and frost-pair rules. Add more with Phase 2's Southern Hemisphere maths and for request validation schemas. |
@@ -288,18 +288,18 @@ names the dataset version it needs:
 
 | App work | Needs dataset | Because |
 |---|---|---|
-| Catalog importer, sowing windows from data | v0.1 | Schema v1 and the first 50 crops |
-| Typed areas (blocking by habit and use) | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
-| Crop rotation advice by family | v0.1 | Every crop has a family |
+| Catalog importer, sowing windows from data — **done, [ADR 0019](adr/0019-dataset-catalog-import.md)–[0020](adr/0020-dataset-as-the-catalog.md)** | v0.1 | Schema v1 and the first 50 crops |
+| Typed areas (blocking by habit and use) — **done, [ADR 0021](adr/0021-area-rules-by-habit.md)** | v0.1 | Habit and use fields, plus a few trees, canes, and a shrub to check against |
+| Crop rotation advice by family — **done** | v0.1 | Every crop has a family |
 | Companion advice from data (principle VIII change) — **done, [ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)** | v0.2 | Companion pairs with reasons and sources |
-| Soil-test advice (pH against each crop's range) | v0.2 | `soilPh` per crop (imported and shown since v0.2.0) |
-| Watering by water balance | v0.2 | Crop coefficients (Kc) per growth stage |
+| Soil-test advice (pH against each crop's range) — **done, [ADR 0033](adr/0033-soil-tests.md)** | v0.2 | `soilPh` per crop (imported and shown since v0.2.0) |
+| Watering by water balance — **done, [ADR 0035](adr/0035-watering-by-water-balance.md)** | v0.2 | Crop coefficients (Kc) per growth stage |
 | Judging sensor readings | v0.3 | Soil moisture, light, and temperature ranges per crop |
 | Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
-| `crops` table (deferred from the importer) | v0.2 | Companion pairs name crops, not varieties. Met with a `crop_id` column on plants instead ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)); a table waits for a feature that needs crop rows of their own |
+| `crops` table (deferred from the importer) — **not needed so far** | v0.2 | Companion pairs name crops, not varieties. Met with a `crop_id` column on plants instead ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)); a table waits for a feature that needs crop rows of their own |
 | Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
 | Named rootstocks: pick M.9, Bud 9, G.41…; bed sized from its spacing; zone check uses the less hardy of variety and rootstock | v0.3 | Named rootstocks per tree crop, each with size, spacing, hardiness zones, and staking |
-| Worldwide sowing (Phase 2) | Later | Frost-free windows |
+| Worldwide sowing (Phase 2) — **done by temperature ([ADR 0025](adr/0025-sowing-by-temperature-where-frost-is-rare.md));** wet and dry seasons wait | Later | Frost-free windows |
 
 Each release attaches `open-garden-catalog-<version>.json` with a SHA-256 and
 a provenance attestation. The app's Docker image bundles a pinned version so a
@@ -338,15 +338,16 @@ habit and use, mismatches are **blocked**, and bramble is its own type.
   validation and the planner UI, so the planner can grey out plants an area
   will not take and explain why. Adding a type (berry bushes, herb spiral,
   perennial border) is one entry plus its rules.
-- Replace the `garden_areas.kind` CHECK constraint with validation against
-  that list, so a new type needs no constraint migration.
-- "Add berry patch" on the Overview becomes "Add bramble patch"; existing
+- **Done (migration 0004):** the `garden_areas.kind` CHECK constraint is
+  gone; the API validates against that list, so a new type needs no
+  constraint migration.
+- **Done:** "Add berry patch" on the Overview becomes "Add bramble patch"; existing
   berry stations in orchards move to a bramble patch in a migration. Fruit
   bushes go there too until they have a type of their own
   ([ADR 0021](adr/0021-area-rules-by-habit.md)).
-- Remove the legacy `garden_beds.kind` (`bed`/`orchard`) column and its API
+- **Done:** remove the legacy `garden_beds.kind` (`bed`/`orchard`) column and its API
   field. It predates areas; nothing writes `kind = 'orchard'` any more.
-- **Block by habit, not by use.** Melons, watermelons, and strawberries are
+- **Done — block by habit, not by use.** Melons, watermelons, and strawberries are
   `use: fruit` but belong in vegetable areas, so a vegetable area blocks trees
   and canes outright and blocks shrubs unless they are herbs (thyme is a woody
   subshrub). The table above lists what each type is for; the code rule
@@ -365,7 +366,7 @@ habit and use, mismatches are **blocked**, and bramble is its own type.
   that rootstock's spacing, and the zone check warns, without blocking, when
   the property is colder than the less hardy of the variety and the
   rootstock. Staking is noted on the planting.
-- Needs the dataset's habit and use fields, so it ships with or after the
+- **Done:** needed the dataset's habit and use fields, so it shipped with the
   first dataset import.
 
 ### Plant-data issues
@@ -397,7 +398,9 @@ In the app:
   existing plantings map to dataset plants (migration 0003); e2e uses dataset
   crops. `PerenualPlantProvider`, the fixture providers, the scheduler, and
   source ordering are gone; the run history table stays for import diffs.
-- **Deferred to dataset v0.2: the `crops` table.** Until a feature needs
+- **Resolved without it: the `crops` table.** Companion pairs, the first
+  feature that needed crop rows, use a `crop_id` column on plants instead
+  ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)). Originally: Until a feature needs
   crop-level rows, each crop and variety is a `plants` row keyed by dataset
   id, and crop fields (family, habit, use) are columns on `plants`. Companion
   pairs are the first feature that needs it; adding it then is cheap because
@@ -482,7 +485,7 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 
 | # | Finding | Change |
 |---|---|---|
-| 1 | No desktop home screen; the app opens on a property list. On mobile, "Today" is the per-garden Reminders page with "Nothing due or not ready yet." | **Done (core):** **Today** is the home page: care due across all properties with a Done button, and crops to start this week; empty states say what will appear. Frost/heat/rain alerts come with weather alerts (Phase 4 item 3). |
+| 1 | No desktop home screen; the app opens on a property list. On mobile, "Today" is the per-garden Reminders page with "Nothing due or not ready yet." | **Done (core):** **Today** is the home page: care due across all properties with a Done button, and crops to start this week; empty states say what will appear. Frost and heat alerts **done** ([ADR 0032](adr/0032-weather-alerts.md)); rain shows on watering reminders. |
 | 2 | Placing a tomato in a bed does not put it on the Planting calendar; the calendar needs a separate catalog search. | **Done:** the calendar lists crops planted this season as well as planned ones, each marked Planted or Planned; a planted crop leaves with its planting, not from the calendar, and Today suggests starting only crops not yet planted. |
 | 3 | Plantings page renders every planting as an open edit form (dates, note, photo, life cycle, save, sow again). Bed rename/sun/ground/mulch is duplicated here and on Overview. | **Done:** one row per planting with status chips (life, transplant or tray, planted, harvested, sync); Edit opens its form in place, one at a time; viewers see the rows without an editor. Bed settings (name, sun, ground, mulch) moved to the Plan inspector. |
 | 4 | Overview side panel stacks the selected bed's editor with create forms for bed, vegetable garden, tree, berry patch, tray, walkway. Size inputs show "8" and "4" without labels or units. Zoom/Save scroll away. | **Done:** an **Add** menu in the toolbar (bed, vegetable garden, tree, bramble patch, tray, walkway); the side panel shows one thing at a time: the chosen create form, with labelled inputs and units, or the selected bed's inspector (name, sun, ground, mulch, position and size, rotate, delete), above a compact list of beds and walkways. The toolbar stays in view. An empty property opens on the bed form. |
@@ -493,8 +496,8 @@ Findings from running the Docker stack (desktop 1280×800 and mobile
 | 9 | Companions are entered by hand per garden. | **Done ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)):** the dataset's pairs show in the planner beside household pairs (a household pair wins) and on plant pages with benefits, evidence, and where each was shown, nearest the member's property zones first. Shown automatically from the catalog in the planner and plant page, with each pair's benefits (deters pests, attracts beneficials, fixes nitrogen, …) and evidence level (research, extension, traditional) so lore is labelled as lore; household overrides stay possible. |
 | 10 | Catalog shows letter-in-a-square avatars, no images, thin detail page (type, zones, sun, water, maturity, spacing), only action is favorite. | **Filters done:** family, and "can sow this week at" a chosen property (a crop whose indoor start, sowing, planting, or fall sowing window there opens in the next seven days; the server works it out, so it needs a connection). **Sowing timeline done:** the plant page lays out when to start indoors, sow, plant out, sow for fall, and harvest at a chosen property, across the months with today marked, worked out on the device from that property's frost dates or monthly temperatures (so it works offline), with "Add to plan" to put the crop on that property's calendar. **Varieties done:** the plant page links to the other catalog entries of the same crop (the crop and its varieties), each with its days to maturity and spacing. **Icons done:** each crop shows its own colour icon in the catalog, the bed plant panel, and the plant page, from an icon set kept in open-garden-data (`icons/`, CC0) that continues OpenFarm's open-crop-icons, credited there, with a style guide for new icons; 51 of the 58 crops come from that project and 7 were drawn to match. Plants without one show a generic plant or flower. Companions on the plant page are done (ADR 0030). A separate season filter is left out: "can sow now" answers the same question for a real place. |
 | 11 | Property cards say "0 placements" and show only zone. | **Done:** each card draws a small plan of the property and its beds (outlines come with the list, in the same batched query as the counts, ADR 0013), counts "plants in beds", and names the most urgent task from Today (overdue, then today, then this week). |
-| 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | **Header done:** on mobile a sticky top bar holds Menu and the property name, in the page flow, so it never covers a heading. Phase 3: the canvas becomes view-first with a bottom sheet for actions. |
-| 13 | Vocabulary varies: Transplant View, Planting tray, Direct seed, placements. | **Glossary done** (`AGENTS.md`): "Planting tray" is now "Waiting transplants" (a tray is only a greenhouse seed tray), "Transplant View" is "Transplants", and property cards say "plants in beds". Phase 3: fold Transplants into a "Seed starting" section of Calendar. |
+| 12 | Mobile: the floating Menu button overlaps the page title. Overview stacks all create forms under the canvas. | **Header done:** on mobile a sticky top bar holds Menu and the property name, in the page flow, so it never covers a heading. **Still to do:** the canvas becomes view-first with a bottom sheet for actions. |
+| 13 | Vocabulary varies: Transplant View, Planting tray, Direct seed, placements. | **Glossary done** (`AGENTS.md`): "Planting tray" is now "Waiting transplants" (a tray is only a greenhouse seed tray), "Transplant View" is "Transplants", and property cards say "plants in beds". **Still to do:** fold Transplants into a "Seed starting" section of Calendar. |
 | 14 | Brand mark is a plain leaf-green circle. This is intentional in `docs/design-system.md` ("solid leaf-green circle on sage"), but it reads as a missing image. | **Done:** a seedling growing from a raised bed on the leaf-green circle, in the crop icons' style (`assets/mark.svg`, CC0), chosen from three candidates. The app icons, a full-bleed maskable icon for launchers, the Apple touch icon, and the favicon (which was an empty file) are exported from it. |
 | 15 | Six per-garden nav items. | **Done:** four: **Plan** (layout, with Plantings beneath), **Calendar** (with Transplants beneath), **Tasks**, **Settings**; a four-tab bar on mobile with section tabs for the pages beneath. Merging the pages themselves comes with the rest of the redesign. |
 
@@ -538,27 +541,16 @@ each against the other phases):
    ([ADR 0035](adr/0035-watering-by-water-balance.md)) for plantings in beds
    whose crop has coefficients; the rest keep fixed intervals. Next: per-crop
    root depth and soil texture for the threshold, and moisture sensors.*
-   Replaces fixed watering intervals (and the
-   mulch multiplier planned before). Each day a planting uses reference
-   evapotranspiration (ET₀) × the crop's coefficient for its growth stage,
-   minus rain; a reminder fires when the deficit passes a threshold for the
-   crop and soil. ET₀ comes from Open-Meteo's `et0_fao_evapotranspiration`,
-   in the same request the rain outlook already makes (it asks only for
-   `rain_sum` today), so no new provider. Mulch lowers evaporation from the
-   soil (beds already record it: none, wood chips, straw, leaves, compost,
-   paper, plastic), and a moisture sensor reading (item 6) overrides the
-   estimate. Sowing advice notes that black plastic warms soil (melons and
-   peppers can start earlier) and straw keeps it cool. **Site exposure:** the
-   bed's sun setting (full, part, shade) scales the crop coefficient, so a
-   shaded bed needs less water than a sunny one with the same plants. **Tested
-   against FAO-56's own worked example** for ET₀, so the arithmetic is proven,
-   not assumed. Prior art to read first: Home Assistant's
-   [Smart Irrigation](https://github.com/altmenorg/HAsmartirrigation) (MIT;
-   hourly FAO-56 with a running water "bucket") and
-   [NeverDry](https://github.com/never-dry/NeverDry) (MIT; seasonal crop
-   coefficients per zone and a site-exposure factor). Needs crop coefficients
-   in the dataset (FAO-56 publishes them for common crops); until then the
-   importer's water-class intervals stay.
+   Each day a planting in a bed uses reference evapotranspiration (ET₀,
+   from Open-Meteo, in one cached request with the rain) × the crop's
+   coefficient for its growth stage × the bed's sun and mulch factor, minus
+   rain that reaches the roots; watering is due when the deficit reaches
+   25 mm. The Kc curve (FAO-56 Eq. 66) and the daily balance are tested with
+   hand-worked numbers. Still open: sowing advice that black plastic warms
+   soil (melons and peppers can start earlier) and straw keeps it cool, and a
+   moisture sensor reading (item 6) overriding the estimate. Prior art:
+   Home Assistant's [Smart Irrigation](https://github.com/altmenorg/HAsmartirrigation)
+   (MIT) and [NeverDry](https://github.com/never-dry/NeverDry) (MIT).
 5. **Soil tests per area and bed** — *first slice done
    ([ADR 0033](adr/0033-soil-tests.md)): record a test on an area (one
    sample of its ground) or on a bed whose soil differs, such as a raised bed,
@@ -675,7 +667,13 @@ advice from data in the planner and on plant pages (step 6,
 split with component tests (step 5); and from Phase 3 polish (step 7): plan
 autosave with undo ([ADR 0031](adr/0031-plan-autosave-with-undo.md)),
 fit-to-content and remembered zoom, property cards with a small plan, and the
-catalog's filters, sowing timeline, varieties, and crop icons.
+catalog's filters, sowing timeline, varieties, and crop icons; areas as a
+level of the plan (step 8, [ADR 0034](adr/0034-managing-areas.md)); from the
+care features (step 9): weather alerts ([ADR 0032](adr/0032-weather-alerts.md)),
+soil tests per area and bed ([ADR 0033](adr/0033-soil-tests.md)), and watering
+by water balance ([ADR 0035](adr/0035-watering-by-water-balance.md)); the web
+app's component tests counted in coverage; and a weekly OSV-Scanner scan of
+the whole lockfile.
 
 | Order | Work | Why this order |
 |---|---|---|
