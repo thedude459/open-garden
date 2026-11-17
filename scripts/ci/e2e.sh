@@ -169,7 +169,7 @@ else
 fi
 
 node scripts/ci/ensure-database.js
-npx nx run api:sync-plants
+npx nx run api:sync-plants --output-style=static
 
 ensure_port_free 3000
 ensure_port_free 4200
@@ -202,11 +202,11 @@ fi
 # so they run one after the other.
 LIVE_STATUS=0
 PW_STATUS=0
-E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache || LIVE_STATUS=$?
+E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache --output-style=static || LIVE_STATUS=$?
 # Kills the API's database connections, so it runs alone after the other live specs.
 E2E_LIVE=1 E2E_DB_RECONNECT=1 npx vitest run --config vitest.config.ts \
   apps/api-e2e/src/db-reconnect-http.spec.ts || LIVE_STATUS=$?
-npx nx e2e web-e2e || PW_STATUS=$?
+npx nx e2e web-e2e --output-style=static || PW_STATUS=$?
 if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
   # Stop the API cleanly so Node writes its coverage, then map it to the sources.
   kill -TERM "${API_PID}" 2>/dev/null || true

@@ -43,7 +43,7 @@ export class PlantsApiService {
 
   private memoryCovers(query: PlantListQueryDto): boolean {
     // Sowing windows are worked out by the server; a cached page cannot answer.
-    if (query.sowNowFor) return false;
+    if (query.sowNowFor || !isFirstPage(query)) return false;
     if (this.memoryMeta.plantType && this.memoryMeta.plantType !== query.plantType) return false;
     if (this.memoryMeta.zone !== undefined && this.memoryMeta.zone !== query.zone) return false;
     return true;
@@ -61,7 +61,7 @@ export class PlantsApiService {
   ): Promise<PageDto<PlantSummaryDto> | null> {
     const exact = await this.cache.getList(key);
     if (exact?.items.length) return exact;
-    if (query.sowNowFor) return null;
+    if (query.sowNowFor || !isFirstPage(query)) return null;
     const browseKeys = [this.lastBrowseKey, this.browseKey(query, 100), this.browseKey(query, 20)];
     for (const browseKey of browseKeys) {
       if (!browseKey) continue;
@@ -108,7 +108,9 @@ export class PlantsApiService {
     } catch {
       const cached = await this.fromIdb(query, key);
       if (cached) return cached;
-      if (this.memory && !query.sowNowFor) return this.cache.filterCached(this.memory, query);
+      if (this.memory && !query.sowNowFor && isFirstPage(query)) {
+        return this.cache.filterCached(this.memory, query);
+      }
       return { items: [], page: 1, pageSize: query.pageSize ?? 20, totalCount: 0 };
     }
   }
@@ -139,5 +141,13 @@ export class PlantsApiService {
 
 /** A page worth keeping in memory to filter offline: no search or narrowing filter. */
 function isBrowse(query: PlantListQueryDto): boolean {
-  return !query.q && !query.family && !query.sowNowFor;
+  return !query.q && !query.family && !query.sowNowFor && isFirstPage(query);
+}
+
+/**
+ * Cached pages are first pages, filtered here; they cannot stand in for a
+ * later page, which would repeat the first one's entries.
+ */
+function isFirstPage(query: PlantListQueryDto): boolean {
+  return (query.page ?? 1) === 1;
 }

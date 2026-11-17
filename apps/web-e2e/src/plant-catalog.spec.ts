@@ -33,6 +33,23 @@ test.describe('plant catalog', () => {
     await expect(page.getByRole('button', { name: /sync|refresh from api/i })).toHaveCount(0);
   });
 
+  test('the whole catalog is reachable a page at a time', async ({ browser }) => {
+    const page = await signedInPage(browser, `catalog-more-${Date.now()}@example.com`);
+    await page.goto('/plants');
+    const rows = page.locator('a.row');
+    // The dataset alone is more than one page of 100.
+    await expect(rows).toHaveCount(100);
+    const shown = page.getByText(/Showing 100 of \d+\./);
+    await expect(shown).toBeVisible();
+    const total = Number((await shown.textContent())!.match(/of (\d+)/)![1]);
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(rows).toHaveCount(total);
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
+    // Each entry once: page two follows page one instead of repeating it.
+    const hrefs = await rows.evaluateAll((links) => links.map((l) => l.getAttribute('href')));
+    expect(new Set(hrefs).size).toBe(total);
+  });
+
   test('nonsense name search stays empty', async ({ browser }) => {
     const page = await signedInPage(browser, `catalog-empty-${Date.now()}@example.com`);
     await page.goto('/plants');

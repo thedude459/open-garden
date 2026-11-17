@@ -20,13 +20,18 @@ const basil: PlantSummaryDto = {
   family: 'Mint',
 };
 
+/** `items` is the whole catalog; the fake API serves it in pages. */
 async function render(items: PlantSummaryDto[] = [basil]) {
-  const list = vi.fn(async (q: PlantListQueryDto) => ({
-    items,
-    page: 1,
-    pageSize: q.pageSize ?? 20,
-    totalCount: items.length,
-  }));
+  const list = vi.fn(async (q: PlantListQueryDto) => {
+    const page = q.page ?? 1;
+    const size = q.pageSize ?? 20;
+    return {
+      items: items.slice((page - 1) * size, page * size),
+      page,
+      pageSize: size,
+      totalCount: items.length,
+    };
+  });
   TestBed.configureTestingModule({
     imports: [PlantListPage],
     providers: [
@@ -89,5 +94,44 @@ describe('PlantListPage filters', () => {
     await page.load();
     fixture.detectChanges();
     expect(el.textContent).toContain('Nothing opens to sow or plant there this week');
+  });
+});
+
+describe('PlantListPage pages', () => {
+  const catalog = Array.from({ length: 130 }, (_, i) => ({
+    ...basil,
+    id: `p${i}`,
+    commonName: `Plant ${i}`,
+  }));
+
+  it('shows the first 100 and adds the rest with Show more', async () => {
+    const { fixture, el, list } = await render(catalog);
+    expect(el.querySelectorAll('a.row')).toHaveLength(100);
+    expect(el.textContent).toContain('Showing 100 of 130.');
+
+    const more = [...el.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Show more'),
+    )!;
+    more.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 100 }));
+    expect(el.querySelectorAll('a.row')).toHaveLength(130);
+    expect(el.textContent).not.toContain('Show more');
+  });
+
+  it('starts again from the first page when a filter changes', async () => {
+    const { fixture, page, el } = await render(catalog);
+    await page.more();
+    page.family = 'Mint';
+    await page.load();
+    fixture.detectChanges();
+    expect(el.querySelectorAll('a.row')).toHaveLength(100);
+  });
+
+  it('offers no Show more when everything fits', async () => {
+    const { el } = await render();
+    expect(el.textContent).not.toContain('Show more');
   });
 });
