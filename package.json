@@ -55,6 +55,7 @@
     "@angular/build": "~22.2.7",
     "@angular/cli": "~22.2.7",
     "@angular/compiler-cli": "~22.2.6",
+    "@axe-core/playwright": "^4.14.0",
     "@electric-sql/pglite": "0.5.16",
     "@nx/devkit": "^24.0.5",
     "@nx/eslint": "^24.0.5",

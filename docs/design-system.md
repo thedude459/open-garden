@@ -68,7 +68,7 @@ Dark text is Ink or Soil, never pure black. Primary button is Leaf with **white*
 
 ## Motion
 
-Short 200–300ms ease; no floating ingredient parallax. Busy = 0.7 opacity.
+Short 200–300ms ease; no floating ingredient parallax. Busy = 0.85 opacity, which keeps a busy button's label above 4.5:1 contrast.
 
 ## Do not
 

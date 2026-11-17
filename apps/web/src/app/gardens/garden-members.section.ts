@@ -69,7 +69,7 @@ import { GardensApiService } from './gardens-api.service';
           type="email"
           placeholder="Member email"
         />
-        <select [(ngModel)]="inviteRole" name="inviteRole">
+        <select [(ngModel)]="inviteRole" name="inviteRole" aria-label="Role">
           <option value="collaborator">collaborator</option>
           <option value="viewer">viewer</option>
         </select>

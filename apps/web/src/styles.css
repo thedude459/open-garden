@@ -936,8 +936,9 @@ article.row p {
   color: #fff;
 }
 
+/* 0.85 keeps every button's label at 5.2:1 or more (WCAG AA needs 4.5:1); 0.7 fell to 3.7. */
 .btn[aria-busy='true'] {
-  opacity: 0.7;
+  opacity: 0.85;
   cursor: wait;
 }
 

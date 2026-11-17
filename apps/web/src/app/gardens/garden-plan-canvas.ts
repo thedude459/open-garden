@@ -160,8 +160,11 @@ type Gesture =
               [attr.data-bed-id]="bed.id"
               [attr.data-bed-name]="bed.name"
               [attr.data-kind]="'bed'"
-              tabindex="0"
+              [attr.tabindex]="allowBedGeometry() ? 0 : null"
+              [attr.role]="allowBedGeometry() ? 'button' : 'img'"
               [attr.aria-label]="bed.name"
+              [attr.aria-pressed]="allowBedGeometry() ? selectedId() === bed.id : null"
+              (keydown)="allowBedGeometry() && onBedKey($event, bed.id)"
             />
             <rect
               class="layout-bed"
@@ -222,7 +225,7 @@ type Gesture =
                 [attr.width]="handleInches"
                 [attr.height]="handleInches"
                 class="layout-handle"
-                [attr.aria-label]="'Resize ' + bed.name"
+                aria-hidden="true"
               />
             }
             @if (probeSpacing() != null) {
@@ -282,6 +285,7 @@ type Gesture =
             [attr.width]="area.lengthInches"
             [attr.height]="area.widthInches"
             class="layout-area"
+            role="img"
             [attr.aria-label]="'Area ' + area.name"
             [attr.data-area-id]="area.id"
             [attr.data-area-name]="area.name"
@@ -304,7 +308,7 @@ type Gesture =
               [attr.width]="handleInches"
               [attr.height]="handleInches"
               class="layout-handle"
-              [attr.aria-label]="'Resize ' + area.name"
+              aria-hidden="true"
             />
           }
         }
@@ -610,6 +614,19 @@ export class GardenPlanCanvas {
     if (!host) return { x: 0, y: 0 };
     const r = host.getBoundingClientRect();
     return this.clientToPlan(r.left + r.width / 2, r.top + r.height / 2);
+  }
+
+  /** Moves keyboard focus to the plan, where Enter places the chosen plant. */
+  focusPlan() {
+    this.svgRef()?.nativeElement.focus();
+  }
+
+  /** Enter or Space on a bed selects it, as a click does. */
+  onBedKey(ev: KeyboardEvent, bedId: string) {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    this.focusBed.emit(bedId);
   }
 
   onPlanKey(ev: KeyboardEvent) {

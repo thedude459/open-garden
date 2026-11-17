@@ -21,7 +21,7 @@ test('planner transplants: add/delete, viewer cannot mutate, indoor items stay o
   await owner.getByRole('button', { name: 'Create property' }).click();
   await owner.getByRole('link', { name: /Planner transplants/ }).click();
   await openOverview(owner);
-  await owner.getByRole('link', { name: 'Transplants' }).click();
+  await owner.getByRole('link', { name: 'Transplants', exact: true }).click();
   await expect(owner.getByRole('heading', { name: 'Transplants', exact: true })).toBeVisible();
   await addTransplant(owner, 'Tomato (Cherry)');
   await expect(owner.getByText(/Tomato \(Cherry\) · started/)).toBeVisible();
@@ -30,13 +30,13 @@ test('planner transplants: add/delete, viewer cannot mutate, indoor items stay o
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Planner transplants/ }).click();
   await openOverview(viewer);
-  await viewer.getByRole('link', { name: 'Transplants' }).click();
+  await viewer.getByRole('link', { name: 'Transplants', exact: true }).click();
   await expect(viewer.getByText(/Tomato \(Cherry\) · started/)).toBeVisible();
   await expect(viewer.getByRole('button', { name: /Add transplant/ })).toHaveCount(0);
   await expect(viewer.getByRole('button', { name: /Delete transplant/ })).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Plan', exact: true }).click();
-  await owner.getByRole('link', { name: 'Transplants' }).click();
+  await owner.getByRole('link', { name: 'Transplants', exact: true }).click();
   await owner.getByRole('button', { name: 'Delete transplant Tomato (Cherry)' }).click();
   await owner.getByRole('button', { name: 'Confirm delete Tomato (Cherry)' }).click();
   await expect(owner.getByText(/Tomato \(Cherry\) · started/)).toHaveCount(0);

@@ -18,10 +18,11 @@ import { PlantIcon } from '../ui/plant-icon';
       <input
         [(ngModel)]="q"
         name="q"
+        aria-label="Search plants"
         placeholder="Search name / species / variety"
         (ngModelChange)="scheduleLoad()"
       />
-      <select [(ngModel)]="zone" name="zone" (ngModelChange)="scheduleLoad()">
+      <select [(ngModel)]="zone" name="zone" aria-label="Zone" (ngModelChange)="scheduleLoad()">
         <option [ngValue]="undefined">Any zone</option>
         @for (z of zones; track z) {
           <option [ngValue]="z">Zone {{ z }}</option>
