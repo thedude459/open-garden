@@ -1396,3 +1396,11 @@ legend {
   padding-block: var(--space-4);
   border-top: 1px solid var(--line);
 }
+
+/* Today: frost and heat ahead, before the tasks, in Warm (the frost prompt colour). */
+.weather-alert {
+  border-left: 4px solid #7a4e00;
+}
+.weather-alert p {
+  margin: var(--space-1) 0 0;
+}

@@ -1,4 +1,4 @@
-import type { TodayDto } from '@open-garden/shared-types';
+import type { TodayDto, Units } from '@open-garden/shared-types';
 import { digestEmail, pushMessage } from './messages';
 
 export interface PushSubscriptionRecord {
@@ -11,6 +11,8 @@ export interface Recipient {
   userId: string;
   email: string;
   emailDigest: boolean;
+  /** How the member reads temperatures, for weather alerts. */
+  units?: Units;
   push: PushSubscriptionRecord[];
 }
 
@@ -53,20 +55,20 @@ export class ReminderDelivery {
       const wantsPush = this.senders.push && recipient.push.length > 0;
       const wantsEmail = this.senders.email && recipient.emailDigest;
       if (!wantsPush && !wantsEmail) continue;
-      let tasks: TodayDto['tasks'];
+      let today: TodayDto;
       try {
-        tasks = (await this.today(recipient.userId, day)).tasks;
+        today = await this.today(recipient.userId, day);
       } catch {
         continue;
       }
-      if (wantsPush && (await this.sendPush(recipient, tasks, day))) sent.push += 1;
-      if (wantsEmail && (await this.sendEmail(recipient, tasks, day))) sent.email += 1;
+      if (wantsPush && (await this.sendPush(recipient, today, day))) sent.push += 1;
+      if (wantsEmail && (await this.sendEmail(recipient, today, day))) sent.email += 1;
     }
     return sent;
   }
 
-  private async sendPush(recipient: Recipient, tasks: TodayDto['tasks'], day: string) {
-    const payload = pushMessage(tasks);
+  private async sendPush(recipient: Recipient, today: TodayDto, day: string) {
+    const payload = pushMessage(today.tasks, today.alerts ?? [], recipient.units);
     if (!payload || !(await this.store.claim(recipient.userId, 'push', day))) return false;
     let delivered = false;
     for (const subscription of recipient.push) {
@@ -82,8 +84,8 @@ export class ReminderDelivery {
     return delivered;
   }
 
-  private async sendEmail(recipient: Recipient, tasks: TodayDto['tasks'], day: string) {
-    const message = digestEmail(tasks, this.appUrl);
+  private async sendEmail(recipient: Recipient, today: TodayDto, day: string) {
+    const message = digestEmail(today.tasks, this.appUrl, today.alerts ?? [], recipient.units);
     if (!message || !(await this.store.claim(recipient.userId, 'email', day))) return false;
     try {
       await this.senders.email!.send(recipient.email, message.subject, message.text);

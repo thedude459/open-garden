@@ -158,6 +158,8 @@ const cropSchema = z.object({
   use: z.enum(['vegetable', 'fruit', 'nut', 'herb', 'flower']),
   family: slug.optional(),
   lifeCycle: z.enum(['annual', 'biennial', 'perennial']),
+  // Required by the dataset since v0.1; optional here so an older file still imports.
+  frostTolerance: z.enum(['tender', 'half-hardy', 'hardy']).optional(),
   sun: z.enum(['full', 'part', 'shade']),
   water: z.enum(['low', 'moderate', 'high']),
   // Required by the dataset; optional here so a release without it still imports.
@@ -304,6 +306,7 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
       : null,
     family,
     cropId: crop.id,
+    frostTolerance: crop.frostTolerance ?? null,
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),

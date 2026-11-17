@@ -346,6 +346,11 @@ describe('the bundled open-garden-data release', () => {
         'dataset:hot-pepper-jalapeno',
       ]),
     );
+    // Frost tolerance comes with each crop and its varieties.
+    expect(items.find((p) => p.varietyKey === 'dataset:tomato-cherry')?.frostTolerance).toBe(
+      'tender',
+    );
+    expect(items.find((p) => p.varietyKey === 'dataset:apple')?.frostTolerance).toBe('hardy');
     expect(items.find((p) => p.varietyKey === 'dataset:tomato')?.cropCoefficients).toMatchObject({
       mid: 1.15,
       stageDays: { initial: 35, development: 40, mid: 50, late: 30 },

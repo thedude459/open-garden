@@ -4,4 +4,5 @@ export { deriveReminders, type DerivePlantingInput, type DeriveEventInput } from
 export { deriveIndoorReminders, type IndoorDerivePlantingInput } from './lib/derive-indoor';
 export { sortReminders } from './lib/sort';
 export { applyRainCover, RAIN_NOTE } from './lib/rain-cover';
+export { weatherAlerts, type AlertPlanting } from './lib/weather-alerts';
 export { CareReminderService } from './lib/care-reminder-service';

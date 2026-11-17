@@ -14,7 +14,8 @@ import { NotificationsApiService } from './notifications-api.service';
       <section class="card reminder-settings" aria-labelledby="reminder-settings-heading">
         <h3 id="reminder-settings-heading">Reminders</h3>
         <p class="muted">
-          Due watering, feeding, and harvest tasks are sent once a day, from {{ hourLabel(s) }}.
+          Due watering, feeding, and harvest tasks, and frost or heat ahead, are sent once a day,
+          from {{ hourLabel(s) }}.
         </p>
         @if (error()) {
           <p class="error">{{ error() }}</p>

@@ -55,6 +55,7 @@ function sources(over: Partial<TodaySources> = {}): TodaySources {
         : [reminder({ plantingId: 'p5', bedName: null })],
     calendar: async (gardenId) =>
       gardenId === 'a' ? [entry({}), entry({ plantId: 'bean', planted: true })] : [],
+    weather: async () => [],
     ...over,
   };
 }
@@ -120,5 +121,26 @@ describe('todayFor', () => {
     const today = await todayFor(sources({ reminders: fail, calendar: fail }), 'u', '2026-06-01');
     expect(today.tasks).toEqual([]);
     expect(today.gardens).toHaveLength(2);
+  });
+
+  it('carries each property’s weather alerts, and still shows Today when a forecast fails', async () => {
+    const frost = {
+      kind: 'frost' as const,
+      date: '2026-06-02',
+      tempC: -1,
+      plantings: [{ name: 'Tomato', bedName: 'North' }],
+    };
+    const today = await todayFor(
+      sources({
+        weather: async (gardenId) => {
+          if (gardenId === 'b') throw new Error('forecast down');
+          return [frost];
+        },
+      }),
+      'u',
+      '2026-06-01',
+    );
+    expect(today.alerts).toEqual([{ ...frost, gardenId: 'a', gardenName: 'Home' }]);
+    expect(today.tasks.length).toBeGreaterThan(0);
   });
 });

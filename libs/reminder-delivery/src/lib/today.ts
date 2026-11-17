@@ -6,6 +6,7 @@ import {
   type GardenRole,
   type ReminderItemDto,
   type TodayDto,
+  type WeatherAlertDto,
 } from '@open-garden/shared-types';
 
 /** Where Today's tasks come from; the API wires these to its services. */
@@ -13,12 +14,15 @@ export interface TodaySources {
   gardens(userId: string): Promise<{ id: string; name: string; myRole: GardenRole }[]>;
   reminders(gardenId: string, userId: string, asOf: string): Promise<ReminderItemDto[]>;
   calendar(gardenId: string, userId: string): Promise<CalendarEntryDto[]>;
+  /** Frost and heat ahead for plants in a property's beds, from `asOf`. */
+  weather(gardenId: string, asOf: string): Promise<WeatherAlertDto[]>;
 }
 
 /**
  * What a member has to do on `asOf` (a `YYYY-MM-DD` day), across every
  * property: care that is overdue or due, and crops not yet planted whose
- * sowing or planting window is open this week.
+ * sowing or planting window is open this week; and frost or heat ahead for
+ * plants in beds.
  */
 export async function todayFor(
   sources: TodaySources,
@@ -29,6 +33,7 @@ export async function todayFor(
   const today = new Date(year!, (month ?? 1) - 1, day ?? 1);
   const tasks: TodayDto['tasks'] = [];
   const gardens: TodayDto['gardens'] = [];
+  const alerts: NonNullable<TodayDto['alerts']> = [];
   for (const garden of await sources.gardens(userId)) {
     let overdue = 0;
     let thisWeek = 0;
@@ -77,7 +82,14 @@ export async function todayFor(
     } catch {
       /* calendar windows are optional here */
     }
+    try {
+      for (const alert of await sources.weather(garden.id, asOf)) {
+        alerts.push({ ...alert, gardenId: garden.id, gardenName: garden.name });
+      }
+    } catch {
+      /* no forecast, no alert: the rest of Today still shows */
+    }
     gardens.push({ id: garden.id, overdue, thisWeek });
   }
-  return { tasks, gardens };
+  return { tasks, gardens, alerts };
 }

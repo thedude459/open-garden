@@ -120,4 +120,28 @@ describe('ReminderDelivery', () => {
     );
     expect(await delivery.run('2026-06-01')).toEqual({ push: 0, email: 1 });
   });
+
+  it('sends a frost warning on a day with no care due, in the member\u2019s units', async () => {
+    const { store } = memoryStore([{ ...ann, units: 'metric', push: [device('phone')] }]);
+    const pushed: string[] = [];
+    const frostOnly: TodayDto = {
+      tasks: [],
+      gardens: [],
+      alerts: [
+        {
+          gardenId: 'g',
+          gardenName: 'Home',
+          kind: 'frost',
+          date: '2026-11-18',
+          tempC: -2,
+          plantings: [{ name: 'Tomato', bedName: 'North' }],
+        },
+      ],
+    };
+    const delivery = new ReminderDelivery(store, async () => frostOnly, {
+      push: { send: async (_sub, payload) => (pushed.push(payload), 'sent') },
+    });
+    expect(await delivery.run('2026-11-17')).toEqual({ push: 1, email: 0 });
+    expect(JSON.parse(pushed[0]!).notification.title).toBe('Frost likely Wed, Nov 18 (low -2 °C)');
+  });
 });

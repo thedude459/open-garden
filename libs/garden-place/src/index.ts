@@ -24,6 +24,13 @@ export {
 export { FixtureRainOutlook, shiftIsoDate } from './lib/fixture-rain-outlook';
 export { OpenMeteoRainOutlook, parseRainSums } from './lib/open-meteo-rain-outlook';
 export {
+  ALERT_FORECAST_DAYS,
+  FixtureTemperatureOutlook,
+  OpenMeteoTemperatureOutlook,
+  parseDayTemperatures,
+  temperatureOutlookFor,
+} from './lib/temperature-outlook';
+export {
   PLACE_NOT_FOUND_MESSAGE,
   PLACE_UNAVAILABLE_MESSAGE,
   PlaceLookupError,
@@ -33,5 +40,7 @@ export {
   type FrostRisk,
   type MonthDay,
   type PlaceLookup,
+  type DayTemperatures,
   type RainOutlook,
+  type TemperatureOutlook,
 } from './lib/ports';

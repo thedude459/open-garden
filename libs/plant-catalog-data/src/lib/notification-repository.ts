@@ -53,7 +53,12 @@ export class NotificationRepository {
   async recipients() {
     const withPush = this.db.select({ userId: pushSubscriptions.userId }).from(pushSubscriptions);
     const rows = await this.db
-      .select({ userId: users.id, email: users.email, emailDigest: users.emailDigest })
+      .select({
+        userId: users.id,
+        email: users.email,
+        emailDigest: users.emailDigest,
+        units: users.units,
+      })
       .from(users)
       .where(or(eq(users.emailDigest, true), inArray(users.id, withPush)));
     if (rows.length === 0) return [];
@@ -68,6 +73,7 @@ export class NotificationRepository {
       );
     return rows.map((row) => ({
       ...row,
+      units: row.units === 'metric' ? ('metric' as const) : ('imperial' as const),
       push: devices
         .filter((device) => device.userId === row.userId)
         .map(({ endpoint, p256dh, auth }) => ({ endpoint, p256dh, auth })),

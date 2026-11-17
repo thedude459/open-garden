@@ -1,13 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { TodayTaskDto } from '@open-garden/shared-types';
+import { alertAdvice, alertHeadline } from '@open-garden/reminder-delivery/messages';
+import type { TodayDto, TodayTaskDto } from '@open-garden/shared-types';
+import { AuthApiService } from '../auth/auth-api.service';
 import { GardensApiService } from '../gardens/gardens-api.service';
 import { RemindersApiService } from '../gardens/reminders-api.service';
 import { EmptyState } from '../ui/empty-state';
 import { ReminderSettings } from './reminder-settings';
 import { NoticeService } from '../ui/notice.service';
 import { groupTodayTasks, localIso, type TodayGroup } from './today-groups';
+
+type Alert = NonNullable<TodayDto['alerts']>[number];
 
 /** The home page: what needs doing today across every property. */
 @Component({
@@ -27,7 +31,7 @@ import { groupTodayTasks, localIso, type TodayGroup } from './today-groups';
       >
         <a class="btn btn-primary" routerLink="/gardens">Add a property</a>
       </og-empty-state>
-    } @else if (groups().length === 0) {
+    } @else if (groups().length === 0 && alerts().length === 0) {
       <og-empty-state
         title="Nothing to do today"
         body="Watering, feeding, and harvest tasks, and crops whose sowing window opens this week, show up here once your beds have plantings."
@@ -35,6 +39,26 @@ import { groupTodayTasks, localIso, type TodayGroup } from './today-groups';
         <a class="btn btn-secondary" routerLink="/gardens">Your properties</a>
       </og-empty-state>
     } @else {
+      @if (alerts().length) {
+        <section class="weather-alerts" aria-labelledby="weather-heading">
+          <h3 id="weather-heading">Weather</h3>
+          <ul class="card-list">
+            @for (alert of alerts(); track alert.gardenId + alert.kind) {
+              <li class="row weather-alert" [attr.data-kind]="alert.kind">
+                <div>
+                  <strong>{{ headline(alert) }}</strong>
+                  <p>
+                    <a [routerLink]="['/gardens', alert.gardenId, 'layout']">{{
+                      alert.gardenName
+                    }}</a
+                    >: {{ advice(alert) }}
+                  </p>
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
       @for (group of groups(); track group.gardenId) {
         <section>
           <h3>
@@ -96,15 +120,27 @@ export class TodayPage implements OnInit {
   private readonly gardens = inject(GardensApiService);
   private readonly reminders = inject(RemindersApiService);
   private readonly notices = inject(NoticeService);
+  private readonly units = inject(AuthApiService).units;
 
   readonly loading = signal(true);
   readonly error = signal('');
   readonly hasProperties = signal(false);
   readonly groups = signal<TodayGroup[]>([]);
+  /** Frost and heat ahead for plants in beds, soonest first. */
+  readonly alerts = signal<Alert[]>([]);
   private tasks: TodayTaskDto[] = [];
 
   ngOnInit() {
     void this.load();
+  }
+
+  headline(alert: Alert) {
+    return alertHeadline(alert, this.units());
+  }
+
+  advice(alert: Alert) {
+    const text = alertAdvice(alert);
+    return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   taskKey(task: TodayTaskDto) {
@@ -141,6 +177,7 @@ export class TodayPage implements OnInit {
       this.hasProperties.set(page.items.length > 0);
       this.tasks = today.tasks;
       this.groups.set(groupTodayTasks(this.tasks));
+      this.alerts.set([...(today.alerts ?? [])].sort((a, b) => a.date.localeCompare(b.date)));
     } catch (err) {
       this.error.set(messageFrom(err));
     } finally {

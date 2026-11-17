@@ -60,9 +60,25 @@ export interface TodayTaskDto {
   canEdit?: boolean;
 }
 
+/**
+ * Weather in the next few days that can hurt plants in beds: frost for crops
+ * that cannot take it, or heat above a crop's growing range. Advice only.
+ */
+export interface WeatherAlertDto {
+  kind: 'frost' | 'heat';
+  /** The day it is forecast, YYYY-MM-DD. */
+  date: string;
+  /** The forecast low (frost) or high (heat) that day, °C. */
+  tempC: number;
+  /** The plants in beds at risk, by name, with their bed. */
+  plantings: { name: string; bedName: string | null }[];
+}
+
 export interface TodayDto {
   tasks: TodayTaskDto[];
   gardens: { id: string; overdue: number; thisWeek: number }[];
+  /** Frost and heat ahead for each property; absent from older cached copies. */
+  alerts?: (WeatherAlertDto & { gardenId: string; gardenName: string })[];
 }
 
 export interface SeasonPlantingDto {

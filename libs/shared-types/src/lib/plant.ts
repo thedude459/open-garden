@@ -26,6 +26,9 @@ export function rootstockSpacing(row: {
   return Object.values(spacing).some((v) => v !== null) ? spacing : null;
 }
 
+/** How much frost a crop survives: none, a light frost, or a hard frost. */
+export type FrostTolerance = 'tender' | 'half-hardy' | 'hardy';
+
 export interface PlantSummaryDto {
   id: string;
   commonName: string;
