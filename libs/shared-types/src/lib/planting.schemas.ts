@@ -100,6 +100,7 @@ export const bedCreateSchema = z.object({
 
 export const bedPatchSchema = z.object({
   name: z.string(),
+  areaId: z.uuid().optional(),
   sun: z.enum(['full', 'part', 'shade']).nullable().optional(),
   site: z.enum(['raised', 'in_ground']).optional(),
   mulch: z
@@ -133,6 +134,14 @@ export const soilTestCreateSchema = z
 
 export const areaCreateSchema = z.object({
   kind: z.enum(AREA_KINDS),
+});
+
+export const areaPatchSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Area name is required')
+    .max(120, 'Area name must be at most 120 characters'),
 });
 
 export const trayCreateSchema = z.object({

@@ -22,6 +22,7 @@ import {
   MULCHES,
   type BedGeometryDto,
   type LayoutBedDto,
+  type PropertyAreaDto,
 } from '@open-garden/shared-types';
 import type { SoilTestCreateDto, SoilTestDto, SoilTestOwner } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
@@ -99,6 +100,16 @@ type GeometryField = 'originXInches' | 'originYInches' | 'lengthInches' | 'width
             }
           </select>
         </label>
+        @if (areas().length > 1) {
+          <label>
+            Area
+            <select name="selectedArea" [value]="b.areaId ?? ''" (change)="pickArea($event)">
+              @for (a of areas(); track a.id) {
+                <option [value]="a.id" [selected]="a.id === b.areaId">{{ a.name }}</option>
+              }
+            </select>
+          </label>
+        }
         <og-soil-test-panel
           [ownerId]="b.id"
           [name]="b.name"
@@ -211,6 +222,19 @@ export class LayoutBedInspector {
   /** The server has this bed, so its name and settings can change now. */
   saved = input(false);
   deleting = input(false);
+  /** Areas the bed can be moved to. */
+  areas = input<PropertyAreaDto[]>([]);
+  /** Moves the bed; resolves false when the area refused it. */
+  moveToArea = input<(bed: LayoutBedDto, areaId: string) => Promise<boolean>>(async () => false);
+
+  async pickArea(event: Event) {
+    const select = event.target as HTMLSelectElement;
+    const bed = this.bed();
+    if (!select.value || select.value === bed.areaId) return;
+    // A refused move puts the picker back where the bed still is.
+    if (!(await this.moveToArea()(bed, select.value))) select.value = bed.areaId ?? '';
+  }
+
   /** The bed's area's latest test, which applies while the bed has none of its own. */
   areaSoilTest = input<{ name: string; test: SoilTestDto } | null>(null);
   saveSoilTest =

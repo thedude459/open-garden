@@ -99,4 +99,38 @@ describe('LayoutBedInspector', () => {
     view.byLabel('Confirm delete East')!.click();
     expect(view.removed()).toBe(1);
   });
+
+  it('moves the bed to another area, and puts the picker back when the move is refused', async () => {
+    const fixture = TestBed.createComponent(LayoutBedInspector);
+    const moves: string[] = [];
+    let allow = false;
+    fixture.componentRef.setInput('bed', bed({ areaId: 'veg' }));
+    fixture.componentRef.setInput('saved', true);
+    fixture.componentRef.setInput('saveSoilTest', async () => true);
+    fixture.componentRef.setInput('deleteSoilTest', async () => true);
+    fixture.componentRef.setInput('areas', [
+      { id: 'veg', name: 'Vegetable garden', kind: 'vegetable' },
+      { id: 'canes', name: 'Bramble patch', kind: 'bramble' },
+    ]);
+    fixture.componentRef.setInput('moveToArea', async (_b: LayoutBedDto, areaId: string) => {
+      moves.push(areaId);
+      return allow;
+    });
+    fixture.autoDetectChanges();
+    await fixture.whenStable();
+    const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
+      'select[name="selectedArea"]',
+    )!;
+    expect(select.value).toBe('veg');
+    select.value = 'canes';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(moves).toEqual(['canes']);
+    expect(select.value).toBe('veg');
+    allow = true;
+    select.value = 'canes';
+    select.dispatchEvent(new Event('change'));
+    await fixture.whenStable();
+    expect(select.value).toBe('canes');
+  });
 });

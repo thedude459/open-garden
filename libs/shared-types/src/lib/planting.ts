@@ -152,4 +152,6 @@ export interface BedPatchDto {
   sun?: BedSun | null;
   site?: BedSite;
   mulch?: Mulch;
+  /** Move the bed to another area; its plants must suit it. */
+  areaId?: string;
 }

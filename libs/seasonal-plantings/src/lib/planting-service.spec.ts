@@ -584,3 +584,124 @@ describe('PlantingService area rules', () => {
     ]);
   });
 });
+
+describe('PlantingService areas: rename, delete, move a bed', () => {
+  type Area = { id: string; name: string; kind: string };
+  function setup() {
+    const areas = new Map<string, Area>([
+      ['veg', { id: 'veg', name: 'Vegetable garden', kind: 'vegetable' }],
+      ['veg2', { id: 'veg2', name: 'Vegetable garden 2', kind: 'vegetable' }],
+      ['orchard', { id: 'orchard', name: 'Orchard', kind: 'orchard' }],
+      ['canes', { id: 'canes', name: 'Bramble patch', kind: 'bramble' }],
+      ['glass', { id: 'glass', name: 'Greenhouse', kind: 'greenhouse' }],
+    ]);
+    const bed = {
+      id: 'north',
+      gardenId: 'g',
+      name: 'North',
+      areaId: 'veg',
+      station: null as string | null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const occupants: { id: string; plantType: string }[] = [{ id: 'p1', plantType: 'vegetable' }];
+    const roles: Record<string, string> = { owner: 'owner', viewer: 'viewer' };
+    const service = new PlantingService(
+      { get: async (_g: string, u: string) => (roles[u] ? { role: roles[u] } : null) } as never,
+      {} as never,
+      { occupants: async () => occupants } as never,
+      {
+        getInGarden: async (_g: string, id: string) => (id === bed.id ? bed : null),
+        findByNormalizedName: async () => null,
+        rename: async () => bed,
+        listByGarden: async () => [bed],
+        setArea: async (_g: string, _id: string, areaId: string, station: string | null) =>
+          Object.assign(bed, { areaId, station }),
+      } as never,
+      {
+        getInGarden: async (gardenId: string, id: string) =>
+          gardenId === 'g' ? (areas.get(id) ?? null) : null,
+        findByName: async (_g: string, name: string) =>
+          [...areas.values()].find((a) => a.name.toLowerCase() === name.toLowerCase()) ?? null,
+        rename: async (_g: string, id: string, name: string) => {
+          const area = areas.get(id);
+          return area ? Object.assign(area, { name }) : null;
+        },
+        delete: async (_g: string, id: string) => areas.delete(id),
+      } as never,
+      { listByGarden: async () => [{ id: 't1', areaId: 'glass', name: 'Tray' }] } as never,
+    );
+    return { service, areas, bed, occupants };
+  }
+
+  it('renames an area, refusing a blank name, a name in use, and viewers', async () => {
+    const { service } = setup();
+    await expect(service.renameArea('owner', 'g', 'veg', '  Kitchen garden ')).resolves.toEqual({
+      id: 'veg',
+      name: 'Kitchen garden',
+      kind: 'vegetable',
+    });
+    await expect(service.renameArea('owner', 'g', 'veg', 'kitchen GARDEN')).resolves.toBeTruthy();
+    await expect(service.renameArea('owner', 'g', 'veg', 'orchard')).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    await expect(service.renameArea('owner', 'g', 'veg', ' ')).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+    await expect(service.renameArea('owner', 'g', 'gone', 'X')).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+    await expect(service.renameArea('viewer', 'g', 'veg', 'X')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+  });
+
+  it('deletes only an empty area', async () => {
+    const { service, areas } = setup();
+    await expect(service.deleteArea('owner', 'g', 'veg')).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: 'Vegetable garden still holds 1 bed: move or delete them first',
+    });
+    await expect(service.deleteArea('owner', 'g', 'glass')).rejects.toMatchObject({
+      message: 'Greenhouse still holds trays: move or delete its trays first',
+    });
+    await service.deleteArea('owner', 'g', 'veg2');
+    expect(areas.has('veg2')).toBe(false);
+    await expect(service.deleteArea('owner', 'g', 'veg2')).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+    await expect(service.deleteArea('viewer', 'g', 'orchard')).rejects.toMatchObject({
+      code: 'FORBIDDEN',
+    });
+  });
+
+  it('moves a bed to an area that takes its plants, and its station follows', async () => {
+    const { service, bed, occupants } = setup();
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'veg2' }),
+    ).resolves.toMatchObject({ areaId: 'veg2', station: null });
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'canes' }),
+    ).rejects.toMatchObject({
+      message: 'Bramble patch will not take this bed: This plant belongs in a vegetable garden',
+    });
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'glass' }),
+    ).rejects.toMatchObject({ message: 'A greenhouse holds trays, not beds' });
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'missing' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    // An orchard takes herbaceous underplanting but one tree per bed.
+    occupants.splice(0, 1, { id: 't1', plantType: 'tree' }, { id: 't2', plantType: 'tree' });
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'orchard' }),
+    ).rejects.toMatchObject({
+      message: 'Orchard will not take this bed: A tree bed holds one tree',
+    });
+    occupants.splice(1, 1);
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'orchard' }),
+    ).resolves.toMatchObject({ areaId: 'orchard', station: 'tree' });
+    expect(bed.station).toBe('tree');
+  });
+});

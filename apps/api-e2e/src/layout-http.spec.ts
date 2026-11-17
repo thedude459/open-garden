@@ -397,22 +397,22 @@ describe.skipIf(!liveEnabled)('layout http', () => {
       );
 
       const missing = crypto.randomUUID();
-      const anonDel = await anon.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
+      const anonDel = await anon.delete(`/api/gardens/${garden.id}/walkways/${areaId}`);
       expect(anonDel.status()).toBe(401);
 
       const stranger = new LiveClient();
       await register(stranger, `layout-area-stranger-${stamp}@example.com`);
-      const strangerDel = await stranger.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
+      const strangerDel = await stranger.delete(`/api/gardens/${garden.id}/walkways/${areaId}`);
       expect(strangerDel.status()).toBe(404);
       stranger.dispose();
 
       await owner.post(`/api/gardens/${garden.id}/members`, {
         data: { email: friendUser.email, role: 'viewer' },
       });
-      const viewerDel = await friend.delete(`/api/gardens/${garden.id}/areas/${areaId}`);
+      const viewerDel = await friend.delete(`/api/gardens/${garden.id}/walkways/${areaId}`);
       expect(viewerDel.status()).toBe(403);
 
-      const missingDel = await owner.delete(`/api/gardens/${garden.id}/areas/${missing}`);
+      const missingDel = await owner.delete(`/api/gardens/${garden.id}/walkways/${missing}`);
       expect(missingDel.status()).toBe(404);
     } finally {
       owner.dispose();

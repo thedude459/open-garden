@@ -39,7 +39,7 @@ import {
   type NewPlot,
 } from './layout-add-forms';
 import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspector';
-import { SoilTestPanel } from './soil-test-panel';
+import { AreaPanel } from './area-panel';
 import { LayoutBedsList, LayoutWalkwaysList } from './layout-lists';
 import { PlanSaveStatus } from './plan-save-status';
 import { LayoutApiService } from './layout-api.service';
@@ -65,7 +65,7 @@ import { EmptyState } from '../ui/empty-state';
     LayoutBedsList,
     LayoutWalkwaysList,
     PlanSaveStatus,
-    SoilTestPanel,
+    AreaPanel,
   ],
   template: `
     <div class="planner">
@@ -218,6 +218,8 @@ import { EmptyState } from '../ui/empty-state';
                 [saved]="isSaved(bed)"
                 [deleting]="notices.busyMap().has('delete-bed')"
                 [areaSoilTest]="inheritedSoilTest(bed)"
+                [areas]="bedAreas()"
+                [moveToArea]="moveBed"
                 [saveSoilTest]="saveSoilTest"
                 [deleteSoilTest]="deleteSoilTest"
                 (settings)="saveBedSettings(bed, $event)"
@@ -249,18 +251,16 @@ import { EmptyState } from '../ui/empty-state';
               <ul class="card-list">
                 @for (area of areas(); track area.id) {
                   <li>
-                    <span [attr.data-area-kind]="area.kind">{{ area.name }}</span>
-                    @if (area.kind !== 'greenhouse') {
-                      <og-soil-test-panel
-                        [ownerId]="area.id"
-                        [name]="area.name"
-                        [test]="areaSoilTest(area.id)"
-                        emptyText="No test yet. One lab test of the whole area covers its beds; a bed whose soil differs, such as a raised bed, can have its own."
-                        [canEdit]="true"
-                        [save]="saveAreaTest(area.id)"
-                        [remove]="deleteAreaTest(area.id)"
-                      />
-                    }
+                    <og-area-panel
+                      [area]="area"
+                      [bedCount]="bedsIn(area.id)"
+                      [trayCount]="traysIn(area.id)"
+                      [soilTest]="areaSoilTest(area.id)"
+                      [saveTest]="saveAreaTest(area.id)"
+                      [removeTest]="deleteAreaTest(area.id)"
+                      (rename)="renamePlantingArea(area, $event)"
+                      (remove)="deletePlantingArea(area)"
+                    />
                   </li>
                 }
                 @for (tray of trays(); track tray.id) {
@@ -453,6 +453,69 @@ export class GardenLayoutPage implements OnInit {
       this.areaRemovers.set(areaId, fn);
     }
     return fn;
+  }
+
+  /** How many beds of the plan are in this area. */
+  bedsIn(areaId: string): number {
+    return this.draft()?.beds.filter((bed) => bed.areaId === areaId).length ?? 0;
+  }
+
+  traysIn(areaId: string): number {
+    return this.trays().filter((tray) => tray.areaId === areaId).length;
+  }
+
+  async renamePlantingArea(area: PropertyAreaDto, name: string) {
+    if (!this.guardMutate()) return;
+    try {
+      await this.gardensApi.renameArea(this.gardenId, area.id, name);
+      await this.loadAreas();
+      this.notices.success(`Renamed to ${name}`);
+    } catch (err) {
+      this.fail(err);
+    }
+  }
+
+  async deletePlantingArea(area: PropertyAreaDto) {
+    if (!this.guardMutate()) return;
+    try {
+      await this.gardensApi.deleteArea(this.gardenId, area.id);
+      await this.loadAreas();
+      this.notices.success(`${area.name} deleted`);
+    } catch (err) {
+      this.fail(err);
+    }
+  }
+
+  /** Moves a bed to another area; resolves false when the area refused it. */
+  readonly moveBed = async (bed: LayoutBedDto, areaId: string): Promise<boolean> => {
+    if (!this.guardMutate()) return false;
+    try {
+      const moved = await this.gardensApi.moveBed(this.gardenId, bed, areaId);
+      const d = this.draft();
+      if (d) {
+        // Not part of the layout save, so this keeps the draft clean.
+        this.planner.setDraft({
+          ...d,
+          beds: d.beds.map((b) =>
+            b.id === bed.id
+              ? { ...b, areaId: moved.areaId ?? areaId, station: moved.station ?? null }
+              : b,
+          ),
+        });
+        this.refreshFlags();
+      }
+      const area = this.areas().find((a) => a.id === areaId);
+      this.notices.success(`${bed.name} moved to ${area?.name ?? 'the area'}`);
+      return true;
+    } catch (err) {
+      this.fail(err);
+      return false;
+    }
+  };
+
+  /** Areas a bed can move to: any but a greenhouse, which holds trays. */
+  bedAreas(): PropertyAreaDto[] {
+    return this.areas().filter((area) => area.kind !== 'greenhouse');
   }
 
   /** An area's latest soil test. */
