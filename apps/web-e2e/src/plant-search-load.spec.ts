@@ -38,15 +38,26 @@ test('plant search shows stand-ins within 2s without per-result plant GETs', asy
   expect(bedRes.status()).toBe(201);
   const bed = (await bedRes.json()) as { id: string };
   extra.length = 0;
+  // Two budgets, as ADR 0013 sets them: Bed View is interactive within 2 s,
+  // and a search there shows results within 2 s. Timing them as one sum
+  // (load, typing, and search) failed on a busy runner (#212).
   const panelStart = Date.now();
   await page.goto(`/gardens/${garden.id}/layout/beds/${bed.id}`);
-  await expect(page.getByRole('heading', { name: 'Bed View' })).toBeVisible({ timeout: 2000 });
-  await page.getByLabel('Search plants').fill('a');
+  const search = page.getByLabel('Search plants');
+  await expect(search).toBeEditable({ timeout: 2000 });
+  const panelMs = Date.now() - panelStart;
+  await search.fill('a');
+  const searchStart = Date.now();
   await page.getByRole('button', { name: 'Apply' }).click();
   const hits = page.locator('.plant-panel-list .row');
   await expect(hits.first()).toBeVisible({ timeout: 2000 });
-  const panelMs = Date.now() - panelStart;
+  const searchMs = Date.now() - searchStart;
+  test.info().annotations.push({
+    type: 'timing',
+    description: `bed panel ${panelMs} ms, search ${searchMs} ms`,
+  });
   expect(panelMs, `bed panel interactive_ms=${panelMs}`).toBeLessThan(2000);
+  expect(searchMs, `bed panel search_ms=${searchMs}`).toBeLessThan(2000);
   expect(await hits.count()).toBeGreaterThanOrEqual(10);
   expect(extra, extra.join('\n')).toEqual([]);
 });
