@@ -1,6 +1,6 @@
 {
   "apps/api": 19,
-  "apps/web": 1,
+  "apps/web": 60,
   "libs/auth": 80,
   "libs/care-reminders": 91,
   "libs/catalog-pipeline": 90,

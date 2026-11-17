@@ -51,7 +51,11 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-all
-          path: coverage/all/
+          # Both land under coverage/ when downloaded: the Vitest run and the
+          # web app's component tests, which the summary merges.
+          path: |
+            coverage/all/
+            coverage/web/coverage-final.json
           retention-days: 14
       - name: Build
         run: npx nx affected -t build --parallel=3
@@ -361,7 +365,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           node scripts/ci/coverage-e2e.mjs selfcheck
-          if gh run download "${RUN_ID}" --name coverage-all --dir coverage/all; then
+          if gh run download "${RUN_ID}" --name coverage-all --dir coverage; then
             node scripts/ci/coverage-summary.js --e2e coverage/e2e/coverage-final.json
           else
             echo "verify's unit coverage is not available yet; skipping the unit + live table."

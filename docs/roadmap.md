@@ -147,6 +147,12 @@ item 15: upload the API log as an artifact when e2e fails.
 
 ### Coverage plan
 
+**Update (November 2026):** the web app showed 1–2% because the report read
+only the root Vitest run, not the Angular component tests (`npx nx test web`).
+The report now merges their coverage for `apps/web`: **60%**, whole codebase
+**71%**, and the `apps/web` floor is 60%. Thinnest now: the large pages (plan,
+Bed View, plan canvas, property list, 44–49%) and the calendar API service.
+
 **Baseline (November 2026)**, from the report-only whole-codebase run
 (`npm run test:coverage:all`): **31% of lines**. The 80% gate passes because it
 measures the domain libraries only.
@@ -210,7 +216,7 @@ measures the domain libraries only.
 |---|---|---|---|
 | `apps/api` (merged with live tests) | 13% unmerged | 70% | 80% |
 | `libs/plant-catalog-data` | 14% | 70% | 80% |
-| `apps/web` | 1% | 20% (services) | 60% |
+| `apps/web` | 1% (component tests not counted) | 20% (services) | 60% — **met:** 60% once the component tests were counted |
 | `libs/seasonal-plantings` | 67% | 85% | 85% |
 | Whole codebase | 31% | 50% | 70% |
 
