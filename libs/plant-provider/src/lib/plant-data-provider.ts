@@ -5,6 +5,7 @@ import type {
   CompanionPlaceDto,
   GrowingGuidanceDto,
   CropCoefficientsDto,
+  FrostTolerance,
   RootstockSpacingDto,
   SoilPhDto,
   SowingTemperatureDto,
@@ -38,6 +39,8 @@ export interface ProviderPlant {
   family?: string | null;
   /** The dataset crop a plant or variety belongs to; companion pairs name crops. */
   cropId?: string | null;
+  /** How much frost the crop survives, for weather alerts. */
+  frostTolerance?: FrostTolerance | null;
 }
 
 /** A companion pair between two crops, by dataset crop id. */

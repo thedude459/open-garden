@@ -16,6 +16,7 @@ import type {
   GrowingGuidanceDto,
   PlantType,
   CropCoefficientsDto,
+  FrostTolerance,
   RootstockSpacingDto,
   SoilPhDto,
   SowingTemperatureDto,
@@ -46,6 +47,7 @@ export interface PlantUpsertInput {
   cropCoefficients?: CropCoefficientsDto | null;
   family?: string | null;
   cropId?: string | null;
+  frostTolerance?: FrostTolerance | null;
 }
 
 export interface PlantListFilters {
@@ -174,6 +176,7 @@ export class PlantRepository {
           stageDaysLate: sql`excluded.stage_days_late`,
           family: sql`excluded.family`,
           cropId: sql`excluded.crop_id`,
+          frostTolerance: sql`excluded.frost_tolerance`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
           status: sql`excluded.status`,
@@ -338,6 +341,7 @@ function catalogColumns(input: {
   cropCoefficients?: CropCoefficientsDto | null;
   family?: string | null;
   cropId?: string | null;
+  frostTolerance?: FrostTolerance | null;
 }) {
   const r = input.rootstockSpacingInches;
   const t = input.sowingTemperature;
@@ -357,6 +361,7 @@ function catalogColumns(input: {
     stageDaysLate: kc?.stageDays?.late ?? null,
     family: input.family ?? null,
     cropId: input.cropId ?? null,
+    frostTolerance: input.frostTolerance ?? null,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,
     standardSpacingInches: r?.standard ?? null,

@@ -1,6 +1,6 @@
-import type { TodayTaskDto } from '@open-garden/shared-types';
+import type { TodayDto, TodayTaskDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
-import { digestEmail, pushMessage } from './messages';
+import { alertAdvice, alertHeadline, digestEmail, pushMessage } from './messages';
 
 const task = (title: string, kind: TodayTaskDto['kind'], gardenName = 'Home'): TodayTaskDto => ({
   gardenId: gardenName,
@@ -53,5 +53,50 @@ describe('digestEmail', () => {
       'Open Garden: 1 task today',
     );
     expect(digestEmail([], '')).toBeNull();
+  });
+});
+
+const frost: NonNullable<TodayDto['alerts']>[number] = {
+  gardenId: 'g1',
+  gardenName: 'Home',
+  kind: 'frost',
+  date: '2026-11-18',
+  tempC: -2,
+  plantings: [
+    { name: 'Tomato', bedName: 'North' },
+    { name: 'Basil', bedName: null },
+  ],
+};
+
+describe('weather alerts in messages', () => {
+  it('says when, how cold or hot in the member\u2019s units, and what to do', () => {
+    expect(alertHeadline(frost, 'metric')).toBe('Frost likely Wed, Nov 18 (low -2 °C)');
+    expect(alertHeadline(frost, 'imperial')).toBe('Frost likely Wed, Nov 18 (low 28 °F)');
+    expect(alertAdvice(frost)).toBe('cover Tomato (North), Basil');
+    const heat = {
+      ...frost,
+      kind: 'heat' as const,
+      tempC: 33,
+      plantings: [{ name: 'Lettuce', bedName: 'South' }],
+    };
+    expect(alertHeadline(heat, 'metric')).toBe('Heat Wed, Nov 18 (high 33 °C)');
+    expect(alertAdvice(heat)).toBe('shade and water Lettuce (South)');
+  });
+
+  it('pushes a frost warning even with no care due, and puts it ahead of the tasks', () => {
+    const alone = JSON.parse(pushMessage([], [frost], 'metric')!);
+    expect(alone.notification.title).toBe('Frost likely Wed, Nov 18 (low -2 °C)');
+    expect(alone.notification.body).toBe('Home: cover Tomato (North), Basil');
+    const both = JSON.parse(pushMessage([task('Water Basil', 'dueToday')], [frost], 'metric')!);
+    expect(both.notification.body).toBe('Home: cover Tomato (North), Basil. 1 garden task today');
+  });
+
+  it('emails the warning under its property, with it in the subject', () => {
+    const mail = digestEmail([task('Water Basil', 'dueToday')], '', [frost], 'imperial')!;
+    expect(mail.subject).toBe('Open Garden: frost likely Wed, Nov 18');
+    expect(mail.text).toContain(
+      'Home\n- Frost likely Wed, Nov 18 (low 28 °F): cover Tomato (North), Basil\n- Water Basil, North (due today)',
+    );
+    expect(digestEmail([], '', [frost])!.subject).toBe('Open Garden: frost likely Wed, Nov 18');
   });
 });

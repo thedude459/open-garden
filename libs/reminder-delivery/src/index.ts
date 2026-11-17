@@ -7,4 +7,4 @@ export {
   type PushSubscriptionRecord,
   type Recipient,
 } from './lib/delivery';
-export { digestEmail, pushMessage } from './lib/messages';
+export { alertAdvice, alertHeadline, digestEmail, pushMessage } from './lib/messages';

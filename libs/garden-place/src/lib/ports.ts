@@ -37,6 +37,24 @@ export interface RainOutlook {
   daily(latitude: number, longitude: number, asOf: string): Promise<Record<string, number> | null>;
 }
 
+/** A day's forecast low and high, in °C. */
+export interface DayTemperatures {
+  minC: number;
+  maxC: number;
+}
+
+export interface TemperatureOutlook {
+  /**
+   * Forecast lows and highs keyed by YYYY-MM-DD, from `asOf` for a few days.
+   * Null when the forecast cannot be read.
+   */
+  daily(
+    latitude: number,
+    longitude: number,
+    asOf: string,
+  ): Promise<Record<string, DayTemperatures> | null>;
+}
+
 export class PlaceLookupError extends Error {
   readonly code: 'VALIDATION_ERROR' | 'SERVICE_UNAVAILABLE';
 

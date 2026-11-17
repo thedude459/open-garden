@@ -58,6 +58,7 @@
       ],
       "@open-garden/care-reminders": ["libs/care-reminders/src/index.ts"],
       "@open-garden/reminder-delivery": ["libs/reminder-delivery/src/index.ts"],
+      "@open-garden/reminder-delivery/messages": ["libs/reminder-delivery/src/lib/messages.ts"],
       "@open-garden/care-reminders/derive": ["libs/care-reminders/src/lib/derive-export.ts"],
       "@open-garden/web-ui": ["libs/web-ui/src/index.ts"],
       "@open-garden/catalog-pipeline": ["libs/catalog-pipeline/src/index.ts"],

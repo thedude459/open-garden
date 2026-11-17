@@ -109,6 +109,8 @@ export const plants = pgTable(
     family: text('family'),
     /** The dataset crop this plant or variety belongs to; companion pairs name crops. */
     cropId: text('crop_id'),
+    /** How much frost the crop survives: tender, half-hardy, or hardy. */
+    frostTolerance: text('frost_tolerance'),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
     indoorWeeksLatest: integer('indoor_weeks_latest'),

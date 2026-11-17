@@ -281,6 +281,7 @@ function toUpsert(
     cropCoefficients: plant.cropCoefficients,
     family: plant.family,
     cropId: plant.cropId,
+    frostTolerance: plant.frostTolerance,
     sourceLinks: plant.sourceLinks,
   };
 }

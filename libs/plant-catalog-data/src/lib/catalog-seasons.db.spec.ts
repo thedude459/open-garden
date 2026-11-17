@@ -107,6 +107,13 @@ describe('PlantRepository', () => {
     expect(await plantsRepo.getById(row!.id)).toMatchObject({ soilPhMin: 4.5, soilPhMax: 5.5 });
   });
 
+  it('stores frost tolerance', async () => {
+    const [row] = await plantsRepo.upsertManyByVarietyKey([
+      variety('cat-frost', { frostTolerance: 'half-hardy' }),
+    ]);
+    expect(await plantsRepo.getById(row!.id)).toMatchObject({ frostTolerance: 'half-hardy' });
+  });
+
   it('lists with search, zone, type, and paging; hides deprecated and spacing-less plants', async () => {
     await plantsRepo.upsertManyByVarietyKey([
       variety('list-tomato', { commonName: 'Listing Tomato' }),
