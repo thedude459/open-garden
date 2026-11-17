@@ -9,6 +9,7 @@ import type {
   GardenPatchDto,
   GardenSummaryDto,
   GardenWriteDto,
+  NamedBedDto,
   PropertyAreaDto,
   SeasonDto,
   TodayDto,
@@ -215,6 +216,44 @@ export class GardensApiService {
       this.http.post<PropertyAreaDto>(
         `${API}/gardens/${id}/areas`,
         { kind },
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  async renameArea(id: string, areaId: string, name: string): Promise<PropertyAreaDto> {
+    this.assertOnline();
+    return firstValueFrom(
+      this.http.patch<PropertyAreaDto>(
+        `${API}/gardens/${id}/areas/${areaId}`,
+        { name },
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  /** Refused (409) while the area holds beds or trays. */
+  async deleteArea(id: string, areaId: string): Promise<void> {
+    this.assertOnline();
+    await firstValueFrom(
+      this.http.delete(`${API}/gardens/${id}/areas/${areaId}`, { withCredentials: true }),
+    );
+  }
+
+  /**
+   * Moves a bed to another area. Online only: the server checks its plants
+   * suit the new area, which a queued change could not tell the member.
+   */
+  async moveBed(
+    id: string,
+    bed: { id: string; name: string },
+    areaId: string,
+  ): Promise<NamedBedDto> {
+    this.assertOnline();
+    return firstValueFrom(
+      this.http.patch<NamedBedDto>(
+        `${API}/gardens/${id}/beds/${bed.id}`,
+        { name: bed.name, areaId },
         { withCredentials: true },
       ),
     );

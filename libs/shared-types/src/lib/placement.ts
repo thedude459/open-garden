@@ -55,6 +55,13 @@ export function areaKindFor(station: BedStation | null | undefined): AreaKind {
   return 'vegetable';
 }
 
+/** A bed's station in an area of this kind; the inverse of `areaKindFor`. */
+export function stationFor(kind: AreaKind): BedStation | null {
+  if (kind === 'orchard') return 'tree';
+  if (kind === 'bramble') return 'berry';
+  return null;
+}
+
 /** A picker may offer this plant for an area. Occupancy is checked on save. */
 export function allowsPlant(area: AreaKind, plantType: string): boolean {
   return (AREA_TYPES[area].accepts as readonly string[]).includes(plantType);

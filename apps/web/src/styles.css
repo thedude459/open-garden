@@ -402,6 +402,16 @@ a.source-link {
   min-width: 0;
 }
 
+.area-panel {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.area-panel h4,
+.area-panel p {
+  margin: 0;
+}
+
 .soil-test {
   display: grid;
   gap: 0.4rem;

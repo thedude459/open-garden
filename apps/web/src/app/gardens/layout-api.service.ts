@@ -79,7 +79,9 @@ export class LayoutApiService {
     this.assertOnline();
     try {
       await firstValueFrom(
-        this.http.delete(`${API}/gardens/${gardenId}/areas/${areaId}`, { withCredentials: true }),
+        this.http.delete(`${API}/gardens/${gardenId}/walkways/${areaId}`, {
+          withCredentials: true,
+        }),
       );
     } catch (err) {
       this.rethrowConnectivity(err);

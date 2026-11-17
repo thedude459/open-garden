@@ -63,13 +63,14 @@ export class GardenLayoutController {
     return this.layouts.put(user.id, id, parsed.data);
   }
 
-  @Delete('gardens/:id/areas/:areaId')
+  /** A walkway or other non-planting area; typed areas are under `areas/`. */
+  @Delete('gardens/:id/walkways/:walkwayId')
   @HttpCode(204)
-  deleteArea(
+  deleteWalkway(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('areaId') areaId: string,
+    @Param('walkwayId') walkwayId: string,
   ) {
-    return this.layouts.deleteArea(user.id, id, areaId);
+    return this.layouts.deleteArea(user.id, id, walkwayId);
   }
 }

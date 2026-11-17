@@ -22,6 +22,7 @@ import {
   mulchOrNone,
   placementRefusal,
   plantOutPatch,
+  stationFor,
 } from '@open-garden/shared-types';
 import type {
   BedRepository,
@@ -253,7 +254,7 @@ export class PlantingService {
         const area = await this.areas.getInGarden(gardenId, areaId);
         if (!area) throw domainError('NOT_FOUND', 'Area not found');
         // The station follows the area, so the bed's rules are the area's.
-        station = area.kind === 'orchard' ? 'tree' : area.kind === 'bramble' ? 'berry' : null;
+        station = stationFor(isAreaKind(area.kind) ? area.kind : 'vegetable');
       } else {
         areaId = (await this.areas.ensure(gardenId, areaKindFor(station))).id;
       }
@@ -300,7 +301,35 @@ export class PlantingService {
       });
       if (site) row = site;
     }
+    if (dto.areaId !== undefined && dto.areaId !== row.areaId) {
+      row = await this.moveBed(gardenId, bedId, dto.areaId);
+    }
     return toBedDto(row);
+  }
+
+  /**
+   * Moves a bed to another area of the property. Every plant in it must suit
+   * the new area, as when it was placed (a hard gate, principle VIII); its
+   * station follows the area's kind.
+   */
+  private async moveBed(gardenId: string, bedId: string, areaId: string) {
+    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
+    const area = await this.areas.getInGarden(gardenId, areaId);
+    if (!area) throw domainError('NOT_FOUND', 'Area not found');
+    const kind = isAreaKind(area.kind) ? area.kind : 'vegetable';
+    if (kind === 'greenhouse') {
+      throw domainError('VALIDATION_ERROR', 'A greenhouse holds trays, not beds');
+    }
+    const occupants =
+      typeof this.plantings.occupants === 'function' ? await this.plantings.occupants(bedId) : [];
+    for (const [i, plant] of occupants.entries()) {
+      const reason = placementRefusal(kind, plant.plantType, occupants.slice(0, i));
+      if (reason)
+        throw domainError('VALIDATION_ERROR', `${area.name} will not take this bed: ${reason}`);
+    }
+    const moved = await this.beds.setArea(gardenId, bedId, areaId, stationFor(kind));
+    if (!moved) throw PLANTING_ERRORS.bedNotFound();
+    return moved;
   }
 
   async deleteBed(userId: string, gardenId: string, bedId: string): Promise<void> {
@@ -331,6 +360,48 @@ export class PlantingService {
     await this.requireBedEditor(userId, gardenId);
     if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
     return toAreaDto(await this.areas.add(gardenId, kind));
+  }
+
+  async renameArea(
+    userId: string,
+    gardenId: string,
+    areaId: string,
+    name: string,
+  ): Promise<PropertyAreaDto> {
+    await this.requireBedEditor(userId, gardenId);
+    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
+    const trimmed = name.trim();
+    if (!trimmed) throw domainError('VALIDATION_ERROR', 'Area name is required');
+    if (trimmed.length > 120) {
+      throw domainError('VALIDATION_ERROR', 'Area name must be at most 120 characters');
+    }
+    const taken = await this.areas.findByName(gardenId, trimmed);
+    if (taken && taken.id !== areaId) {
+      throw domainError('CONFLICT', 'That property already has an area with that name');
+    }
+    const row = await this.areas.rename(gardenId, areaId, trimmed);
+    if (!row) throw domainError('NOT_FOUND', 'Area not found');
+    return toAreaDto(row);
+  }
+
+  /** Deletes an empty area; one that holds beds or trays is refused, so nothing is lost. */
+  async deleteArea(userId: string, gardenId: string, areaId: string): Promise<void> {
+    await this.requireBedEditor(userId, gardenId);
+    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
+    const area = await this.areas.getInGarden(gardenId, areaId);
+    if (!area) throw domainError('NOT_FOUND', 'Area not found');
+    const beds = (await this.beds.listByGarden(gardenId)).filter((bed) => bed.areaId === areaId);
+    const trays = this.trays
+      ? (await this.trays.listByGarden(gardenId)).filter((tray) => tray.areaId === areaId)
+      : [];
+    if (beds.length || trays.length) {
+      const what = beds.length ? (beds.length === 1 ? '1 bed' : `${beds.length} beds`) : 'trays';
+      throw domainError(
+        'CONFLICT',
+        `${area.name} still holds ${what}: move or delete ${beds.length ? 'them' : 'its trays'} first`,
+      );
+    }
+    await this.areas.delete(gardenId, areaId);
   }
 
   async listTrays(userId: string, gardenId: string): Promise<TrayDto[]> {

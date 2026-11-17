@@ -101,6 +101,16 @@ export class BedRepository {
     return row ?? null;
   }
 
+  /** Moves a bed to another area; its station follows the area's kind. */
+  async setArea(gardenId: string, id: string, areaId: string, station: string | null) {
+    const [row] = await this.db
+      .update(gardenBeds)
+      .set({ areaId, station, updatedAt: new Date() })
+      .where(and(eq(gardenBeds.gardenId, gardenId), eq(gardenBeds.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
   async setGeometry(
     gardenId: string,
     id: string,

@@ -59,6 +59,38 @@ export class PlantingAreaRepository {
     return this.insert(gardenId, AREA_NAMES[kind], kind);
   }
 
+  async findByName(gardenId: string, name: string) {
+    const [row] = await this.db
+      .select()
+      .from(gardenAreas)
+      .where(
+        and(
+          eq(gardenAreas.gardenId, gardenId),
+          eq(gardenAreas.nameNormalized, normalizeName(name)),
+        ),
+      )
+      .limit(1);
+    return row ?? null;
+  }
+
+  async rename(gardenId: string, id: string, name: string) {
+    const [row] = await this.db
+      .update(gardenAreas)
+      .set({ name: name.trim(), nameNormalized: normalizeName(name), updatedAt: new Date() })
+      .where(and(eq(gardenAreas.gardenId, gardenId), eq(gardenAreas.id, id)))
+      .returning();
+    return row ?? null;
+  }
+
+  /** Deletes an area. Callers make sure it holds no beds or trays first. */
+  async delete(gardenId: string, id: string): Promise<boolean> {
+    const rows = await this.db
+      .delete(gardenAreas)
+      .where(and(eq(gardenAreas.gardenId, gardenId), eq(gardenAreas.id, id)))
+      .returning({ id: gardenAreas.id });
+    return rows.length > 0;
+  }
+
   /** Another area of this kind. The first one uses the default name. */
   async add(gardenId: string, kind: AreaKind) {
     const rows = await this.listByGarden(gardenId);

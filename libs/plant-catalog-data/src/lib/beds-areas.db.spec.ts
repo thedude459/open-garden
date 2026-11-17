@@ -164,6 +164,31 @@ describe('PlantingAreaRepository and TrayRepository', () => {
     expect((await plantingAreas.add(mine.id, 'bramble')).name).toBe('Bramble patch 2');
   });
 
+  it('renames, finds by name, and deletes an area only in its own property', async () => {
+    const { mine, other } = await twoGardens();
+    const veg = await plantingAreas.ensure(mine.id, 'vegetable');
+    const renamed = await plantingAreas.rename(mine.id, veg.id, '  Kitchen garden ');
+    expect(renamed).toMatchObject({ name: 'Kitchen garden', nameNormalized: 'kitchen garden' });
+    expect((await plantingAreas.findByName(mine.id, 'KITCHEN garden'))?.id).toBe(veg.id);
+    expect(await plantingAreas.findByName(other.id, 'Kitchen garden')).toBeNull();
+    expect(await plantingAreas.rename(other.id, veg.id, 'Stolen')).toBeNull();
+    expect(await plantingAreas.delete(other.id, veg.id)).toBe(false);
+    expect(await plantingAreas.delete(mine.id, veg.id)).toBe(true);
+    expect(await plantingAreas.getById(veg.id)).toBeNull();
+  });
+
+  it('moves a bed to another area with its new station', async () => {
+    const { mine, other } = await twoGardens();
+    const veg = await plantingAreas.ensure(mine.id, 'vegetable');
+    const orchard = await plantingAreas.ensure(mine.id, 'orchard');
+    const bed = await beds.insert({ ...bedInput(mine.id, 'North'), areaId: veg.id });
+    expect(await beds.setArea(other.id, bed.id, orchard.id, 'tree')).toBeNull();
+    expect(await beds.setArea(mine.id, bed.id, orchard.id, 'tree')).toMatchObject({
+      areaId: orchard.id,
+      station: 'tree',
+    });
+  });
+
   it('opening a tray by an existing name returns that tray', async () => {
     const { mine, other } = await twoGardens();
     const greenhouse = await plantingAreas.ensure(mine.id, 'greenhouse');

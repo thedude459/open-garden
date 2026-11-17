@@ -3,16 +3,18 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Inject,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import { domainError } from '@open-garden/seasonal-plantings';
-import { areaCreateSchema, trayCreateSchema } from '@open-garden/shared-types';
+import { areaCreateSchema, areaPatchSchema, trayCreateSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
@@ -47,6 +49,34 @@ export class GardenAreasController {
         'Choose a vegetable garden, orchard, bramble patch, or greenhouse',
       );
     return this.plantings.createArea(user.id, id, parsed.data.kind);
+  }
+
+  @Patch('areas/:areaId')
+  renameArea(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId', ParseUUIDPipe) areaId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = areaPatchSchema.safeParse(body);
+    if (!parsed.success) {
+      throw domainError(
+        'VALIDATION_ERROR',
+        parsed.error.issues[0]?.message ?? 'Area name is required',
+      );
+    }
+    return this.plantings.renameArea(user.id, id, areaId, parsed.data.name);
+  }
+
+  /** Only an empty area can go: one that holds beds or trays is refused (409). */
+  @Delete('areas/:areaId')
+  @HttpCode(204)
+  deleteArea(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId', ParseUUIDPipe) areaId: string,
+  ) {
+    return this.plantings.deleteArea(user.id, id, areaId);
   }
 
   @Get('trays')
