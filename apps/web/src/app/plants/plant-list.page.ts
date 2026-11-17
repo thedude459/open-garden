@@ -102,6 +102,19 @@ import { PlantIcon } from '../ui/plant-icon';
           </a>
         }
       </div>
+      @if (items().length < total()) {
+        <p class="muted">
+          Showing {{ items().length }} of {{ total() }}.
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="more()"
+            [attr.aria-busy]="searching() || null"
+          >
+            Show more
+          </button>
+        </p>
+      }
     }
   `,
 })
@@ -120,6 +133,9 @@ export class PlantListPage implements OnInit, OnDestroy {
   zones = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
   types = PLANT_TYPES;
   items = signal<PlantSummaryDto[]>([]);
+  /** Entries matching the filters; the list shows them a page at a time. */
+  readonly total = signal(0);
+  private page = 1;
   loading = signal(false);
   searching = signal(false);
   private loadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -152,23 +168,44 @@ export class PlantListPage implements OnInit, OnDestroy {
     this.searching.set(true);
     if (!this.items().length) this.loading.set(true);
     try {
-      const page = await this.api.list({
-        q: this.q || undefined,
-        zone: this.zone,
-        plantType: this.plantType,
-        family: this.family,
-        sowNowFor: this.sowNowFor,
-        asOf: this.sowNowFor ? localIso() : undefined,
-        page: 1,
-        pageSize: 100,
-      });
+      const page = await this.fetch(1);
       if (gen !== this.loadGen) return;
+      this.page = 1;
       this.items.set(page.items);
+      this.total.set(page.totalCount);
     } finally {
       if (gen === this.loadGen) {
         this.loading.set(false);
         this.searching.set(false);
       }
     }
+  }
+
+  /** The next page of the same filters, added below the entries shown. */
+  async more() {
+    const gen = ++this.loadGen;
+    this.searching.set(true);
+    try {
+      const next = await this.fetch(this.page + 1);
+      if (gen !== this.loadGen) return;
+      this.page = next.page;
+      this.items.update((items) => [...items, ...next.items]);
+      this.total.set(next.totalCount);
+    } finally {
+      if (gen === this.loadGen) this.searching.set(false);
+    }
+  }
+
+  private fetch(page: number) {
+    return this.api.list({
+      q: this.q || undefined,
+      zone: this.zone,
+      plantType: this.plantType,
+      family: this.family,
+      sowNowFor: this.sowNowFor,
+      asOf: this.sowNowFor ? localIso() : undefined,
+      page,
+      pageSize: 100,
+    });
   }
 }
