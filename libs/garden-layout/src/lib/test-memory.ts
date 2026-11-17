@@ -1,4 +1,4 @@
-import type { GardenRole, LayoutPutDto } from '@open-garden/shared-types';
+import type { GardenRole, LayoutPutDto, SoilTestDto } from '@open-garden/shared-types';
 import { LayoutService } from './layout-service';
 
 const tomato = {
@@ -9,6 +9,8 @@ const tomato = {
   plantType: 'vegetable' as const,
   status: 'active' as const,
   spacingInches: 24,
+  soilPhMin: 6.2,
+  soilPhMax: 6.8,
 };
 
 const basil = {
@@ -56,6 +58,8 @@ export function createLayoutMemory() {
       plantType: 'vegetable' | 'herb' | 'tree';
       status: 'active' | 'deprecated';
       spacingInches: number | null;
+      soilPhMin?: number;
+      soilPhMax?: number;
     }
   >([
     [tomato.id, tomato],
@@ -232,11 +236,14 @@ export function createLayoutMemory() {
     },
   };
 
+  const soilTests = { areas: new Map<string, SoilTestDto>(), beds: new Map<string, SoilTestDto>() };
   const service = new LayoutService(
     membershipRepo as never,
     plantingRepo as never,
     bedRepo as never,
     areaRepo as never,
+    undefined,
+    { latestByGarden: async () => soilTests },
   );
 
   function addBed(name: string, id?: string) {
@@ -283,6 +290,7 @@ export function createLayoutMemory() {
     gardenId,
     addBed,
     addPlanting,
+    soilTests,
     plantings: plantingRepo,
     tomato,
     basil,

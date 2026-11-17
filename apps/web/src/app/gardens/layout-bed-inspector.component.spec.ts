@@ -21,6 +21,8 @@ async function render(saved = true) {
   const fixture = TestBed.createComponent(LayoutBedInspector);
   fixture.componentRef.setInput('bed', bed());
   fixture.componentRef.setInput('saved', saved);
+  fixture.componentRef.setInput('saveSoilTest', async () => true);
+  fixture.componentRef.setInput('deleteSoilTest', async () => true);
   const settings: BedSettingsPatch[] = [];
   const geometry: Partial<BedGeometryDto>[] = [];
   let removed = 0;

@@ -4,6 +4,7 @@ export { normalizeBedName } from './lib/beds';
 export { groupPlantings, type PlantingGroup } from './lib/group-plantings';
 export { PlantingService } from './lib/planting-service';
 export { SeasonService } from './lib/season-service';
+export { SoilTestService } from './lib/soil-tests';
 export {
   plantingIsCurrent,
   nextOpenYear,

@@ -8,6 +8,9 @@ import type {
   PlantingDto,
   PlantingListDto,
   PlantingPatchDto,
+  SoilTestCreateDto,
+  SoilTestDto,
+  SoilTestOwner,
 } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardenLayoutCacheService } from './garden-layout-cache.service';
@@ -339,6 +342,35 @@ export class PlantingsApiService {
     await this.queue.put(item);
   }
 
+  /** Soil tests need the server: a lab report is entered once, not queued (ADR 0033). */
+  async recordSoilTest(
+    gardenId: string,
+    owner: SoilTestOwner,
+    test: SoilTestCreateDto,
+  ): Promise<SoilTestDto> {
+    const saved = await firstValueFrom(
+      this.http.post<SoilTestDto>(soilTestsPath(gardenId, owner), test, { withCredentials: true }),
+    );
+    await this.invalidateLayout(gardenId);
+    return saved;
+  }
+
+  /** Deletes a test and returns its owner's latest test now. */
+  async deleteSoilTest(
+    gardenId: string,
+    owner: SoilTestOwner,
+    testId: string,
+  ): Promise<SoilTestDto | null> {
+    const result = await firstValueFrom(
+      this.http.delete<{ latest: SoilTestDto | null }>(
+        `${soilTestsPath(gardenId, owner)}/${testId}`,
+        { withCredentials: true },
+      ),
+    );
+    await this.invalidateLayout(gardenId);
+    return result.latest;
+  }
+
   private userId(): string | null {
     return this.auth.currentUserId();
   }
@@ -353,6 +385,11 @@ export class PlantingsApiService {
       throw err;
     }
   }
+}
+
+function soilTestsPath(gardenId: string, owner: SoilTestOwner): string {
+  const where = 'bedId' in owner ? `beds/${owner.bedId}` : `areas/${owner.areaId}`;
+  return `${API}/gardens/${gardenId}/${where}/soil-tests`;
 }
 
 function isNotFound(err: unknown): boolean {

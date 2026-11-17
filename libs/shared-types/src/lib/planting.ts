@@ -22,6 +22,33 @@ export interface NamedBedDto {
   areaId?: string | null;
 }
 
+/** A level as the soil lab reported it; labs differ in method and units, so only the level is kept. */
+export type NutrientLevel = 'low' | 'medium' | 'high';
+
+/**
+ * One soil test (ADR 0033), of an area or of a bed whose soil differs; the
+ * bed's own test wins. Every measurement is optional; a lab may report only some.
+ */
+export interface SoilTestDto {
+  id: string;
+  areaId: string | null;
+  bedId: string | null;
+  testedOn: IsoDate;
+  lab: string | null;
+  ph: number | null;
+  organicMatterPct: number | null;
+  nitrogen: NutrientLevel | null;
+  phosphorus: NutrientLevel | null;
+  potassium: NutrientLevel | null;
+  /** The lab's own recommendations, as written. */
+  recommendations: string | null;
+}
+
+export type SoilTestCreateDto = Omit<SoilTestDto, 'id' | 'areaId' | 'bedId'>;
+
+/** What a soil test belongs to. */
+export type SoilTestOwner = { areaId: string } | { bedId: string };
+
 export interface PropertyAreaDto {
   id: string;
   name: string;

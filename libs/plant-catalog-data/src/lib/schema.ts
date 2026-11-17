@@ -14,6 +14,7 @@ import {
   index,
   boolean,
   primaryKey,
+  check,
 } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
@@ -536,5 +537,33 @@ export const gardenCareEvents = pgTable(
   (t) => [
     uniqueIndex('garden_care_events_occurrence_uidx').on(t.plantingId, t.kind, t.occurrenceOn),
     index('garden_care_events_planting_id_idx').on(t.plantingId),
+  ],
+);
+
+/**
+ * Soil tests, as the lab reported them (ADR 0033). A test belongs to an area
+ * (one sample of its ground) or to a bed whose soil differs, such as a raised
+ * bed; the bed's own test wins. The latest one gives advice.
+ */
+export const gardenSoilTests = pgTable(
+  'garden_soil_tests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    areaId: uuid('area_id').references(() => gardenAreas.id, { onDelete: 'cascade' }),
+    bedId: uuid('bed_id').references(() => gardenBeds.id, { onDelete: 'cascade' }),
+    testedOn: date('tested_on', { mode: 'string' }).notNull(),
+    lab: text('lab'),
+    ph: real('ph'),
+    organicMatterPct: real('organic_matter_pct'),
+    nitrogen: text('nitrogen'),
+    phosphorus: text('phosphorus'),
+    potassium: text('potassium'),
+    recommendations: text('recommendations'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('garden_soil_tests_area_id_idx').on(t.areaId),
+    index('garden_soil_tests_bed_id_idx').on(t.bedId),
+    check('garden_soil_tests_one_owner', sql`num_nonnulls(${t.areaId}, ${t.bedId}) = 1`),
   ],
 );

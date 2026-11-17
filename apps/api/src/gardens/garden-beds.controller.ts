@@ -5,6 +5,7 @@ import {
   HttpCode,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Res,
@@ -18,15 +19,21 @@ import { bedCreateSchema, bedPatchSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
-import { openPlantingService } from './planting-service.factory';
+import {
+  openPlantingService,
+  openSoilTestService,
+  parseSoilTest,
+} from './planting-service.factory';
 
 @Controller('gardens/:id/beds')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenBedsController {
   private readonly plantings: ReturnType<typeof openPlantingService>;
+  private readonly soilTests: ReturnType<typeof openSoilTestService>;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     this.plantings = openPlantingService(bundle.db);
+    this.soilTests = openSoilTestService(bundle.db);
   }
 
   @Post()
@@ -63,5 +70,26 @@ export class GardenBedsController {
   @HttpCode(204)
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('bedId') bedId: string) {
     return this.plantings.deleteBed(user.id, id, bedId);
+  }
+
+  @Post(':bedId/soil-tests')
+  recordSoilTest(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('bedId', ParseUUIDPipe) bedId: string,
+    @Body() body: unknown,
+  ) {
+    return this.soilTests.record(user.id, id, { bedId }, parseSoilTest(body));
+  }
+
+  /** Answers with the bed's latest test once this one is gone. */
+  @Delete(':bedId/soil-tests/:testId')
+  removeSoilTest(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('bedId', ParseUUIDPipe) bedId: string,
+    @Param('testId', ParseUUIDPipe) testId: string,
+  ) {
+    return this.soilTests.remove(user.id, id, { bedId }, testId);
   }
 }

@@ -107,6 +107,30 @@ export const bedPatchSchema = z.object({
     .optional(),
 });
 
+const nutrientLevel = z.enum(['low', 'medium', 'high']).nullable().default(null);
+
+export const soilTestCreateSchema = z
+  .object({
+    testedOn: isoDate,
+    lab: z.string().trim().max(120).nullable().default(null),
+    ph: z.number().min(0).max(14).nullable().default(null),
+    organicMatterPct: z.number().min(0).max(100).nullable().default(null),
+    nitrogen: nutrientLevel,
+    phosphorus: nutrientLevel,
+    potassium: nutrientLevel,
+    recommendations: z.string().trim().max(4000).nullable().default(null),
+  })
+  .refine(
+    (test) =>
+      test.ph !== null ||
+      test.organicMatterPct !== null ||
+      test.nitrogen !== null ||
+      test.phosphorus !== null ||
+      test.potassium !== null ||
+      Boolean(test.recommendations),
+    'Enter at least one result from the test',
+  );
+
 export const areaCreateSchema = z.object({
   kind: z.enum(AREA_KINDS),
 });
@@ -127,5 +151,6 @@ export type CompanionPairParsed = z.infer<typeof companionPairSchema>;
 export type PlantingCreateParsed = z.infer<typeof plantingCreateSchema>;
 export type PlantingPatchParsed = z.infer<typeof plantingPatchSchema>;
 export type BedCreateParsed = z.infer<typeof bedCreateSchema>;
+export type SoilTestCreateParsed = z.infer<typeof soilTestCreateSchema>;
 export type BedPatchParsed = z.infer<typeof bedPatchSchema>;
 export type PlantingListQueryParsed = z.infer<typeof plantingListQuerySchema>;

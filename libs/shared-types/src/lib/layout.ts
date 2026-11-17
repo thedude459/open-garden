@@ -1,7 +1,7 @@
 import type { GardenRole } from './garden';
-import type { PlantStatus, PlantType } from './plant';
+import type { PlantStatus, PlantType, SoilPhDto } from './plant';
 import type { BedSite, BedStation, Mulch } from './placement';
-import type { IsoDate, StartMethod } from './planting';
+import type { IsoDate, SoilTestDto, StartMethod } from './planting';
 import type { ReminderItemDto } from './reminders';
 
 export type { StartMethod } from './planting';
@@ -25,6 +25,10 @@ export interface LayoutBedDto {
   site?: BedSite;
   station?: BedStation | null;
   mulch?: Mulch;
+  /** The typed area the bed belongs to. */
+  areaId?: string | null;
+  /** The bed's own latest soil test; without one, its area's applies. */
+  soilTest?: SoilTestDto | null;
 }
 
 export interface LayoutPlacementDto {
@@ -54,10 +58,12 @@ export interface LayoutPlantingDto {
   life?: 'annual' | 'perennial' | 'tree';
   spacingFeet?: number | null;
   rootstock?: string | null;
+  /** The crop's soil pH range from the dataset, for soil test advice. */
+  soilPh?: SoilPhDto | null;
 }
 
 export type LayoutFlagKind =
-  'spacing' | 'fit' | 'unavailable' | 'sun' | 'repeat' | 'companion' | 'area';
+  'spacing' | 'fit' | 'unavailable' | 'sun' | 'repeat' | 'companion' | 'area' | 'soil';
 
 export interface LayoutFlagDto {
   kind: LayoutFlagKind;
@@ -93,6 +99,8 @@ export interface GardenLayoutDto {
   flags: LayoutFlagDto[];
   priorCrops?: PriorCropDto[];
   pairs?: CompanionPairDto[];
+  /** Each area's latest soil test. */
+  areaSoilTests?: SoilTestDto[];
 }
 
 export interface PriorCropDto {

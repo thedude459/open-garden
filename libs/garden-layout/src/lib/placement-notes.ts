@@ -5,9 +5,18 @@ import {
   type CompanionPairDto,
   type LayoutFlagDto,
   type PriorCropDto,
+  type SoilPhDto,
+  type SoilTestDto,
 } from '@open-garden/shared-types';
+import { phAdvice, testForBed } from './soil-advice';
 
-export type NoteBed = { id: string; sun?: string | null; station?: BedStation | null };
+export type NoteBed = {
+  id: string;
+  sun?: string | null;
+  station?: BedStation | null;
+  areaId?: string | null;
+  soilTest?: SoilTestDto | null;
+};
 export type NotePlanting = {
   id: string;
   plantId?: string;
@@ -17,6 +26,7 @@ export type NotePlanting = {
   sunRequirements?: string | null;
   spacingInches: number | null;
   spacingFeet?: number | null;
+  soilPh?: SoilPhDto | null;
   placement: { bedId: string } | null;
 };
 
@@ -53,10 +63,14 @@ export function placementNotes(input: {
   plantings: NotePlanting[];
   priorCrops?: PriorCropDto[];
   pairs?: CompanionPairDto[];
+  areaSoilTests?: SoilTestDto[];
 }): LayoutFlagDto[] {
   const flags: LayoutFlagDto[] = [];
   const bedSun = new Map(input.beds.map((bed) => [bed.id, bed.sun ?? null]));
   const bedStation = new Map(input.beds.map((bed) => [bed.id, bed.station ?? null]));
+  const bedPh = new Map(
+    input.beds.map((bed) => [bed.id, testForBed(bed, input.areaSoilTests)?.ph ?? null]),
+  );
   const names = new Map(
     input.plantings.filter((p) => p.plantId).map((p) => [p.plantId!, p.commonName ?? 'Plant']),
   );
@@ -85,6 +99,10 @@ export function placementNotes(input: {
         blocking: false,
         message: `${planting.commonName ?? 'Plant'} no longer suits this bed`,
       });
+    }
+    const soil = phAdvice(planting.commonName ?? 'Plant', bedPh.get(bedId), planting.soilPh);
+    if (soil) {
+      flags.push({ kind: 'soil', plantingIds: [planting.id], blocking: false, message: soil });
     }
     // Rotation advice: the same plant, or another of its family, in this bed last year.
     const lastYear = (input.priorCrops ?? []).filter((crop) => crop.bedId === bedId);

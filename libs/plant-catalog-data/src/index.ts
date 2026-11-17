@@ -13,6 +13,7 @@ export * from './lib/planting-repository';
 export * from './lib/year-record-repository';
 export * from './lib/catalog-companion-repository';
 export * from './lib/care-event-repository';
+export * from './lib/soil-test-repository';
 export * from './lib/notification-repository';
 export * from './lib/pipeline-run-repository';
 export * from './lib/plant-source-repository';

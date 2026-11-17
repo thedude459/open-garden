@@ -17,6 +17,7 @@ import {
   BedRepository,
   GardenMembershipRepository,
   PlantingRepository,
+  SoilTestRepository,
   YearRecordRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
@@ -38,6 +39,7 @@ export class GardenLayoutController {
       new BedRepository(bundle.db),
       new AreaRepository(bundle.db),
       new YearRecordRepository(bundle.db),
+      new SoilTestRepository(bundle.db),
     );
   }
 
