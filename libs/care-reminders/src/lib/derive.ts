@@ -1,11 +1,13 @@
 import type {
   CareKind,
+  CropCoefficientsDto,
   PlantStatus,
   PlantType,
   ReminderItemDto,
   ReminderUrgency,
 } from '@open-garden/shared-types';
 import { addIsoDateDays, diffIsoDateDays } from './dates';
+import { waterDue, type DayWater } from './water-balance';
 
 export interface DerivePlantingInput {
   plantingId: string;
@@ -22,12 +24,29 @@ export interface DerivePlantingInput {
   fertilizeIntervalDays: number | null;
   bedId?: string | null;
   bedName?: string | null;
+  /**
+   * Set for a planting in a bed whose crop has coefficients: watering then
+   * follows the water balance (ADR 0035) instead of `waterIntervalDays`.
+   */
+  water?: { kc: CropCoefficientsDto; annual: boolean; factor: number } | null;
 }
 
 export interface DeriveEventInput {
   plantingId: string;
   kind: CareKind;
   occurrenceOn: string;
+  /** The day the member completed or dismissed it, when known. */
+  recordedOn?: string;
+}
+
+/** The last day watering was dealt with: done, or dismissed as not needed. */
+function lastWateredOn(events: DeriveEventInput[]): string | null {
+  let last: string | null = null;
+  for (const event of events) {
+    const day = event.recordedOn ?? event.occurrenceOn;
+    if (!last || day > last) last = day;
+  }
+  return last;
 }
 
 function urgency(dueOn: string, asOf: string): ReminderUrgency {
@@ -88,6 +107,8 @@ export function deriveReminders(
   plantings: DerivePlantingInput[],
   events: DeriveEventInput[],
   asOf: string,
+  /** Evapotranspiration and rain by day; without it, watering follows fixed intervals. */
+  weather: Record<string, DayWater> | null = null,
 ): ReminderItemDto[] {
   const eventsByPlanting = new Map<string, DeriveEventInput[]>();
   for (const event of events) {
@@ -116,8 +137,27 @@ export function deriveReminders(
     }
 
     if (planting.plantedOn) {
+      const balance =
+        planting.water && weather && !planting.harvestedOn
+          ? waterDue(
+              {
+                plantedOn: planting.plantedOn,
+                lastWateredOn: lastWateredOn(waterEvents),
+                ...planting.water,
+              },
+              weather,
+              asOf,
+            )
+          : null;
       const waterInterval = planting.waterIntervalDays;
-      if (waterInterval != null && waterInterval > 0) {
+      if (balance === 'not-due') {
+        // The soil holds enough water through the forecast.
+      } else if (balance) {
+        items.push({
+          ...plantingItem(planting, 'water', balance.dueOn, asOf, null),
+          deficitMm: balance.deficitMm,
+        });
+      } else if (waterInterval != null && waterInterval > 0) {
         const dueOn = openRepeatingDueOn(
           planting.plantedOn,
           waterInterval,

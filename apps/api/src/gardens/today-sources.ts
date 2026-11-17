@@ -1,9 +1,8 @@
-import { CareReminderService, weatherAlerts } from '@open-garden/care-reminders';
+import { weatherAlerts } from '@open-garden/care-reminders';
 import { GardenService } from '@open-garden/gardens';
 import { climateLookupFor, temperatureOutlookFor } from '@open-garden/garden-place';
 import {
   CalendarEntryRepository,
-  CareEventRepository,
   GardenMembershipRepository,
   GardenRepository,
   PlantingRepository,
@@ -13,6 +12,7 @@ import {
 import { CalendarService } from '@open-garden/planting-calendar';
 import type { TodaySources } from '@open-garden/reminder-delivery';
 import { plantName, type FrostTolerance } from '@open-garden/shared-types';
+import { openCareReminderService } from './care-reminder-service.factory';
 
 /** Today's sources over the database: shared by the Today page and the daily reminders. */
 export function todaySources(db: AppDatabase): TodaySources {
@@ -21,7 +21,6 @@ export function todaySources(db: AppDatabase): TodaySources {
   const gardenRows = new GardenRepository(db);
   const plantings = new PlantingRepository(db);
   const memberships = new GardenMembershipRepository(db);
-  const events = new CareEventRepository(db);
   const gardens = new GardenService(new GardenRepository(db), memberships, climate);
   const calendar = new CalendarService(
     new GardenRepository(db),
@@ -29,20 +28,7 @@ export function todaySources(db: AppDatabase): TodaySources {
     new PlantRepository(db),
     new CalendarEntryRepository(db),
   );
-  const reminders = new CareReminderService(
-    {
-      getMembership: async (gardenId, userId) => {
-        const row = await memberships.get(gardenId, userId);
-        return row ? { role: row.role } : null;
-      },
-    },
-    new PlantingRepository(db),
-    {
-      listForGarden: (gardenId) => events.listForGarden(gardenId),
-      upsert: (plantingId, kind, occurrenceOn, action) =>
-        events.upsertEvent(plantingId, kind, occurrenceOn, action),
-    },
-  );
+  const reminders = openCareReminderService(db);
   return {
     gardens: async (userId) => (await gardens.list(userId, 1, 100)).items,
     reminders: async (gardenId, userId, asOf) =>

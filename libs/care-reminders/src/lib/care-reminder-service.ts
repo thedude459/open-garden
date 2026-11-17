@@ -1,5 +1,7 @@
 import type { CareAction, CareKind, ReminderListDto } from '@open-garden/shared-types';
 import { deriveReminders } from './derive';
+import { applyRainCover } from './rain-cover';
+import { bedWaterFactor, type DayWater } from './water-balance';
 import { sortReminders } from './sort';
 import { CARE_ERRORS } from './domain-error';
 import { isIsoDate } from './dates';
@@ -25,6 +27,17 @@ export interface ReminderPlantingReader {
       fertilizeIntervalDays: number | null;
       bedId?: string | null;
       bedName?: string | null;
+      /** For watering by water balance (ADR 0035). */
+      life?: string | null;
+      bedSun?: string | null;
+      bedMulch?: string | null;
+      kcInitial?: number | null;
+      kcMid?: number | null;
+      kcEnd?: number | null;
+      stageDaysInitial?: number | null;
+      stageDaysDevelopment?: number | null;
+      stageDaysMid?: number | null;
+      stageDaysLate?: number | null;
     }>
   >;
   getInGarden(gardenId: string, plantingId: string): Promise<{ id: string } | null>;
@@ -36,6 +49,7 @@ export interface CareEventWriter {
       plantingId: string;
       kind: CareKind;
       occurrenceOn: string;
+      recordedOn?: string;
     }>
   >;
   upsert(
@@ -52,6 +66,11 @@ export class CareReminderService {
     private readonly memberships: GardenMembershipReader,
     private readonly plantings: ReminderPlantingReader,
     private readonly events: CareEventWriter,
+    /** A property's evapotranspiration and rain by day; null when it has no location or the weather cannot be read. */
+    private readonly weather?: (
+      gardenId: string,
+      asOf: string,
+    ) => Promise<Record<string, DayWater> | null>,
   ) {}
 
   async list(gardenId: string, userId: string, asOf: string): Promise<ReminderListDto> {
@@ -81,16 +100,24 @@ export class CareReminderService {
       fertilizeIntervalDays: row.fertilizeIntervalDays,
       bedId: row.bedId ?? null,
       bedName: row.bedName ?? null,
+      water: waterInput(row),
     }));
 
-    const items = sortReminders(deriveReminders(plantings, eventRows, asOf));
+    // A forecast that cannot be read means fixed intervals, never a failed list.
+    const weather = this.weather ? await this.weather(gardenId, asOf).catch(() => null) : null;
+    const rain = weather
+      ? Object.fromEntries(Object.entries(weather).map(([day, w]) => [day, w.rainMm]))
+      : null;
+    const items = sortReminders(
+      applyRainCover(deriveReminders(plantings, eventRows, asOf, weather), rain),
+    );
 
     return {
       gardenId,
       asOf,
       myRole: membership.role as ReminderListDto['myRole'],
       items,
-      outlookOn: null,
+      outlookOn: weather ? asOf : null,
     };
   }
 
@@ -158,4 +185,25 @@ export class CareReminderService {
 
     await this.events.upsert(plantingId, kind, dueOn, action);
   }
+}
+
+type ReminderRow = Awaited<ReturnType<ReminderPlantingReader['listAllForReminders']>>[number];
+
+/** A planting in a bed whose crop has coefficients waters by the water balance. */
+function waterInput(row: ReminderRow) {
+  if (!row.bedId || row.kcInitial == null || row.kcMid == null || row.kcEnd == null) return null;
+  const stages =
+    row.stageDaysInitial && row.stageDaysDevelopment && row.stageDaysMid && row.stageDaysLate
+      ? {
+          initial: row.stageDaysInitial,
+          development: row.stageDaysDevelopment,
+          mid: row.stageDaysMid,
+          late: row.stageDaysLate,
+        }
+      : null;
+  return {
+    kc: { initial: row.kcInitial, mid: row.kcMid, end: row.kcEnd, stageDays: stages },
+    annual: !row.life || row.life === 'annual',
+    factor: bedWaterFactor(row.bedSun, row.bedMulch),
+  };
 }

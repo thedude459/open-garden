@@ -8,12 +8,15 @@ export class CareEventRepository {
 
   async listForGarden(
     gardenId: string,
-  ): Promise<Array<{ plantingId: string; kind: CareKind; occurrenceOn: string }>> {
+  ): Promise<
+    Array<{ plantingId: string; kind: CareKind; occurrenceOn: string; recordedOn: string }>
+  > {
     const rows = await this.db
       .select({
         plantingId: gardenCareEvents.plantingId,
         kind: gardenCareEvents.kind,
         occurrenceOn: gardenCareEvents.occurrenceOn,
+        updatedAt: gardenCareEvents.updatedAt,
       })
       .from(gardenCareEvents)
       .innerJoin(gardenPlantings, eq(gardenCareEvents.plantingId, gardenPlantings.id))
@@ -23,6 +26,8 @@ export class CareEventRepository {
       plantingId: row.plantingId,
       kind: row.kind as CareKind,
       occurrenceOn: row.occurrenceOn,
+      // The day it was done (UTC), which the water balance counts from.
+      recordedOn: row.updatedAt.toISOString().slice(0, 10),
     }));
   }
 

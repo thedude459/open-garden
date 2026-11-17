@@ -386,6 +386,16 @@ export class PlantingRepository {
         bedName: gardenBeds.name,
         frostTolerance: plants.frostTolerance,
         growMaxC: plants.growMaxC,
+        life: gardenPlantings.life,
+        bedSun: gardenBeds.sun,
+        bedMulch: gardenBeds.mulch,
+        kcInitial: plants.kcInitial,
+        kcMid: plants.kcMid,
+        kcEnd: plants.kcEnd,
+        stageDaysInitial: plants.stageDaysInitial,
+        stageDaysDevelopment: plants.stageDaysDevelopment,
+        stageDaysMid: plants.stageDaysMid,
+        stageDaysLate: plants.stageDaysLate,
       })
       .from(gardenPlantings)
       .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))

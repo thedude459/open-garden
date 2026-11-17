@@ -32,9 +32,22 @@ export interface ClimateLookup {
   lookup(place: PlaceCandidateDto): Promise<ClimateFacts>;
 }
 
-export interface RainOutlook {
-  /** Millimeters of rain keyed by YYYY-MM-DD. Null when the forecast cannot be read. */
-  daily(latitude: number, longitude: number, asOf: string): Promise<Record<string, number> | null>;
+/** A day's reference evapotranspiration (FAO-56) and rain, in millimetres. */
+export interface DayWater {
+  et0Mm: number;
+  rainMm: number;
+}
+
+export interface WaterOutlook {
+  /**
+   * Evapotranspiration and rain keyed by YYYY-MM-DD, from 30 days before
+   * `asOf` to 6 days after. Null when the weather cannot be read.
+   */
+  daily(
+    latitude: number,
+    longitude: number,
+    asOf: string,
+  ): Promise<Record<string, DayWater> | null>;
 }
 
 /** A day's forecast low and high, in °C. */

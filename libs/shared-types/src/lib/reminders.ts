@@ -25,6 +25,8 @@ export interface ReminderItemDto {
   rainNote: string | null;
   bedId?: string | null;
   bedName?: string | null;
+  /** Watering by water balance: how far the soil is below full, in mm, on `dueOn`. */
+  deficitMm?: number | null;
 }
 
 export interface ReminderListDto {

@@ -525,7 +525,11 @@ each against the other phases):
    Frost and heat warnings from the Open-Meteo forecast for plants in beds, by
    each crop's frost tolerance and growing range from the dataset, on Today
    and in the daily push and email. Next: a way to mark a bed as covered.
-4. **Watering by water balance** — replaces fixed watering intervals (and the
+4. **Watering by water balance** — *done
+   ([ADR 0035](adr/0035-watering-by-water-balance.md)) for plantings in beds
+   whose crop has coefficients; the rest keep fixed intervals. Next: per-crop
+   root depth and soil texture for the threshold, and moisture sensors.*
+   Replaces fixed watering intervals (and the
    mulch multiplier planned before). Each day a planting uses reference
    evapotranspiration (ET₀) × the crop's coefficient for its growth stage,
    minus rain; a reminder fires when the deficit passes a threshold for the
@@ -674,7 +678,7 @@ catalog's filters, sowing timeline, varieties, and crop icons.
 | 6 | **Done ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)).** Companion advice from data, in the planner and on plant pages (Phase 3 item 9), ranked by where each pair was shown relative to the zones of the member's properties | Needs v0.2 (c); pairs carry `shownIn` with USDA hardiness zones. |
 | 7 | **Done.** Phase 3 polish, desktop first: **Settings in sections (8) done,** **autosave with undo (7) done,** **fit-to-content and remembered zoom (6) done,** **catalog filters, sowing timeline, varieties, and crop icons (10) done,** **property cards (11) done,** **brand mark (14) done;** **onboarding for a new household done;** **accessibility checks (test item 7) done** | The redesign's remaining items, now that pages have tests. |
 | 8 | **Done ([ADR 0034](adr/0034-managing-areas.md)).** Areas as a level of the plan: rename and delete an area, move a bed to another area that takes its plants, each area outlined on the plan around its beds, and each area's beds, plants, and soil tests listed for every member, read-only for viewers. A property already holds the address, zone, frost dates, and climate, and its typed areas hold the beds (principle VIII), but today an area can only be added | The property → area → bed model is in the data but barely in the UI; soil tests per area (step 9) made the gap visible, and later care features (watering, IPM) also work per area. |
-| **9 (next)** | Care features: **weather alerts (Phase 4 item 3) done,** soil tests per area and bed (5, first slice done), watering by water balance (4), succession planting (7), harvest totals (10) | Gardening depth; each builds on reminders and v0.2 data. |
+| **9 (next)** | Care features: **weather alerts (Phase 4 item 3) done,** soil tests per area and bed (5, first slice done), **watering by water balance (4) done,** succession planting (7), harvest totals (10) | Gardening depth; each builds on reminders and v0.2 data. |
 | 10 | Account basics (Phase 4 item 17): change password, reset by email (SMTP is already there), delete account | Needed before more households join; small at household scale. |
 | 11p *(parallel, data repo)* | Dataset v0.3: about 150 crops (fruit trees with named rootstocks) and pests and diseases organized for IPM; then v0.4, soil amendment rates and nutrient recommendations | Broadens the catalog; unblocks pest advice and amendment advice. |
 | 12 | Pests and diseases as IPM (Phase 4 item 9): scouting reminders, thresholds, controls in IPM order; named rootstocks for tree plantings; then soil amendment advice on a bed's soil test (item 5) | Need v0.3, then v0.4. |
@@ -734,8 +738,9 @@ Size is a rough guess: S is under a day, M a few days, L longer.
 | **Tests:** find and clean up the test that leaves a second "Tomato" catalog entry with the tomato crop id in the e2e database | The starter-crops list showed Tomato twice until it learned to keep one entry per crop; leftover rows can hide or cause other test failures | S |
 | **Pipeline:** generate the app icon PNGs and `favicon.ico` from `assets/mark.svg` in the web build, instead of committing exported files | The exports can drift from the SVG, as the empty `favicon.ico` showed; one source, no manual step | S |
 | **Tests:** intercept every `openstreetmap.org` request in the Playwright config, not only in `signedInPage`, so no test loads the real map site | Tests that skip that helper reach the outside site; where it is slow or blocked, the suite slows (about 3½ against 2 minutes locally) and depends on a site we do not run | S |
-| **Performance:** one Open-Meteo forecast request per property for rain and temperature, shared by care reminders, Today, and the daily send | The rain outlook and the weather alerts each ask Open-Meteo separately, and only the temperatures are cached; one cached request would halve the calls | S |
+| **Performance:** fold the temperature forecast for frost and heat alerts into the water outlook's request | Rain and evapotranspiration now share one cached request per property (ADR 0035); the alerts still ask Open-Meteo separately for temperatures | S |
 | **Feature:** show the soil test that applies in Bed View | Viewers now read each area's and bed's tests in the plan's Areas list, but Bed View, where a member looks at one bed, does not show them | S |
+| **Pipeline:** have `scripts/ci/e2e.sh` print each Nx task's output (`--output-style=static`) | Nx hides a failing live HTTP or Playwright step's output in the run's log, so a one-off failure cannot be read afterwards (one live HTTP failure during the water-balance work could not be traced) | S |
 | **Accessibility:** move the plant to place with the arrow keys in Bed View before Enter places it | Keyboard placement today puts the plant in the middle of the visible area only | M |
 
 ## Licensing
