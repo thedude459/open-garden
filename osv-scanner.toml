@@ -1,0 +1,8 @@
+# OSV-Scanner configuration (.github/workflows/osv-scanner.yml).
+# Each ignore needs a reason and an expiry: after `effectiveUntil` the
+# advisory is reported again, so every acceptance gets looked at.
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+effectiveUntil = 2027-01-31
+reason = "picomatch ReDoS from an attacker-controlled glob pattern. picomatch is only in build and test tooling (Angular build, Vite, Vitest, Nx, typescript-eslint), whose patterns come from our own config; it is not in the API image or the web bundle. No patched release yet: override to the fixed version once it ships."
