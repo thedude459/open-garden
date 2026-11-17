@@ -71,7 +71,7 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
       <p class="muted">Loading…</p>
     } @else if (plant(); as p) {
       <h2 class="plant-title">
-        <og-plant-icon [plantType]="p.plantType" [family]="p.family" />
+        <og-plant-icon [plantType]="p.plantType" [cropId]="p.cropId" />
         {{ p.commonName }}
       </h2>
       <p class="muted">

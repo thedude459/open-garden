@@ -91,7 +91,7 @@ import { PlantIcon } from '../ui/plant-icon';
             @if (p.illustrationUrl) {
               <img [src]="p.illustrationUrl" alt="" width="32" height="32" decoding="async" />
             } @else {
-              <og-plant-icon [plantType]="p.plantType" [family]="p.family" />
+              <og-plant-icon [plantType]="p.plantType" [cropId]="p.cropId" />
             }
             <span>
               <strong>{{ plantName(p) }}</strong>

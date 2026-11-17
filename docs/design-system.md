@@ -55,7 +55,7 @@ Dark text is Ink or Soil, never pure black. Primary button is Leaf with **white*
 - **Cards / rows:** cream/white 55% over sage, 1px `rgba(47,93,58,.15)` border
 - **Banner:** warm paper `#fff4d6` for “Set your site”
 - **Map viewport:** grass `#6f8f5c`, beds soil brown
-- **Plant icons** (`apps/web/src/app/ui/plant-icon.ts`): white line drawings (24-unit grid, 1.6 stroke, round caps) on a 6px-radius tile in the plant type's colour. One per plant type (vegetable, herb, flower, fruit, cane, shrub, tree), and for vegetables one per family that has a drawing (nightshade, cabbage, gourd, onion, legume, carrot, corn). Made for the project, CC0. Decorative: the plant's name always sits beside the icon. Add a family by drawing it in the same style and adding it to the family list; no images or icon fonts
+- **Plant icons** (`apps/web/src/assets/crops/<crop id>.svg`, shown by `og-plant-icon`): one colour drawing per dataset crop, beside the plant's name (decorative, `alt=""`). Plants without one show `generic-plant` or, for flowers, `generic-flower`. The set lives in [open-garden-data's `icons/`](https://github.com/thedude459/open-garden-data/tree/main/icons) with its style guide and credits (CC0; it continues OpenFarm's [open-crop-icons](https://github.com/openfarmcc/open-crop-icons)); copy new icons here and add the crop id to `crop-icons.ts`, and `crop-icons.spec.ts` checks the two match.
 
 ## Layout / flow (redesign intent)
 

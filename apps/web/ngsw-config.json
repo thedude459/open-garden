@@ -16,6 +16,14 @@
           "/assets/icon-512.png"
         ]
       }
+    },
+    {
+      "name": "crop-icons",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": ["/assets/crops/*.svg"]
+      }
     }
   ],
   "dataGroups": [

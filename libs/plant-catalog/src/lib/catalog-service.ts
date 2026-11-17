@@ -85,6 +85,7 @@ function toSummary(row: {
   semiDwarfSpacingInches?: number | null;
   standardSpacingInches?: number | null;
   family?: string | null;
+  cropId?: string | null;
 }): PlantSummaryDto {
   return {
     id: row.id,
@@ -98,6 +99,7 @@ function toSummary(row: {
     illustrationUrl: null,
     rootstockSpacingInches: rootstockSpacing(row),
     family: row.family ?? null,
+    cropId: row.cropId ?? null,
   };
 }
 
