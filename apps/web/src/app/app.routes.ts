@@ -70,6 +70,11 @@ export const routes: Routes = [
       import('./gardens/garden-transplants.page').then((m) => m.GardenTransplantsPage),
   },
   {
+    path: 'gardens/:id/welcome',
+    canActivate: [authGuard],
+    loadComponent: () => import('./gardens/garden-welcome.page').then((m) => m.GardenWelcomePage),
+  },
+  {
     path: 'gardens/:id/configure',
     canActivate: [authGuard],
     loadComponent: () => import('./gardens/garden-detail.page').then((m) => m.GardenDetailPage),

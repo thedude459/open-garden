@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, type SafeResourceUrl } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   convertLength,
   inchesFromInput,
@@ -103,6 +103,17 @@ import { localIso, nextTaskByGarden } from '../today/today-groups';
         </button>
       </form>
     }
+    @if (setUpId(); as id) {
+      <section class="card stack" aria-labelledby="setup-heading">
+        <h3 id="setup-heading">Next: set up your new property</h3>
+        <p>Check the climate its address gave it, pick a few easy crops, and add a first bed.</p>
+        <p>
+          <button type="button" class="btn btn-primary" (click)="startSetup(id)">
+            Start setup
+          </button>
+        </p>
+      </section>
+    }
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (items().length === 0) {
@@ -178,6 +189,9 @@ export class GardenListPage implements OnInit, OnDestroy {
   private readonly api = inject(GardensApiService);
   private readonly sanitizer = inject(DomSanitizer);
   readonly notices = inject(NoticeService);
+  private readonly router = inject(Router);
+  /** The household's first property, just created: offer its guided setup. */
+  readonly setUpId = signal<string | null>(null);
   name = '';
   notes = '';
   addressQuery = '';
@@ -303,6 +317,10 @@ export class GardenListPage implements OnInit, OnDestroy {
     this.mapWatch = null;
   }
 
+  startSetup(id: string) {
+    void this.router.navigate(['/gardens', id, 'welcome']);
+  }
+
   emptyBody() {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       return new OnlineRequiredError().message;
@@ -350,6 +368,7 @@ export class GardenListPage implements OnInit, OnDestroy {
     const place = this.selected();
     if (!place || !this.canCreate()) return;
     this.error.set('');
+    const first = this.items().length === 0;
     await this.notices.run('create-garden', async () => {
       try {
         const created = await this.api.create({
@@ -384,6 +403,7 @@ export class GardenListPage implements OnInit, OnDestroy {
         ]);
         this.creating.set(false);
         this.loading.set(false);
+        this.setUpId.set(first ? created.id : null);
         this.notices.success(
           created.seasonNotice ? `Garden created. ${created.seasonNotice}` : 'Garden created',
         );

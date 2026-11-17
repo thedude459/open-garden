@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import type { GardenSummaryDto, TodayDto } from '@open-garden/shared-types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GardenListPage } from './garden-list.page';
 import { GardensApiService } from './gardens-api.service';
 
@@ -49,7 +49,7 @@ async function render(gardens: GardenSummaryDto[], today: TodayDto | Error) {
   await fixture.whenStable();
   const el: HTMLElement = fixture.nativeElement;
   const text = () => el.textContent.replace(/\s+/g, ' ');
-  return { el, text };
+  return { el, text, fixture };
 }
 
 describe('GardenListPage property cards', () => {
@@ -85,5 +85,18 @@ describe('GardenListPage property cards', () => {
     expect(view.text()).toContain('Home');
     expect(view.el.querySelector('svg.garden-thumb')).toBeNull();
     expect(view.el.querySelector('.garden-next')).toBeNull();
+  });
+
+  it('offers the guided setup for a first property, and opens it', async () => {
+    const view = await render([garden()], { tasks: [], gardens: [] });
+    expect(view.text()).not.toContain('Next: set up your new property');
+    view.fixture.componentInstance.setUpId.set('g1');
+    await view.fixture.whenStable();
+    expect(view.text()).toContain('Next: set up your new property');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    [...view.el.querySelectorAll('button')]
+      .find((b) => b.textContent.trim() === 'Start setup')!
+      .click();
+    expect(navigate).toHaveBeenCalledWith(['/gardens', 'g1', 'welcome']);
   });
 });
