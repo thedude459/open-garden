@@ -37,15 +37,17 @@ export function starterCrops(
 ): PlantSummaryDto[] {
   const rank = new Map(STARTER_CROP_IDS.map((id, i) => [id, i]));
   const seen = new Set<string>();
-  return catalog
-    .filter((p) => p.cultivar == null && p.cropId != null && rank.has(p.cropId))
-    .filter((p) => zone == null || (p.zoneMin <= zone && zone <= p.zoneMax))
-    // One entry per crop, should the catalog hold two for it.
-    .filter((p) => !seen.has(p.cropId!) && seen.add(p.cropId!))
-    .sort(
-      (a, b) =>
-        Number(sowableIds.has(b.id)) - Number(sowableIds.has(a.id)) ||
-        rank.get(a.cropId!)! - rank.get(b.cropId!)!,
-    )
-    .slice(0, limit);
+  return (
+    catalog
+      .filter((p) => p.cultivar == null && p.cropId != null && rank.has(p.cropId))
+      .filter((p) => zone == null || (p.zoneMin <= zone && zone <= p.zoneMax))
+      // One entry per crop, should the catalog hold two for it.
+      .filter((p) => !seen.has(p.cropId!) && seen.add(p.cropId!))
+      .sort(
+        (a, b) =>
+          Number(sowableIds.has(b.id)) - Number(sowableIds.has(a.id)) ||
+          rank.get(a.cropId!)! - rank.get(b.cropId!)!,
+      )
+      .slice(0, limit)
+  );
 }
