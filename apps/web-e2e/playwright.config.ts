@@ -19,6 +19,11 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     serviceWorkers: 'block',
+    // A Chromium already installed on this machine instead of Playwright's
+    // download (see CONTRIBUTING.md, "Running the browser tests").
+    ...(process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE']
+      ? { launchOptions: { executablePath: process.env['PLAYWRIGHT_CHROMIUM_EXECUTABLE'] } }
+      : {}),
   },
   projects: [
     {
