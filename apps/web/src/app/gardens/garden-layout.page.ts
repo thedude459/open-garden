@@ -27,6 +27,7 @@ import type {
   PropertyAreaDto,
   SoilTestCreateDto,
   SoilTestDto,
+  SoilTestOwner,
   TrayDto,
 } from '@open-garden/shared-types';
 import { mulchOrNone } from '@open-garden/shared-types';
@@ -38,6 +39,7 @@ import {
   type NewPlot,
 } from './layout-add-forms';
 import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspector';
+import { SoilTestPanel } from './soil-test-panel';
 import { LayoutBedsList, LayoutWalkwaysList } from './layout-lists';
 import { PlanSaveStatus } from './plan-save-status';
 import { LayoutApiService } from './layout-api.service';
@@ -63,6 +65,7 @@ import { EmptyState } from '../ui/empty-state';
     LayoutBedsList,
     LayoutWalkwaysList,
     PlanSaveStatus,
+    SoilTestPanel,
   ],
   template: `
     <div class="planner">
@@ -214,6 +217,7 @@ import { EmptyState } from '../ui/empty-state';
                 [bed]="bed"
                 [saved]="isSaved(bed)"
                 [deleting]="notices.busyMap().has('delete-bed')"
+                [areaSoilTest]="inheritedSoilTest(bed)"
                 [saveSoilTest]="saveSoilTest"
                 [deleteSoilTest]="deleteSoilTest"
                 (settings)="saveBedSettings(bed, $event)"
@@ -244,7 +248,20 @@ import { EmptyState } from '../ui/empty-state';
               <h3>Areas</h3>
               <ul class="card-list">
                 @for (area of areas(); track area.id) {
-                  <li [attr.data-area-kind]="area.kind">{{ area.name }}</li>
+                  <li>
+                    <span [attr.data-area-kind]="area.kind">{{ area.name }}</span>
+                    @if (area.kind !== 'greenhouse') {
+                      <og-soil-test-panel
+                        [ownerId]="area.id"
+                        [name]="area.name"
+                        [test]="areaSoilTest(area.id)"
+                        emptyText="No test yet. One lab test of the whole area covers its beds; a bed whose soil differs, such as a raised bed, can have its own."
+                        [canEdit]="true"
+                        [save]="saveAreaTest(area.id)"
+                        [remove]="deleteAreaTest(area.id)"
+                      />
+                    }
+                  </li>
                 }
                 @for (tray of trays(); track tray.id) {
                   <li>{{ tray.name }}</li>
@@ -387,11 +404,14 @@ export class GardenLayoutPage implements OnInit {
     }
   }
 
-  /** Records a soil test; the bed shows it once it is the latest. */
-  readonly saveSoilTest = async (bedId: string, test: SoilTestCreateDto): Promise<boolean> => {
+  /** Records a soil test of an area or a bed; it shows once it is the latest. */
+  readonly saveSoilTest = async (
+    owner: SoilTestOwner,
+    test: SoilTestCreateDto,
+  ): Promise<boolean> => {
     try {
-      const saved = await this.bedsApi.recordSoilTest(this.gardenId, bedId, test);
-      this.setSoilTest(bedId, (current) =>
+      const saved = await this.bedsApi.recordSoilTest(this.gardenId, owner, test);
+      this.setSoilTest(owner, (current) =>
         !current || saved.testedOn >= current.testedOn ? saved : current,
       );
       this.notices.success('Soil test saved');
@@ -402,10 +422,10 @@ export class GardenLayoutPage implements OnInit {
     }
   };
 
-  readonly deleteSoilTest = async (bedId: string, test: SoilTestDto): Promise<boolean> => {
+  readonly deleteSoilTest = async (owner: SoilTestOwner, test: SoilTestDto): Promise<boolean> => {
     try {
-      const latest = await this.bedsApi.deleteSoilTest(this.gardenId, bedId, test.id);
-      this.setSoilTest(bedId, () => latest);
+      const latest = await this.bedsApi.deleteSoilTest(this.gardenId, owner, test.id);
+      this.setSoilTest(owner, () => latest);
       return true;
     } catch (err) {
       this.fail(err);
@@ -413,14 +433,59 @@ export class GardenLayoutPage implements OnInit {
     }
   };
 
+  /** Bound per area once, so the panel's inputs stay stable across renders. */
+  private readonly areaSavers = new Map<string, (test: SoilTestCreateDto) => Promise<boolean>>();
+  private readonly areaRemovers = new Map<string, (test: SoilTestDto) => Promise<boolean>>();
+
+  saveAreaTest(areaId: string) {
+    let fn = this.areaSavers.get(areaId);
+    if (!fn) {
+      fn = (test) => this.saveSoilTest({ areaId }, test);
+      this.areaSavers.set(areaId, fn);
+    }
+    return fn;
+  }
+
+  deleteAreaTest(areaId: string) {
+    let fn = this.areaRemovers.get(areaId);
+    if (!fn) {
+      fn = (test) => this.deleteSoilTest({ areaId }, test);
+      this.areaRemovers.set(areaId, fn);
+    }
+    return fn;
+  }
+
+  /** An area's latest soil test. */
+  areaSoilTest(areaId: string): SoilTestDto | null {
+    return this.draft()?.areaSoilTests?.find((t) => t.areaId === areaId) ?? null;
+  }
+
+  /** The area test that applies to a bed without its own. */
+  inheritedSoilTest(bed: LayoutBedDto): { name: string; test: SoilTestDto } | null {
+    const area = this.areas().find((a) => a.id === bed.areaId);
+    const test = area ? this.areaSoilTest(area.id) : null;
+    return area && test ? { name: area.name, test } : null;
+  }
+
   /** Soil tests are not part of the layout save, so this keeps the draft clean. */
-  private setSoilTest(bedId: string, next: (current: SoilTestDto | null) => SoilTestDto | null) {
+  private setSoilTest(
+    owner: SoilTestOwner,
+    next: (current: SoilTestDto | null) => SoilTestDto | null,
+  ) {
     const d = this.draft();
     if (!d) return;
-    this.planner.setDraft({
-      ...d,
-      beds: d.beds.map((b) => (b.id === bedId ? { ...b, soilTest: next(b.soilTest ?? null) } : b)),
-    });
+    if ('bedId' in owner) {
+      this.planner.setDraft({
+        ...d,
+        beds: d.beds.map((b) =>
+          b.id === owner.bedId ? { ...b, soilTest: next(b.soilTest ?? null) } : b,
+        ),
+      });
+    } else {
+      const others = (d.areaSoilTests ?? []).filter((t) => t.areaId !== owner.areaId);
+      const test = next(this.areaSoilTest(owner.areaId));
+      this.planner.setDraft({ ...d, areaSoilTests: test ? [...others, test] : others });
+    }
     this.refreshFlags();
   }
 

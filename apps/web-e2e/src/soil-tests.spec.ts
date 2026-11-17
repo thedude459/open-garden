@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 import { fixturePlace } from './fixture-place';
 import { signedInPage } from './session';
 
-test('a soil test on a bed gives pH advice for what grows there', async ({ browser }) => {
+test('an area’s soil test gives pH advice, and a bed’s own test overrides it', async ({
+  browser,
+}) => {
   const page = await signedInPage(browser, `soil-${Date.now()}@example.com`);
   const garden = (await (
     await page.request.post('/api/gardens', { data: { name: 'Soil plot', place: fixturePlace } })
@@ -40,30 +42,38 @@ test('a soil test on a bed gives pH advice for what grows there', async ({ brows
 
   await page.goto(`/gardens/${garden.id}`);
   await expect(page.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
-  await page.getByRole('button', { name: 'North', exact: true }).click();
-  const soil = page.getByRole('region', { name: 'Soil test of North' });
-  await expect(soil.getByText('No test yet.', { exact: false })).toBeVisible();
+  const note = page.getByText(
+    'Tomato needs pH 6.0–7.0; the soil here tested 7.2: lower it with sulfur over a season',
+  );
 
-  await soil.getByRole('button', { name: 'Record a soil test' }).click();
-  await soil.getByLabel('Date tested').fill('2026-04-01');
-  await soil.getByLabel('Lab', { exact: true }).fill('State lab');
-  await soil.getByLabel('pH', { exact: true }).fill('7.2');
-  await soil.getByLabel('Organic matter (%)').fill('2.5');
-  await soil.getByLabel('Phosphorus (P)').selectOption({ label: 'Low' });
-  await soil.getByRole('button', { name: 'Save test' }).click();
-
-  await expect(soil.getByText('Tested Apr 1, 2026 by State lab')).toBeVisible();
-  await expect(soil.getByText('pH 7.2 · organic matter 2.5% · Phosphorus low')).toBeVisible();
-  await expect(soil.getByText(/^Organic matter is 2\.5%: work in compost/)).toBeVisible();
+  // One test of the whole vegetable garden covers its beds.
+  const area = page.getByRole('region', { name: 'Soil test of Vegetable garden' });
+  await area.getByRole('button', { name: 'Record a soil test' }).click();
+  await area.getByLabel('Date tested').fill('2026-04-01');
+  await area.getByLabel('Lab', { exact: true }).fill('State lab');
+  await area.getByLabel('pH', { exact: true }).fill('7.2');
+  await area.getByLabel('Organic matter (%)').fill('2.5');
+  await area.getByLabel('Phosphorus (P)').selectOption({ label: 'Low' });
+  await area.getByRole('button', { name: 'Save test' }).click();
+  await expect(area.getByText('Tested Apr 1, 2026 by State lab')).toBeVisible();
+  await expect(area.getByText('pH 7.2 · organic matter 2.5% · Phosphorus low')).toBeVisible();
+  await expect(area.getByText(/^Organic matter is 2\.5%: work in compost/)).toBeVisible();
   // Advice on the plan, not a block: the tomato stays where it is.
-  await expect(
-    page.getByText(
-      'Tomato needs pH 6.0–7.0; this bed tested 7.2: lower it with sulfur over a season',
-    ),
-  ).toBeVisible();
+  await expect(note).toBeVisible();
 
-  await soil.getByRole('button', { name: 'Delete this test' }).click();
-  await soil.getByRole('button', { name: 'Confirm delete test' }).click();
-  await expect(soil.getByText('No test yet.', { exact: false })).toBeVisible();
-  await expect(page.getByText(/Tomato needs pH/)).toHaveCount(0);
+  // A bed whose soil differs takes its own test, which wins.
+  await page.getByRole('button', { name: 'North', exact: true }).click();
+  const bedSoil = page.getByRole('region', { name: 'Soil test of North' });
+  await expect(bedSoil.getByText(/^The Vegetable garden test applies:/)).toBeVisible();
+  await bedSoil.getByRole('button', { name: 'Record a soil test' }).click();
+  await bedSoil.getByLabel('Date tested').fill('2026-05-01');
+  await bedSoil.getByLabel('pH', { exact: true }).fill('6.5');
+  await bedSoil.getByRole('button', { name: 'Save test' }).click();
+  await expect(bedSoil.getByText('pH 6.5')).toBeVisible();
+  await expect(note).toHaveCount(0);
+
+  await bedSoil.getByRole('button', { name: 'Delete this test' }).click();
+  await bedSoil.getByRole('button', { name: 'Confirm delete test' }).click();
+  await expect(bedSoil.getByText(/^The Vegetable garden test applies:/)).toBeVisible();
+  await expect(note).toBeVisible();
 });

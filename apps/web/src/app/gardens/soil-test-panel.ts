@@ -1,12 +1,7 @@
 import { Component, computed, input, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { soilTestNotes } from '@open-garden/garden-layout';
-import type {
-  LayoutBedDto,
-  NutrientLevel,
-  SoilTestCreateDto,
-  SoilTestDto,
-} from '@open-garden/shared-types';
+import type { NutrientLevel, SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
 import { formatDay } from '@open-garden/web-ui';
 
 function localToday(): string {
@@ -26,18 +21,18 @@ function numberOrNull(value: unknown): number | null {
 }
 
 /**
- * A bed's latest soil test and the advice it gives, and a form to record a
- * new one (ADR 0033). Advice only: nothing here blocks a planting.
+ * The latest soil test of an area or a bed, the advice it gives, and a form
+ * to record a new one (ADR 0033). A bed without its own test shows its
+ * area's. Advice only: nothing here blocks a planting.
  */
 @Component({
-  selector: 'og-bed-soil-test',
+  selector: 'og-soil-test-panel',
   standalone: true,
   imports: [FormsModule],
   template: `
-    @let b = bed();
-    <section class="soil-test" [attr.aria-label]="'Soil test of ' + b.name">
+    <section class="soil-test" [attr.aria-label]="'Soil test of ' + name()">
       <h4>Soil test</h4>
-      @if (b.soilTest; as t) {
+      @if (test(); as t) {
         <p>{{ tested(t) }}</p>
         @if (results(t); as line) {
           <p>{{ line }}</p>
@@ -48,10 +43,10 @@ function numberOrNull(value: unknown): number | null {
         @for (note of notes(); track note) {
           <p class="needs-attention">{{ note }}</p>
         }
+      } @else if (inherited(); as from) {
+        <p class="muted">{{ inheritedText(from) }}</p>
       } @else {
-        <p class="muted">
-          No test yet. A lab test every 2–3 years shows the bed's pH, organic matter, and nutrients.
-        </p>
+        <p class="muted">{{ emptyText() }}</p>
       }
       @if (canEdit()) {
         @if (recording()) {
@@ -127,7 +122,7 @@ function numberOrNull(value: unknown): number | null {
             <button type="button" class="btn btn-secondary" (click)="start()">
               Record a soil test
             </button>
-            @if (b.soilTest; as t) {
+            @if (test(); as t) {
               @if (confirmDelete()) {
                 <button
                   type="button"
@@ -153,13 +148,21 @@ function numberOrNull(value: unknown): number | null {
     </section>
   `,
 })
-export class BedSoilTest {
-  bed = input.required<LayoutBedDto>();
+export class SoilTestPanel {
+  /** The area or bed; the form starts over when it changes. */
+  ownerId = input.required<string>();
+  name = input.required<string>();
+  test = input<SoilTestDto | null>(null);
+  /** A bed without its own test: its area's test, which applies to it. */
+  inherited = input<{ name: string; test: SoilTestDto } | null>(null);
+  emptyText = input(
+    'No test yet. A lab test every 2–3 years shows the pH, organic matter, and nutrients.',
+  );
   canEdit = input(false);
   /** Saves a test; resolves true when it was saved. */
-  save = input.required<(bedId: string, test: SoilTestCreateDto) => Promise<boolean>>();
+  save = input.required<(test: SoilTestCreateDto) => Promise<boolean>>();
   /** Deletes a test; resolves true when it was deleted. */
-  remove = input.required<(bedId: string, test: SoilTestDto) => Promise<boolean>>();
+  remove = input.required<(test: SoilTestDto) => Promise<boolean>>();
 
   readonly today = localToday();
   readonly nutrients = [
@@ -168,18 +171,25 @@ export class BedSoilTest {
     { key: 'potassium', label: 'Potassium (K)' },
   ] as const;
 
-  private readonly bedId = computed(() => this.bed().id);
-  /** The form is open; it closes when another bed is selected. */
-  recording = linkedSignal({ source: this.bedId, computation: () => false });
-  confirmDelete = linkedSignal({ source: this.bedId, computation: () => false });
+  /** The form is open; it closes when another area or bed is shown. */
+  recording = linkedSignal({ source: this.ownerId, computation: () => false });
+  confirmDelete = linkedSignal({ source: this.ownerId, computation: () => false });
   busy = signal(false);
   formError = signal('');
   draft = this.emptyDraft();
 
   notes = computed(() => {
-    const test = this.bed().soilTest;
+    const test = this.test();
     return test ? soilTestNotes(test, this.today) : [];
   });
+
+  inheritedText(from: { name: string; test: SoilTestDto }): string {
+    const results = this.results(from.test);
+    return (
+      `The ${from.name} test applies: ${this.tested(from.test)}${results ? `, ${results}` : ''}. ` +
+      "Record one here if this bed's soil differs, such as a raised bed."
+    );
+  }
 
   tested(t: SoilTestDto): string {
     return `Tested ${formatDay(t.testedOn)}${t.lab ? ` by ${t.lab}` : ''}`;
@@ -218,7 +228,7 @@ export class BedSoilTest {
     if (error) return;
     this.busy.set(true);
     try {
-      if (await this.save()(this.bed().id, test)) this.recording.set(false);
+      if (await this.save()(test)) this.recording.set(false);
     } finally {
       this.busy.set(false);
     }
@@ -227,7 +237,7 @@ export class BedSoilTest {
   async removeTest(test: SoilTestDto) {
     this.busy.set(true);
     try {
-      if (await this.remove()(this.bed().id, test)) this.confirmDelete.set(false);
+      if (await this.remove()(test)) this.confirmDelete.set(false);
     } finally {
       this.busy.set(false);
     }

@@ -23,9 +23,9 @@ import {
   type BedGeometryDto,
   type LayoutBedDto,
 } from '@open-garden/shared-types';
-import type { SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
+import type { SoilTestCreateDto, SoilTestDto, SoilTestOwner } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
-import { BedSoilTest } from './bed-soil-test';
+import { SoilTestPanel } from './soil-test-panel';
 
 export interface BedSettingsPatch {
   name?: string;
@@ -44,7 +44,7 @@ type GeometryField = 'originXInches' | 'originYInches' | 'lengthInches' | 'width
 @Component({
   selector: 'og-layout-bed-inspector',
   standalone: true,
-  imports: [FormsModule, BedSoilTest],
+  imports: [FormsModule, SoilTestPanel],
   template: `
     @let b = bed();
     <section class="inspector" aria-label="Selected bed">
@@ -99,11 +99,14 @@ type GeometryField = 'originXInches' | 'originYInches' | 'lengthInches' | 'width
             }
           </select>
         </label>
-        <og-bed-soil-test
-          [bed]="b"
+        <og-soil-test-panel
+          [ownerId]="b.id"
+          [name]="b.name"
+          [test]="b.soilTest ?? null"
+          [inherited]="areaSoilTest()"
           [canEdit]="true"
-          [save]="saveSoilTest()"
-          [remove]="deleteSoilTest()"
+          [save]="saveTest"
+          [remove]="deleteTest"
         />
       } @else {
         <p class="muted">Save the layout to set its name, sun, ground, and mulch.</p>
@@ -208,8 +211,15 @@ export class LayoutBedInspector {
   /** The server has this bed, so its name and settings can change now. */
   saved = input(false);
   deleting = input(false);
-  saveSoilTest = input.required<(bedId: string, test: SoilTestCreateDto) => Promise<boolean>>();
-  deleteSoilTest = input.required<(bedId: string, test: SoilTestDto) => Promise<boolean>>();
+  /** The bed's area's latest test, which applies while the bed has none of its own. */
+  areaSoilTest = input<{ name: string; test: SoilTestDto } | null>(null);
+  saveSoilTest =
+    input.required<(owner: SoilTestOwner, test: SoilTestCreateDto) => Promise<boolean>>();
+  deleteSoilTest = input.required<(owner: SoilTestOwner, test: SoilTestDto) => Promise<boolean>>();
+  readonly saveTest = (test: SoilTestCreateDto) =>
+    this.saveSoilTest()({ bedId: this.bed().id }, test);
+  readonly deleteTest = (test: SoilTestDto) =>
+    this.deleteSoilTest()({ bedId: this.bed().id }, test);
   settings = output<BedSettingsPatch>();
   geometryChange = output<Partial<BedGeometryDto>>();
   rotate = output<void>();

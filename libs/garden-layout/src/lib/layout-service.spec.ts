@@ -311,7 +311,7 @@ describe('LayoutService load path', () => {
 });
 
 describe('LayoutService soil', () => {
-  it('gives each bed its latest soil test and each planting its crop pH range', async () => {
+  it('gives beds and areas their latest soil tests and plantings their crop pH range', async () => {
     const mem = createLayoutMemory();
     const north = mem.addBed('North bed');
     const south = mem.addBed('South bed');
@@ -319,6 +319,7 @@ describe('LayoutService soil', () => {
     mem.addPlanting(mem.basil.id, north.id);
     const test = {
       id: 't1',
+      areaId: null,
       bedId: north.id,
       testedOn: '2026-04-01',
       lab: null,
@@ -329,10 +330,13 @@ describe('LayoutService soil', () => {
       potassium: null,
       recommendations: null,
     };
-    mem.soilTests.set(north.id, test);
+    const areaTest = { ...test, id: 't2', areaId: 'veg', bedId: null, ph: 6.4 };
+    mem.soilTests.beds.set(north.id, test);
+    mem.soilTests.areas.set('veg', areaTest);
     const layout = await mem.service.get(mem.ownerId, mem.gardenId);
     expect(layout.beds.find((b) => b.id === north.id)?.soilTest).toEqual(test);
     expect(layout.beds.find((b) => b.id === south.id)?.soilTest).toBeNull();
+    expect(layout.areaSoilTests).toEqual([areaTest]);
     expect(layout.plantings.map((p) => [p.commonName, p.soilPh])).toEqual(
       expect.arrayContaining([
         ['Cherry Tomato', { min: 6.2, max: 6.8 }],

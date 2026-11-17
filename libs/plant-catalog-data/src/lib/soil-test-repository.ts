@@ -1,9 +1,14 @@
-import { and, desc, eq } from 'drizzle-orm';
-import type { NutrientLevel, SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
+import { and, desc, eq, type SQL } from 'drizzle-orm';
+import type {
+  NutrientLevel,
+  SoilTestCreateDto,
+  SoilTestDto,
+  SoilTestOwner,
+} from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
-import { gardenBedSoilTests, gardenBeds } from './schema';
+import { gardenAreas, gardenBeds, gardenSoilTests } from './schema';
 
-type Row = typeof gardenBedSoilTests.$inferSelect;
+type Row = typeof gardenSoilTests.$inferSelect;
 
 function level(value: string | null): NutrientLevel | null {
   return value === 'low' || value === 'medium' || value === 'high' ? value : null;
@@ -12,6 +17,7 @@ function level(value: string | null): NutrientLevel | null {
 function toDto(row: Row): SoilTestDto {
   return {
     id: row.id,
+    areaId: row.areaId,
     bedId: row.bedId,
     testedOn: row.testedOn,
     lab: row.lab,
@@ -24,48 +30,81 @@ function toDto(row: Row): SoilTestDto {
   };
 }
 
-/** Soil tests of beds (ADR 0033). Callers check the bed belongs to the property. */
+function ownedBy(owner: SoilTestOwner): SQL {
+  return 'bedId' in owner
+    ? eq(gardenSoilTests.bedId, owner.bedId)
+    : eq(gardenSoilTests.areaId, owner.areaId);
+}
+
+/** The latest date first, then the latest entered: that one speaks for its owner. */
+const latestFirst = [desc(gardenSoilTests.testedOn), desc(gardenSoilTests.createdAt)];
+
+function latestPerKey(rows: Row[], key: (row: Row) => string | null): Map<string, SoilTestDto> {
+  const latest = new Map<string, SoilTestDto>();
+  for (const row of rows) {
+    const id = key(row);
+    if (id && !latest.has(id)) latest.set(id, toDto(row));
+  }
+  return latest;
+}
+
+/** Soil tests of areas and beds (ADR 0033). Callers check the owner belongs to the property. */
 export class SoilTestRepository {
   constructor(private readonly db: AppDatabase) {}
 
-  async insert(bedId: string, input: SoilTestCreateDto): Promise<SoilTestDto> {
+  async insert(owner: SoilTestOwner, input: SoilTestCreateDto): Promise<SoilTestDto> {
     const [row] = await this.db
-      .insert(gardenBedSoilTests)
-      .values({ bedId, ...input })
+      .insert(gardenSoilTests)
+      .values({ ...owner, ...input })
       .returning();
     return toDto(row!);
   }
 
-  async delete(bedId: string, id: string): Promise<boolean> {
+  async delete(owner: SoilTestOwner, id: string): Promise<boolean> {
     const rows = await this.db
-      .delete(gardenBedSoilTests)
-      .where(and(eq(gardenBedSoilTests.bedId, bedId), eq(gardenBedSoilTests.id, id)))
-      .returning({ id: gardenBedSoilTests.id });
+      .delete(gardenSoilTests)
+      .where(and(ownedBy(owner), eq(gardenSoilTests.id, id)))
+      .returning({ id: gardenSoilTests.id });
     return rows.length > 0;
   }
 
-  async latestForBed(bedId: string): Promise<SoilTestDto | null> {
+  async latestFor(owner: SoilTestOwner): Promise<SoilTestDto | null> {
     const [row] = await this.db
       .select()
-      .from(gardenBedSoilTests)
-      .where(eq(gardenBedSoilTests.bedId, bedId))
-      .orderBy(desc(gardenBedSoilTests.testedOn), desc(gardenBedSoilTests.createdAt))
+      .from(gardenSoilTests)
+      .where(ownedBy(owner))
+      .orderBy(...latestFirst)
       .limit(1);
     return row ? toDto(row) : null;
   }
 
-  /** Each bed's latest test in a property: the latest test date, then the latest entered. */
-  async latestByGarden(gardenId: string): Promise<Map<string, SoilTestDto>> {
-    const rows = await this.db
-      .select({ test: gardenBedSoilTests })
-      .from(gardenBedSoilTests)
-      .innerJoin(gardenBeds, eq(gardenBedSoilTests.bedId, gardenBeds.id))
-      .where(eq(gardenBeds.gardenId, gardenId))
-      .orderBy(desc(gardenBedSoilTests.testedOn), desc(gardenBedSoilTests.createdAt));
-    const latest = new Map<string, SoilTestDto>();
-    for (const { test } of rows) {
-      if (!latest.has(test.bedId)) latest.set(test.bedId, toDto(test));
-    }
-    return latest;
+  /** The latest test of each area and of each bed in a property. */
+  async latestByGarden(
+    gardenId: string,
+  ): Promise<{ areas: Map<string, SoilTestDto>; beds: Map<string, SoilTestDto> }> {
+    const [areaRows, bedRows] = await Promise.all([
+      this.db
+        .select({ test: gardenSoilTests })
+        .from(gardenSoilTests)
+        .innerJoin(gardenAreas, eq(gardenSoilTests.areaId, gardenAreas.id))
+        .where(eq(gardenAreas.gardenId, gardenId))
+        .orderBy(...latestFirst),
+      this.db
+        .select({ test: gardenSoilTests })
+        .from(gardenSoilTests)
+        .innerJoin(gardenBeds, eq(gardenSoilTests.bedId, gardenBeds.id))
+        .where(eq(gardenBeds.gardenId, gardenId))
+        .orderBy(...latestFirst),
+    ]);
+    return {
+      areas: latestPerKey(
+        areaRows.map((r) => r.test),
+        (row) => row.areaId,
+      ),
+      beds: latestPerKey(
+        bedRows.map((r) => r.test),
+        (row) => row.bedId,
+      ),
+    };
   }
 }

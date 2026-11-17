@@ -8,12 +8,13 @@ import {
   type SoilPhDto,
   type SoilTestDto,
 } from '@open-garden/shared-types';
-import { phAdvice } from './soil-advice';
+import { phAdvice, testForBed } from './soil-advice';
 
 export type NoteBed = {
   id: string;
   sun?: string | null;
   station?: BedStation | null;
+  areaId?: string | null;
   soilTest?: SoilTestDto | null;
 };
 export type NotePlanting = {
@@ -62,11 +63,14 @@ export function placementNotes(input: {
   plantings: NotePlanting[];
   priorCrops?: PriorCropDto[];
   pairs?: CompanionPairDto[];
+  areaSoilTests?: SoilTestDto[];
 }): LayoutFlagDto[] {
   const flags: LayoutFlagDto[] = [];
   const bedSun = new Map(input.beds.map((bed) => [bed.id, bed.sun ?? null]));
   const bedStation = new Map(input.beds.map((bed) => [bed.id, bed.station ?? null]));
-  const bedPh = new Map(input.beds.map((bed) => [bed.id, bed.soilTest?.ph ?? null]));
+  const bedPh = new Map(
+    input.beds.map((bed) => [bed.id, testForBed(bed, input.areaSoilTests)?.ph ?? null]),
+  );
   const names = new Map(
     input.plantings.filter((p) => p.plantId).map((p) => [p.plantId!, p.commonName ?? 'Plant']),
   );

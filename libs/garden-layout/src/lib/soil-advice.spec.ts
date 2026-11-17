@@ -1,10 +1,11 @@
 import type { SoilTestDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import { placementNotes } from './placement-notes';
-import { phAdvice, soilTestNotes } from './soil-advice';
+import { phAdvice, soilTestNotes, testForBed } from './soil-advice';
 
 const test = (over: Partial<SoilTestDto> = {}): SoilTestDto => ({
   id: 't',
+  areaId: null,
   bedId: 'north',
   testedOn: '2026-04-01',
   lab: null,
@@ -21,10 +22,10 @@ describe('phAdvice', () => {
   const blueberry = { min: 4.5, max: 5.5 };
   it('says which way to move a pH outside the crop’s range', () => {
     expect(phAdvice('Blueberry', 7.2, blueberry)).toBe(
-      'Blueberry needs pH 4.5–5.5; this bed tested 7.2: lower it with sulfur over a season',
+      'Blueberry needs pH 4.5–5.5; the soil here tested 7.2: lower it with sulfur over a season',
     );
     expect(phAdvice('Tomato', 5.4, { min: 6.2, max: 6.8 })).toBe(
-      'Tomato needs pH 6.2–6.8; this bed tested 5.4: raise it with lime',
+      'Tomato needs pH 6.2–6.8; the soil here tested 5.4: raise it with lime',
     );
   });
 
@@ -65,12 +66,24 @@ describe('soilTestNotes', () => {
   });
 });
 
+describe('testForBed', () => {
+  const area = test({ id: 'a', areaId: 'veg', bedId: null, ph: 6.5 });
+  it('uses the bed’s own test, or else its area’s', () => {
+    const own = test({ ph: 5 });
+    expect(testForBed({ soilTest: own, areaId: 'veg' }, [area])).toBe(own);
+    expect(testForBed({ soilTest: null, areaId: 'veg' }, [area])).toBe(area);
+    expect(testForBed({ soilTest: null, areaId: 'orchard' }, [area])).toBeNull();
+    expect(testForBed({ areaId: null }, [area])).toBeNull();
+  });
+});
+
 describe('placementNotes soil', () => {
-  it('notes a plant in a bed whose tested pH is outside its range, without blocking', () => {
+  it('notes a plant where the tested pH is outside its range, without blocking', () => {
     const flags = placementNotes({
+      areaSoilTests: [test({ id: 'a', areaId: 'veg', bedId: null, ph: 7.2 })],
       beds: [
-        { id: 'north', soilTest: test({ ph: 7.2 }) },
-        { id: 'south', soilTest: null },
+        { id: 'north', areaId: 'veg', soilTest: null },
+        { id: 'south', areaId: 'veg', soilTest: test({ bedId: 'south', ph: 5 }) },
       ],
       plantings: [
         {
@@ -97,7 +110,7 @@ describe('placementNotes soil', () => {
         plantingIds: ['p1'],
         blocking: false,
         message:
-          'Blueberry needs pH 4.5–5.5; this bed tested 7.2: lower it with sulfur over a season',
+          'Blueberry needs pH 4.5–5.5; the soil here tested 7.2: lower it with sulfur over a season',
       },
     ]);
   });

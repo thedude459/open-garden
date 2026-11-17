@@ -4,7 +4,12 @@ import { liveEnabled, LiveClient, uniqueEmail } from './live-http';
 
 describe.skipIf(!liveEnabled)('soil tests http', () => {
   type Layout = {
-    beds: Array<{ id: string; soilTest?: { id: string; ph: number | null } | null }>;
+    beds: Array<{
+      id: string;
+      areaId?: string | null;
+      soilTest?: { id: string; ph: number | null } | null;
+    }>;
+    areaSoilTests?: Array<{ id: string; areaId: string | null; ph: number | null }>;
     plantings: Array<{
       id: string;
       commonName: string;
@@ -91,5 +96,50 @@ describe.skipIf(!liveEnabled)('soil tests http', () => {
     });
     const again = await owner.delete(`${path}/${test.id}`);
     expect(again.status()).toBe(404);
+  });
+
+  test('an area’s test covers its beds until a bed has its own; a greenhouse takes none', async () => {
+    const owner = new LiveClient();
+    await owner.register(uniqueEmail('soil-area'));
+    const garden = (await (
+      await owner.post('/api/gardens', { data: { name: 'Area soil plot', place: fixturePlace } })
+    ).json()) as { id: string };
+    const bed = (await (
+      await owner.post(`/api/gardens/${garden.id}/beds`, {
+        data: { id: crypto.randomUUID(), name: 'North', lengthInches: 96, widthInches: 48 },
+      })
+    ).json()) as { id: string; areaId: string };
+    const glass = (await (
+      await owner.post(`/api/gardens/${garden.id}/areas`, { data: { kind: 'greenhouse' } })
+    ).json()) as { id: string };
+
+    const areaPath = `/api/gardens/${garden.id}/areas/${bed.areaId}/soil-tests`;
+    const areaTest = await owner.post(areaPath, { data: { ...result, ph: 6.4 } });
+    expect(areaTest.status(), await areaTest.text()).toBe(201);
+    const saved = (await areaTest.json()) as { id: string };
+    expect(saved).toMatchObject({ areaId: bed.areaId, bedId: null, ph: 6.4 });
+    const greenhouse = await owner.post(`/api/gardens/${garden.id}/areas/${glass.id}/soil-tests`, {
+      data: result,
+    });
+    expect(greenhouse.status()).toBe(400);
+
+    let layout = (await (await owner.get(`/api/gardens/${garden.id}/layout`)).json()) as Layout;
+    expect(layout.beds.find((b) => b.id === bed.id)).toMatchObject({
+      areaId: bed.areaId,
+      soilTest: null,
+    });
+    expect(layout.areaSoilTests).toEqual([expect.objectContaining({ id: saved.id, ph: 6.4 })]);
+
+    const own = await owner.post(`/api/gardens/${garden.id}/beds/${bed.id}/soil-tests`, {
+      data: { ...result, ph: 5.2 },
+    });
+    expect(own.status()).toBe(201);
+    layout = (await (await owner.get(`/api/gardens/${garden.id}/layout`)).json()) as Layout;
+    expect(layout.beds.find((b) => b.id === bed.id)?.soilTest).toMatchObject({ ph: 5.2 });
+    expect(layout.areaSoilTests).toHaveLength(1);
+
+    const removed = await owner.delete(`${areaPath}/${saved.id}`);
+    expect(removed.status()).toBe(200);
+    expect(await removed.json()).toEqual({ latest: null });
   });
 });

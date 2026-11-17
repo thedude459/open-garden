@@ -25,7 +25,9 @@ export interface LayoutBedDto {
   site?: BedSite;
   station?: BedStation | null;
   mulch?: Mulch;
-  /** The bed's latest soil test, for advice on the plan. */
+  /** The typed area the bed belongs to. */
+  areaId?: string | null;
+  /** The bed's own latest soil test; without one, its area's applies. */
   soilTest?: SoilTestDto | null;
 }
 
@@ -97,6 +99,8 @@ export interface GardenLayoutDto {
   flags: LayoutFlagDto[];
   priorCrops?: PriorCropDto[];
   pairs?: CompanionPairDto[];
+  /** Each area's latest soil test. */
+  areaSoilTests?: SoilTestDto[];
 }
 
 export interface PriorCropDto {

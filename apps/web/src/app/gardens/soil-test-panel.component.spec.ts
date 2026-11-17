@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import type { LayoutBedDto, SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
+import type { SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
-import { BedSoilTest, checkTest } from './bed-soil-test';
+import { checkTest, SoilTestPanel } from './soil-test-panel';
 
 const soilTest = (over: Partial<SoilTestDto> = {}): SoilTestDto => ({
   id: 't1',
+  areaId: null,
   bedId: 'b1',
   testedOn: '2026-04-01',
   lab: 'State lab',
@@ -17,24 +18,25 @@ const soilTest = (over: Partial<SoilTestDto> = {}): SoilTestDto => ({
   ...over,
 });
 
-const bed = (over: Partial<LayoutBedDto> = {}): LayoutBedDto => ({
-  id: 'b1',
-  name: 'North',
-  geometry: null,
-  ...over,
-});
-
-async function render(b: LayoutBedDto, canEdit = true, saveResult = true) {
-  const fixture = TestBed.createComponent(BedSoilTest);
-  const saved: [string, SoilTestCreateDto][] = [];
+async function render(
+  test: SoilTestDto | null,
+  canEdit = true,
+  saveResult = true,
+  inherited: { name: string; test: SoilTestDto } | null = null,
+) {
+  const fixture = TestBed.createComponent(SoilTestPanel);
+  const saved: SoilTestCreateDto[] = [];
   const removed: string[] = [];
-  fixture.componentRef.setInput('bed', b);
+  fixture.componentRef.setInput('ownerId', 'b1');
+  fixture.componentRef.setInput('name', 'North');
+  fixture.componentRef.setInput('test', test);
+  fixture.componentRef.setInput('inherited', inherited);
   fixture.componentRef.setInput('canEdit', canEdit);
-  fixture.componentRef.setInput('save', async (bedId: string, test: SoilTestCreateDto) => {
-    saved.push([bedId, test]);
+  fixture.componentRef.setInput('save', async (t: SoilTestCreateDto) => {
+    saved.push(t);
     return saveResult;
   });
-  fixture.componentRef.setInput('remove', async (_bedId: string, test: SoilTestDto) => {
+  fixture.componentRef.setInput('remove', async (test: SoilTestDto) => {
     removed.push(test.id);
     return true;
   });
@@ -56,9 +58,9 @@ async function render(b: LayoutBedDto, canEdit = true, saveResult = true) {
   return { fixture, el, button, type, saved, removed };
 }
 
-describe('BedSoilTest', () => {
+describe('SoilTestPanel', () => {
   it('shows the latest test, the lab’s advice, and notes on it', async () => {
-    const view = await render(bed({ soilTest: soilTest() }));
+    const view = await render(soilTest());
     const text = view.el.textContent ?? '';
     expect(text).toContain('Tested Apr 1, 2026 by State lab');
     expect(text).toContain('pH 7.2 · organic matter 2.5% · Phosphorus low · Potassium high');
@@ -68,13 +70,22 @@ describe('BedSoilTest', () => {
   });
 
   it('invites a first test, and shows viewers no form', async () => {
-    const view = await render(bed(), false);
+    const view = await render(null, false);
     expect(view.el.textContent).toContain('No test yet');
     expect(view.button('Record a soil test')).toBeUndefined();
   });
 
+  it('shows the area’s test for a bed without its own', async () => {
+    const area = soilTest({ id: 'a1', areaId: 'veg', bedId: null, ph: 6.5, phosphorus: null });
+    const view = await render(null, true, true, { name: 'Vegetable garden', test: area });
+    expect(view.el.textContent).toContain(
+      'The Vegetable garden test applies: Tested Apr 1, 2026 by State lab, pH 6.5 · organic matter 2.5% · Potassium high.',
+    );
+    expect(view.button('Delete this test')).toBeUndefined();
+  });
+
   it('records a test and closes the form once saved', async () => {
-    const view = await render(bed());
+    const view = await render(null);
     view.button('Record a soil test')!.click();
     await view.fixture.whenStable();
     await view.type('testedOn', '2026-03-15');
@@ -84,25 +95,22 @@ describe('BedSoilTest', () => {
     view.button('Save test')!.click();
     await view.fixture.whenStable();
     expect(view.saved).toEqual([
-      [
-        'b1',
-        {
-          testedOn: '2026-03-15',
-          lab: 'County lab',
-          ph: 6.4,
-          organicMatterPct: null,
-          nitrogen: 'low',
-          phosphorus: null,
-          potassium: null,
-          recommendations: null,
-        },
-      ],
+      {
+        testedOn: '2026-03-15',
+        lab: 'County lab',
+        ph: 6.4,
+        organicMatterPct: null,
+        nitrogen: 'low',
+        phosphorus: null,
+        potassium: null,
+        recommendations: null,
+      },
     ]);
     expect(view.button('Save test')).toBeUndefined();
   });
 
   it('keeps the form open with what was typed when the save fails, and refuses an empty test', async () => {
-    const view = await render(bed(), true, false);
+    const view = await render(null, true, false);
     view.button('Record a soil test')!.click();
     await view.fixture.whenStable();
     view.button('Save test')!.click();
@@ -119,7 +127,7 @@ describe('BedSoilTest', () => {
   });
 
   it('deletes the latest test after a confirm', async () => {
-    const view = await render(bed({ soilTest: soilTest() }));
+    const view = await render(soilTest());
     view.button('Delete this test')!.click();
     await view.fixture.whenStable();
     view.button('Confirm delete test')!.click();

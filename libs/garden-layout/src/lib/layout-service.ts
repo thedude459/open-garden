@@ -185,7 +185,9 @@ export class LayoutService {
     ]);
     const [advice, soilTests] = await Promise.all([
       this.years ? this.years.layoutAdvice(gardenId) : { prior: [], pairs: [] },
-      this.soilTests ? this.soilTests.latestByGarden(gardenId) : new Map<string, SoilTestDto>(),
+      this.soilTests
+        ? this.soilTests.latestByGarden(gardenId)
+        : { areas: new Map<string, SoilTestDto>(), beds: new Map<string, SoilTestDto>() },
     ]);
     const beds = bedRows.map((row): LayoutBedDto => ({
       id: row.id,
@@ -195,7 +197,8 @@ export class LayoutService {
       site: row.site === 'raised' ? 'raised' : 'in_ground',
       station: row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null,
       mulch: mulchOrNone(row.mulch),
-      soilTest: soilTests.get(row.id) ?? null,
+      areaId: (row as { areaId?: string | null }).areaId ?? null,
+      soilTest: soilTests.beds.get(row.id) ?? null,
     }));
     const plantings = plantingRows.map((row) => {
       const placed = row.layoutXInches !== null && row.layoutYInches !== null && row.bedId !== null;
@@ -249,6 +252,7 @@ export class LayoutService {
       flags: evaluateLayout(beds, plantings, { beds, plantings }),
       priorCrops: advice.prior,
       pairs: advice.pairs,
+      areaSoilTests: [...soilTests.areas.values()],
     };
   }
 }

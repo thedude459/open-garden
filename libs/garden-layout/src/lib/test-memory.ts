@@ -236,7 +236,7 @@ export function createLayoutMemory() {
     },
   };
 
-  const soilTests = new Map<string, SoilTestDto>();
+  const soilTests = { areas: new Map<string, SoilTestDto>(), beds: new Map<string, SoilTestDto>() };
   const service = new LayoutService(
     membershipRepo as never,
     plantingRepo as never,

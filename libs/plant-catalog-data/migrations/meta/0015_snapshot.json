@@ -1,5 +1,5 @@
 {
-  "id": "ff0e322b-ce42-4db4-a1c7-166d78863022",
+  "id": "5da1d676-b7d0-45e6-aa87-ed4518929b53",
   "prevId": "1abebe8b-370f-417b-9238-954668bea0de",
   "version": "7",
   "dialect": "postgresql",
@@ -851,113 +851,6 @@
           "tableFrom": "garden_areas",
           "tableTo": "gardens",
           "columnsFrom": ["garden_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.garden_bed_soil_tests": {
-      "name": "garden_bed_soil_tests",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "bed_id": {
-          "name": "bed_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tested_on": {
-          "name": "tested_on",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "lab": {
-          "name": "lab",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ph": {
-          "name": "ph",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "organic_matter_pct": {
-          "name": "organic_matter_pct",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "nitrogen": {
-          "name": "nitrogen",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "phosphorus": {
-          "name": "phosphorus",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "potassium": {
-          "name": "potassium",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "recommendations": {
-          "name": "recommendations",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "garden_bed_soil_tests_bed_id_idx": {
-          "name": "garden_bed_soil_tests_bed_id_idx",
-          "columns": [
-            {
-              "expression": "bed_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "garden_bed_soil_tests_bed_id_garden_beds_id_fk": {
-          "name": "garden_bed_soil_tests_bed_id_garden_beds_id_fk",
-          "tableFrom": "garden_bed_soil_tests",
-          "tableTo": "garden_beds",
-          "columnsFrom": ["bed_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -2002,6 +1895,148 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.garden_soil_tests": {
+      "name": "garden_soil_tests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "area_id": {
+          "name": "area_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bed_id": {
+          "name": "bed_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tested_on": {
+          "name": "tested_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lab": {
+          "name": "lab",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ph": {
+          "name": "ph",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "organic_matter_pct": {
+          "name": "organic_matter_pct",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nitrogen": {
+          "name": "nitrogen",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phosphorus": {
+          "name": "phosphorus",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "potassium": {
+          "name": "potassium",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recommendations": {
+          "name": "recommendations",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "garden_soil_tests_area_id_idx": {
+          "name": "garden_soil_tests_area_id_idx",
+          "columns": [
+            {
+              "expression": "area_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "garden_soil_tests_bed_id_idx": {
+          "name": "garden_soil_tests_bed_id_idx",
+          "columns": [
+            {
+              "expression": "bed_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "garden_soil_tests_area_id_garden_areas_id_fk": {
+          "name": "garden_soil_tests_area_id_garden_areas_id_fk",
+          "tableFrom": "garden_soil_tests",
+          "tableTo": "garden_areas",
+          "columnsFrom": ["area_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "garden_soil_tests_bed_id_garden_beds_id_fk": {
+          "name": "garden_soil_tests_bed_id_garden_beds_id_fk",
+          "tableFrom": "garden_soil_tests",
+          "tableTo": "garden_beds",
+          "columnsFrom": ["bed_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "garden_soil_tests_one_owner": {
+          "name": "garden_soil_tests_one_owner",
+          "value": "num_nonnulls(\"garden_soil_tests\".\"area_id\", \"garden_soil_tests\".\"bed_id\") = 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.garden_trays": {

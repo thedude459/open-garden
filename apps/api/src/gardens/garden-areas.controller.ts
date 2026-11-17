@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import { domainError } from '@open-garden/seasonal-plantings';
@@ -6,15 +16,21 @@ import { areaCreateSchema, trayCreateSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
-import { openPlantingService } from './planting-service.factory';
+import {
+  openPlantingService,
+  openSoilTestService,
+  parseSoilTest,
+} from './planting-service.factory';
 
 @Controller('gardens/:id')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenAreasController {
   private readonly plantings: ReturnType<typeof openPlantingService>;
+  private readonly soilTests: ReturnType<typeof openSoilTestService>;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     this.plantings = openPlantingService(bundle.db);
+    this.soilTests = openSoilTestService(bundle.db);
   }
 
   @Get('areas')
@@ -43,5 +59,27 @@ export class GardenAreasController {
     const parsed = trayCreateSchema.safeParse(body);
     if (!parsed.success) throw domainError('VALIDATION_ERROR', 'Tray name is required');
     return this.plantings.createTray(user.id, id, parsed.data.name);
+  }
+
+  /** One sample of the area's ground; a bed whose soil differs takes its own (ADR 0033). */
+  @Post('areas/:areaId/soil-tests')
+  recordSoilTest(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId', ParseUUIDPipe) areaId: string,
+    @Body() body: unknown,
+  ) {
+    return this.soilTests.record(user.id, id, { areaId }, parseSoilTest(body));
+  }
+
+  /** Answers with the area's latest test once this one is gone. */
+  @Delete('areas/:areaId/soil-tests/:testId')
+  removeSoilTest(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('areaId', ParseUUIDPipe) areaId: string,
+    @Param('testId', ParseUUIDPipe) testId: string,
+  ) {
+    return this.soilTests.remove(user.id, id, { areaId }, testId);
   }
 }

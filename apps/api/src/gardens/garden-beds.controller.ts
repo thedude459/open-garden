@@ -14,32 +14,26 @@ import {
 import type { Response } from 'express';
 import type { AuthUser } from '@open-garden/auth';
 import { domainError } from '@open-garden/seasonal-plantings';
-import { SoilTestService } from '@open-garden/seasonal-plantings';
-import {
-  BedRepository,
-  GardenMembershipRepository,
-  SoilTestRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
-import { bedCreateSchema, bedPatchSchema, soilTestCreateSchema } from '@open-garden/shared-types';
+import type { AppDatabase } from '@open-garden/plant-catalog-data';
+import { bedCreateSchema, bedPatchSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
-import { openPlantingService } from './planting-service.factory';
+import {
+  openPlantingService,
+  openSoilTestService,
+  parseSoilTest,
+} from './planting-service.factory';
 
 @Controller('gardens/:id/beds')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenBedsController {
   private readonly plantings: ReturnType<typeof openPlantingService>;
-  private readonly soilTests: SoilTestService;
+  private readonly soilTests: ReturnType<typeof openSoilTestService>;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     this.plantings = openPlantingService(bundle.db);
-    this.soilTests = new SoilTestService(
-      new GardenMembershipRepository(bundle.db),
-      new BedRepository(bundle.db),
-      new SoilTestRepository(bundle.db),
-    );
+    this.soilTests = openSoilTestService(bundle.db);
   }
 
   @Post()
@@ -85,14 +79,7 @@ export class GardenBedsController {
     @Param('bedId', ParseUUIDPipe) bedId: string,
     @Body() body: unknown,
   ) {
-    const parsed = soilTestCreateSchema.safeParse(body);
-    if (!parsed.success) {
-      throw domainError(
-        'VALIDATION_ERROR',
-        parsed.error.issues[0]?.message ?? 'Check the soil test',
-      );
-    }
-    return this.soilTests.record(user.id, id, bedId, parsed.data);
+    return this.soilTests.record(user.id, id, { bedId }, parseSoilTest(body));
   }
 
   /** Answers with the bed's latest test once this one is gone. */
@@ -103,6 +90,6 @@ export class GardenBedsController {
     @Param('bedId', ParseUUIDPipe) bedId: string,
     @Param('testId', ParseUUIDPipe) testId: string,
   ) {
-    return this.soilTests.remove(user.id, id, bedId, testId);
+    return this.soilTests.remove(user.id, id, { bedId }, testId);
   }
 }
