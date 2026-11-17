@@ -232,7 +232,7 @@ guidance. Status from the OpenSSF Scorecard run of November 2026 (overall
 |---|---|---|
 | Pinned-Dependencies, SAST, Dangerous-Workflow, Binary-Artifacts, Dependency-Update-Tool, License, Packaging, Security-Policy, CI-Tests, Maintained | 10 | Passing. Keep them there: actions pinned by SHA (Dependabot updates them), CodeQL, zizmor, `SECURITY.md`, CI on every PR. |
 | Token-Permissions | 9 | **Fixing:** read-only defaults in `codeql.yml`; `verify` and `e2e` drop `actions: write`. Two write grants stay because the job needs them — `release.yml` (`contents: write` to upload release assets) and `dependabot-automerge.yml` (`contents: write` to enable auto-merge) — and their alerts are dismissed as *won't fix* with that reason. |
-| Vulnerabilities | 7 | **Fixing:** the three advisories were all development-only tooling. Removing the unused `@nx/angular`, `@nx/node`, `@nx/playwright`, and `@nx/vite` drops the Jest chain (`deepmerge` GHSA-gcqx-w48m-w2h4, `glob` GHSA-3g3m-2fjr-6pw4); an npm override moves `minimatch` to 11.0.5 (GHSA-g3hv-75wg-m249). `npm audit` (all dependencies) reports 0. Remove the override once Nx, ESLint, and Vitest depend on minimatch 11 themselves. |
+| Vulnerabilities | 7 | **Fixing:** the three advisories were all development-only tooling. Removing the unused `@nx/angular`, `@nx/node`, `@nx/playwright`, and `@nx/vite` drops the Jest chain (`deepmerge` GHSA-gcqx-w48m-w2h4, `glob` GHSA-3g3m-2fjr-6pw4); an npm override moves `minimatch` to 11.0.5 (GHSA-g3hv-75wg-m249). `npm audit` (all dependencies) reports 0. Remove the override once Nx, ESLint, and Vitest depend on minimatch 11 themselves. **Whole-lockfile scan:** the pull request gate fails only on findings a change adds, so `osv-scanner.yml` (OSV-Scanner, weekly and on lockfile changes to `main`) reports every known vulnerability, dev tools included, under Security → Code scanning. Acceptances live in `osv-scanner.toml`, each with a reason and an `effectiveUntil` date. Accepted now: picomatch GHSA-fc5q-39xc-vjpf (ReDoS, build and test tooling only, no fix released) until 2027-01-31. |
 | Signed-Releases | 0 | **Fixing:** the release workflow signs `compose.yaml` with a Sigstore provenance attestation and attaches `compose.yaml.sigstore.json`. Scorecard looks at the last five releases, so the score rises as new releases ship. Images are already attested (SBOM + provenance). |
 | Branch-Protection | ? | **Done:** `scorecard.yml` passes the `SCORECARD_TOKEN` secret (fine-grained, read-only *Administration*, renew before it expires) as `repo_token`, so the check can read the rules. Expect a partial score: required checks, no force pushes, and admins included count, but zero required approvals (single maintainer) does not. |
 | CII-Best-Practices | 0 | **Registered:** [bestpractices.dev project 16466](https://www.bestpractices.dev/projects/16466), badge in the README (in progress, 18% in November 2026). **Maintainer action:** finish the *passing* questionnaire; most criteria are already met (license, `SECURITY.md`, `CONTRIBUTING.md`, CI with tests, release notes, signed releases, static analysis). Scorecard gives partial credit while in progress and full credit at *passing*. |
@@ -249,9 +249,10 @@ guidance. Status from the OpenSSF Scorecard run of November 2026 (overall
   verification is documented in `docs/deploy.md`.
 - **OpenSSF Best Practices badge:** aim for *passing* now, *silver* after 1.0
   (needs a documented release process — done — and a second maintainer).
+- **Done:** [OSV-Scanner](https://github.com/google/osv-scanner) as a second
+  vulnerability source alongside `npm audit` and Trivy (`osv-scanner.yml`).
 - **Optional:** [Allstar](https://github.com/ossf/allstar) to enforce repository
-  policies continuously, and [OSV-Scanner](https://github.com/google/osv-scanner)
-  as a second vulnerability source alongside `npm audit` and Trivy.
+  policies continuously.
 
 ---
 

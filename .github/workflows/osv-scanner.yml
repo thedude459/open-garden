@@ -1,0 +1,33 @@
+name: OSV-Scanner
+
+# Every known vulnerability in the whole lockfile, dev tools included, from
+# OSV.dev (the source OpenSSF Scorecard uses). The pull request gate (ci.yml,
+# sca) fails only on findings a change adds, so an advisory published against a
+# package already on main shows up here, under Security → Code scanning, next
+# to CodeQL and Scorecard. Accepted advisories, each with a reason and an
+# expiry date, are in osv-scanner.toml.
+on:
+  push:
+    branches: [main]
+    paths:
+      - package-lock.json
+      - osv-scanner.toml
+      - .github/workflows/osv-scanner.yml
+  schedule:
+    - cron: '45 7 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  scan:
+    name: osv-scanner
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
+    with:
+      scan-args: |-
+        --recursive
+        ./
