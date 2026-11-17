@@ -104,7 +104,7 @@ export async function openConfiguration(page: Page) {
     expect(id).toBeTruthy();
     await page.goto(`/gardens/${id}/configure`);
   }
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeVisible();
 }
 
 export async function inviteViewer(owner: Page, email: string) {

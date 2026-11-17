@@ -1,5 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { isDevMode } from '@angular/core';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -9,7 +9,7 @@ import { sessionExpiredInterceptor } from './app/auth/session-expired.intercepto
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes),
+    provideRouter(routes, withInMemoryScrolling({ anchorScrolling: 'enabled' })),
     provideHttpClient(withFetch(), withInterceptors([sessionExpiredInterceptor])),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

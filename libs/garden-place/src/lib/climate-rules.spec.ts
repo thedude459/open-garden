@@ -53,6 +53,10 @@ describe('climate rules', () => {
 
   it('fills Washington and leaves another fixture coordinate empty', async () => {
     const climate = new FixtureClimateLookup();
+    // A saved address has lost its postal code; its place id still finds it.
+    await expect(
+      climate.lookup({ ...WASHINGTON_PLACE, postalCode: null, countryCode: null }),
+    ).resolves.toMatchObject({ hardinessZone: 8 });
     await expect(climate.lookup(WASHINGTON_PLACE)).resolves.toEqual({
       hardinessZone: 8,
       lastFrost: { month: 4, day: 15 },
