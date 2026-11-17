@@ -8,6 +8,8 @@ import { PlantingsApiService } from './plantings-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { type ClientReminderItem, type ClientReminderList } from './reminders-offline.queue';
 import { rainForDeviceDay } from './garden-reminders-cache.service';
+import { AuthApiService } from '../auth/auth-api.service';
+import { waterNote } from './water-note';
 @Component({
   standalone: true,
   imports: [RouterLink],
@@ -54,6 +56,9 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
                     @if (item.rainNote) {
                       <span>{{ item.rainNote }}</span>
                     }
+                    @if (waterNote(item.deficitMm, units()); as note) {
+                      <span class="muted"> · {{ note }}</span>
+                    }
                     @if (item.sync === 'pending') {
                       <span class="badge">pending</span>
                     }
@@ -87,6 +92,8 @@ export class GardenRemindersPage implements OnInit {
   private readonly plantingsApi = inject(PlantingsApiService);
   private readonly notices = inject(NoticeService);
   readonly formatDay = formatDay;
+  readonly waterNote = waterNote;
+  readonly units = inject(AuthApiService).units;
 
   gardenId = '';
   readonly list = signal<ClientReminderList | null>(null);

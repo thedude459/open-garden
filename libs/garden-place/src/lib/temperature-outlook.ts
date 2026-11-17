@@ -1,5 +1,5 @@
 import { isWashingtonPoint } from './fixtures';
-import { shiftIsoDate } from './fixture-rain-outlook';
+import { shiftIsoDate } from './dates';
 import type { DayTemperatures, TemperatureOutlook } from './ports';
 
 /** Days of forecast a weather alert looks at: today and the next three. */

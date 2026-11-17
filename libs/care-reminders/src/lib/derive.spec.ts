@@ -164,3 +164,68 @@ describe('deriveReminders', () => {
     expect(items.find((i) => i.kind === 'water')?.dueOn).toBe('2026-01-15');
   });
 });
+
+describe('deriveReminders: watering by water balance', () => {
+  const kc = { initial: 0.6, mid: 1.15, end: 0.8, stageDays: null };
+  const inBed = planting({
+    plantingId: 'w',
+    plantedOn: '2026-06-01',
+    daysToMaturity: null,
+    waterIntervalDays: 3,
+    bedId: 'b1',
+    water: { kc, annual: true, factor: 1 },
+  });
+  // Kc 1.15 (no stage lengths), ET₀ 5 mm: 5.75 mm a day, 28.75 mm on day 5.
+  const weather: Record<string, { et0Mm: number; rainMm: number }> = {};
+  for (let d = 1; d <= 20; d++) {
+    weather[`2026-06-${String(d).padStart(2, '0')}`] = { et0Mm: 5, rainMm: 0 };
+  }
+  const water = (items: ReturnType<typeof deriveReminders>) =>
+    items.filter((i) => i.kind === 'water');
+
+  it('is due when the deficit reaches the threshold, with no fixed interval', () => {
+    expect(water(deriveReminders([inBed], [], '2026-06-08', weather))).toEqual([
+      expect.objectContaining({
+        dueOn: '2026-06-06',
+        urgency: 'overdue',
+        intervalDays: null,
+        deficitMm: 29,
+      }),
+    ]);
+  });
+
+  it('starts again from the day the member watered', () => {
+    const events = [
+      {
+        plantingId: 'w',
+        kind: 'water' as const,
+        occurrenceOn: '2026-06-06',
+        recordedOn: '2026-06-08',
+      },
+    ];
+    expect(water(deriveReminders([inBed], events, '2026-06-08', weather))[0]).toMatchObject({
+      dueOn: '2026-06-13',
+      urgency: 'upcoming',
+    });
+  });
+
+  it('shows nothing when no watering is due through the forecast', () => {
+    const wet = { ...weather, '2026-06-04': { et0Mm: 5, rainMm: 30 } };
+    const shortForecast = Object.fromEntries(
+      Object.entries(wet).filter(([day]) => day <= '2026-06-07'),
+    );
+    expect(water(deriveReminders([inBed], [], '2026-06-05', shortForecast))).toEqual([]);
+  });
+
+  it('falls back to the fixed interval without weather, out of a bed, or once harvested', () => {
+    expect(water(deriveReminders([inBed], [], '2026-06-08'))[0]).toMatchObject({ intervalDays: 3 });
+    expect(
+      water(deriveReminders([{ ...inBed, water: null }], [], '2026-06-08', weather))[0],
+    ).toMatchObject({ intervalDays: 3 });
+    expect(
+      water(
+        deriveReminders([{ ...inBed, harvestedOn: '2026-06-07' }], [], '2026-06-08', weather),
+      )[0],
+    ).toMatchObject({ intervalDays: 3 });
+  });
+});

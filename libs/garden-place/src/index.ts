@@ -21,8 +21,15 @@ export {
   keepFrostPair,
   zoneFromMinimum,
 } from './lib/climate';
-export { FixtureRainOutlook, shiftIsoDate } from './lib/fixture-rain-outlook';
-export { OpenMeteoRainOutlook, parseRainSums } from './lib/open-meteo-rain-outlook';
+export { shiftIsoDate } from './lib/dates';
+export {
+  FixtureWaterOutlook,
+  OpenMeteoWaterOutlook,
+  WATER_FORECAST_DAYS,
+  WATER_PAST_DAYS,
+  parseDayWater,
+  waterOutlookFor,
+} from './lib/water-outlook';
 export {
   ALERT_FORECAST_DAYS,
   FixtureTemperatureOutlook,
@@ -41,6 +48,7 @@ export {
   type MonthDay,
   type PlaceLookup,
   type DayTemperatures,
-  type RainOutlook,
+  type DayWater,
+  type WaterOutlook,
   type TemperatureOutlook,
 } from './lib/ports';

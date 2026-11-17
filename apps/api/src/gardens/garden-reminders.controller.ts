@@ -10,86 +10,35 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
-import { CareReminderService, applyRainCover, domainError } from '@open-garden/care-reminders';
+import { CareReminderService, domainError } from '@open-garden/care-reminders';
 import { PlantingService } from '@open-garden/seasonal-plantings';
-import {
-  FixtureRainOutlook,
-  OpenMeteoRainOutlook,
-  type RainOutlook,
-} from '@open-garden/garden-place';
-import {
-  CareEventRepository,
-  GardenMembershipRepository,
-  GardenRepository,
-  PlantingRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import { asOfQuerySchema, reminderMutationSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { openCareReminderService } from './care-reminder-service.factory';
 import { openPlantingService } from './planting-service.factory';
 
 @Controller('gardens/:id/reminders')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenRemindersController {
   private readonly reminders: CareReminderService;
-  private readonly gardens: GardenRepository;
   private readonly plantings: PlantingService;
-  private readonly rain: RainOutlook;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    const memberships = new GardenMembershipRepository(bundle.db);
-    const plantings = new PlantingRepository(bundle.db);
-    const events = new CareEventRepository(bundle.db);
-    this.gardens = new GardenRepository(bundle.db);
     this.plantings = openPlantingService(bundle.db);
-    this.rain =
-      process.env['PLACE_PROVIDER'] === 'live'
-        ? new OpenMeteoRainOutlook()
-        : new FixtureRainOutlook();
-    this.reminders = new CareReminderService(
-      {
-        getMembership: async (gardenId, userId) => {
-          const row = await memberships.get(gardenId, userId);
-          return row ? { role: row.role } : null;
-        },
-      },
-      plantings,
-      {
-        listForGarden: (gardenId) => events.listForGarden(gardenId),
-        upsert: (plantingId, kind, occurrenceOn, action) =>
-          events.upsertEvent(plantingId, kind, occurrenceOn, action),
-        remove: (plantingId, kind, occurrenceOn) =>
-          events.deleteEvent(plantingId, kind, occurrenceOn),
-      },
-    );
+    this.reminders = openCareReminderService(bundle.db);
   }
 
+  /** Watering follows the property's weather; rain covers a wet due day (ADR 0035). */
   @Get()
-  async list(@CurrentUser() user: AuthUser, @Param('id') id: string, @Query('asOf') asOf: string) {
+  list(@CurrentUser() user: AuthUser, @Param('id') id: string, @Query('asOf') asOf: string) {
     const parsed = asOfQuerySchema.safeParse({ asOf });
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Date must be YYYY-MM-DD');
     }
-    const listed = await this.reminders.list(id, user.id, parsed.data.asOf);
-    const garden = await this.gardens.getById(id);
-    if (garden?.latitude == null || garden.longitude == null) {
-      return { ...listed, outlookOn: null, items: applyRainCover(listed.items, null) };
-    }
-    try {
-      const daily = await this.rain.daily(garden.latitude, garden.longitude, parsed.data.asOf);
-      if (!daily) {
-        return { ...listed, outlookOn: null, items: applyRainCover(listed.items, null) };
-      }
-      return {
-        ...listed,
-        outlookOn: parsed.data.asOf,
-        items: applyRainCover(listed.items, daily),
-      };
-    } catch {
-      return { ...listed, outlookOn: null, items: applyRainCover(listed.items, null) };
-    }
+    return this.reminders.list(id, user.id, parsed.data.asOf);
   }
 
   @Post('complete')
