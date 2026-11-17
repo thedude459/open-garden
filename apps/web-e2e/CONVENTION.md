@@ -23,7 +23,7 @@ Layering, session, waits, and isolation for `apps/web-e2e`. Live HTTP proofs liv
 | `plant-catalog-offline.spec.ts` | keep | Distinct offline action |
 | `plant-favorites.spec.ts` | keep | Favorites UI |
 | `plant-filters.spec.ts` | keep | Filter UI |
-| `plant-search-load.spec.ts` | keep | Search 2s budget |
+| `plant-search-load.spec.ts` | keep | Search 2s budget; Bed View load and its search are timed separately, each under 2s (#212) |
 | `plantings-beds.spec.ts` | keep | Planting-list beds UI |
 | `plantings-record.spec.ts` | keep | Record plantings UI |
 | `plantings-offline.spec.ts` | keep | Distinct offline action |
