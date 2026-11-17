@@ -69,6 +69,7 @@ import { gardenErrorMessage } from './garden-error-message';
                 [attr.aria-label]="'Place ' + plantName(p)"
                 [attr.aria-pressed]="armedId() === p.id"
                 (pointerdown)="armDown.emit({ event: $event, plant: p })"
+                (click)="onPlaceClick($event, p)"
               >
                 Place
               </button>
@@ -110,6 +111,7 @@ import { gardenErrorMessage } from './garden-error-message';
                 [attr.aria-label]="'Place ' + plantName(p)"
                 [attr.aria-pressed]="armedId() === p.id"
                 (pointerdown)="armDown.emit({ event: $event, plant: p })"
+                (click)="onPlaceClick($event, p)"
               >
                 Place
               </button>
@@ -141,6 +143,13 @@ export class BedPlantPanel implements OnInit {
   /** The rootstock a tree placed in this bed grows on; it sets the bed's size. */
   rootstock = model<Rootstock>('semiDwarf');
   armDown = output<{ event: PointerEvent; plant: PlantSummaryDto }>();
+  /** Place chosen from the keyboard (Enter or Space), which sends no pointer events. */
+  armKey = output<PlantSummaryDto>();
+
+  onPlaceClick(ev: MouseEvent, plant: PlantSummaryDto) {
+    // A pointer press already armed it; a keyboard click has no pointer (detail 0).
+    if (ev.detail === 0) this.armKey.emit(plant);
+  }
 
   catalogHits = signal<PlantSummaryDto[]>([]);
   favorites = signal<FavoriteListItemDto[]>([]);

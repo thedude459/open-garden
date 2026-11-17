@@ -118,3 +118,32 @@ describe('GardenPlanCanvas view', () => {
     expect(view.scale()).toBeCloseTo(fitted, 5);
   });
 });
+
+describe('GardenPlanCanvas keyboard', () => {
+  it('on the plan, a bed is a button: Enter or Space selects it', async () => {
+    const view = await render();
+    view.fixture.componentRef.setInput('canEdit', true);
+    await view.fixture.whenStable();
+    const selected: string[] = [];
+    view.canvas.focusBed.subscribe((id) => selected.push(id));
+    const frame = (view.fixture.nativeElement as HTMLElement).querySelector('.layout-bed-frame')!;
+    expect(frame.getAttribute('role')).toBe('button');
+    expect(frame.getAttribute('tabindex')).toBe('0');
+    expect(frame.getAttribute('aria-label')).toBe('North');
+    frame.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    frame.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    frame.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+    expect(selected).toEqual(['b1', 'b1']);
+    const handle = (view.fixture.nativeElement as HTMLElement).querySelector('.layout-handle')!;
+    expect(handle.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('in Bed View, a bed is a labelled picture and not a stop for Tab', async () => {
+    const view = await render();
+    view.fixture.componentRef.setInput('allowBedGeometry', false);
+    await view.fixture.whenStable();
+    const frame = (view.fixture.nativeElement as HTMLElement).querySelector('.layout-bed-frame')!;
+    expect(frame.getAttribute('role')).toBe('img');
+    expect(frame.hasAttribute('tabindex')).toBe(false);
+  });
+});

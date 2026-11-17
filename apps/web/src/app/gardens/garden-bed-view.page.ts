@@ -120,7 +120,11 @@ import { PlaceMarker } from '../ui/place-marker';
             [showPlantingMarks]="true"
             [showBedCaption]="false"
             [probeSpacing]="armedPlant()?.spacingInches ?? null"
-            [planLabel]="'Bed plan'"
+            [planLabel]="
+              armedPlant()
+                ? 'Bed plan: press Enter to place ' + plantName(armedPlant()!) + ' in the middle'
+                : 'Bed plan'
+            "
             (plantingDrop)="onPlantingDrop($event)"
             (gestureEnd)="refreshFlags()"
             (missedBed)="onMissedBed()"
@@ -141,6 +145,7 @@ import { PlaceMarker } from '../ui/place-marker';
                 [emptyBody]="emptyPlantingBody()"
                 [(rootstock)]="rootstock"
                 (armDown)="onArmPointerDown($event.event, $event.plant)"
+                (armKey)="onArmKey($event)"
               />
             </section>
             <og-bed-plantings-list
@@ -332,6 +337,13 @@ export class GardenBedViewPage implements OnInit {
     // Capture so drag-from-Place reaches the bed (same pattern as waiting transplants).
     (ev.currentTarget as HTMLElement).setPointerCapture(ev.pointerId);
     this.panelDrag = { plant, x: ev.clientX, y: ev.clientY };
+  }
+
+  /** Place from the keyboard: choose the plant, then Enter on the plan puts it in the middle. */
+  onArmKey(plant: PlantSummaryDto) {
+    if (!this.guardMutate()) return;
+    this.armedPlant.set(plant);
+    this.canvas()?.focusPlan();
   }
 
   onPlanActivate() {
