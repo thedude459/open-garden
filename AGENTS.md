@@ -200,6 +200,12 @@ Use one word per concept, in the UI and in code comments:
 - The product roadmap lives in `docs/roadmap.md`.
 - `npm test` runs every unit test and the coverage gate; `npm run e2e` runs
   Playwright against a seeded stack. See `README.md` for setup.
+- While working, watch for performance gains, missing features, and pipeline
+  or CI improvements outside the task at hand. Do not build them in the same
+  change (principle IV). Add each as one line under **Ideas** in
+  `docs/roadmap.md` (what, why, rough size), and list them in the pull
+  request description under "Noticed". Bugs still go in GitHub issues, as
+  `CONTRIBUTING.md` says.
 
 ## Governance
 

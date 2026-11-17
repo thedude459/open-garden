@@ -701,6 +701,21 @@ Measured on `main` after PR #167.
   move to TypeScript 7 (the native compiler) once Angular and Nx support it.
 - **Dependencies:** current apart from patch releases Dependabot handles.
 
+## Ideas
+
+Performance gains, features, and pipeline improvements noticed while working
+on something else (AGENTS.md, "Working in this repo"). Not planned yet: move
+one into the [implementation order](#implementation-order) when it is chosen.
+Size is a rough guess: S is under a day, M a few days, L longer.
+
+| Idea | Why | Size |
+|---|---|---|
+| **Pipeline:** copy crop icons from the pinned open-garden-data release in the build, instead of keeping a hand-copied set in `apps/web/src/assets/crops/` | A crop's new icon reaches the app with the catalog it belongs to; `crop-icons.ts` would read the list instead of repeating it | S |
+| **Performance:** a light catalog query for whole-catalog uses ("can sow now", the setup page's starter crops) returning only id, crop id, type, and zones | Both read every catalog row 100 at a time today; fine at 107 entries, slower at dataset v0.3's ~150 crops and their varieties | S |
+| **Tests:** find and clean up the test that leaves a second "Tomato" catalog entry with the tomato crop id in the e2e database | The starter-crops list showed Tomato twice until it learned to keep one entry per crop; leftover rows can hide or cause other test failures | S |
+| **Developer tooling:** `scripts/dev-stack.sh` to start Postgres, the API (fixture places), and the web app, freeing ports 3000 and 4200 first | A stale server still holding port 4200 made `nx serve` exit at startup during local runs; one script also documents the setup | S |
+| **Accessibility:** move the plant to place with the arrow keys in Bed View before Enter places it | Keyboard placement today puts the plant in the middle of the visible area only | M |
+
 ## Licensing
 
 - **Data (`open-garden-data`): CC0-1.0.** Maximally free; compatible with
