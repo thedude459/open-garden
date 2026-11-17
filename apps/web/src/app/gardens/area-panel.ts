@@ -1,11 +1,23 @@
 import { Component, computed, input, linkedSignal, output, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { PropertyAreaDto, SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
+import { formatDay } from '@open-garden/web-ui';
 import { SoilTestPanel } from './soil-test-panel';
 
+/** A bed of the area as the panel lists it. */
+export interface AreaBed {
+  id: string;
+  name: string;
+  /** What grows in it, by name, once each. */
+  plants: string[];
+  /** The bed's own test, which wins over the area's. */
+  soilTest: SoilTestDto | null;
+}
+
 /**
- * One area of the property on the plan: its name (rename), what it holds,
- * its soil test, and delete once it is empty, so no bed or tray is lost.
+ * One area of the property on the plan: what it holds, its beds and what
+ * grows in them, and its soil test. Editors also rename it and delete it
+ * once it is empty, so no bed or tray is lost; viewers see it read-only.
  */
 @Component({
   selector: 'og-area-panel',
@@ -18,46 +30,61 @@ import { SoilTestPanel } from './soil-test-panel';
         <span [attr.data-area-kind]="a.kind">{{ a.name }}</span>
       </h4>
       <p class="muted">{{ holds() }}</p>
-      <form class="filters" (ngSubmit)="submitName()">
-        <label>
-          Name
-          <input
-            [name]="'areaName-' + a.id"
-            [attr.name]="'areaName-' + a.id"
-            maxlength="120"
-            [ngModel]="nameDraft()"
-            (ngModelChange)="nameDraft.set($event)"
-          />
-        </label>
-        <button type="submit" class="btn btn-secondary" [attr.aria-label]="'Rename ' + a.name">
-          Rename
-        </button>
-      </form>
-      @if (empty()) {
-        @if (confirming()) {
-          <p>Delete {{ a.name }}? It holds nothing.</p>
-          <div class="filters">
+      @if (beds().length) {
+        <ul class="area-beds">
+          @for (bed of beds(); track bed.id) {
+            <li>
+              <strong>{{ bed.name }}</strong
+              >: {{ bed.plants.join(', ') || 'nothing planted' }}
+              @if (bed.soilTest; as t) {
+                <span class="muted"> · {{ ownTest(t) }}</span>
+              }
+            </li>
+          }
+        </ul>
+      }
+      @if (canEdit()) {
+        <form class="filters" (ngSubmit)="submitName()">
+          <label>
+            Name
+            <input
+              [name]="'areaName-' + a.id"
+              [attr.name]="'areaName-' + a.id"
+              maxlength="120"
+              [ngModel]="nameDraft()"
+              (ngModelChange)="nameDraft.set($event)"
+            />
+          </label>
+          <button type="submit" class="btn btn-secondary" [attr.aria-label]="'Rename ' + a.name">
+            Rename
+          </button>
+        </form>
+        @if (empty()) {
+          @if (confirming()) {
+            <p>Delete {{ a.name }}? It holds nothing.</p>
+            <div class="filters">
+              <button
+                type="button"
+                class="btn btn-destructive"
+                [attr.aria-label]="'Confirm delete area ' + a.name"
+                (click)="remove.emit()"
+              >
+                Confirm delete
+              </button>
+              <button type="button" class="btn btn-secondary" (click)="confirming.set(false)">
+                Cancel
+              </button>
+            </div>
+          } @else {
             <button
               type="button"
-              class="btn btn-destructive"
-              [attr.aria-label]="'Confirm delete area ' + a.name"
-              (click)="remove.emit()"
+              class="btn btn-secondary"
+              [attr.aria-label]="'Delete area ' + a.name"
+              (click)="confirming.set(true)"
             >
-              Confirm delete
+              Delete area
             </button>
-            <button type="button" class="btn btn-secondary" (click)="confirming.set(false)">
-              Cancel
-            </button>
-          </div>
-        } @else {
-          <button
-            type="button"
-            class="btn btn-secondary"
-            [attr.aria-label]="'Delete area ' + a.name"
-            (click)="confirming.set(true)"
-          >
-            Delete area
-          </button>
+          }
         }
       }
       @if (a.kind !== 'greenhouse') {
@@ -66,7 +93,7 @@ import { SoilTestPanel } from './soil-test-panel';
           [name]="a.name"
           [test]="soilTest()"
           emptyText="No test yet. One lab test of the whole area covers its beds; a bed whose soil differs, such as a raised bed, can have its own."
-          [canEdit]="true"
+          [canEdit]="canEdit()"
           [save]="saveTest()"
           [remove]="removeTest()"
         />
@@ -76,6 +103,9 @@ import { SoilTestPanel } from './soil-test-panel';
 })
 export class AreaPanel {
   area = input.required<PropertyAreaDto>();
+  /** Editors rename, delete, and record soil tests; viewers read. */
+  canEdit = input(false);
+  beds = input<AreaBed[]>([]);
   bedCount = input(0);
   trayCount = input(0);
   soilTest = input<SoilTestDto | null>(null);
@@ -97,6 +127,11 @@ export class AreaPanel {
     if (this.area().kind === 'greenhouse') return count(this.trayCount(), 'tray');
     return count(this.bedCount(), 'bed');
   });
+
+  ownTest(t: SoilTestDto): string {
+    const ph = t.ph != null ? `pH ${t.ph}, ` : '';
+    return `its own soil test: ${ph}${formatDay(t.testedOn)}`;
+  }
 
   submitName() {
     const name = this.nameDraft().trim();

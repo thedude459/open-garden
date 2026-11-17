@@ -1,7 +1,26 @@
-import { expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test';
 
 export const TEST_PASSWORD = 'password123';
 const ORIGIN = 'http://localhost:4200';
+
+/**
+ * Contexts the helpers below open on the worker's shared browser. Playwright
+ * only closes the contexts it creates itself, so without this every signed-in
+ * page stayed open until its worker exited, and a full run ran out of memory.
+ */
+const opened = new Set<BrowserContext>();
+
+async function newContext(browser: Browser, locale: string): Promise<BrowserContext> {
+  const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block', locale });
+  opened.add(context);
+  return context;
+}
+
+test.afterEach(async () => {
+  const contexts = [...opened];
+  opened.clear();
+  await Promise.all(contexts.map((context) => context.close()));
+});
 
 export function uniqueEmail(prefix = 'e2e'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
@@ -61,7 +80,7 @@ export async function signedInPage(
   email = uniqueEmail(),
   locale = 'en-US',
 ): Promise<Page> {
-  const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block', locale });
+  const context = await newContext(browser, locale);
   await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
     route.fulfill({
       status: 200,
@@ -82,11 +101,7 @@ export async function signedInPage(
  * signing out behaves as it does for real users.
  */
 export async function signedInViaLoginForm(browser: Browser, email = uniqueEmail()): Promise<Page> {
-  const context = await browser.newContext({
-    baseURL: ORIGIN,
-    serviceWorkers: 'block',
-    locale: 'en-US',
-  });
+  const context = await newContext(browser, 'en-US');
   await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
     route.fulfill({
       status: 200,

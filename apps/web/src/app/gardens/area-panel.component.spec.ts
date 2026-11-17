@@ -1,11 +1,19 @@
 import { TestBed } from '@angular/core/testing';
 import type { PropertyAreaDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
-import { AreaPanel } from './area-panel';
+import { AreaPanel, type AreaBed } from './area-panel';
 
-async function render(area: PropertyAreaDto, beds = 0, trays = 0) {
+async function render(
+  area: PropertyAreaDto,
+  beds = 0,
+  trays = 0,
+  canEdit = true,
+  bedList: AreaBed[] = [],
+) {
   const fixture = TestBed.createComponent(AreaPanel);
   fixture.componentRef.setInput('area', area);
+  fixture.componentRef.setInput('canEdit', canEdit);
+  fixture.componentRef.setInput('beds', bedList);
   fixture.componentRef.setInput('bedCount', beds);
   fixture.componentRef.setInput('trayCount', trays);
   fixture.componentRef.setInput('saveTest', async () => true);
@@ -57,5 +65,39 @@ describe('AreaPanel', () => {
     expect(view.el.textContent).toContain('1 tray');
     expect(view.el.querySelector('og-soil-test-panel')).toBeNull();
     expect(view.byLabel('Delete area Greenhouse')).toBeNull();
+  });
+
+  it('lists its beds, what grows in each, and a bed’s own soil test; read-only for viewers', async () => {
+    const view = await render(veg, 2, 0, false, [
+      {
+        id: 'b1',
+        name: 'North',
+        plants: ['Tomato', 'Basil'],
+        soilTest: {
+          id: 't',
+          areaId: null,
+          bedId: 'b1',
+          testedOn: '2026-04-01',
+          lab: null,
+          ph: 6.5,
+          organicMatterPct: null,
+          nitrogen: null,
+          phosphorus: null,
+          potassium: null,
+          recommendations: null,
+        },
+      },
+      { id: 'b2', name: 'South', plants: [], soilTest: null },
+    ]);
+    const items = [...view.el.querySelectorAll('.area-beds li')].map((li) =>
+      li.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+    expect(items).toEqual([
+      'North: Tomato, Basil · its own soil test: pH 6.5, Apr 1, 2026',
+      'South: nothing planted',
+    ]);
+    expect(view.el.querySelector('input')).toBeNull();
+    expect(view.byLabel('Rename Vegetable garden')).toBeNull();
+    expect([...view.el.querySelectorAll('button')].map((b) => b.textContent?.trim())).toEqual([]);
   });
 });

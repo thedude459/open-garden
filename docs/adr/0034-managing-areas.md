@@ -42,9 +42,20 @@ Walkways and other non-planting parts of the plan were deleted through
    when the property has more than one area a bed can be in; a refused move
    puts the picker back.
 
+6. **Each area outlined on the plan.** A dashed box around each area's
+   beds, 12 inches out and kept inside the property, labelled with its name
+   at the bottom-left (the margin below the beds is always there). Worked out
+   from the beds (`areaOutlines` in `garden-layout`), so nothing more is
+   stored, and drawn only when two or more areas have beds. Areas whose beds
+   interleave draw overlapping boxes; an area with a shape of its own would
+   fix that if households need it.
+7. **Every member reads the areas.** The plan's sidebar lists each area for
+   viewers too, read-only: what it holds, each bed with what grows in it and
+   any soil test of its own, and the area's soil test.
+
 ## Consequences
 
 - Areas have names a household chose and can be tidied, without a schema
   change.
-- Drawing each area's outline on the plan, and a read-only area view for
-  viewers, are the second half of roadmap step 8.
+- Roadmap step 8 is done: the property → area → bed model now shows on the
+  plan as well as in the data.

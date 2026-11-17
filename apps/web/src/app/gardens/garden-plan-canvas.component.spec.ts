@@ -147,3 +147,35 @@ describe('GardenPlanCanvas keyboard', () => {
     expect(frame.hasAttribute('tabindex')).toBe(false);
   });
 });
+
+describe('GardenPlanCanvas area outlines', () => {
+  it('outlines each area around its beds when two areas have beds', async () => {
+    const fixture = TestBed.createComponent(GardenPlanCanvas);
+    fixture.componentRef.setInput('beds', [
+      { ...bed, areaId: 'veg' },
+      {
+        ...bed,
+        id: 'b2',
+        name: 'Apple',
+        areaId: 'orchard',
+        geometry: { ...bed.geometry!, originXInches: 300 },
+      },
+    ]);
+    fixture.componentRef.setInput('plantingAreas', [
+      { id: 'veg', name: 'Vegetable garden', kind: 'vegetable' },
+      { id: 'orchard', name: 'Orchard', kind: 'orchard' },
+    ]);
+    fixture.autoDetectChanges();
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const outlines = [...el.querySelectorAll('rect.area-outline')];
+    expect(outlines.map((r) => r.getAttribute('data-outline-of'))).toEqual([
+      'Vegetable garden',
+      'Orchard',
+    ]);
+    expect(outlines[0]?.getAttribute('x')).toBe('108');
+    expect(
+      [...el.querySelectorAll('text.area-outline-label')].map((t) => t.textContent?.trim()),
+    ).toEqual(['Vegetable garden', 'Orchard']);
+  });
+});

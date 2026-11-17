@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  computed,
   Component,
   HostListener,
   OnInit,
@@ -39,7 +40,7 @@ import {
   type NewPlot,
 } from './layout-add-forms';
 import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspector';
-import { AreaPanel } from './area-panel';
+import { AreaPanel, type AreaBed } from './area-panel';
 import { LayoutBedsList, LayoutWalkwaysList } from './layout-lists';
 import { PlanSaveStatus } from './plan-save-status';
 import { LayoutApiService } from './layout-api.service';
@@ -49,6 +50,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
+
+const NO_AREA_BEDS: AreaBed[] = [];
 
 @Component({
   standalone: true,
@@ -170,6 +173,7 @@ import { EmptyState } from '../ui/empty-state';
           <og-garden-plan-canvas
             [beds]="draft()!.beds"
             [areas]="draft()!.areas"
+            [plantingAreas]="areas()"
             [plantings]="draft()!.plantings"
             [priorCrops]="draft()!.priorCrops ?? []"
             [selectedId]="selectedId()"
@@ -246,13 +250,15 @@ import { EmptyState } from '../ui/empty-state';
               [deleting]="notices.busyMap().has('delete-area')"
               (remove)="deleteArea($event)"
             />
-            @if (canEdit() && (areas().length || trays().length)) {
+            @if (areas().length || trays().length) {
               <h3>Areas</h3>
               <ul class="card-list">
                 @for (area of areas(); track area.id) {
                   <li>
                     <og-area-panel
                       [area]="area"
+                      [canEdit]="canEdit()"
+                      [beds]="areaBeds(area.id)"
                       [bedCount]="bedsIn(area.id)"
                       [trayCount]="traysIn(area.id)"
                       [soilTest]="areaSoilTest(area.id)"
@@ -455,6 +461,27 @@ export class GardenLayoutPage implements OnInit {
     return fn;
   }
 
+  /** Each area's beds, what grows in each, and any bed's own soil test. */
+  readonly bedsByArea = computed(() => {
+    const byArea = new Map<string, AreaBed[]>();
+    const d = this.draft();
+    if (!d) return byArea;
+    for (const bed of d.beds) {
+      if (!bed.areaId) continue;
+      const plants = [
+        ...new Set(d.plantings.filter((p) => p.bedId === bed.id).map((p) => p.commonName)),
+      ];
+      const list = byArea.get(bed.areaId) ?? [];
+      list.push({ id: bed.id, name: bed.name, plants, soilTest: bed.soilTest ?? null });
+      byArea.set(bed.areaId, list);
+    }
+    return byArea;
+  });
+
+  areaBeds(areaId: string): AreaBed[] {
+    return this.bedsByArea().get(areaId) ?? NO_AREA_BEDS;
+  }
+
   /** How many beds of the plan are in this area. */
   bedsIn(areaId: string): number {
     return this.draft()?.beds.filter((bed) => bed.areaId === areaId).length ?? 0;
@@ -523,11 +550,19 @@ export class GardenLayoutPage implements OnInit {
     return this.draft()?.areaSoilTests?.find((t) => t.areaId === areaId) ?? null;
   }
 
-  /** The area test that applies to a bed without its own. */
+  /** The area test that applies to each bed without its own, by bed id. */
+  private readonly inherited = computed(() => {
+    const byBed = new Map<string, { name: string; test: SoilTestDto }>();
+    for (const bed of this.draft()?.beds ?? []) {
+      const area = this.areas().find((a) => a.id === bed.areaId);
+      const test = area ? this.areaSoilTest(area.id) : null;
+      if (area && test) byBed.set(bed.id, { name: area.name, test });
+    }
+    return byBed;
+  });
+
   inheritedSoilTest(bed: LayoutBedDto): { name: string; test: SoilTestDto } | null {
-    const area = this.areas().find((a) => a.id === bed.areaId);
-    const test = area ? this.areaSoilTest(area.id) : null;
-    return area && test ? { name: area.name, test } : null;
+    return this.inherited().get(bed.id) ?? null;
   }
 
   /** Soil tests are not part of the layout save, so this keeps the draft clean. */
