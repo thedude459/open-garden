@@ -12,6 +12,7 @@
           "/manifest.webmanifest",
           "/*.css",
           "/*.js",
+          "/assets/mark.svg",
           "/assets/icon-192.png",
           "/assets/icon-512.png"
         ]

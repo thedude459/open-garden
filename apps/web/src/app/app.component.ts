@@ -46,7 +46,7 @@ import { SOURCE_CODE_URL } from './source-link';
           }
           <aside class="sidebar" [class.open]="menuOpen()">
             <a class="nav-brand" routerLink="/today">
-              <img src="assets/icon-512.png" alt="" width="32" height="32" />
+              <img src="assets/mark.svg" alt="" width="32" height="32" />
               <h1 class="brand-name">Open Garden</h1>
             </a>
             <div class="sidebar-body">
@@ -155,7 +155,7 @@ import { SOURCE_CODE_URL } from './source-link';
       } @else {
         <header class="app-bar">
           <a class="nav-brand" routerLink="/login">
-            <img src="assets/icon-512.png" alt="" width="32" height="32" />
+            <img src="assets/mark.svg" alt="" width="32" height="32" />
             <h1 class="brand-name">Open Garden</h1>
           </a>
           <span class="app-bar-end">

@@ -13,7 +13,7 @@ import { safeReturnUrl } from './session-expiry';
   template: `
     <div class="auth-page">
       <div class="brand-hero">
-        <img src="assets/icon-512.png" alt="Open Garden" width="72" height="72" />
+        <img src="assets/mark.svg" alt="Open Garden" width="72" height="72" />
         <p class="muted">Household garden planner</p>
       </div>
       <h2>{{ mode() === 'login' ? 'Sign in' : 'Create account' }}</h2>
