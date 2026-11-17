@@ -113,6 +113,13 @@ fails on the same code also gets the `flaky-test` label: say how often it
 failed (`--repeat-each`), and whether it also fails on `main`. Never skip or
 retry a flaky test to get green; fix the cause.
 
+**Workarounds in tests.** When you work around a problem to make a test run
+(a different action than a person would take, a local-only config, a step done
+by hand), open an issue for the real problem with the labels `bug` and
+`test-workaround`, and add it to **Test workarounds** in `docs/roadmap.md`.
+Remove the line when the issue is fixed. A workaround never goes into the
+repository without its issue.
+
 ## Useful commands
 
 ```bash

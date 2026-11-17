@@ -206,6 +206,9 @@ Use one word per concept, in the UI and in code comments:
   `docs/roadmap.md` (what, why, rough size), and list them in the pull
   request description under "Noticed". Bugs still go in GitHub issues, as
   `CONTRIBUTING.md` says.
+- Any workaround used to get a test to run, locally or in CI, gets an issue
+  (labels `bug` and `test-workaround`) and a line under **Test workarounds**
+  in `docs/roadmap.md`, as `CONTRIBUTING.md` says.
 
 ## Governance
 
