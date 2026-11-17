@@ -73,6 +73,17 @@ export class AuthApiService {
     sessionStorage.setItem('og_units', units);
   }
 
+  /** Change the password; the server signs out every other session. */
+  async changePassword(currentPassword: string, newPassword: string) {
+    await firstValueFrom(
+      this.http.put(
+        `${API}/account/password`,
+        { currentPassword, newPassword },
+        { withCredentials: true },
+      ),
+    );
+  }
+
   currentUserId(): string | null {
     return this.user?.id ?? sessionStorage.getItem('og_user_id');
   }

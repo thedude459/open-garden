@@ -55,6 +55,7 @@ test('the main pages have no serious accessibility problems', async ({ browser }
   await heading('When to sow')();
   found['plant'] = await problems(page);
   await scan('favorites', '/favorites', heading(/Favorites/));
+  await scan('account', '/account', heading('Account'));
   await scan('setup', `/gardens/${gardenId}/welcome`, heading(/Set up/));
   // A bed on the plan, so the plan and Bed View are scanned with something drawn.
   await page.getByRole('button', { name: 'Add bed' }).click();

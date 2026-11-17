@@ -25,6 +25,11 @@ export const routes: Routes = [
     loadComponent: () => import('./favorites/favorites-list.page').then((m) => m.FavoritesListPage),
   },
   {
+    path: 'account',
+    canActivate: [authGuard],
+    loadComponent: () => import('./auth/account.page').then((m) => m.AccountPage),
+  },
+  {
     path: 'today',
     canActivate: [authGuard],
     loadComponent: () => import('./today/today.page').then((m) => m.TodayPage),

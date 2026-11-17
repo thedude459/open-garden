@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { AuthService, EMAIL_TAKEN_MESSAGE } from './auth-service';
 
@@ -170,5 +171,39 @@ describe('AuthService', () => {
     expect(user?.email).toBe('a@example.com');
     await svc.logout('abc');
     expect(db.delete).toHaveBeenCalled();
+  });
+
+  describe('changePassword', () => {
+    async function setup(current = 'old-password') {
+      const passwordHash = await bcrypt.hash(current, 4);
+      const limit = vi.fn().mockResolvedValue([{ passwordHash }]);
+      const set = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+      const deleteWhere = vi.fn().mockResolvedValue(undefined);
+      const tx = {
+        update: vi.fn().mockReturnValue({ set }),
+        delete: vi.fn().mockReturnValue({ where: deleteWhere }),
+      };
+      const db = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit }) }),
+        }),
+        transaction: vi.fn(async (fn: (t: typeof tx) => Promise<void>) => fn(tx)),
+      };
+      return { svc: new AuthService(db as never), db, set, deleteWhere };
+    }
+
+    it('saves a new hash and signs out the other sessions', async () => {
+      const { svc, set, deleteWhere } = await setup();
+      expect(await svc.changePassword('u1', 'old-password', 'new-password', 'tok')).toBe(true);
+      const saved = set.mock.calls[0]![0] as { passwordHash: string };
+      expect(await bcrypt.compare('new-password', saved.passwordHash)).toBe(true);
+      expect(deleteWhere).toHaveBeenCalledTimes(1);
+    });
+
+    it('changes nothing when the current password is wrong', async () => {
+      const { svc, db } = await setup();
+      expect(await svc.changePassword('u1', 'guess', 'new-password', 'tok')).toBe(false);
+      expect(db.transaction).not.toHaveBeenCalled();
+    });
   });
 });

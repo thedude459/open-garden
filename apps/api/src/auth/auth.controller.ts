@@ -94,7 +94,7 @@ function clientIp(res: Response): string {
   return (Array.isArray(real) ? real[0] : real) ?? res.req.socket.remoteAddress ?? 'unknown';
 }
 
-function throwIfLimited(retryAfterMs: number) {
+export function throwIfLimited(retryAfterMs: number) {
   if (retryAfterMs <= 0) return;
   const minutes = Math.max(1, Math.ceil(retryAfterMs / 60_000));
   const err = new Error(

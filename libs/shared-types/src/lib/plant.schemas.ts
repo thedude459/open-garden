@@ -35,6 +35,13 @@ export const authRegisterSchema = z.object({
   displayName: z.string().min(1).max(120).optional(),
 });
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8, 'The new password needs at least 8 characters'),
+  })
+  .strict();
+
 export const favoriteMutationSchema = z.object({
   clientMutationId: z.string().min(1).max(128).optional(),
 });

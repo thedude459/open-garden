@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, ne } from 'drizzle-orm';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import type { Units } from '@open-garden/shared-types';
 import { isUniqueViolation, sessions, users } from '@open-garden/plant-catalog-data';
@@ -93,6 +93,34 @@ export class AuthService {
       .where(eq(users.email, email.trim().toLowerCase()))
       .returning({ id: users.id });
     return rows.length > 0;
+  }
+
+  /**
+   * Change a member's password after checking the current one, and sign out
+   * every other session, so a device someone else may hold loses access.
+   * The session making the change (`keepToken`) stays signed in. False when
+   * the current password is wrong.
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    keepToken: string,
+  ): Promise<boolean> {
+    const [user] = await this.db
+      .select({ passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) return false;
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.db.transaction(async (tx) => {
+      await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
+      await tx
+        .delete(sessions)
+        .where(and(eq(sessions.userId, userId), ne(sessions.tokenHash, hashToken(keepToken))));
+    });
+    return true;
   }
 
   async setUnits(userId: string, units: Units): Promise<void> {

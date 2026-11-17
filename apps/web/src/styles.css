@@ -215,6 +215,11 @@ textarea {
   color: var(--muted);
 }
 
+.sidebar-account {
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+
 .sidebar-signout {
   margin-top: 0.5rem;
   text-align: left;
