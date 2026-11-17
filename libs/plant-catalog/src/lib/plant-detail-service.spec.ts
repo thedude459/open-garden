@@ -18,6 +18,8 @@ describe('PlantDetailService', () => {
         species: 'Solanum lycopersicum',
         cultivar: null,
         plantType: 'vegetable',
+        family: 'Nightshade family',
+        cropId: 'tomato',
         zoneMin: 5,
         zoneMax: 10,
         sunRequirements: 'full',
@@ -45,12 +47,15 @@ describe('PlantDetailService', () => {
         stageDaysMid: 50,
         stageDaysLate: 30,
       }),
+      listByCrop: vi.fn().mockResolvedValue([]),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(true) };
     const svc = new PlantDetailService(plants as never, favorites as never);
     const detail = await svc.getById('p1', 'user-1');
     expect(detail?.isFavorite).toBe(true);
     expect(detail?.commonName).toBe('Tomato');
+    expect(detail?.family).toBe('Nightshade family');
+    expect(detail?.cropId).toBe('tomato');
     expect(detail?.growingGuidance.indoorStart).toEqual({
       frostAnchor: 'last',
       weeksEarliest: -8,

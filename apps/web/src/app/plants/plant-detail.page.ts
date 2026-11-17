@@ -17,6 +17,7 @@ import { PlantsApiService } from './plants-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { SowingTimeline } from './sowing-timeline';
+import { PlantIcon } from '../ui/plant-icon';
 
 const EVIDENCE_LABELS: Record<CatalogCompanionDto['evidence'], string> = {
   research: 'Research',
@@ -40,7 +41,7 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
 
 @Component({
   standalone: true,
-  imports: [RouterLink, SowingTimeline],
+  imports: [RouterLink, SowingTimeline, PlantIcon],
   styles: `
     .companion-list {
       list-style: none;
@@ -58,13 +59,21 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
     .small {
       font-size: 0.875rem;
     }
+    .plant-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
   `,
   template: `
     <p class="back-link"><a routerLink="/plants">Back to catalog</a></p>
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (plant(); as p) {
-      <h2>{{ p.commonName }}</h2>
+      <h2 class="plant-title">
+        <og-plant-icon [plantType]="p.plantType" [cropId]="p.cropId" />
+        {{ p.commonName }}
+      </h2>
       <p class="muted">
         {{ p.species }}
         @if (p.cultivar) {

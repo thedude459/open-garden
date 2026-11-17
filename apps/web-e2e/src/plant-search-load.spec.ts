@@ -24,7 +24,7 @@ test('plant search shows stand-ins within 2s without per-result plant GETs', asy
   const interactiveMs = Date.now() - started;
   expect(interactiveMs, `plants search interactive_ms=${interactiveMs}`).toBeLessThan(2000);
   expect(await rows.count()).toBeGreaterThanOrEqual(10);
-  await expect(page.locator('.plant-stand-in, .card-list img')).toHaveCount(await rows.count());
+  await expect(page.locator('.card-list .plant-icon img')).toHaveCount(await rows.count());
   expect(extra, extra.join('\n')).toEqual([]);
 
   const created = await page.request.post('/api/gardens', {

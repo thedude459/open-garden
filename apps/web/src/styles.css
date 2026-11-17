@@ -834,7 +834,7 @@ a.garden-card:focus-visible {
 }
 
 .row > img,
-.row > .plant-stand-in {
+.row > .plant-icon {
   flex: 0 0 auto;
 }
 
@@ -1181,37 +1181,15 @@ legend {
   background: #fff6f6;
 }
 
-.plant-stand-in {
+.plant-icon {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex: 0 0 auto;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: var(--radius);
-  background: var(--moss);
-  color: #fff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
 }
-
-.plant-stand-in[data-plant-type='vegetable'] {
-  background: #2f5d3a;
-}
-.plant-stand-in[data-plant-type='herb'] {
-  background: #4a7c59;
-}
-.plant-stand-in[data-plant-type='flower'] {
-  background: #8a4d6e;
-}
-.plant-stand-in[data-plant-type='fruit'] {
-  background: #b85c38;
-}
-.plant-stand-in[data-plant-type='shrub'] {
-  background: #5a6b3f;
-}
-.plant-stand-in[data-plant-type='tree'] {
-  background: #3d4f2f;
+.plant-icon img {
+  width: 100%;
+  height: 100%;
 }
 
 .plant-facts {

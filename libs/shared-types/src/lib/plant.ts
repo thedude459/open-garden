@@ -36,12 +36,14 @@ export interface PlantSummaryDto {
   zoneMax: number;
   /** Present on list items; catalog admission requires a known value. */
   spacingInches: number;
-  /** Null until a later art feature; clients use the CSS stand-in. */
+  /** Null: clients show the crop's icon (by `cropId`) instead. */
   illustrationUrl: string | null;
   /** Trees only: spacing by rootstock, which sizes a tree's bed. */
   rootstockSpacingInches?: RootstockSpacingDto | null;
   /** Botanical family by its common name, for rotation advice. */
   family?: string | null;
+  /** The dataset crop this entry belongs to; names its icon. Null outside the dataset. */
+  cropId?: string | null;
 }
 
 /**

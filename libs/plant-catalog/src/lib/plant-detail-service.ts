@@ -39,6 +39,8 @@ export class PlantDetailService {
       species: row.species,
       cultivar: row.cultivar,
       plantType: row.plantType as PlantType,
+      family: row.family ?? null,
+      cropId: row.cropId ?? null,
       zoneMin: row.zoneMin,
       zoneMax: row.zoneMax,
       sunRequirements: row.sunRequirements,
