@@ -44,6 +44,11 @@ test('the main pages have no serious accessibility problems', async ({ browser }
   await scan('properties', '/gardens', heading('Properties'));
   await scan('today', '/today', heading(/Today/));
   await scan('catalog', '/plants', heading('Plant catalog'));
+  // A busy button (a search under way) must keep its label readable too.
+  await page
+    .getByRole('button', { name: 'Apply' })
+    .evaluate((b) => b.setAttribute('aria-busy', 'true'));
+  found['catalog busy'] = await problems(page);
   await page.getByPlaceholder('Search name / species / variety').fill('Tomato');
   await page.getByRole('button', { name: 'Apply' }).click();
   await page.getByRole('link', { name: /Tomato \(Cherry\)/ }).click();
