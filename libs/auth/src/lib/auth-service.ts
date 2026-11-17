@@ -3,7 +3,19 @@ import bcrypt from 'bcryptjs';
 import { and, eq, gt, lt, ne } from 'drizzle-orm';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import type { Units } from '@open-garden/shared-types';
-import { isUniqueViolation, sessions, users } from '@open-garden/plant-catalog-data';
+import {
+  gardenMemberships,
+  gardens,
+  isUniqueViolation,
+  sessions,
+  users,
+} from '@open-garden/plant-catalog-data';
+
+/** Why an account was not deleted, or that it was. */
+export type DeleteAccountResult =
+  | { deleted: true }
+  | { deleted: false; reason: 'wrong-password' }
+  | { deleted: false; reason: 'shared-properties'; properties: string[] };
 
 export interface AuthUser {
   id: string;
@@ -107,12 +119,7 @@ export class AuthService {
     newPassword: string,
     keepToken: string,
   ): Promise<boolean> {
-    const [user] = await this.db
-      .select({ passwordHash: users.passwordHash })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) return false;
+    if (!(await this.passwordMatches(userId, currentPassword))) return false;
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.db.transaction(async (tx) => {
       await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
@@ -121,6 +128,45 @@ export class AuthService {
         .where(and(eq(sessions.userId, userId), ne(sessions.tokenHash, hashToken(keepToken))));
     });
     return true;
+  }
+
+  /**
+   * Delete a member's account after checking their password. Their sessions,
+   * memberships, and the properties only they belong to go with it (the
+   * foreign keys cascade). Refused while they own a property someone else
+   * also belongs to: they hand it over or delete it first, so nobody loses a
+   * shared property by surprise.
+   */
+  async deleteAccount(userId: string, password: string): Promise<DeleteAccountResult> {
+    if (!(await this.passwordMatches(userId, password))) {
+      return { deleted: false, reason: 'wrong-password' };
+    }
+    return this.db.transaction(async (tx) => {
+      const shared = await tx
+        .selectDistinct({ name: gardens.name })
+        .from(gardens)
+        .innerJoin(gardenMemberships, eq(gardenMemberships.gardenId, gardens.id))
+        .where(and(eq(gardens.ownerId, userId), ne(gardenMemberships.userId, userId)))
+        .orderBy(gardens.name);
+      if (shared.length) {
+        return {
+          deleted: false as const,
+          reason: 'shared-properties' as const,
+          properties: shared.map((g) => g.name),
+        };
+      }
+      await tx.delete(users).where(eq(users.id, userId));
+      return { deleted: true as const };
+    });
+  }
+
+  private async passwordMatches(userId: string, password: string): Promise<boolean> {
+    const [user] = await this.db
+      .select({ passwordHash: users.passwordHash })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+    return Boolean(user && (await bcrypt.compare(password, user.passwordHash)));
   }
 
   async setUnits(userId: string, units: Units): Promise<void> {

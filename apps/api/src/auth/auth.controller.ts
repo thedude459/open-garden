@@ -80,7 +80,7 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response, @CurrentUser() _user: AuthUser) {
     const token = (res.req as { cookies?: { og_session?: string } }).cookies?.og_session;
     if (token) await this.auth.logout(token);
-    res.clearCookie('og_session', sessionCookieOptions(forwardedProto(res)));
+    clearSessionCookie(res);
   }
 }
 
@@ -107,6 +107,10 @@ export function throwIfLimited(retryAfterMs: number) {
 function forwardedProto(res: Response): string | undefined {
   const value = res.req.headers['x-forwarded-proto'];
   return Array.isArray(value) ? value[0] : value;
+}
+
+export function clearSessionCookie(res: Response) {
+  res.clearCookie('og_session', sessionCookieOptions(forwardedProto(res)));
 }
 
 function setSessionCookie(res: Response, token: string) {

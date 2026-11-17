@@ -1,9 +1,19 @@
-import { Body, Controller, HttpCode, Inject, Put, Req, UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
+import {
+  Body,
+  Controller,
+  Delete,
+  HttpCode,
+  Inject,
+  Put,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { AuthService, FailureLimiter, type AuthUser } from '@open-garden/auth';
-import { changePasswordSchema, unitsSchema } from '@open-garden/shared-types';
+import { changePasswordSchema, deleteAccountSchema, unitsSchema } from '@open-garden/shared-types';
 import { domainError } from '@open-garden/gardens';
-import { throwIfLimited } from './auth.controller';
+import { clearSessionCookie, throwIfLimited } from './auth.controller';
 import { CurrentUser, SessionGuard } from './session.guard';
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
@@ -12,7 +22,7 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
 @Controller('account')
 @UseGuards(SessionGuard)
 export class AccountController {
-  /** Wrong current passwords per member, so a left-open session cannot guess it. */
+  /** Wrong passwords per member, so a left-open session cannot guess it. */
   private readonly wrongPassword = new FailureLimiter(5, FIFTEEN_MINUTES);
 
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
@@ -42,5 +52,36 @@ export class AccountController {
       throw domainError('VALIDATION_ERROR', 'The current password is not right.');
     }
     this.wrongPassword.clear(user.id);
+  }
+
+  /**
+   * Delete the account. Refused (409) while the member owns a property others
+   * also belong to; the message names those properties.
+   */
+  @Delete()
+  @HttpCode(204)
+  async deleteAccount(
+    @CurrentUser() user: AuthUser,
+    @Body() body: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const parsed = deleteAccountSchema.safeParse(body);
+    if (!parsed.success) throw domainError('VALIDATION_ERROR', 'Enter your password');
+    throwIfLimited(this.wrongPassword.retryAfterMs(user.id));
+    const result = await this.auth.deleteAccount(user.id, parsed.data.password);
+    if (result.deleted) {
+      this.wrongPassword.clear(user.id);
+      clearSessionCookie(res);
+      return;
+    }
+    if (result.reason === 'wrong-password') {
+      this.wrongPassword.fail(user.id);
+      throw domainError('VALIDATION_ERROR', 'The password is not right.');
+    }
+    throw domainError(
+      'CONFLICT',
+      `Others belong to ${result.properties.join(', ')}. Before deleting your account, ` +
+        `transfer ownership to a member in Settings, or delete the property.`,
+    );
   }
 }

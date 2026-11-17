@@ -206,4 +206,58 @@ describe('AuthService', () => {
       expect(db.transaction).not.toHaveBeenCalled();
     });
   });
+
+  describe('deleteAccount', () => {
+    async function setup(shared: { name: string }[]) {
+      const passwordHash = await bcrypt.hash('password123', 4);
+      const deleteWhere = vi.fn().mockResolvedValue(undefined);
+      const orderBy = vi.fn().mockResolvedValue(shared);
+      const tx = {
+        selectDistinct: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            innerJoin: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ orderBy }),
+            }),
+          }),
+        }),
+        delete: vi.fn().mockReturnValue({ where: deleteWhere }),
+      };
+      const db = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              limit: vi.fn().mockResolvedValue([{ passwordHash }]),
+            }),
+          }),
+        }),
+        transaction: vi.fn(async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx)),
+      };
+      return { svc: new AuthService(db as never), db, deleteWhere };
+    }
+
+    it('deletes the member when no property they own has others in it', async () => {
+      const { svc, deleteWhere } = await setup([]);
+      expect(await svc.deleteAccount('u1', 'password123')).toEqual({ deleted: true });
+      expect(deleteWhere).toHaveBeenCalledTimes(1);
+    });
+
+    it('names the shared properties and deletes nothing', async () => {
+      const { svc, deleteWhere } = await setup([{ name: 'Allotment' }, { name: 'Home' }]);
+      expect(await svc.deleteAccount('u1', 'password123')).toEqual({
+        deleted: false,
+        reason: 'shared-properties',
+        properties: ['Allotment', 'Home'],
+      });
+      expect(deleteWhere).not.toHaveBeenCalled();
+    });
+
+    it('refuses a wrong password before looking further', async () => {
+      const { svc, db } = await setup([]);
+      expect(await svc.deleteAccount('u1', 'guess')).toEqual({
+        deleted: false,
+        reason: 'wrong-password',
+      });
+      expect(db.transaction).not.toHaveBeenCalled();
+    });
+  });
 });

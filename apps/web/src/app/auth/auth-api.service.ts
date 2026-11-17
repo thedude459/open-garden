@@ -84,6 +84,14 @@ export class AuthApiService {
     );
   }
 
+  /** Delete the account after the password check; this browser forgets it. */
+  async deleteAccount(password: string) {
+    await firstValueFrom(
+      this.http.delete(`${API}/account`, { body: { password }, withCredentials: true }),
+    );
+    this.forget();
+  }
+
   currentUserId(): string | null {
     return this.user?.id ?? sessionStorage.getItem('og_user_id');
   }

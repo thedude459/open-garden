@@ -42,6 +42,8 @@ export const changePasswordSchema = z
   })
   .strict();
 
+export const deleteAccountSchema = z.object({ password: z.string().min(1) }).strict();
+
 export const favoriteMutationSchema = z.object({
   clientMutationId: z.string().min(1).max(128).optional(),
 });

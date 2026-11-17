@@ -2,12 +2,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router } from '@angular/router';
 import { NoticeService } from '../ui/notice.service';
 import { AccountPage } from './account.page';
 
 async function render() {
   TestBed.configureTestingModule({
-    providers: [provideHttpClient(), provideHttpClientTesting()],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      provideRouter([{ path: '**', children: [] }]),
+    ],
   });
   const fixture = TestBed.createComponent(AccountPage);
   fixture.autoDetectChanges();
@@ -71,6 +76,47 @@ describe('AccountPage', () => {
       expect(el.querySelector('[role="alert"]')?.textContent).toContain(
         'The current password is not right.',
       ),
+    );
+  });
+
+  it('deletes the account after the password and goes to sign-in', async () => {
+    const { fixture, el, http } = await render();
+    sessionStorage.setItem('og_authed', '1');
+    const button = (name: string) =>
+      [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === name)!;
+    button('Delete account').click();
+    await fixture.whenStable();
+    const input = el.querySelector<HTMLInputElement>('input[name="deletePassword"]')!;
+    input.value = 'password123';
+    input.dispatchEvent(new Event('input'));
+    button('Delete my account permanently').click();
+    await fixture.whenStable();
+    const req = http.expectOne('/api/account');
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.body).toEqual({ password: 'password123' });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/login'));
+    expect(sessionStorage.getItem('og_authed')).toBeNull();
+  });
+
+  it('names the shared properties that stop the deletion', async () => {
+    const { fixture, el, http } = await render();
+    [...el.querySelectorAll('button')]
+      .find((b) => b.textContent?.trim() === 'Delete account')!
+      .click();
+    await fixture.whenStable();
+    [...el.querySelectorAll('button')]
+      .find((b) => b.textContent?.trim() === 'Delete my account permanently')!
+      .click();
+    await fixture.whenStable();
+    http
+      .expectOne('/api/account')
+      .flush(
+        { error: { code: 'CONFLICT', message: 'Others belong to Shared plot.' } },
+        { status: 409, statusText: 'Conflict' },
+      );
+    await vi.waitFor(() =>
+      expect(el.querySelector('[role="alert"]')?.textContent).toContain('Shared plot'),
     );
   });
 });
