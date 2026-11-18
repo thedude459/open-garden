@@ -137,29 +137,45 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
     await owner.post(`/api/gardens/${garden.id}/members`, {
       data: { email: viewerUser.email, role: 'viewer' },
     });
-    const day = (n: number) => laterIso(n);
+    // Next spring at the test address (frost Apr 15 and Oct 20): radish sows
+    // Mar 11 to Apr 29 and again Sep 8 to Oct 6, which is also its last sowing.
+    const y = new Date().getFullYear() + 1;
     const radish = await findPlant(owner, 'Radish');
-    const firstId = await addPlanting(owner, garden.id, radish.id, todayIso());
+    const firstId = await addPlanting(owner, garden.id, radish.id, `${y}-03-11`);
     const repeatUrl = `/api/gardens/${garden.id}/plantings/${firstId}/repeat`;
 
-    const asViewer = await viewer.post(repeatUrl, { data: { everyWeeks: 2, until: day(30) } });
+    const asViewer = await viewer.post(repeatUrl, { data: { everyWeeks: 2, until: `${y}-10-31` } });
     expect(asViewer.status()).toBe(403);
-    const badWeeks = await owner.post(repeatUrl, { data: { everyWeeks: 0, until: day(30) } });
+    const badWeeks = await owner.post(repeatUrl, { data: { everyWeeks: 0, until: `${y}-10-31` } });
     expect(badWeeks.status()).toBe(400);
+    const plan = await owner.get(repeatUrl);
+    expect(await plan.json()).toEqual({ lastSowOn: `${y}-10-06` });
 
-    const repeated = await owner.post(repeatUrl, { data: { everyWeeks: 2, until: day(30) } });
+    const repeated = await owner.post(repeatUrl, { data: { everyWeeks: 2, until: `${y}-10-31` } });
     expect(repeated.status(), await repeated.text()).toBe(201);
-    const copies = ((await repeated.json()) as PlantingList).plantings.filter(
-      (p) => p.id !== firstId,
+    const result = (await repeated.json()) as {
+      list: PlantingList;
+      added: number;
+      outOfWindow: number;
+      tooLate: number;
+    };
+    // Every two weeks: three in spring, none in the summer gap, two in fall,
+    // and the two in October after the last useful sowing left out.
+    expect(result).toMatchObject({ added: 5, outOfWindow: 9, tooLate: 2 });
+    const copies = result.list.plantings.filter((p) => p.id !== firstId);
+    expect(copies.map((p) => p.plantedOn).sort()).toEqual(
+      ['03-25', '04-08', '04-22', '09-09', '09-23'].map((d) => `${y}-${d}`),
     );
-    expect(copies.map((p) => p.plantedOn).sort()).toEqual([day(14), day(28)].sort());
 
     const sow = (
       (await (
         await owner.get(`/api/gardens/${garden.id}/reminders?asOf=${todayIso()}`)
       ).json()) as ReminderList
     ).items.filter((i) => i.kind === 'sow');
-    expect(sow.map((i) => i.plantingId).sort()).toEqual(copies.map((p) => p.id).sort());
+    // The first sowing was recorded ahead too, so it has a Sow task as well.
+    expect(sow.map((i) => i.plantingId).sort()).toEqual(
+      [firstId, ...copies.map((p) => p.id)].sort(),
+    );
   });
 
   test('care reminders HTTP: authz, asOf, harvest, intervals, complete/dismiss', async () => {

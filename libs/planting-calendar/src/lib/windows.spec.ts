@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeWindows, seasonYear, windowsAvailable } from './windows';
+import { computeWindows, seasonYear, sowingPlan, windowsAvailable } from './windows';
 import type { GrowingGuidanceDto } from '@open-garden/shared-types';
 
 const tomatoGuidance: GrowingGuidanceDto = {
@@ -369,5 +369,54 @@ describe('windows where it rarely frosts', () => {
         sowingTemperature: tomatoTemps,
       }).transplant,
     ).toBeNull();
+  });
+});
+
+describe('sowingPlan (succession planting, ADR 0037)', () => {
+  const lettuce: GrowingGuidanceDto = {
+    indoorStart: null,
+    outdoorSow: { frostAnchor: 'last', weeksEarliest: -4, weeksLatest: 2 },
+    transplant: { frostAnchor: 'last', weeksEarliest: -2, weeksLatest: 2 },
+    fallSow: { frostAnchor: 'first', weeksEarliest: -8, weeksLatest: -4 },
+  };
+
+  const springOnly: GrowingGuidanceDto = { ...lettuce, fallSow: null };
+
+  it('gives the spring and fall windows; a fall window ends at the last sowing', () => {
+    expect(sowingPlan(typicalFrost, lettuce, 45, false, 'direct_seed', 2024)).toEqual({
+      windows: [
+        { from: '2024-03-18', to: '2024-04-29' },
+        { from: '2024-08-25', to: '2024-09-22' },
+      ],
+      lastSowOn: '2024-09-22',
+    });
+  });
+
+  it('without a fall window, counts back from first frost with the fall factor', () => {
+    // First frost Oct 20; 45 days to maturity plus 14 days.
+    expect(sowingPlan(typicalFrost, springOnly, 45, false, 'direct_seed', 2024).lastSowOn).toBe(
+      '2024-08-22',
+    );
+  });
+
+  it('allows two weeks more for a crop frost kills, and uses the planting-out window for transplants', () => {
+    const plan = sowingPlan(typicalFrost, springOnly, 45, true, 'transplant', 2024);
+    expect(plan.windows).toEqual([{ from: '2024-04-01', to: '2024-04-29' }]);
+    expect(plan.lastSowOn).toBe('2024-08-08');
+  });
+
+  it('has no last sowing without frost dates or days to maturity', () => {
+    expect(
+      sowingPlan(typicalFrost, springOnly, null, false, 'direct_seed', 2024).lastSowOn,
+    ).toBeNull();
+    const plan = sowingPlan(
+      { lastFrost: null, firstFrost: null },
+      lettuce,
+      45,
+      false,
+      'direct_seed',
+      2024,
+    );
+    expect(plan).toEqual({ windows: [], lastSowOn: null });
   });
 });

@@ -19,7 +19,14 @@ import type {
 import { allowsPlant, homeFor } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
 import { overlapsThisWeek } from './this-week';
-import { computeWindows, seasonYear, windowsAvailable, type WarmClimate } from './windows';
+import {
+  computeWindows,
+  seasonYear,
+  sowingPlan,
+  windowsAvailable,
+  type SowingPlan,
+  type WarmClimate,
+} from './windows';
 
 export class CalendarService {
   constructor(
@@ -97,6 +104,36 @@ export class CalendarService {
       );
       return overlapsThisWeek([w.indoorStart, w.outdoorSow, w.transplant, w.fallSow], asOf);
     };
+  }
+
+  /**
+   * Where a sowing series of a crop may land at a property, for the season
+   * of `firstSowOn` (ADR 0037). The caller has checked the member's access.
+   * Null when the property or the crop is gone.
+   */
+  async sowingPlanFor(
+    gardenId: string,
+    plantId: string,
+    startMethod: string,
+    firstSowOn: string,
+  ): Promise<SowingPlan | null> {
+    const garden = await this.gardens.getById(gardenId);
+    const plant = await this.plants.getById(plantId);
+    if (!garden || !plant) return null;
+    const frost = {
+      lastFrost: pair(garden.lastFrostMonth, garden.lastFrostDay),
+      firstFrost: pair(garden.firstFrostMonth, garden.firstFrostDay),
+    };
+    const [y, m, d] = firstSowOn.split('-').map(Number);
+    return sowingPlan(
+      frost,
+      guidanceFromRow(plant),
+      plant.daysToMaturity,
+      plant.frostTolerance === 'tender',
+      startMethod,
+      seasonYear(frost, new Date(y!, m! - 1, d)),
+      warmClimate(plant, garden.monthlyMeanC ?? null),
+    );
   }
 
   async add(

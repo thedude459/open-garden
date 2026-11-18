@@ -31,8 +31,13 @@ export const PLANTING_ERRORS = {
   repeatNeedsSowDate: () =>
     domainError('VALIDATION_ERROR', 'Give the planting a sow date before repeating it'),
   repeatAnnualsOnly: () => domainError('VALIDATION_ERROR', 'Only annual plantings repeat'),
-  repeatNothing: () =>
-    domainError('VALIDATION_ERROR', 'No sowing fits before that date; pick a later one'),
+  repeatNothing: (lastSowOn: string | null) =>
+    domainError(
+      'VALIDATION_ERROR',
+      lastSowOn
+        ? `No sowing fits before that date in this crop's sowing windows; the last that ripens before frost is ${lastSowOn}`
+        : "No sowing fits before that date in this crop's sowing windows",
+    ),
   repeatTooMany: (max: number) =>
     domainError('VALIDATION_ERROR', `A series adds at most ${max} sowings; pick an earlier date`),
   bedSizeRequired: () =>

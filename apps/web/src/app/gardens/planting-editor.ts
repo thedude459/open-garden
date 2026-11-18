@@ -1,4 +1,5 @@
 import {
+  computed,
   Component,
   ElementRef,
   afterRenderEffect,
@@ -112,7 +113,7 @@ type Life = NonNullable<ClientPlanting['life']>;
             type="button"
             class="btn btn-secondary"
             [attr.aria-expanded]="repeating()"
-            (click)="repeating.set(!repeating())"
+            (click)="toggleRepeat()"
           >
             Repeat sowing
           </button>
@@ -148,7 +149,8 @@ type Life = NonNullable<ClientPlanting['life']>;
               type="date"
               name="repeatUntil"
               [min]="p.plantedOn"
-              [(ngModel)]="until"
+              [ngModel]="until()"
+              (ngModelChange)="untilDraft.set($event)"
               required
             />
           </label>
@@ -161,7 +163,13 @@ type Life = NonNullable<ClientPlanting['life']>;
             Add sowings
           </button>
         </form>
-        <p class="muted">Each sowing is added without a bed, and Today says when to sow it.</p>
+        <p class="muted">
+          @if (suggestedUntil(); as last) {
+            The last sowing that ripens before frost here is {{ last }}.
+          }
+          Dates outside this crop's sowing windows here, such as midsummer for a cool-season crop,
+          are left out. Each sowing is added without a bed, and Today says when to sow it.
+        </p>
       }
       @if (confirmRemove()) {
         <p>Permanently remove this planting? This cannot be undone.</p>
@@ -190,9 +198,13 @@ export class PlantingEditor {
   /** Succession planting: the same crop every `everyWeeks` weeks until `until`. */
   repeat = output<{ everyWeeks: number; until: string }>();
   repeatBusy = input(false);
+  /** The last sowing that ripens before frost, offered as the series' end. */
+  suggestedUntil = input<string | null>(null);
+  repeatOpened = output<void>();
   readonly repeating = signal(false);
   everyWeeks = 2;
-  until = '';
+  readonly untilDraft = signal('');
+  readonly until = computed(() => this.untilDraft() || this.suggestedUntil() || '');
   remove = output<void>();
   failed = output<string>();
 
@@ -249,13 +261,19 @@ export class PlantingEditor {
     reader.readAsDataURL(file);
   }
 
+  toggleRepeat() {
+    this.repeating.update((open) => !open);
+    if (this.repeating()) this.repeatOpened.emit();
+  }
+
   emitRepeat() {
     const everyWeeks = Math.round(Number(this.everyWeeks));
-    if (!this.until || !(everyWeeks >= 1 && everyWeeks <= 12)) {
+    const until = this.until();
+    if (!until || !(everyWeeks >= 1 && everyWeeks <= 12)) {
       this.failed.emit('Repeat every 1 to 12 weeks, until a date');
       return;
     }
-    this.repeat.emit({ everyWeeks, until: this.until });
+    this.repeat.emit({ everyWeeks, until });
   }
 
   emitSave(bedId: string) {

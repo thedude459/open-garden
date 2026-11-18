@@ -11,6 +11,7 @@ import {
   plantName,
   type PlantingCreateDto,
   type PlantingPatchDto,
+  type PlantingRepeatResultDto,
 } from '@open-garden/shared-types';
 import { formatDay } from '@open-garden/web-ui';
 import { NoticeService } from '../ui/notice.service';
@@ -144,6 +145,8 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       (sowAgain)="sowAgain(p)"
                       [repeatBusy]="notices.busyMap().has('repeat-planting-' + p.id)"
                       (repeat)="repeat(p, $event)"
+                      [suggestedUntil]="repeatUntil()[p.id] ?? null"
+                      (repeatOpened)="loadRepeatPlan(p)"
                       (remove)="confirmRemove(p)"
                       (failed)="error.set($event)"
                     />
@@ -302,17 +305,21 @@ export class GardenPlantingsPage implements OnInit {
     }
   }
 
+  /** Suggested series ends by planting: the last sowing that ripens before frost. */
+  readonly repeatUntil = signal<Record<string, string | null>>({});
+
+  async loadRepeatPlan(planting: ClientPlanting) {
+    const last = await this.api.repeatPlan(this.gardenId, planting.id);
+    this.repeatUntil.update((all) => ({ ...all, [planting.id]: last }));
+  }
+
   async repeat(planting: ClientPlanting, body: { everyWeeks: number; until: string }) {
     this.error.set('');
     await this.notices.run(`repeat-planting-${planting.id}`, async () => {
       try {
-        const before = this.list()?.plantings.length ?? 0;
-        await this.api.repeat(this.gardenId, planting.id, body);
+        const result = await this.api.repeat(this.gardenId, planting.id, body);
         await this.load(true);
-        const added = (this.list()?.plantings.length ?? before) - before;
-        this.notices.success(
-          `Added ${added} sowing${added === 1 ? '' : 's'} of ${plantName(planting)}.`,
-        );
+        this.notices.success(repeatMessage(plantName(planting), result));
       } catch (err) {
         this.error.set(messageFrom(err));
       }
@@ -379,4 +386,17 @@ function messageFrom(err: unknown): string {
   }
   if (err instanceof Error && err.message) return err.message;
   return 'Could not update plantings';
+}
+
+/** What a succession series did, in one line for the notice. */
+export function repeatMessage(
+  name: string,
+  result: Pick<PlantingRepeatResultDto, 'added' | 'outOfWindow' | 'tooLate'>,
+): string {
+  const sowings = (n: number) => `${n} sowing${n === 1 ? '' : 's'}`;
+  const left: string[] = [];
+  if (result.outOfWindow) left.push(`${sowings(result.outOfWindow)} outside its sowing windows`);
+  if (result.tooLate) left.push(`${sowings(result.tooLate)} too late to ripen before frost`);
+  const rest = left.length ? ` Left out ${left.join(' and ')}.` : '';
+  return `Added ${sowings(result.added)} of ${name}.${rest}`;
 }

@@ -9,6 +9,7 @@ import type {
   PlantingDto,
   PlantingListDto,
   PlantingPatchDto,
+  PlantingRepeatResultDto,
   PlantStatus,
   PlantType,
   PropertyAreaDto,
@@ -45,6 +46,7 @@ export class PlantingService {
     private readonly beds: BedRepository,
     private readonly areas?: PlantingAreaRepository,
     private readonly trays?: TrayRepository,
+    private readonly sowing?: SowingPlanner,
   ) {}
 
   async list(userId: string, gardenId: string, page = 1, pageSize = 200): Promise<PlantingListDto> {
@@ -216,8 +218,9 @@ export class PlantingService {
    * Succession planting: copies of a planting sown every `everyWeeks` weeks
    * after it, up to `until`, in the same season. Each copy keeps the crop and
    * start method (a transplant's indoor start moves with its sow date) and
-   * starts without a bed or tray, to be placed when it is sown. Copies sown
-   * later than the day they are made get Sow tasks (ADR 0037).
+   * starts without a bed or tray, to be placed when it is sown. With a sowing
+   * planner, dates outside the crop's sowing windows and after the last
+   * sowing that ripens before frost are left out (ADR 0037).
    */
   async repeat(
     userId: string,
@@ -225,39 +228,77 @@ export class PlantingService {
     plantingId: string,
     everyWeeks: number,
     until: string,
-  ): Promise<PlantingListDto> {
-    await this.requirePlantingEditor(userId, gardenId);
-    const current = await this.plantings.getInGarden(gardenId, plantingId);
-    if (!current) throw PLANTING_ERRORS.plantingNotFound();
-    if (!current.plantedOn) throw PLANTING_ERRORS.repeatNeedsSowDate();
-    if (current.life !== 'annual') throw PLANTING_ERRORS.repeatAnnualsOnly();
-    const offsets: number[] = [];
-    for (
-      let days = everyWeeks * 7;
-      addDays(current.plantedOn, days) <= until;
-      days += everyWeeks * 7
-    ) {
-      offsets.push(days);
-      if (offsets.length > MAX_SUCCESSION_SOWINGS) {
-        throw PLANTING_ERRORS.repeatTooMany(MAX_SUCCESSION_SOWINGS);
-      }
+  ): Promise<PlantingRepeatResultDto> {
+    const current = await this.repeatable(userId, gardenId, plantingId);
+    const plan = await this.planFor(gardenId, current);
+    const candidates: string[] = [];
+    for (let days = everyWeeks * 7; ; days += everyWeeks * 7) {
+      const date = addDays(current.plantedOn, days);
+      if (date > until) break;
+      candidates.push(date);
+      // A date years ahead cannot fit 26 sowings in any season's windows.
+      if (candidates.length > 52 * 2) throw PLANTING_ERRORS.repeatTooMany(MAX_SUCCESSION_SOWINGS);
     }
-    if (!offsets.length) throw PLANTING_ERRORS.repeatNothing();
-    for (const days of offsets) {
+    const tooLate = candidates.filter((d) => plan?.lastSowOn != null && d > plan.lastSowOn);
+    const inSeason = candidates.filter((d) => !tooLate.includes(d));
+    const dates = inSeason.filter((d) => inWindows(d, plan?.windows));
+    if (dates.length > MAX_SUCCESSION_SOWINGS) {
+      throw PLANTING_ERRORS.repeatTooMany(MAX_SUCCESSION_SOWINGS);
+    }
+    if (!dates.length) throw PLANTING_ERRORS.repeatNothing(plan?.lastSowOn ?? null);
+    const shift = (date: string) => diffDays(current.plantedOn, date);
+    for (const date of dates) {
       await this.plantings.insert({
         gardenId,
         plantId: current.plantId,
         bedId: null,
         trayId: null,
-        plantedOn: addDays(current.plantedOn, days),
+        plantedOn: date,
         harvestedOn: null,
         startMethod: current.startMethod,
-        indoorStartedOn: current.indoorStartedOn ? addDays(current.indoorStartedOn, days) : null,
+        indoorStartedOn: current.indoorStartedOn
+          ? addDays(current.indoorStartedOn, shift(date))
+          : null,
         life: current.life,
         seasonYear: current.seasonYear,
       });
     }
-    return this.list(userId, gardenId);
+    return {
+      list: await this.list(userId, gardenId),
+      added: dates.length,
+      outOfWindow: inSeason.length - dates.length,
+      tooLate: tooLate.length,
+      lastSowOn: plan?.lastSowOn ?? null,
+    };
+  }
+
+  /** The last sowing of this planting's crop that ripens before frost, to suggest an end. */
+  async repeatPlan(
+    userId: string,
+    gardenId: string,
+    plantingId: string,
+  ): Promise<{ lastSowOn: string | null }> {
+    const current = await this.repeatable(userId, gardenId, plantingId);
+    return { lastSowOn: (await this.planFor(gardenId, current))?.lastSowOn ?? null };
+  }
+
+  private async repeatable(userId: string, gardenId: string, plantingId: string) {
+    await this.requirePlantingEditor(userId, gardenId);
+    const current = await this.plantings.getInGarden(gardenId, plantingId);
+    if (!current) throw PLANTING_ERRORS.plantingNotFound();
+    if (!current.plantedOn) throw PLANTING_ERRORS.repeatNeedsSowDate();
+    if (current.life !== 'annual') throw PLANTING_ERRORS.repeatAnnualsOnly();
+    return { ...current, plantedOn: current.plantedOn };
+  }
+
+  private planFor(
+    gardenId: string,
+    current: { plantId: string; startMethod: string; plantedOn: string },
+  ) {
+    return (
+      this.sowing?.plan(gardenId, current.plantId, current.startMethod, current.plantedOn) ??
+      Promise.resolve(null)
+    );
   }
 
   async remove(userId: string, gardenId: string, plantingId: string): Promise<void> {
@@ -669,6 +710,25 @@ function toLayoutPlanting(row: {
         }
       : null,
   };
+}
+
+/** Where a sowing series may land: the crop's sowing windows and its last useful sowing. */
+export interface SowingPlanner {
+  plan(
+    gardenId: string,
+    plantId: string,
+    startMethod: string,
+    firstSowOn: string,
+  ): Promise<{ windows: { from: string; to: string }[]; lastSowOn: string | null } | null>;
+}
+
+/** Inside one of the windows; with no windows known, any date is. */
+function inWindows(date: string, windows: { from: string; to: string }[] | undefined): boolean {
+  return !windows?.length || windows.some((w) => w.from <= date && date <= w.to);
+}
+
+function diffDays(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
 
 /** An ISO date `days` later. */

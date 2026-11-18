@@ -83,6 +83,16 @@ export class GardenPlantingsController {
     return this.plantings.update(user.id, id, plantingId, parsed.data);
   }
 
+  /** The last sowing of this crop that ripens before frost, to suggest as a series' end. */
+  @Get(':plantingId/repeat')
+  repeatPlan(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('plantingId') plantingId: string,
+  ) {
+    return this.plantings.repeatPlan(user.id, id, plantingId);
+  }
+
   /** Succession planting: sow it again every N weeks until a date. */
   @Post(':plantingId/repeat')
   @HttpCode(201)
