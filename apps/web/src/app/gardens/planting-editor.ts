@@ -107,6 +107,16 @@ type Life = NonNullable<ClientPlanting['life']>;
           Save planting
         </button>
         <button type="button" class="btn btn-secondary" (click)="sowAgain.emit()">Sow again</button>
+        @if (p.plantedOn && life() === 'annual') {
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [attr.aria-expanded]="repeating()"
+            (click)="repeating.set(!repeating())"
+          >
+            Repeat sowing
+          </button>
+        }
         @if (!confirmRemove()) {
           <button
             type="button"
@@ -118,6 +128,41 @@ type Life = NonNullable<ClientPlanting['life']>;
           </button>
         }
       </div>
+      @if (repeating() && p.plantedOn) {
+        <form class="filters repeat-form" (ngSubmit)="emitRepeat()">
+          <label>
+            Every
+            <input
+              type="number"
+              name="everyWeeks"
+              min="1"
+              max="12"
+              [(ngModel)]="everyWeeks"
+              required
+            />
+            weeks
+          </label>
+          <label>
+            until
+            <input
+              type="date"
+              name="repeatUntil"
+              [min]="p.plantedOn"
+              [(ngModel)]="until"
+              required
+            />
+          </label>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [attr.aria-busy]="repeatBusy() || null"
+            [disabled]="repeatBusy()"
+          >
+            Add sowings
+          </button>
+        </form>
+        <p class="muted">Each sowing is added without a bed, and Today says when to sow it.</p>
+      }
       @if (confirmRemove()) {
         <p>Permanently remove this planting? This cannot be undone.</p>
         <div class="filters">
@@ -142,6 +187,12 @@ export class PlantingEditor {
   saving = input(false);
   save = output<PlantingPatchDto>();
   sowAgain = output<void>();
+  /** Succession planting: the same crop every `everyWeeks` weeks until `until`. */
+  repeat = output<{ everyWeeks: number; until: string }>();
+  repeatBusy = input(false);
+  readonly repeating = signal(false);
+  everyWeeks = 2;
+  until = '';
   remove = output<void>();
   failed = output<string>();
 
@@ -196,6 +247,15 @@ export class PlantingEditor {
     const reader = new FileReader();
     reader.onload = () => this.photo.set(typeof reader.result === 'string' ? reader.result : '');
     reader.readAsDataURL(file);
+  }
+
+  emitRepeat() {
+    const everyWeeks = Math.round(Number(this.everyWeeks));
+    if (!this.until || !(everyWeeks >= 1 && everyWeeks <= 12)) {
+      this.failed.emit('Repeat every 1 to 12 weeks, until a date');
+      return;
+    }
+    this.repeat.emit({ everyWeeks, until: this.until });
   }
 
   emitSave(bedId: string) {

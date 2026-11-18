@@ -4,6 +4,7 @@ import type { GardenRole } from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
+import { NoticeService } from '../ui/notice.service';
 import { GardenPlantingsPage } from './garden-plantings.page';
 import { planting } from './planting.testing';
 import { PlantingsApiService } from './plantings-api.service';
@@ -108,5 +109,38 @@ describe('GardenPlantingsPage', () => {
   it('says the property is unavailable when it cannot be read', async () => {
     const view = await render({ list: async () => null });
     expect(view.text()).toContain('Garden unavailable or not found.');
+  });
+
+  it('adds a succession series and says how many sowings it added', async () => {
+    let calls = 0;
+    const repeat = vi.fn(async () => undefined);
+    const withSeries = (): ClientPlantingList => {
+      const base = list();
+      return {
+        ...base,
+        plantings: [
+          ...base.plantings,
+          planting({ id: 'p3', commonName: 'Tomato', plantedOn: '2027-05-15' }),
+          planting({ id: 'p4', commonName: 'Tomato', plantedOn: '2027-05-29' }),
+        ],
+      };
+    };
+    const view = await render({
+      list: async () => (calls++ === 0 ? list() : withSeries()),
+      repeat,
+    });
+    view.byLabel('Edit Tomato')!.click();
+    await view.fixture.whenStable();
+    view.button('Repeat sowing')!.click();
+    await view.fixture.whenStable();
+    const until = view.el.querySelector<HTMLInputElement>('input[name="repeatUntil"]')!;
+    until.value = '2027-06-01';
+    until.dispatchEvent(new Event('input'));
+    view.button('Add sowings')!.click();
+    await vi.waitFor(() => expect(repeat).toHaveBeenCalled());
+    expect(repeat).toHaveBeenCalledWith('g1', 'p1', { everyWeeks: 2, until: '2027-06-01' });
+    await vi.waitFor(() =>
+      expect(TestBed.inject(NoticeService).current()?.message).toBe('Added 2 sowings of Tomato.'),
+    );
   });
 });

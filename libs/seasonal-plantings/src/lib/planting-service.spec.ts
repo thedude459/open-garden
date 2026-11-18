@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PlantingService } from './planting-service';
-import type { GardenRole } from '@open-garden/shared-types';
+import type { GardenRole, PlantingCreateDto } from '@open-garden/shared-types';
 
 const tomato = {
   id: 'plant-tomato',
@@ -267,6 +267,8 @@ function createMemory() {
     harvestedOn: string | null;
     startMethod: string;
     indoorStartedOn: string | null;
+    life: string;
+    seasonYear: number;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -328,6 +330,8 @@ function createMemory() {
       harvestedOn: string | null;
       startMethod?: string;
       indoorStartedOn?: string | null;
+      life?: string;
+      seasonYear?: number;
     }) {
       const now = new Date();
       const row: PlantingRow = {
@@ -339,6 +343,8 @@ function createMemory() {
         harvestedOn: input.harvestedOn,
         startMethod: input.startMethod ?? 'direct_seed',
         indoorStartedOn: input.indoorStartedOn ?? null,
+        life: input.life ?? 'annual',
+        seasonYear: input.seasonYear ?? 2026,
         createdAt: now,
         updatedAt: now,
       };
@@ -703,5 +709,74 @@ describe('PlantingService areas: rename, delete, move a bed', () => {
       service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'orchard' }),
     ).resolves.toMatchObject({ areaId: 'orchard', station: 'tree' });
     expect(bed.station).toBe('tree');
+  });
+});
+
+describe('PlantingService.repeat (succession planting)', () => {
+  async function sown(
+    mem: ReturnType<typeof createMemory>,
+    plantedOn: string | null,
+    extra: Partial<PlantingCreateDto> = {},
+  ) {
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      plantedOn,
+      ...extra,
+    });
+    return list.plantings[0]!.id;
+  }
+
+  it('adds a sowing every N weeks up to the date, without a bed', async () => {
+    const mem = createMemory();
+    const id = await sown(mem, '2026-04-01');
+    const list = await mem.service.repeat(mem.ownerId, mem.gardenId, id, 2, '2026-05-14');
+    const copies = list.plantings.filter((p) => p.id !== id);
+    expect(copies.map((p) => p.plantedOn).sort()).toEqual([
+      '2026-04-15',
+      '2026-04-29',
+      '2026-05-13',
+    ]);
+    expect(copies.every((p) => p.bedId === null && p.plantId === tomato.id)).toBe(true);
+  });
+
+  it('moves a transplant’s indoor start with its sow date', async () => {
+    const mem = createMemory();
+    const id = await sown(mem, '2026-05-01', {
+      startMethod: 'transplant',
+      indoorStartedOn: '2026-03-20',
+    });
+    const list = await mem.service.repeat(mem.ownerId, mem.gardenId, id, 3, '2026-05-22');
+    const copy = list.plantings.find((p) => p.id !== id)!;
+    expect(copy).toMatchObject({
+      startMethod: 'transplant',
+      plantedOn: '2026-05-22',
+      indoorStartedOn: '2026-04-10',
+    });
+  });
+
+  it('refuses without a sow date, when nothing fits, past 26 sowings, and for viewers', async () => {
+    const mem = createMemory();
+    const undated = await sown(mem, null);
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, undated, 2, '2026-06-01'),
+    ).rejects.toMatchObject({ message: 'Give the planting a sow date before repeating it' });
+    const id = await sown(mem, '2026-04-01');
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 2, '2026-04-10'),
+    ).rejects.toMatchObject({ message: 'No sowing fits before that date; pick a later one' });
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 1, '2026-12-31'),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', message: expect.stringContaining('26') });
+    await expect(
+      mem.service.repeat(mem.viewerId, mem.gardenId, id, 2, '2026-06-01'),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('repeats only annual plantings', async () => {
+    const mem = createMemory();
+    const id = await sown(mem, '2026-04-01', { life: 'perennial' });
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 2, '2026-06-01'),
+    ).rejects.toMatchObject({ message: 'Only annual plantings repeat' });
   });
 });

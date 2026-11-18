@@ -342,6 +342,22 @@ export class PlantingsApiService {
     await this.queue.put(item);
   }
 
+  /**
+   * Succession planting: sow it again every N weeks until a date. Needs the
+   * server (the series is worked out there), so it is not queued offline.
+   */
+  async repeat(
+    gardenId: string,
+    plantingId: string,
+    body: { everyWeeks: number; until: string },
+  ): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${API}/gardens/${gardenId}/plantings/${plantingId}/repeat`, body, {
+        withCredentials: true,
+      }),
+    );
+  }
+
   /** Soil tests need the server: a lab report is entered once, not queued (ADR 0033). */
   async recordSoilTest(
     gardenId: string,

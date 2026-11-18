@@ -142,6 +142,8 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       [saving]="notices.busyMap().has('save-planting-' + p.id)"
                       (save)="save(p, $event)"
                       (sowAgain)="sowAgain(p)"
+                      [repeatBusy]="notices.busyMap().has('repeat-planting-' + p.id)"
+                      (repeat)="repeat(p, $event)"
                       (remove)="confirmRemove(p)"
                       (failed)="error.set($event)"
                     />
@@ -298,6 +300,23 @@ export class GardenPlantingsPage implements OnInit {
     } catch (err) {
       this.error.set(messageFrom(err));
     }
+  }
+
+  async repeat(planting: ClientPlanting, body: { everyWeeks: number; until: string }) {
+    this.error.set('');
+    await this.notices.run(`repeat-planting-${planting.id}`, async () => {
+      try {
+        const before = this.list()?.plantings.length ?? 0;
+        await this.api.repeat(this.gardenId, planting.id, body);
+        await this.load(true);
+        const added = (this.list()?.plantings.length ?? before) - before;
+        this.notices.success(
+          `Added ${added} sowing${added === 1 ? '' : 's'} of ${plantName(planting)}.`,
+        );
+      } catch (err) {
+        this.error.set(messageFrom(err));
+      }
+    });
   }
 
   /**

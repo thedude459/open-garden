@@ -18,6 +18,7 @@ import type {
 import {
   AREA_KINDS,
   areaKindFor,
+  MAX_SUCCESSION_SOWINGS,
   lifeForPlant,
   mulchOrNone,
   placementRefusal,
@@ -209,6 +210,54 @@ export class PlantingService {
     if (!row) throw PLANTING_ERRORS.plantingNotFound();
     const harvests = await this.harvestsByPlanting(gardenId);
     return { ...toPlantingDto(row), harvests: harvests.get(row.id) ?? [] };
+  }
+
+  /**
+   * Succession planting: copies of a planting sown every `everyWeeks` weeks
+   * after it, up to `until`, in the same season. Each copy keeps the crop and
+   * start method (a transplant's indoor start moves with its sow date) and
+   * starts without a bed or tray, to be placed when it is sown. Copies sown
+   * later than the day they are made get Sow tasks (ADR 0037).
+   */
+  async repeat(
+    userId: string,
+    gardenId: string,
+    plantingId: string,
+    everyWeeks: number,
+    until: string,
+  ): Promise<PlantingListDto> {
+    await this.requirePlantingEditor(userId, gardenId);
+    const current = await this.plantings.getInGarden(gardenId, plantingId);
+    if (!current) throw PLANTING_ERRORS.plantingNotFound();
+    if (!current.plantedOn) throw PLANTING_ERRORS.repeatNeedsSowDate();
+    if (current.life !== 'annual') throw PLANTING_ERRORS.repeatAnnualsOnly();
+    const offsets: number[] = [];
+    for (
+      let days = everyWeeks * 7;
+      addDays(current.plantedOn, days) <= until;
+      days += everyWeeks * 7
+    ) {
+      offsets.push(days);
+      if (offsets.length > MAX_SUCCESSION_SOWINGS) {
+        throw PLANTING_ERRORS.repeatTooMany(MAX_SUCCESSION_SOWINGS);
+      }
+    }
+    if (!offsets.length) throw PLANTING_ERRORS.repeatNothing();
+    for (const days of offsets) {
+      await this.plantings.insert({
+        gardenId,
+        plantId: current.plantId,
+        bedId: null,
+        trayId: null,
+        plantedOn: addDays(current.plantedOn, days),
+        harvestedOn: null,
+        startMethod: current.startMethod,
+        indoorStartedOn: current.indoorStartedOn ? addDays(current.indoorStartedOn, days) : null,
+        life: current.life,
+        seasonYear: current.seasonYear,
+      });
+    }
+    return this.list(userId, gardenId);
   }
 
   async remove(userId: string, gardenId: string, plantingId: string): Promise<void> {
@@ -620,4 +669,10 @@ function toLayoutPlanting(row: {
         }
       : null,
   };
+}
+
+/** An ISO date `days` later. */
+function addDays(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(Date.UTC(y!, m! - 1, d! + days)).toISOString().slice(0, 10);
 }

@@ -378,6 +378,7 @@ export class PlantingRepository {
         plantType: plants.plantType,
         status: plants.status,
         plantedOn: gardenPlantings.plantedOn,
+        createdAt: gardenPlantings.createdAt,
         harvestedOn: gardenPlantings.harvestedOn,
         daysToMaturity: plants.daysToMaturity,
         waterIntervalDays: plants.waterIntervalDays,

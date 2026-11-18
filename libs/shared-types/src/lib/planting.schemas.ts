@@ -59,6 +59,21 @@ export const plantingCreateSchema = z
     }
   });
 
+/** The most sowings one series adds (half a year, sowing weekly). */
+export const MAX_SUCCESSION_SOWINGS = 26;
+
+/** Succession planting: repeat a planting's sowing every N weeks until a date. */
+export const plantingRepeatSchema = z
+  .object({
+    everyWeeks: z
+      .number()
+      .int()
+      .min(1, 'Repeat at least every week')
+      .max(12, 'Repeat at most every 12 weeks'),
+    until: isoDate,
+  })
+  .strict();
+
 const photoField = z
   .string()
   .max(400_000)

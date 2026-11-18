@@ -102,4 +102,36 @@ describe('PlantingEditor', () => {
     await view.fixture.whenStable();
     expect(view.button('Save planting')!.disabled).toBe(true);
   });
+
+  describe('Repeat sowing', () => {
+    it('emits every N weeks until a date', async () => {
+      const view = await render(planting());
+      const repeats: { everyWeeks: number; until: string }[] = [];
+      view.fixture.componentInstance.repeat.subscribe((r) => repeats.push(r));
+      view.button('Repeat sowing')!.click();
+      await view.fixture.whenStable();
+      await view.type('everyWeeks', '3');
+      await view.type('repeatUntil', '2027-07-01');
+      view.button('Add sowings')!.click();
+      expect(repeats).toEqual([{ everyWeeks: 3, until: '2027-07-01' }]);
+    });
+
+    it('says what is missing instead of emitting', async () => {
+      const view = await render(planting());
+      const failures: string[] = [];
+      view.fixture.componentInstance.failed.subscribe((m) => failures.push(m));
+      view.button('Repeat sowing')!.click();
+      await view.fixture.whenStable();
+      view.button('Add sowings')!.click();
+      expect(failures).toEqual(['Repeat every 1 to 12 weeks, until a date']);
+    });
+
+    it('is offered only for an annual with a sow date', async () => {
+      expect((await render(planting({ plantedOn: null }))).button('Repeat sowing')).toBeUndefined();
+      TestBed.resetTestingModule();
+      expect(
+        (await render(planting({ life: 'perennial' }))).button('Repeat sowing'),
+      ).toBeUndefined();
+    });
+  });
 });

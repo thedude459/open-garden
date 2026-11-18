@@ -18,6 +18,8 @@ export interface DerivePlantingInput {
   plantType: PlantType;
   status: PlantStatus;
   plantedOn: string | null;
+  /** The day the planting was recorded; a sow date well after it was planned ahead. */
+  createdOn?: string | null;
   harvestedOn: string | null;
   daysToMaturity: number | null;
   waterIntervalDays: number | null;
@@ -47,6 +49,19 @@ function lastWateredOn(events: DeriveEventInput[]): string | null {
     if (!last || day > last) last = day;
   }
   return last;
+}
+
+/**
+ * A planting whose sow date is more than a day after it was recorded was
+ * planned ahead (a later sowing, or one in a series), so it gets a Sow task
+ * until marked done. One recorded on or just before its sow date was sown
+ * already. ponytail: "more than a day" absorbs the time zone between the
+ * server's record date and the member's sow date; a sowing planned for the
+ * next day gets no task.
+ */
+function plannedAhead(planting: DerivePlantingInput): boolean {
+  if (!planting.plantedOn || !planting.createdOn) return false;
+  return diffIsoDateDays(planting.createdOn, planting.plantedOn) > 1;
 }
 
 function urgency(dueOn: string, asOf: string): ReminderUrgency {
@@ -124,6 +139,14 @@ export function deriveReminders(
     const harvestEvents = plantingEvents.filter((e) => e.kind === 'harvest');
     const waterEvents = plantingEvents.filter((e) => e.kind === 'water');
     const fertilizeEvents = plantingEvents.filter((e) => e.kind === 'fertilize');
+
+    if (
+      plannedAhead(planting) &&
+      !planting.harvestedOn &&
+      !plantingEvents.some((e) => e.kind === 'sow')
+    ) {
+      items.push(plantingItem(planting, 'sow', planting.plantedOn!, asOf, null));
+    }
 
     if (
       !planting.harvestedOn &&
