@@ -20,6 +20,7 @@ import {
   plantingCreateSchema,
   plantingListQuerySchema,
   plantingPatchSchema,
+  plantingRepeatSchema,
 } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
@@ -80,6 +81,41 @@ export class GardenPlantingsController {
       );
     }
     return this.plantings.update(user.id, id, plantingId, parsed.data);
+  }
+
+  /** The last sowing of this crop that ripens before frost, to suggest as a series' end. */
+  @Get(':plantingId/repeat')
+  repeatPlan(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('plantingId') plantingId: string,
+  ) {
+    return this.plantings.repeatPlan(user.id, id, plantingId);
+  }
+
+  /** Succession planting: sow it again every N weeks until a date. */
+  @Post(':plantingId/repeat')
+  @HttpCode(201)
+  repeat(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('plantingId') plantingId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = plantingRepeatSchema.safeParse(body);
+    if (!parsed.success) {
+      throw domainError(
+        'VALIDATION_ERROR',
+        parsed.error.issues[0]?.message ?? 'Repeat every 1 to 12 weeks until a date',
+      );
+    }
+    return this.plantings.repeat(
+      user.id,
+      id,
+      plantingId,
+      parsed.data.everyWeeks,
+      parsed.data.until,
+    );
   }
 
   @Delete(':plantingId')

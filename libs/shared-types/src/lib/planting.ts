@@ -88,6 +88,18 @@ export interface PlantingDto {
   updatedAt: string;
 }
 
+/** What a succession series added, and the sowings it left out (ADR 0037). */
+export interface PlantingRepeatResultDto {
+  list: PlantingListDto;
+  added: number;
+  /** Dates outside the crop's sowing windows here (summer heat for a cool crop). */
+  outOfWindow: number;
+  /** Dates too late to ripen before the first frost. */
+  tooLate: number;
+  /** The last sowing that ripens before the first frost, when it can be worked out. */
+  lastSowOn: string | null;
+}
+
 export interface PlantingListDto {
   gardenId: string;
   myRole: GardenRole;

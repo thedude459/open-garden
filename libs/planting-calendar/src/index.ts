@@ -2,7 +2,10 @@ export { domainError, CALENDAR_ERRORS } from './lib/domain-error';
 export { addDays, addWeeks, mdKey } from './lib/month-day';
 export {
   computeWindows,
+  FALL_FACTOR_DAYS,
   frostComplete,
+  sowingPlan,
+  type SowingPlan,
   seasonYear,
   windowsAvailable,
   type WarmClimate,

@@ -8,6 +8,7 @@ import type {
   PlantingDto,
   PlantingListDto,
   PlantingPatchDto,
+  PlantingRepeatResultDto,
   SoilTestCreateDto,
   SoilTestDto,
   SoilTestOwner,
@@ -340,6 +341,39 @@ export class PlantingsApiService {
 
   private async enqueue(item: QueueItem) {
     await this.queue.put(item);
+  }
+
+  /**
+   * Succession planting: sow it again every N weeks until a date. Needs the
+   * server (the series is worked out there), so it is not queued offline.
+   */
+  async repeat(
+    gardenId: string,
+    plantingId: string,
+    body: { everyWeeks: number; until: string },
+  ): Promise<PlantingRepeatResultDto> {
+    return firstValueFrom(
+      this.http.post<PlantingRepeatResultDto>(
+        `${API}/gardens/${gardenId}/plantings/${plantingId}/repeat`,
+        body,
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  /** The last sowing of a planting's crop that ripens before frost here, or null. */
+  async repeatPlan(gardenId: string, plantingId: string): Promise<string | null> {
+    try {
+      const plan = await firstValueFrom(
+        this.http.get<{ lastSowOn: string | null }>(
+          `${API}/gardens/${gardenId}/plantings/${plantingId}/repeat`,
+          { withCredentials: true },
+        ),
+      );
+      return plan.lastSowOn;
+    } catch {
+      return null;
+    }
   }
 
   /** Soil tests need the server: a lab report is entered once, not queued (ADR 0033). */

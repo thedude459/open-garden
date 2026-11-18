@@ -229,3 +229,56 @@ describe('deriveReminders: watering by water balance', () => {
     ).toMatchObject({ intervalDays: 3 });
   });
 });
+
+describe('Sow tasks', () => {
+  const sow = (items: ReturnType<typeof deriveReminders>) => items.filter((i) => i.kind === 'sow');
+
+  it('asks to sow a planting planned ahead, on its sow date', () => {
+    const items = deriveReminders(
+      [planting({ plantingId: 'a', plantedOn: '2026-05-15', createdOn: '2026-05-01' })],
+      [],
+      '2026-05-10',
+    );
+    expect(sow(items)).toEqual([
+      expect.objectContaining({ kind: 'sow', dueOn: '2026-05-15', urgency: 'upcoming' }),
+    ]);
+  });
+
+  it('keeps a missed sowing as overdue until it is marked done', () => {
+    const planned = planting({ plantingId: 'a', plantedOn: '2026-05-15', createdOn: '2026-05-01' });
+    expect(sow(deriveReminders([planned], [], '2026-05-20'))[0]?.urgency).toBe('overdue');
+    const done = [{ plantingId: 'a', kind: 'sow' as const, occurrenceOn: '2026-05-15' }];
+    expect(sow(deriveReminders([planned], done, '2026-05-20'))).toEqual([]);
+  });
+
+  it('does not ask to sow a planting recorded on or just before its sow date', () => {
+    const items = deriveReminders(
+      [
+        planting({ plantingId: 'same', plantedOn: '2026-05-15', createdOn: '2026-05-15' }),
+        // A day apart is the time zone between the server's date and the member's.
+        planting({ plantingId: 'next', plantedOn: '2026-05-15', createdOn: '2026-05-14' }),
+        planting({ plantingId: 'after', plantedOn: '2026-05-01', createdOn: '2026-05-15' }),
+        planting({ plantingId: 'unknown', plantedOn: '2026-05-15' }),
+      ],
+      [],
+      '2026-05-15',
+    );
+    expect(sow(items)).toEqual([]);
+  });
+
+  it('drops the Sow task once the planting is harvested', () => {
+    const items = deriveReminders(
+      [
+        planting({
+          plantingId: 'a',
+          plantedOn: '2026-05-15',
+          createdOn: '2026-05-01',
+          harvestedOn: '2026-07-01',
+        }),
+      ],
+      [],
+      '2026-07-02',
+    );
+    expect(sow(items)).toEqual([]);
+  });
+});

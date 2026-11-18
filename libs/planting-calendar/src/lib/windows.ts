@@ -58,24 +58,9 @@ export function computeWindows(
   year: number,
   warm: WarmClimate = { monthlyMeanC: null, sowingTemperature: null },
 ): CalendarWindowsDto {
-  let indoorStart: DatedWindow | null = null;
-  let outdoorSow: DatedWindow | null = null;
-  let transplant: DatedWindow | null = null;
-  let fallSow: DatedWindow | null = null;
-  if (frostComplete(frost)) {
-    const firstFrostYear = seasonWraps(frost) ? year + 1 : year;
-    const window = (g: FrostRelativeWeeksDto | null) =>
-      windowFromGuidance(frost, g, g?.frostAnchor === 'last' ? year : firstFrostYear);
-    indoorStart = window(guidance.indoorStart);
-    outdoorSow = window(guidance.outdoorSow);
-    transplant = window(guidance.transplant);
-    fallSow = window(guidance.fallSow);
-  } else {
-    const months = warmMonths(warm, year);
-    if (!months) return emptyWindows();
-    outdoorSow = guidance.outdoorSow ? months : null;
-    transplant = guidance.transplant ? months : null;
-  }
+  const dated = datedWindows(frost, guidance, year, warm);
+  if (!dated) return emptyWindows();
+  const { indoorStart, outdoorSow, transplant, fallSow } = dated;
   const start = transplant ?? outdoorSow ?? indoorStart;
   const harvest =
     start && daysToMaturity != null && daysToMaturity > 0
@@ -135,6 +120,90 @@ function warmMonths(warm: WarmClimate, year: number): DatedWindow | null {
 
 function daysIn(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/** One season's sowing and planting windows in real years, before harvest is added. */
+interface DatedWindows {
+  indoorStart: DatedWindow | null;
+  outdoorSow: DatedWindow | null;
+  transplant: DatedWindow | null;
+  fallSow: DatedWindow | null;
+}
+
+function datedWindows(
+  frost: GardenFrost,
+  guidance: GrowingGuidanceDto,
+  year: number,
+  warm: WarmClimate,
+): DatedWindows | null {
+  if (frostComplete(frost)) {
+    const firstFrostYear = seasonWraps(frost) ? year + 1 : year;
+    const window = (g: FrostRelativeWeeksDto | null) =>
+      windowFromGuidance(frost, g, g?.frostAnchor === 'last' ? year : firstFrostYear);
+    return {
+      indoorStart: window(guidance.indoorStart),
+      outdoorSow: window(guidance.outdoorSow),
+      transplant: window(guidance.transplant),
+      fallSow: window(guidance.fallSow),
+    };
+  }
+  const months = warmMonths(warm, year);
+  if (!months) return null;
+  return {
+    indoorStart: null,
+    outdoorSow: guidance.outdoorSow ? months : null,
+    transplant: guidance.transplant ? months : null,
+    fallSow: null,
+  };
+}
+
+/** Where a sowing series may land, as ISO dates (ADR 0037). */
+export interface SowingPlan {
+  /** The windows a crop goes in this season: sowing (or planting out) and fall sowing. */
+  windows: { from: string; to: string }[];
+  /** The last sowing that ripens before the first frost; null without frost dates or maturity. */
+  lastSowOn: string | null;
+}
+
+/**
+ * Extension guidance for the last sowing, for a crop without a fall window:
+ * count back from the first frost by
+ * the days to maturity plus about two weeks for slower growth in cool, short
+ * fall days, and two weeks more for a crop frost kills (Virginia Cooperative
+ * Extension's "fall factor").
+ */
+export const FALL_FACTOR_DAYS = 14;
+
+export function sowingPlan(
+  frost: GardenFrost,
+  guidance: GrowingGuidanceDto,
+  daysToMaturity: number | null,
+  frostTender: boolean,
+  startMethod: string,
+  year: number,
+  warm: WarmClimate = { monthlyMeanC: null, sowingTemperature: null },
+): SowingPlan {
+  const dated = datedWindows(frost, guidance, year, warm);
+  const main = startMethod === 'transplant' ? dated?.transplant : dated?.outdoorSow;
+  const windows = [main, dated?.fallSow]
+    .filter((w): w is DatedWindow => w != null)
+    .map((w) => ({ from: isoOf(w.earliest), to: isoOf(w.latest) }));
+  let lastSowOn: string | null = null;
+  if (dated?.fallSow) {
+    // A crop sown for fall (lettuce, peas, spinach) is hardy enough to grow on
+    // through light frosts; the dataset's fall window already ends at its
+    // last sowing, later than counting back from the first frost would.
+    lastSowOn = isoOf(dated.fallSow.latest);
+  } else if (frostComplete(frost) && daysToMaturity != null && daysToMaturity > 0) {
+    const firstFrostYear = seasonWraps(frost) ? year + 1 : year;
+    const back = daysToMaturity + FALL_FACTOR_DAYS + (frostTender ? FALL_FACTOR_DAYS : 0);
+    lastSowOn = isoOf(addDays(frost.firstFrost!, -back, firstFrostYear));
+  }
+  return { windows, lastSowOn };
+}
+
+function isoOf(d: DatedMonthDay): string {
+  return `${d.year}-${String(d.month).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
 }
 
 function emptyWindows(): CalendarWindowsDto {

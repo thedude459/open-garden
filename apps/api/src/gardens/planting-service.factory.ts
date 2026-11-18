@@ -1,6 +1,9 @@
+import { CalendarService } from '@open-garden/planting-calendar';
 import {
   BedRepository,
+  CalendarEntryRepository,
   GardenMembershipRepository,
+  GardenRepository,
   PlantingAreaRepository,
   PlantingRepository,
   PlantRepository,
@@ -12,13 +15,22 @@ import { domainError, PlantingService, SoilTestService } from '@open-garden/seas
 import { soilTestCreateSchema, type SoilTestCreateDto } from '@open-garden/shared-types';
 
 export function openPlantingService(db: AppDatabase) {
+  const memberships = new GardenMembershipRepository(db);
+  const plants = new PlantRepository(db);
+  const calendar = new CalendarService(
+    new GardenRepository(db),
+    memberships,
+    plants,
+    new CalendarEntryRepository(db),
+  );
   return new PlantingService(
-    new GardenMembershipRepository(db),
-    new PlantRepository(db),
+    memberships,
+    plants,
     new PlantingRepository(db),
     new BedRepository(db),
     new PlantingAreaRepository(db),
     new TrayRepository(db),
+    { plan: (...args) => calendar.sowingPlanFor(...args) },
   );
 }
 

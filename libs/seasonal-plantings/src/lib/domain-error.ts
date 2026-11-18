@@ -28,6 +28,18 @@ export const PLANTING_ERRORS = {
     domainError('VALIDATION_ERROR', 'Indoor start date is required for transplants'),
   indoorStartForbidden: () =>
     domainError('VALIDATION_ERROR', 'Direct seed plantings cannot have an indoor start date'),
+  repeatNeedsSowDate: () =>
+    domainError('VALIDATION_ERROR', 'Give the planting a sow date before repeating it'),
+  repeatAnnualsOnly: () => domainError('VALIDATION_ERROR', 'Only annual plantings repeat'),
+  repeatNothing: (lastSowOn: string | null) =>
+    domainError(
+      'VALIDATION_ERROR',
+      lastSowOn
+        ? `No sowing fits before that date in this crop's sowing windows; the last that ripens before frost is ${lastSowOn}`
+        : "No sowing fits before that date in this crop's sowing windows",
+    ),
+  repeatTooMany: (max: number) =>
+    domainError('VALIDATION_ERROR', `A series adds at most ${max} sowings; pick an earlier date`),
   bedSizeRequired: () =>
     domainError('VALIDATION_ERROR', 'Bed length and width must be at least 1 inch'),
 } as const;

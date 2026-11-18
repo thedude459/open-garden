@@ -4,7 +4,8 @@ import type { GardenRole } from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
-import { GardenPlantingsPage } from './garden-plantings.page';
+import { NoticeService } from '../ui/notice.service';
+import { GardenPlantingsPage, repeatMessage } from './garden-plantings.page';
 import { planting } from './planting.testing';
 import { PlantingsApiService } from './plantings-api.service';
 import type { ClientPlantingList } from './plantings-offline.queue';
@@ -108,5 +109,38 @@ describe('GardenPlantingsPage', () => {
   it('says the property is unavailable when it cannot be read', async () => {
     const view = await render({ list: async () => null });
     expect(view.text()).toContain('Garden unavailable or not found.');
+  });
+
+  it('suggests the last useful sowing, adds the series, and says what it left out', async () => {
+    const repeat = vi.fn(async () => ({
+      list: list(),
+      added: 2,
+      outOfWindow: 3,
+      tooLate: 1,
+      lastSowOn: '2027-08-20',
+    }));
+    const repeatPlan = vi.fn(async () => '2027-08-20');
+    const view = await render({ list: async () => list(), repeat, repeatPlan });
+    view.byLabel('Edit Tomato')!.click();
+    await view.fixture.whenStable();
+    view.button('Repeat sowing')!.click();
+    await vi.waitFor(() => expect(view.text()).toContain('ripens before frost here is 2027-08-20'));
+    const until = view.el.querySelector<HTMLInputElement>('input[name="repeatUntil"]')!;
+    await vi.waitFor(() => expect(until.value).toBe('2027-08-20'));
+    view.button('Add sowings')!.click();
+    await vi.waitFor(() =>
+      expect(repeat).toHaveBeenCalledWith('g1', 'p1', { everyWeeks: 2, until: '2027-08-20' }),
+    );
+    await vi.waitFor(() =>
+      expect(TestBed.inject(NoticeService).current()?.message).toBe(
+        'Added 2 sowings of Tomato. Left out 3 sowings outside its sowing windows and 1 sowing too late to ripen before frost.',
+      ),
+    );
+  });
+
+  it('says plainly when a series left nothing out', () => {
+    expect(repeatMessage('Radish', { added: 1, outOfWindow: 0, tooLate: 0 })).toBe(
+      'Added 1 sowing of Radish.',
+    );
   });
 });

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { PlantingService } from './planting-service';
-import type { GardenRole } from '@open-garden/shared-types';
+import { describe, expect, it, vi } from 'vitest';
+import { PlantingService, type SowingPlanner } from './planting-service';
+import type { GardenRole, PlantingCreateDto } from '@open-garden/shared-types';
 
 const tomato = {
   id: 'plant-tomato',
@@ -243,7 +243,7 @@ describe('PlantingService', () => {
   });
 });
 
-function createMemory() {
+function createMemory(sowing?: SowingPlanner) {
   const ownerId = 'owner-1';
   const viewerId = 'viewer-1';
   const strangerId = 'stranger-1';
@@ -267,6 +267,8 @@ function createMemory() {
     harvestedOn: string | null;
     startMethod: string;
     indoorStartedOn: string | null;
+    life: string;
+    seasonYear: number;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -328,6 +330,8 @@ function createMemory() {
       harvestedOn: string | null;
       startMethod?: string;
       indoorStartedOn?: string | null;
+      life?: string;
+      seasonYear?: number;
     }) {
       const now = new Date();
       const row: PlantingRow = {
@@ -339,6 +343,8 @@ function createMemory() {
         harvestedOn: input.harvestedOn,
         startMethod: input.startMethod ?? 'direct_seed',
         indoorStartedOn: input.indoorStartedOn ?? null,
+        life: input.life ?? 'annual',
+        seasonYear: input.seasonYear ?? 2026,
         createdAt: now,
         updatedAt: now,
       };
@@ -463,6 +469,9 @@ function createMemory() {
     plantRepo as never,
     plantingRepo as never,
     bedRepo as never,
+    undefined,
+    undefined,
+    sowing,
   );
   return { service, ownerId, viewerId, strangerId, gardenId, otherGardenId };
 }
@@ -703,5 +712,122 @@ describe('PlantingService areas: rename, delete, move a bed', () => {
       service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'orchard' }),
     ).resolves.toMatchObject({ areaId: 'orchard', station: 'tree' });
     expect(bed.station).toBe('tree');
+  });
+});
+
+describe('PlantingService.repeat (succession planting)', () => {
+  async function sown(
+    mem: ReturnType<typeof createMemory>,
+    plantedOn: string | null,
+    extra: Partial<PlantingCreateDto> = {},
+  ) {
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      plantedOn,
+      ...extra,
+    });
+    return list.plantings[0]!.id;
+  }
+
+  it('adds a sowing every N weeks up to the date, without a bed', async () => {
+    const mem = createMemory();
+    const id = await sown(mem, '2026-04-01');
+    const { list, added } = await mem.service.repeat(
+      mem.ownerId,
+      mem.gardenId,
+      id,
+      2,
+      '2026-05-14',
+    );
+    expect(added).toBe(3);
+    const copies = list.plantings.filter((p) => p.id !== id);
+    expect(copies.map((p) => p.plantedOn).sort()).toEqual([
+      '2026-04-15',
+      '2026-04-29',
+      '2026-05-13',
+    ]);
+    expect(copies.every((p) => p.bedId === null && p.plantId === tomato.id)).toBe(true);
+  });
+
+  it('moves a transplant’s indoor start with its sow date', async () => {
+    const mem = createMemory();
+    const id = await sown(mem, '2026-05-01', {
+      startMethod: 'transplant',
+      indoorStartedOn: '2026-03-20',
+    });
+    const { list } = await mem.service.repeat(mem.ownerId, mem.gardenId, id, 3, '2026-05-22');
+    const copy = list.plantings.find((p) => p.id !== id)!;
+    expect(copy).toMatchObject({
+      startMethod: 'transplant',
+      plantedOn: '2026-05-22',
+      indoorStartedOn: '2026-04-10',
+    });
+  });
+
+  it('refuses without a sow date, when nothing fits, past 26 sowings, and for viewers', async () => {
+    const mem = createMemory();
+    const undated = await sown(mem, null);
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, undated, 2, '2026-06-01'),
+    ).rejects.toMatchObject({ message: 'Give the planting a sow date before repeating it' });
+    const id = await sown(mem, '2026-04-01');
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 2, '2026-04-10'),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('No sowing fits before that date'),
+    });
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 1, '2026-12-31'),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', message: expect.stringContaining('26') });
+    await expect(
+      mem.service.repeat(mem.viewerId, mem.gardenId, id, 2, '2026-06-01'),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('repeats only annual plantings', async () => {
+    const mem = createMemory();
+    const id = await sown(mem, '2026-04-01', { life: 'perennial' });
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 2, '2026-06-01'),
+    ).rejects.toMatchObject({ message: 'Only annual plantings repeat' });
+  });
+
+  it('leaves out dates outside the sowing windows and after the last useful sowing', async () => {
+    const plan = vi.fn(async () => ({
+      windows: [
+        { from: '2026-04-01', to: '2026-05-31' },
+        { from: '2026-08-01', to: '2026-09-15' },
+      ],
+      lastSowOn: '2026-09-01',
+    }));
+    const mem = createMemory({ plan });
+    const id = await sown(mem, '2026-04-01');
+    const result = await mem.service.repeat(mem.ownerId, mem.gardenId, id, 4, '2026-10-01');
+    // Every 4 weeks: Apr 29, May 27 in spring; Jun 24, Jul 22 in the summer
+    // gap; Aug 19 in fall; Sep 16 after the last useful sowing.
+    expect(
+      result.list.plantings
+        .filter((p) => p.id !== id)
+        .map((p) => p.plantedOn)
+        .sort(),
+    ).toEqual(['2026-04-29', '2026-05-27', '2026-08-19']);
+    expect(result).toMatchObject({ added: 3, outOfWindow: 2, tooLate: 1, lastSowOn: '2026-09-01' });
+    expect(plan).toHaveBeenCalledWith(mem.gardenId, tomato.id, 'direct_seed', '2026-04-01');
+    expect(await mem.service.repeatPlan(mem.ownerId, mem.gardenId, id)).toEqual({
+      lastSowOn: '2026-09-01',
+    });
+  });
+
+  it('names the last useful sowing when nothing fits', async () => {
+    const mem = createMemory({
+      plan: async () => ({
+        windows: [{ from: '2026-04-01', to: '2026-04-20' }],
+        lastSowOn: '2026-08-01',
+      }),
+    });
+    const id = await sown(mem, '2026-04-01');
+    await expect(
+      mem.service.repeat(mem.ownerId, mem.gardenId, id, 4, '2026-06-30'),
+    ).rejects.toMatchObject({ message: expect.stringContaining('2026-08-01') });
   });
 });
