@@ -7,6 +7,7 @@ import {
   gardenMemberships,
   gardens,
   isUniqueViolation,
+  passwordResets,
   sessions,
   users,
 } from '@open-garden/plant-catalog-data';
@@ -169,6 +170,53 @@ export class AuthService {
     return Boolean(user && (await bcrypt.compare(password, user.passwordHash)));
   }
 
+  /**
+   * A one-time reset link token for the account with this email, valid for an
+   * hour; any earlier link for it stops working. Null when no account has the
+   * address (callers must not reveal that to whoever asked).
+   */
+  async createPasswordReset(email: string): Promise<{ email: string; token: string } | null> {
+    const [user] = await this.db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.email, email.trim().toLowerCase()))
+      .limit(1);
+    if (!user) return null;
+    const token = randomBytes(32).toString('hex');
+    await this.db.transaction(async (tx) => {
+      await tx.delete(passwordResets).where(eq(passwordResets.userId, user.id));
+      await tx.insert(passwordResets).values({
+        userId: user.id,
+        tokenHash: hashToken(token),
+        expiresAt: new Date(Date.now() + RESET_LINK_MS),
+      });
+    });
+    return { email: user.email, token };
+  }
+
+  /**
+   * Set a new password from a reset link. The link works once; every session
+   * of the account is signed out. False when the link is unknown or expired.
+   */
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    return this.db.transaction(async (tx) => {
+      const [reset] = await tx
+        .delete(passwordResets)
+        .where(
+          and(
+            eq(passwordResets.tokenHash, hashToken(token)),
+            gt(passwordResets.expiresAt, new Date()),
+          ),
+        )
+        .returning({ userId: passwordResets.userId });
+      if (!reset) return false;
+      await tx.update(users).set({ passwordHash }).where(eq(users.id, reset.userId));
+      await tx.delete(sessions).where(eq(sessions.userId, reset.userId));
+      return true;
+    });
+  }
+
   async setUnits(userId: string, units: Units): Promise<void> {
     await this.db.update(users).set({ units }).where(eq(users.id, userId));
   }
@@ -184,6 +232,9 @@ export class AuthService {
     return { ...user, role: 'admin' };
   }
 }
+
+/** How long a password reset link works. */
+export const RESET_LINK_MS = 60 * 60 * 1000;
 
 export const EMAIL_TAKEN_MESSAGE = 'An account with this email already exists. Sign in instead.';
 

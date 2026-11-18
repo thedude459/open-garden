@@ -10,6 +10,14 @@ export const routes: Routes = [
     loadComponent: () => import('./auth/login.page').then((m) => m.LoginPage),
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./auth/reset-password.page').then((m) => m.ResetPasswordPage),
+  },
+  {
     path: 'plants',
     canActivate: [authGuard],
     loadComponent: () => import('./plants/plant-list.page').then((m) => m.PlantListPage),

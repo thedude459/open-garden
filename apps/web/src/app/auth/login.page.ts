@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthApiService } from './auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { SOURCE_CODE_URL } from '../source-link';
@@ -9,7 +9,7 @@ import { safeReturnUrl } from './session-expiry';
 
 @Component({
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="auth-page">
       <div class="brand-hero">
@@ -43,6 +43,11 @@ import { safeReturnUrl } from './session-expiry';
         <button type="button" class="btn btn-secondary" (click)="toggle()">
           {{ mode() === 'login' ? 'Need an account?' : 'Have an account?' }}
         </button>
+        @if (mode() === 'login' && canReset()) {
+          <a routerLink="/forgot-password" [queryParams]="email ? { email } : {}"
+            >Forgot password?</a
+          >
+        }
       </form>
       <p class="source-link">
         Open Garden is free software (AGPL-3.0).
@@ -67,6 +72,12 @@ export class LoginPage {
     this.route.snapshot.queryParamMap.get('register') === '1' ? 'register' : 'login',
   );
   error = signal('');
+  /** "Forgot password?" shows only where the server can email a link. */
+  readonly canReset = signal(false);
+
+  constructor() {
+    void this.auth.resetByEmail().then((ok) => this.canReset.set(ok));
+  }
   /** Sent here because the server ended the session (see sessionExpiredInterceptor). */
   readonly expired = this.route.snapshot.queryParamMap.get('expired') === '1';
 

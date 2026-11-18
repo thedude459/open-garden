@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { describe, expect, test } from 'vitest';
 import { fixturePlace } from './fixture-place';
 import { liveEnabled, LiveClient, uniqueEmail } from './live-http';
@@ -141,5 +142,55 @@ describe.skipIf(!liveEnabled)('account http', () => {
     expect(
       (await owner.delete('/api/account', { data: { password: 'password123' } })).status(),
     ).toBe(204);
+  });
+
+  test('without SMTP, a reset link comes from the reset-link command and works once', async () => {
+    const options = await new LiveClient().get('/api/auth/password-reset');
+    expect(await options.json()).toEqual({ byEmail: false });
+    const byEmail = await new LiveClient().post('/api/auth/password-reset', {
+      data: { email: 'someone@example.com' },
+    });
+    expect(byEmail.status()).toBe(404);
+
+    const email = uniqueEmail('reset');
+    const me = new LiveClient();
+    await me.register(email);
+    // The command the README gives operators, from the bundle the image ships.
+    const out = execFileSync('node', ['dist/api-runtime/reset-link.js', email], {
+      encoding: 'utf8',
+    });
+    const token = /reset-password\?token=([0-9a-f]{64})/.exec(out)?.[1];
+    expect(token, out).toBeTruthy();
+
+    const short = await new LiveClient().post('/api/auth/password-reset/confirm', {
+      data: { token, password: 'short' },
+    });
+    expect(short.status()).toBe(400);
+    const done = await new LiveClient().post('/api/auth/password-reset/confirm', {
+      data: { token, password: 'reset-password-1' },
+    });
+    expect(done.status()).toBe(204);
+    expect((await me.get('/api/gardens')).status()).toBe(401);
+    expect((await new LiveClient().login(email, 'reset-password-1')).email).toBe(email);
+
+    const again = await new LiveClient().post('/api/auth/password-reset/confirm', {
+      data: { token, password: 'reset-password-2' },
+    });
+    expect(again.status()).toBe(400);
+    expect(await again.text()).toContain('expired or was already used');
+  });
+
+  test('the reset-link command says when no account has the address', () => {
+    let failed: { status?: number; stderr?: string } = {};
+    try {
+      execFileSync('node', ['dist/api-runtime/reset-link.js', uniqueEmail('nobody')], {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      });
+    } catch (err) {
+      failed = err as typeof failed;
+    }
+    expect(failed.status).toBe(1);
+    expect(failed.stderr).toContain('No account uses');
   });
 });

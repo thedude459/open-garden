@@ -58,10 +58,10 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `CLIMATE_SOURCE` | `open-meteo` | Where a property's zone, frost dates, and monthly temperatures come from. `open-meteo` uses Open-Meteo's historical weather and falls back to NASA POWER when it is unreachable; `nasa-power` uses NASA POWER only (public domain, no usage limits), for installs whose use does not fit Open-Meteo's non-commercial terms. Watering still uses Open-Meteo's forecast for rain and evapotranspiration. |
 | `REMINDER_HOUR` | `7` | Hour of the day (0–23) the daily reminders go out, in the API container's time zone. |
 | `TZ` | `UTC` | The API container's time zone, for example `Europe/Berlin`. Reminders and "today" on the server follow it. |
-| `APP_URL` | unset | The address people open the app at, for example `https://garden.example.com`. Used for the link in reminder emails. |
+| `APP_URL` | unset | The address people open the app at, for example `https://garden.example.com`. Used for the links in reminder and password reset emails. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | unset (push off) | Turn on push reminders. Generate a pair once with `docker run --rm node:24-alpine npx -y web-push generate-vapid-keys` and keep it: a new pair makes every device turn push on again. Set both or neither. People reach the app over HTTPS for push to work in browsers. |
 | `VAPID_SUBJECT` | `APP_URL` | A `mailto:` or `https:` contact that push services can use to reach the admin. |
-| `SMTP_HOST`, `SMTP_FROM` | unset (email off) | Turn on the daily email summary: your mail server and the sender address. Set both. |
+| `SMTP_HOST`, `SMTP_FROM` | unset (email off) | Turn on email: the daily summary, and password reset links when `APP_URL` is also set. Your mail server and the sender address; set both. |
 | `SMTP_PORT` | `587` | `465` uses TLS from the start; other ports upgrade with STARTTLS when the server offers it. |
 | `SMTP_USER`, `SMTP_PASSWORD` | unset | Mail server login, if it needs one. |
 
@@ -175,6 +175,21 @@ The setting only promotes an account that already exists, and only when the
 API starts. Email addresses are not verified, so promoting at sign-up would
 let whoever registers that address first become admin. Removing the setting
 later does not take the role away.
+
+## Forgotten passwords
+
+With SMTP and `APP_URL` set, the sign-in page offers **Forgot password?** and
+emails a link that works once, for an hour. Without them (or when the email
+does not arrive), make the link yourself and pass it on:
+
+```sh
+docker compose exec api node dist/reset-link.js person@example.com
+```
+
+It prints the link (with `APP_URL` in front when set; otherwise put the
+address you open Open Garden at in front of the path). Using the link signs
+that person out everywhere. A member who still knows their password changes it
+on the **Account** page, which also has **Delete account**.
 
 ## Troubleshooting
 

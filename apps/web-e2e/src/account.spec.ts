@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { expect, test } from '@playwright/test';
 import { confirmFixtureAddress } from './planner-helpers';
 import { signedInPage, signedInViaLoginForm, uniqueEmail, TEST_PASSWORD } from './session';
@@ -53,4 +54,39 @@ test('a member deletes their account and cannot sign in again', async ({ browser
   await page.getByPlaceholder('Password').fill(TEST_PASSWORD);
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page.getByText('Authentication failed')).toBeVisible();
+});
+
+test('a reset link from the reset-link command sets a new password', async ({ page }) => {
+  const email = uniqueEmail('account-reset');
+  const registered = await page.request.post('/api/auth/register', {
+    data: { email, password: TEST_PASSWORD },
+  });
+  expect(registered.ok()).toBeTruthy();
+  await page.context().clearCookies();
+  // Without SMTP (as here), sign-in offers no "Forgot password?"; the server's
+  // operator runs this command and passes the link on.
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Forgot password?' })).toHaveCount(0);
+  const out = execFileSync('node', ['dist/api-runtime/reset-link.js', email], {
+    encoding: 'utf8',
+  });
+  const path = /\/reset-password\?token=[0-9a-f]{64}/.exec(out)![0];
+
+  await page.goto(path);
+  await page.getByRole('textbox', { name: /^New password/ }).fill('reset-password-1');
+  await page.getByLabel('Repeat new password').fill('reset-password-1');
+  await page.getByRole('button', { name: 'Set password' }).click();
+  await expect(page.getByText('Password changed. Sign in with the new one.')).toBeVisible();
+  await page.getByPlaceholder('Email').fill(email);
+  await page.getByPlaceholder('Password').fill('reset-password-1');
+  await page.getByRole('button', { name: 'Login' }).click();
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+
+  // The link works once.
+  await page.goto(path);
+  await page.getByRole('textbox', { name: /^New password/ }).fill('reset-password-2');
+  await page.getByLabel('Repeat new password').fill('reset-password-2');
+  await page.getByRole('button', { name: 'Set password' }).click();
+  await expect(page.getByRole('alert')).toContainText('expired or was already used');
 });

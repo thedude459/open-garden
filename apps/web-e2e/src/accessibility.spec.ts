@@ -15,9 +15,17 @@ async function problems(page: Page) {
     .map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`);
 }
 
-test('the sign-in page has no serious accessibility problems', async ({ page }) => {
+test('the sign-in and password reset pages have no serious accessibility problems', async ({
+  page,
+}) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
+  expect(await problems(page)).toEqual([]);
+  await page.goto('/forgot-password');
+  await expect(page.getByRole('button', { name: 'Email me a link' })).toBeVisible();
+  expect(await problems(page)).toEqual([]);
+  await page.goto(`/reset-password?token=${'0'.repeat(64)}`);
+  await expect(page.getByRole('button', { name: 'Set password' })).toBeVisible();
   expect(await problems(page)).toEqual([]);
 });
 

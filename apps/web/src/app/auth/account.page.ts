@@ -13,10 +13,6 @@ import { AuthApiService } from './auth-api.service';
     .authform {
       max-width: 22rem;
     }
-    label {
-      display: grid;
-      gap: 0.25rem;
-    }
     section + section {
       margin-top: 1rem;
     }

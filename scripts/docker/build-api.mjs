@@ -10,6 +10,7 @@ await build({
     'sync-cli': 'apps/api/src/plants/sync-cli.ts',
     'boot-env': 'apps/api/src/boot-env.ts',
     'wait-for-db': 'apps/api/src/wait-for-db.ts',
+    'reset-link': 'apps/api/src/auth/reset-link-cli.ts',
   },
   outdir: 'dist/api-runtime',
   bundle: true,

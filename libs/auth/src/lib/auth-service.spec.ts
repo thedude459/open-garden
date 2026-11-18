@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AuthService, EMAIL_TAKEN_MESSAGE } from './auth-service';
+import { AuthService, EMAIL_TAKEN_MESSAGE, RESET_LINK_MS } from './auth-service';
 
 describe('AuthService', () => {
   beforeEach(() => {
@@ -258,6 +258,66 @@ describe('AuthService', () => {
         reason: 'wrong-password',
       });
       expect(db.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('password reset', () => {
+    it('makes a link only for a known address, replacing any earlier one', async () => {
+      const limit = vi.fn().mockResolvedValueOnce([{ id: 'u1', email: 'a@example.com' }]);
+      const values = vi.fn().mockResolvedValue(undefined);
+      const removed = vi.fn().mockResolvedValue(undefined);
+      const tx = {
+        delete: vi.fn().mockReturnValue({ where: removed }),
+        insert: vi.fn().mockReturnValue({ values }),
+      };
+      const db = {
+        select: vi.fn().mockReturnValue({
+          from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit }) }),
+        }),
+        transaction: vi.fn(async (fn: (t: typeof tx) => Promise<void>) => fn(tx)),
+      };
+      const svc = new AuthService(db as never);
+      const reset = await svc.createPasswordReset(' A@Example.com ');
+      expect(reset?.email).toBe('a@example.com');
+      expect(reset?.token).toMatch(/^[0-9a-f]{64}$/);
+      expect(removed).toHaveBeenCalledTimes(1);
+      const row = values.mock.calls[0]![0] as { tokenHash: string; expiresAt: Date };
+      // Only the hash is stored, and it expires within the hour.
+      expect(row.tokenHash).not.toBe(reset?.token);
+      expect(row.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(RESET_LINK_MS);
+
+      limit.mockResolvedValueOnce([]);
+      expect(await svc.createPasswordReset('nobody@example.com')).toBeNull();
+    });
+
+    function resetDb(found: { userId: string }[]) {
+      const set = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+      const sessionsGone = vi.fn().mockResolvedValue(undefined);
+      const tx = {
+        delete: vi
+          .fn()
+          .mockReturnValueOnce({
+            where: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue(found) }),
+          })
+          .mockReturnValueOnce({ where: sessionsGone }),
+        update: vi.fn().mockReturnValue({ set }),
+      };
+      const db = { transaction: vi.fn(async (fn: (t: typeof tx) => Promise<boolean>) => fn(tx)) };
+      return { svc: new AuthService(db as never), set, sessionsGone };
+    }
+
+    it('sets the new password and signs out every session', async () => {
+      const { svc, set, sessionsGone } = resetDb([{ userId: 'u1' }]);
+      expect(await svc.resetPassword('a'.repeat(64), 'new-password-1')).toBe(true);
+      const saved = set.mock.calls[0]![0] as { passwordHash: string };
+      expect(await bcrypt.compare('new-password-1', saved.passwordHash)).toBe(true);
+      expect(sessionsGone).toHaveBeenCalledTimes(1);
+    });
+
+    it('changes nothing for an unknown, used, or expired link', async () => {
+      const { svc, set } = resetDb([]);
+      expect(await svc.resetPassword('b'.repeat(64), 'new-password-1')).toBe(false);
+      expect(set).not.toHaveBeenCalled();
     });
   });
 });
