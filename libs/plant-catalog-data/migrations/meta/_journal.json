@@ -127,6 +127,13 @@
       "when": 1794964516075,
       "tag": "0017_care_kind_sow",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795003726264,
+      "tag": "0018_harvest_amounts",
+      "breakpoints": true
     }
   ]
 }

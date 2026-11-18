@@ -10,7 +10,16 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { feetFromTreeSpacing, lengthUnit, treeSpacingInput } from '@open-garden/garden-layout';
+import {
+  feetFromTreeSpacing,
+  gramsFromInput,
+  lengthUnit,
+  treeSpacingInput,
+  weightUnit,
+} from '@open-garden/garden-layout';
+import { formatDay } from '@open-garden/web-ui';
+import { localIso } from '../today/today-groups';
+import { harvestAmount } from './harvest-amount';
 import { plantName, type PlantingPatchDto, type Units } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import type { ClientBed, ClientPlanting } from './plantings-offline.queue';
@@ -171,6 +180,55 @@ type Life = NonNullable<ClientPlanting['life']>;
           are left out. Each sowing is added without a bed, and Today says when to sow it.
         </p>
       }
+      <section class="harvests" aria-label="Harvests">
+        <h4>Harvests</h4>
+        @if (p.harvests?.length) {
+          <ul class="card-list">
+            @for (h of p.harvests; track h.harvestedOn) {
+              <li class="row">
+                <span>{{ formatDay(h.harvestedOn) }}: {{ harvestAmount(h, units()) }}</span>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [attr.aria-label]="'Delete harvest of ' + formatDay(h.harvestedOn)"
+                  (click)="deleteHarvest.emit(h.harvestedOn)"
+                >
+                  Delete
+                </button>
+              </li>
+            }
+          </ul>
+          <p class="muted">Total: {{ harvestAmount(harvestTotal(), units()) }}</p>
+        }
+        <form class="filters" (ngSubmit)="emitHarvest()">
+          <label>
+            Picked on
+            <input type="date" name="harvestOn" [(ngModel)]="harvestOn" required />
+          </label>
+          <label>
+            Weight ({{ weightUnit(units()) }})
+            <input
+              type="number"
+              name="harvestWeight"
+              min="0"
+              step="0.1"
+              [(ngModel)]="harvestWeight"
+            />
+          </label>
+          <label>
+            Count
+            <input type="number" name="harvestCount" min="0" step="1" [(ngModel)]="harvestCount" />
+          </label>
+          <button
+            type="submit"
+            class="btn btn-secondary"
+            [attr.aria-busy]="harvestBusy() || null"
+            [disabled]="harvestBusy()"
+          >
+            Log harvest
+          </button>
+        </form>
+      </section>
       @if (confirmRemove()) {
         <p>Permanently remove this planting? This cannot be undone.</p>
         <div class="filters">
@@ -195,6 +253,16 @@ export class PlantingEditor {
   saving = input(false);
   save = output<PlantingPatchDto>();
   sowAgain = output<void>();
+  /** A day's harvest to record (ADR 0038); a weight in grams, a count, or neither. */
+  logHarvest = output<{ harvestedOn: string; grams: number | null; count: number | null }>();
+  deleteHarvest = output<string>();
+  harvestBusy = input(false);
+  readonly formatDay = formatDay;
+  readonly harvestAmount = harvestAmount;
+  readonly weightUnit = weightUnit;
+  harvestOn = localIso();
+  harvestWeight: number | string | null = null;
+  harvestCount: number | string | null = null;
   /** Succession planting: the same crop every `everyWeeks` weeks until `until`. */
   repeat = output<{ everyWeeks: number; until: string }>();
   repeatBusy = input(false);
@@ -259,6 +327,29 @@ export class PlantingEditor {
     const reader = new FileReader();
     reader.onload = () => this.photo.set(typeof reader.result === 'string' ? reader.result : '');
     reader.readAsDataURL(file);
+  }
+
+  /** Everything picked from this planting, added up. */
+  harvestTotal() {
+    const all = this.planting().harvests ?? [];
+    return {
+      grams: all.reduce((sum, h) => sum + (h.grams ?? 0), 0),
+      count: all.reduce((sum, h) => sum + (h.count ?? 0), 0),
+    };
+  }
+
+  emitHarvest() {
+    const grams = gramsFromInput(this.harvestWeight, this.units());
+    const raw =
+      this.harvestCount === null || this.harvestCount === '' ? null : Number(this.harvestCount);
+    const count = raw === null || !Number.isFinite(raw) ? null : Math.round(raw);
+    if (!this.harvestOn || (count !== null && count < 0)) {
+      this.failed.emit('Give the harvest a date, and a weight or count of 0 or more');
+      return;
+    }
+    this.logHarvest.emit({ harvestedOn: this.harvestOn, grams, count });
+    this.harvestWeight = null;
+    this.harvestCount = null;
   }
 
   toggleRepeat() {

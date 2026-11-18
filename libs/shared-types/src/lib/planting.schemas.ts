@@ -59,6 +59,15 @@ export const plantingCreateSchema = z
     }
   });
 
+/** Log a harvest: the day, and optionally its weight in grams and a count (ADR 0038). */
+export const harvestLogSchema = z
+  .object({
+    harvestedOn: isoDate,
+    grams: z.number().int().min(0).max(10_000_000).nullable().optional(),
+    count: z.number().int().min(0).max(100_000).nullable().optional(),
+  })
+  .strict();
+
 /** The most sowings one series adds (half a year, sowing weekly). */
 export const MAX_SUCCESSION_SOWINGS = 26;
 

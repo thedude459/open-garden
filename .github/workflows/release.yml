@@ -1,17 +1,30 @@
 name: Release
 
-# Publishing a GitHub Release with a tag like v0.1.0 builds the api and web
-# images for amd64 and arm64, pushes them to ghcr.io with an SBOM and build
-# provenance, scans them, and attaches the install compose.yaml to the release.
+# Run from Actions -> Release -> Run workflow, on main, with the version
+# (CONTRIBUTING.md, "Releasing"). It checks that CHANGELOG.md has that
+# version's entry and that every published security advisory fixed in it is
+# named there, then creates a draft GitHub Release with the notes, builds the
+# api and web images for amd64 and arm64, pushes them to ghcr.io with an SBOM
+# and build provenance, scans them, attaches the install compose.yaml, and
+# publishes the release.
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 0.2.0 (CHANGELOG.md must have "## v0.2.0 (date)")'
+        required: true
+        type: string
+      prerelease:
+        description: 'A release candidate (e.g. 0.3.0-rc.1): no latest tag'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: release-${{ inputs.version }}
   cancel-in-progress: false
 
 env:
@@ -19,27 +32,70 @@ env:
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/open-garden
 
 jobs:
-  version:
-    name: version
+  notes:
+    name: notes and draft release
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      # Create the draft release.
+      contents: write
     outputs:
-      version: ${{ steps.tag.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Check the tag is vMAJOR.MINOR.PATCH
-        id: tag
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the version and branch
+        id: version
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ ! "${TAG}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)$ ]]; then
-            echo "Release tag must look like v1.2.3 (got ${TAG})" >&2
+          VERSION="${VERSION#v}"
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Version must look like 1.2.3 or 1.3.0-rc.1 (got ${VERSION})" >&2
             exit 1
           fi
-          echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Run the release from main (got ${GITHUB_REF})" >&2
+            exit 1
+          fi
+          if gh release view "v${VERSION}" --repo "${GITHUB_REPOSITORY}" > /dev/null 2>&1; then
+            echo "Release v${VERSION} already exists" >&2
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+      - name: Notes from CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node scripts/ci/release-notes.js selfcheck
+          node scripts/ci/release-notes.js check
+          node scripts/ci/release-notes.js notes "${VERSION}" > notes.md
+          cat notes.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Every advisory fixed in this version is in the notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/security-advisories?state=published&per_page=100" \
+            --jq '.[]' | jq -s . > advisories.json
+          node scripts/ci/release-notes.js advisories "${VERSION}" advisories.json
+      - name: Create the draft release
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          args=(--draft --target "${GITHUB_SHA}" --title "Open Garden ${TAG}" --notes-file notes.md)
+          if [[ "${PRERELEASE}" == "true" ]]; then args+=(--prerelease); fi
+          gh release create "${TAG}" "${args[@]}" --repo "${GITHUB_REPOSITORY}"
 
   images:
     name: images (${{ matrix.image }})
-    needs: version
+    needs: notes
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -71,11 +127,11 @@ jobs:
           # 1.2.3, 1.2, 1, and latest for stable releases; only the exact
           # version for pre-releases (v1.3.0-rc.1).
           tags: |
-            type=semver,pattern={{version}},value=${{ github.event.release.tag_name }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name }}
-            type=semver,pattern={{major}},value=${{ github.event.release.tag_name }}
+            type=semver,pattern={{version}},value=${{ needs.notes.outputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.notes.outputs.tag }}
+            type=semver,pattern={{major}},value=${{ needs.notes.outputs.tag }}
           flavor: |
-            latest=${{ !github.event.release.prerelease }}
+            latest=${{ !inputs.prerelease }}
           labels: |
             org.opencontainers.image.title=open-garden-${{ matrix.image }}
             org.opencontainers.image.licenses=AGPL-3.0-or-later
@@ -116,7 +172,7 @@ jobs:
 
   compose:
     name: attach compose.yaml
-    needs: [version, images]
+    needs: [notes, images]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -130,7 +186,7 @@ jobs:
           persist-credentials: false
       - name: Pin the release version in compose.yaml
         env:
-          VERSION: ${{ needs.version.outputs.version }}
+          VERSION: ${{ needs.notes.outputs.version }}
         run: |
           sed "s/\${OPEN_GARDEN_VERSION:-latest}/\${OPEN_GARDEN_VERSION:-${VERSION}}/" deploy/compose.yaml > compose.yaml
           grep -q "OPEN_GARDEN_VERSION:-${VERSION}" compose.yaml
@@ -142,10 +198,25 @@ jobs:
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ needs.notes.outputs.tag }}
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
           # The Sigstore bundle lets anyone verify compose.yaml came from this
           # workflow: gh attestation verify compose.yaml --owner <owner>
           cp "${BUNDLE}" compose.yaml.sigstore.json
           gh release upload "${TAG}" compose.yaml compose.yaml.sigstore.json --clobber --repo "${GITHUB_REPOSITORY}"
+
+  publish:
+    name: publish
+    needs: [notes, compose]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Publish the draft: this creates the tag at the commit it was built from.
+      contents: write
+    steps:
+      - name: Publish the release
+        env:
+          TAG: ${{ needs.notes.outputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${TAG}" --draft=false --repo "${GITHUB_REPOSITORY}"

@@ -10,6 +10,7 @@ import { type ClientReminderItem, type ClientReminderList } from './reminders-of
 import { rainForDeviceDay } from './garden-reminders-cache.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { waterNote } from './water-note';
+import { gramsFromInput, weightUnit } from '@open-garden/garden-layout';
 @Component({
   standalone: true,
   imports: [RouterLink],
@@ -69,6 +70,40 @@ import { waterNote } from './water-note';
                 </div>
                 @if (canEdit()) {
                   <div class="filters">
+                    @if (item.kind === 'harvest') {
+                      <label>
+                        Weight ({{ weightUnit(units()) }})
+                        <input
+                          #weight
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          [attr.name]="'weight-' + item.plantingId"
+                          (input)="
+                            amounts[item.plantingId] = {
+                              weight: weight.value,
+                              count: amounts[item.plantingId]?.count ?? '',
+                            }
+                          "
+                        />
+                      </label>
+                      <label>
+                        Count
+                        <input
+                          #count
+                          type="number"
+                          min="0"
+                          step="1"
+                          [attr.name]="'count-' + item.plantingId"
+                          (input)="
+                            amounts[item.plantingId] = {
+                              weight: amounts[item.plantingId]?.weight ?? '',
+                              count: count.value,
+                            }
+                          "
+                        />
+                      </label>
+                    }
                     <button type="button" class="btn btn-secondary" (click)="complete(item)">
                       Complete
                     </button>
@@ -94,6 +129,9 @@ export class GardenRemindersPage implements OnInit {
   readonly formatDay = formatDay;
   readonly waterNote = waterNote;
   readonly units = inject(AuthApiService).units;
+  readonly weightUnit = weightUnit;
+  /** What was picked, typed next to a Harvest task before it is completed (ADR 0038). */
+  amounts: Record<string, { weight: string; count: string }> = {};
 
   gardenId = '';
   readonly list = signal<ClientReminderList | null>(null);
@@ -148,6 +186,7 @@ export class GardenRemindersPage implements OnInit {
 
   async complete(item: ClientReminderItem) {
     const ok = await this.mutate(item, 'complete');
+    if (ok && item.kind === 'harvest') await this.logAmount(item);
     if (
       !ok ||
       item.kind !== 'harvest' ||
@@ -159,6 +198,25 @@ export class GardenRemindersPage implements OnInit {
     this.notices.success('Date saved', () => {
       void this.api.undo(this.gardenId, body).then(() => this.refresh());
     });
+  }
+
+  /** Record the amount typed for a completed Harvest task on that day's harvest. */
+  private async logAmount(item: ClientReminderItem) {
+    const typed = this.amounts[item.plantingId];
+    if (!typed) return;
+    delete this.amounts[item.plantingId];
+    const grams = gramsFromInput(typed.weight, this.units());
+    const count = typed.count === '' ? null : Math.max(0, Math.round(Number(typed.count))) || null;
+    if (grams === null && count === null) return;
+    try {
+      await this.plantingsApi.logHarvest(this.gardenId, item.plantingId, {
+        harvestedOn: item.dueOn,
+        grams,
+        count,
+      });
+    } catch {
+      this.error.set('The harvest is recorded, but its amount was not saved. Add it on Plantings.');
+    }
   }
 
   async dismiss(item: ClientReminderItem) {

@@ -10,6 +10,7 @@ import {
 import {
   plantName,
   type PlantingCreateDto,
+  type PlantingDto,
   type PlantingPatchDto,
   type PlantingRepeatResultDto,
 } from '@open-garden/shared-types';
@@ -147,6 +148,9 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                       (repeat)="repeat(p, $event)"
                       [suggestedUntil]="repeatUntil()[p.id] ?? null"
                       (repeatOpened)="loadRepeatPlan(p)"
+                      [harvestBusy]="notices.busyMap().has('harvest-' + p.id)"
+                      (logHarvest)="logHarvest(p, $event)"
+                      (deleteHarvest)="deleteHarvest(p, $event)"
                       (remove)="confirmRemove(p)"
                       (failed)="error.set($event)"
                     />
@@ -303,6 +307,42 @@ export class GardenPlantingsPage implements OnInit {
     } catch (err) {
       this.error.set(messageFrom(err));
     }
+  }
+
+  async logHarvest(
+    planting: ClientPlanting,
+    body: { harvestedOn: string; grams: number | null; count: number | null },
+  ) {
+    this.error.set('');
+    await this.notices.run(`harvest-${planting.id}`, async () => {
+      try {
+        this.replace(await this.api.logHarvest(this.gardenId, planting.id, body));
+        this.notices.success(`Harvest of ${plantName(planting)} saved.`);
+      } catch (err) {
+        this.error.set(messageFrom(err));
+      }
+    });
+  }
+
+  async deleteHarvest(planting: ClientPlanting, harvestedOn: string) {
+    this.error.set('');
+    await this.notices.run(`harvest-${planting.id}`, async () => {
+      try {
+        this.replace(await this.api.deleteHarvest(this.gardenId, planting.id, harvestedOn));
+      } catch (err) {
+        this.error.set(messageFrom(err));
+      }
+    });
+  }
+
+  /** Put a saved planting in place of its row. */
+  private replace(saved: PlantingDto) {
+    const list = this.list();
+    if (!list) return;
+    this.list.set({
+      ...list,
+      plantings: list.plantings.map((row) => (row.id === saved.id ? { ...row, ...saved } : row)),
+    });
   }
 
   /** Suggested series ends by planting: the last sowing that ripens before frost. */

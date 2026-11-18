@@ -7,6 +7,7 @@ import type {
   PlantingCreateDto,
   PlantingDto,
   PlantingListDto,
+  HarvestTotalsDto,
   PlantingPatchDto,
   PlantingRepeatResultDto,
   SoilTestCreateDto,
@@ -358,6 +359,44 @@ export class PlantingsApiService {
         body,
         { withCredentials: true },
       ),
+    );
+  }
+
+  /** Log a harvest (ADR 0038). Needs the server; amounts are not queued offline. */
+  async logHarvest(
+    gardenId: string,
+    plantingId: string,
+    body: { harvestedOn: string; grams: number | null; count: number | null },
+  ): Promise<PlantingDto> {
+    return firstValueFrom(
+      this.http.post<PlantingDto>(
+        `${API}/gardens/${gardenId}/plantings/${plantingId}/harvests`,
+        body,
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  async deleteHarvest(
+    gardenId: string,
+    plantingId: string,
+    harvestedOn: string,
+  ): Promise<PlantingDto> {
+    return firstValueFrom(
+      this.http.delete<PlantingDto>(
+        `${API}/gardens/${gardenId}/plantings/${plantingId}/harvests/${harvestedOn}`,
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  /** A season's harvests by crop; the latest season with any when none is given. */
+  async harvestTotals(gardenId: string, season?: number): Promise<HarvestTotalsDto> {
+    return firstValueFrom(
+      this.http.get<HarvestTotalsDto>(`${API}/gardens/${gardenId}/harvests`, {
+        params: season ? { season: String(season) } : {},
+        withCredentials: true,
+      }),
     );
   }
 

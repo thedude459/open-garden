@@ -3,7 +3,10 @@ import type {
   BedCreateDto,
   BedPatchDto,
   BedStation,
+  CropHarvestDto,
   GardenRole,
+  HarvestDto,
+  HarvestTotalsDto,
   NamedBedDto,
   PlantingCreateDto,
   PlantingDto,
@@ -20,6 +23,7 @@ import {
   AREA_KINDS,
   areaKindFor,
   MAX_SUCCESSION_SOWINGS,
+  plantName,
   lifeForPlant,
   mulchOrNone,
   placementRefusal,
@@ -301,6 +305,90 @@ export class PlantingService {
     );
   }
 
+  /**
+   * Log a harvest from a planting (ADR 0038). A second one on the same day
+   * adds to it. Returns the planting with its harvests.
+   */
+  async logHarvest(
+    userId: string,
+    gardenId: string,
+    plantingId: string,
+    harvest: { harvestedOn: string; grams?: number | null; count?: number | null },
+  ): Promise<PlantingDto> {
+    await this.requirePlantingEditor(userId, gardenId);
+    const current = await this.plantings.getInGarden(gardenId, plantingId);
+    if (!current) throw PLANTING_ERRORS.plantingNotFound();
+    if (current.plantedOn && harvest.harvestedOn < current.plantedOn) {
+      throw PLANTING_ERRORS.harvestBeforePlanted();
+    }
+    await this.plantings.logHarvest(
+      plantingId,
+      harvest.harvestedOn,
+      harvest.grams ?? null,
+      harvest.count ?? null,
+    );
+    return this.plantingWithHarvests(gardenId, plantingId);
+  }
+
+  /** Remove one day's harvest; a planting marked harvested that day is no longer. */
+  async deleteHarvest(
+    userId: string,
+    gardenId: string,
+    plantingId: string,
+    harvestedOn: string,
+  ): Promise<PlantingDto> {
+    await this.requirePlantingEditor(userId, gardenId);
+    const current = await this.plantings.getInGarden(gardenId, plantingId);
+    if (!current) throw PLANTING_ERRORS.plantingNotFound();
+    await this.plantings.deleteHarvest(plantingId, harvestedOn);
+    if (current.harvestedOn === harvestedOn) {
+      await this.plantings.update(gardenId, plantingId, { harvestedOn: null });
+    }
+    return this.plantingWithHarvests(gardenId, plantingId);
+  }
+
+  /**
+   * A season's harvests at a property, by crop with totals (ADR 0038). Any
+   * member may read them. Without `seasonYear`, the latest season with any.
+   */
+  async harvestTotals(
+    userId: string,
+    gardenId: string,
+    seasonYear?: number,
+  ): Promise<HarvestTotalsDto> {
+    const membership = await this.memberships.get(gardenId, userId);
+    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
+    const seasons = await this.plantings.harvestSeasons(gardenId);
+    const year = seasonYear ?? seasons[0] ?? new Date().getFullYear();
+    const crops = new Map<string, CropHarvestDto>();
+    for (const row of await this.plantings.listHarvestsForSeason(gardenId, year)) {
+      const key = row.cropId ?? row.plantId;
+      const crop = crops.get(key) ?? { name: row.commonName, grams: 0, count: 0, harvests: [] };
+      crop.grams += row.grams ?? 0;
+      crop.count += row.count ?? 0;
+      crop.harvests.push({
+        plantingId: row.plantingId,
+        plantName: plantName(row),
+        harvestedOn: row.harvestedOn,
+        grams: row.grams ?? null,
+        count: row.count ?? null,
+      });
+      crops.set(key, crop);
+    }
+    return {
+      seasonYear: year,
+      seasons,
+      crops: [...crops.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    };
+  }
+
+  private async plantingWithHarvests(gardenId: string, plantingId: string): Promise<PlantingDto> {
+    const row = await this.plantings.getInGarden(gardenId, plantingId);
+    if (!row) throw PLANTING_ERRORS.plantingNotFound();
+    const harvests = await this.harvestsByPlanting(gardenId);
+    return { ...toPlantingDto(row), harvests: harvests.get(row.id) ?? [] };
+  }
+
   async remove(userId: string, gardenId: string, plantingId: string): Promise<void> {
     await this.requirePlantingEditor(userId, gardenId);
     const deleted = await this.plantings.delete(gardenId, plantingId);
@@ -565,11 +653,15 @@ export class PlantingService {
   }
 
   private async harvestsByPlanting(gardenId: string) {
-    const map = new Map<string, string[]>();
+    const map = new Map<string, HarvestDto[]>();
     if (typeof this.plantings.listHarvests !== 'function') return map;
     for (const row of await this.plantings.listHarvests(gardenId)) {
       const list = map.get(row.plantingId) ?? [];
-      list.push(row.harvestedOn);
+      list.push({
+        harvestedOn: row.harvestedOn,
+        grams: row.grams ?? null,
+        count: row.count ?? null,
+      });
       map.set(row.plantingId, list);
     }
     return map;

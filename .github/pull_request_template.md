@@ -10,5 +10,5 @@
 
 - [ ] Tests added or updated for the change (see [AGENTS.md](../AGENTS.md))
 - [ ] Docs updated if behaviour, settings, or install steps changed
-- [ ] Release-note-worthy changes for operators are called out above (new settings, breaking changes)
+- [ ] A line under **Unreleased** in `CHANGELOG.md`, in the right section (or the `skip-changelog` label); Security names any CVE or advisory fixed
 - [ ] Any deliberate exception to [AGENTS.md](../AGENTS.md) is explained

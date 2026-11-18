@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   convertLength,
+  formatWeight,
+  gramsFromInput,
+  weightUnit,
   feetFromTreeSpacing,
   feetToInches,
   formatLength,
@@ -83,5 +86,25 @@ describe('display units', () => {
     expect(feetFromTreeSpacing('4.6', 'metric')).toBe(15);
     expect(feetFromTreeSpacing(12, 'imperial')).toBe(12);
     expect(feetFromTreeSpacing('', 'metric')).toBe(0);
+  });
+});
+
+describe('harvest weights (ADR 0038)', () => {
+  it('reads a typed weight in grams, and nothing for a blank or bad one', () => {
+    expect(gramsFromInput('2', 'imperial')).toBe(907);
+    expect(gramsFromInput(1.5, 'metric')).toBe(1500);
+    expect(gramsFromInput('', 'metric')).toBeNull();
+    expect(gramsFromInput(null, 'metric')).toBeNull();
+    expect(gramsFromInput('lots', 'imperial')).toBeNull();
+    expect(gramsFromInput('-1', 'imperial')).toBeNull();
+    expect(weightUnit('imperial')).toBe('lb');
+    expect(weightUnit('metric')).toBe('kg');
+  });
+
+  it('shows pounds or ounces, kilograms or grams', () => {
+    expect(formatWeight(1089, 'imperial')).toBe('2.4 lb');
+    expect(formatWeight(170, 'imperial')).toBe('6 oz');
+    expect(formatWeight(1200, 'metric')).toBe('1.2 kg');
+    expect(formatWeight(450, 'metric')).toBe('450 g');
   });
 });

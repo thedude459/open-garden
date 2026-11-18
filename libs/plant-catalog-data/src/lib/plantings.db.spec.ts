@@ -58,7 +58,7 @@ describe('PlantingRepository', () => {
     expect(p).toMatchObject({ startMethod: 'direct_seed', life: 'annual', trayId: null });
     expect((await plantings.getById(p.id))?.id).toBe(p.id);
     expect(await plantings.listHarvests(garden.id)).toEqual([
-      { plantingId: p.id, harvestedOn: '2026-07-01' },
+      { plantingId: p.id, harvestedOn: '2026-07-01', grams: null, count: null },
     ]);
   });
 
@@ -241,6 +241,36 @@ describe('PlantingRepository', () => {
     expect((await plantings.listAllForReminders(garden.id)).map((r) => r.id).sort()).toEqual(
       [thisYear.id, tree.id].sort(),
     );
+  });
+
+  it('logs a day’s harvest, adding a second pick that day to it', async () => {
+    const { garden, other, plant } = await setup();
+    const p = await plantings.insert({
+      gardenId: garden.id,
+      plantId: plant.id,
+      bedId: null,
+      plantedOn: '2026-05-01',
+      harvestedOn: null,
+      seasonYear: 2026,
+    });
+    await plantings.logHarvest(p.id, '2026-07-01', 500, null);
+    await plantings.logHarvest(p.id, '2026-07-01', 250, 3);
+    await plantings.logHarvest(p.id, '2026-07-01', null, null);
+    await plantings.logHarvest(p.id, '2026-07-08', null, 4);
+    expect(await plantings.listHarvests(garden.id)).toEqual([
+      { plantingId: p.id, harvestedOn: '2026-07-01', grams: 750, count: 3 },
+      { plantingId: p.id, harvestedOn: '2026-07-08', grams: null, count: 4 },
+    ]);
+    await expect(plantings.logHarvest(p.id, '2026-07-09', -1, null)).rejects.toThrow();
+
+    const season = await plantings.listHarvestsForSeason(garden.id, 2026);
+    expect(season.map((h) => [h.commonName, h.harvestedOn, h.grams])).toEqual([
+      ['Tomato', '2026-07-01', 750],
+      ['Tomato', '2026-07-08', null],
+    ]);
+    expect(await plantings.listHarvestsForSeason(garden.id, 2025)).toEqual([]);
+    expect(await plantings.listHarvestsForSeason(other.id, 2026)).toEqual([]);
+    expect(await plantings.harvestSeasons(garden.id)).toEqual([2026]);
   });
 
   it('deleting a planting removes it and its harvest history', async () => {
