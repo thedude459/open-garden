@@ -159,10 +159,10 @@ export class SoilTestPanel {
     'No test yet. A lab test every 2–3 years shows the pH, organic matter, and nutrients.',
   );
   canEdit = input(false);
-  /** Saves a test; resolves true when it was saved. */
-  save = input.required<(test: SoilTestCreateDto) => Promise<boolean>>();
-  /** Deletes a test; resolves true when it was deleted. */
-  remove = input.required<(test: SoilTestDto) => Promise<boolean>>();
+  /** Saves a test; resolves true when it was saved. Needed only with `canEdit`. */
+  save = input<(test: SoilTestCreateDto) => Promise<boolean>>(async () => false);
+  /** Deletes a test; resolves true when it was deleted. Needed only with `canEdit`. */
+  remove = input<(test: SoilTestDto) => Promise<boolean>>(async () => false);
 
   readonly today = localToday();
   readonly nutrients = [

@@ -24,7 +24,7 @@ import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/d
 import { dropTargetAt } from '@open-garden/garden-layout/plan-drawing';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
-import type { LayoutPlantingDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type { LayoutPlantingDto, PlantSummaryDto, SoilTestDto } from '@open-garden/shared-types';
 import { ROOTSTOCK_LABELS, type Rootstock } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
@@ -32,6 +32,7 @@ import { PlannerDraftService } from './planner-draft.service';
 import { BedPlantPanel } from './bed-plant-panel';
 import { BedPlantingsList } from './bed-plantings-list';
 import { PlanSaveStatus } from './plan-save-status';
+import { SoilTestPanel } from './soil-test-panel';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from '../auth/auth-api.service';
@@ -48,6 +49,7 @@ import { PlaceMarker } from '../ui/place-marker';
     BedPlantPanel,
     BedPlantingsList,
     PlanSaveStatus,
+    SoilTestPanel,
   ],
   template: `
     <p class="back-link"><a [routerLink]="['/gardens', gardenId, 'layout']">Back to overview</a></p>
@@ -160,6 +162,13 @@ import { PlaceMarker } from '../ui/place-marker';
               (startDrag)="onTrayStart($event)"
               (offlineRequired)="onOfflineRequired()"
             />
+            <og-soil-test-panel
+              [ownerId]="bedId"
+              [name]="bed()!.name"
+              [test]="bed()!.soilTest ?? null"
+              [inherited]="areaSoilTest()"
+              emptyText="No soil test of this bed or its area yet. Record one from the overview."
+            />
           </aside>
         </div>
       }
@@ -251,6 +260,15 @@ export class GardenBedViewPage implements OnInit {
   canEdit() {
     const role = this.draft()?.myRole;
     return role === 'owner' || role === 'collaborator';
+  }
+
+  /** Its area's latest soil test, which applies while the bed has none of its own. */
+  areaSoilTest(): { name: string; test: SoilTestDto } | null {
+    const d = this.draft();
+    const areaId = this.bed()?.areaId;
+    const area = d?.areas.find((a) => a.id === areaId);
+    const test = d?.areaSoilTests?.find((t) => t.areaId === areaId);
+    return area && test ? { name: area.name, test } : null;
   }
 
   trayPlantings() {

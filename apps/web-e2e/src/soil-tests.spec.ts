@@ -72,8 +72,17 @@ test('an area’s soil test gives pH advice, and a bed’s own test overrides it
   await expect(bedSoil.getByText('pH 6.5')).toBeVisible();
   await expect(note).toHaveCount(0);
 
+  // Bed View shows the test that applies to the bed.
+  await page.goto(`/gardens/${garden.id}/layout/beds/${bed.id}`);
+  await expect(page.getByRole('heading', { name: 'Bed View' })).toBeVisible();
+  await expect(bedSoil.getByText('pH 6.5')).toBeVisible();
+  await page.goto(`/gardens/${garden.id}`);
+  await page.getByRole('button', { name: 'North', exact: true }).click();
+
   await bedSoil.getByRole('button', { name: 'Delete this test' }).click();
   await bedSoil.getByRole('button', { name: 'Confirm delete test' }).click();
   await expect(bedSoil.getByText(/^The Vegetable garden test applies:/)).toBeVisible();
   await expect(note).toBeVisible();
+  await page.goto(`/gardens/${garden.id}/layout/beds/${bed.id}`);
+  await expect(bedSoil.getByText(/^The Vegetable garden test applies:.*pH 7\.2/)).toBeVisible();
 });

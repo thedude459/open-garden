@@ -32,6 +32,10 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 - Release notes start with the Summary under a release titled with the
   version, and have a Documentation section for guide and install changes.
+- Bed View shows the soil test that applies to the bed: its own, otherwise
+  its area's.
+- Watering and frost and heat alerts share one weather request per property
+  an hour, instead of two.
 
 
 ### Bug fixes

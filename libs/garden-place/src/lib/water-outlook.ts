@@ -1,20 +1,18 @@
 import { isWashingtonPoint } from './fixtures';
 import { shiftIsoDate } from './dates';
+import {
+  OpenMeteoForecast,
+  WATER_FORECAST_DAYS,
+  WATER_PAST_DAYS,
+  liveForecast,
+  type ForecastBody,
+} from './open-meteo-forecast';
 import type { DayWater, WaterOutlook } from './ports';
 
-/** Days back the water balance reads, so a deficit can build since the last watering. */
-export const WATER_PAST_DAYS = 30;
-/** Days ahead, from today: when watering will be due this week. */
-export const WATER_FORECAST_DAYS = 7;
+export { WATER_FORECAST_DAYS, WATER_PAST_DAYS };
 
 /** Reads Open-Meteo's `et0_fao_evapotranspiration` and `rain_sum` by day. */
-export function parseDayWater(body: {
-  daily?: {
-    time?: string[];
-    et0_fao_evapotranspiration?: Array<number | null>;
-    rain_sum?: Array<number | null>;
-  };
-}): Record<string, DayWater> | null {
+export function parseDayWater(body: ForecastBody): Record<string, DayWater> | null {
   const time = body.daily?.time;
   const et0 = body.daily?.et0_fao_evapotranspiration;
   const rain = body.daily?.rain_sum;
@@ -33,47 +31,13 @@ export function parseDayWater(body: {
   return daily;
 }
 
-/** Cached for this long, so the reminders page, Today, and the daily send share one request. */
-const CACHE_MS = 60 * 60 * 1000;
-
-/**
- * Open-Meteo's daily reference evapotranspiration (FAO-56 Penman-Monteith)
- * and rain, from 30 days back to 6 days ahead, in one request.
- */
+/** Evapotranspiration and rain, from 30 days back to 6 days ahead, from the shared forecast. */
 export class OpenMeteoWaterOutlook implements WaterOutlook {
-  // ponytail: an unbounded in-memory map, one entry per property and day;
-  // fine for a household install. Bound it (LRU) if one API serves many.
-  private readonly cache = new Map<string, { at: number; value: Record<string, DayWater> }>();
+  constructor(private readonly forecast: OpenMeteoForecast = liveForecast) {}
 
-  constructor(
-    private readonly fetchFn: typeof fetch = fetch,
-    private readonly now: () => number = Date.now,
-  ) {}
-
-  async daily(
-    latitude: number,
-    longitude: number,
-    asOf: string,
-  ): Promise<Record<string, DayWater> | null> {
-    const key = `${latitude.toFixed(3)},${longitude.toFixed(3)},${asOf}`;
-    const hit = this.cache.get(key);
-    if (hit && this.now() - hit.at < CACHE_MS) return hit.value;
-    const url = new URL('https://api.open-meteo.com/v1/forecast');
-    url.searchParams.set('latitude', String(latitude));
-    url.searchParams.set('longitude', String(longitude));
-    url.searchParams.set('daily', 'et0_fao_evapotranspiration,rain_sum');
-    url.searchParams.set('timezone', 'auto');
-    url.searchParams.set('start_date', shiftIsoDate(asOf, -WATER_PAST_DAYS));
-    url.searchParams.set('end_date', shiftIsoDate(asOf, WATER_FORECAST_DAYS - 1));
-    try {
-      const response = await this.fetchFn(url, { signal: AbortSignal.timeout(3000) });
-      if (!response.ok) return null;
-      const value = parseDayWater((await response.json()) as Parameters<typeof parseDayWater>[0]);
-      if (value) this.cache.set(key, { at: this.now(), value });
-      return value;
-    } catch {
-      return null;
-    }
+  async daily(latitude: number, longitude: number, asOf: string) {
+    const body = await this.forecast.daily(latitude, longitude, asOf);
+    return body && parseDayWater(body);
   }
 }
 
