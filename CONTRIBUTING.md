@@ -192,8 +192,8 @@ does not move the `latest` image tag or the README install link.
 **Release notes** come from [CHANGELOG.md](CHANGELOG.md), in the layout of
 The Good Docs Project's release notes template: the GitHub Release is titled
 with the version (`v0.2.0`), and the notes start with the Summary, then New
-features, Improvements, Bug fixes, Security, Known issues, and Deprecated
-features (each says "None" when empty).
+features, Improvements, Bug fixes, Documentation, Security, Known issues,
+and Deprecated features (each says "None" when empty).
 
 - Every pull request adds a line under **Unreleased**, in the section it
   belongs to, in plain words for households first. The `changelog` CI job

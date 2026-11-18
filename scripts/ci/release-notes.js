@@ -27,6 +27,7 @@ const SECTIONS = [
   'New features',
   'Improvements',
   'Bug fixes',
+  'Documentation',
   'Security',
   'Known issues',
   'Deprecated features',
@@ -37,6 +38,7 @@ const EMPTY = {
   'New features': 'None in this release.',
   Improvements: 'None in this release.',
   'Bug fixes': 'None in this release.',
+  Documentation: 'None in this release.',
   Security:
     `No publicly known vulnerabilities in ${PRODUCT}'s own code (with a CVE or GitHub ` +
     'security advisory) were fixed in this release. Vulnerabilities in dependencies are ' +

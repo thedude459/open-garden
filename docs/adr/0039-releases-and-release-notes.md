@@ -22,8 +22,9 @@ automatically at release time, in both repositories.
    merged; a patch release for a fix that should not wait; release
    candidates only to try a release first.
 2. **CHANGELOG.md is the source.** Its Unreleased entry has the template's
-   headings: Summary, New features, Improvements, Bug fixes, Security, Known
-   issues, Deprecated features. Every pull request adds its line under one
+   headings: Summary, New features, Improvements, Bug fixes, Documentation,
+   Security, Known issues, Deprecated features (Documentation added at the
+   maintainer's request, so guide and install changes are called out). Every pull request adds its line under one
    of them; the `changelog` CI job fails a pull request that does not, except
    Dependabot's and those labelled `skip-changelog` (CI, tests, roadmap).
    `node scripts/ci/release-notes.js cut <version> <date>` renames Unreleased

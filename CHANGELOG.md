@@ -12,6 +12,8 @@ Headings, in this order (leave one empty when nothing belongs there):
   release is cut.
 - **New features**, **Improvements**, **Bug fixes**: one line per change, in
   plain words, for households first.
+- **Documentation**: new or changed guides, install and upgrade steps,
+  settings references, and ADRs worth reading.
 - **Security**: every publicly known vulnerability in Open Garden's own code
   (with a CVE or GitHub security advisory id) that this release fixes. Not
   dependency updates.
@@ -28,9 +30,14 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- Release notes start with the Summary under a release titled with the
+  version, and have a Documentation section for guide and install changes.
+
 
 ### Bug fixes
 
+
+### Documentation
 
 ### Security
 
