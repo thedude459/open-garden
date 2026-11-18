@@ -22,6 +22,28 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Summary
 
+
+### New features
+
+
+### Improvements
+
+
+### Bug fixes
+
+
+### Security
+
+
+### Known issues
+
+
+### Deprecated features
+
+## v0.2.0 (2026-11-18)
+
+### Summary
+
 Areas, watering by water balance, weather alerts, soil tests, succession
 planting, harvest totals, and accounts you can manage yourself, on a climate
 worked out anywhere in the world. Database changes apply on their own when
@@ -81,6 +103,9 @@ the API starts; back up first, as always.
   address and per IP, and expired sessions are cleaned up.
 - A tree's bed is sized by its rootstock; a bramble patch takes cane fruit.
 - A new brand mark: a seedling in a raised bed.
+- Release notes follow one layout from this release on, with a Security
+  section naming any fixed vulnerability in Open Garden by its CVE or
+  advisory id.
 
 ### Bug fixes
 
