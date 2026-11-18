@@ -73,6 +73,45 @@ export class AuthApiService {
     sessionStorage.setItem('og_units', units);
   }
 
+  /** Change the password; the server signs out every other session. */
+  async changePassword(currentPassword: string, newPassword: string) {
+    await firstValueFrom(
+      this.http.put(
+        `${API}/account/password`,
+        { currentPassword, newPassword },
+        { withCredentials: true },
+      ),
+    );
+  }
+
+  /** Delete the account after the password check; this browser forgets it. */
+  async deleteAccount(password: string) {
+    await firstValueFrom(
+      this.http.delete(`${API}/account`, { body: { password }, withCredentials: true }),
+    );
+    this.forget();
+  }
+
+  /** Whether this server can email a password reset link. */
+  async resetByEmail(): Promise<boolean> {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ byEmail: boolean }>(`${API}/auth/password-reset`),
+      );
+      return res.byEmail;
+    } catch {
+      return false;
+    }
+  }
+
+  async requestPasswordReset(email: string) {
+    await firstValueFrom(this.http.post(`${API}/auth/password-reset`, { email }));
+  }
+
+  async resetPassword(token: string, password: string) {
+    await firstValueFrom(this.http.post(`${API}/auth/password-reset/confirm`, { token, password }));
+  }
+
   currentUserId(): string | null {
     return this.user?.id ?? sessionStorage.getItem('og_user_id');
   }

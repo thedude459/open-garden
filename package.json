@@ -10,6 +10,7 @@
     "api:serve": "nx serve api",
     "api:sync-plants": "nx run api:sync-plants",
     "web:serve": "nx serve web",
+    "reset-link": "tsx apps/api/src/auth/reset-link-cli.ts",
     "migrate": "nx run plant-catalog-data:migrate",
     "migrate:generate": "drizzle-kit generate --config=libs/plant-catalog-data/drizzle.config.ts",
     "test": "bash scripts/ci/test.sh",

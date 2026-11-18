@@ -35,6 +35,24 @@ export const authRegisterSchema = z.object({
   displayName: z.string().min(1).max(120).optional(),
 });
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8, 'The new password needs at least 8 characters'),
+  })
+  .strict();
+
+export const deleteAccountSchema = z.object({ password: z.string().min(1) }).strict();
+
+export const passwordResetRequestSchema = z.object({ email: z.email() }).strict();
+
+export const passwordResetSchema = z
+  .object({
+    token: z.string().regex(/^[0-9a-f]{64}$/, 'This reset link is not complete'),
+    password: z.string().min(8, 'The new password needs at least 8 characters'),
+  })
+  .strict();
+
 export const favoriteMutationSchema = z.object({
   clientMutationId: z.string().min(1).max(128).optional(),
 });

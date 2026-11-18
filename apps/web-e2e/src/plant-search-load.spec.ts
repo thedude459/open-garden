@@ -14,15 +14,25 @@ test('plant search shows stand-ins within 2s without per-result plant GETs', asy
     if (/\/api\/plants\/[0-9a-f-]{36}(\?|$)/i.test(url)) extra.push(url);
   });
 
-  const started = Date.now();
+  // The catalog is interactive within 2 s, and a search shows results within
+  // 2 s, each timed on its own as for Bed View below (#212, #228).
+  const catalogStart = Date.now();
   await page.goto('/plants');
-  await expect(page.getByRole('heading', { name: 'Plant catalog' })).toBeVisible();
-  await page.getByPlaceholder(/Search name/).fill('a');
+  const box = page.getByPlaceholder(/Search name/);
+  await expect(box).toBeEditable({ timeout: 2000 });
+  const catalogMs = Date.now() - catalogStart;
+  await box.fill('a');
+  const catalogSearchStart = Date.now();
   await page.getByRole('button', { name: 'Apply' }).click();
   const rows = page.locator('.card-list a.row');
   await expect(rows.first()).toBeVisible({ timeout: 2000 });
-  const interactiveMs = Date.now() - started;
-  expect(interactiveMs, `plants search interactive_ms=${interactiveMs}`).toBeLessThan(2000);
+  const catalogSearchMs = Date.now() - catalogSearchStart;
+  test.info().annotations.push({
+    type: 'timing',
+    description: `catalog ${catalogMs} ms, search ${catalogSearchMs} ms`,
+  });
+  expect(catalogMs, `plants interactive_ms=${catalogMs}`).toBeLessThan(2000);
+  expect(catalogSearchMs, `plants search_ms=${catalogSearchMs}`).toBeLessThan(2000);
   expect(await rows.count()).toBeGreaterThanOrEqual(10);
   await expect(page.locator('.card-list .plant-icon img')).toHaveCount(await rows.count());
   expect(extra, extra.join('\n')).toEqual([]);

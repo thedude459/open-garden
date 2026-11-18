@@ -108,6 +108,9 @@ import { SOURCE_CODE_URL } from './source-link';
                 <option value="metric" [selected]="units() === 'metric'">Metric (m, °C)</option>
               </select>
             </label>
+            <a class="nav-text sidebar-account" routerLink="/account" routerLinkActive="active"
+              >Account</a
+            >
             <button type="button" class="nav-text sidebar-signout" (click)="logout()">
               Sign out
             </button>
