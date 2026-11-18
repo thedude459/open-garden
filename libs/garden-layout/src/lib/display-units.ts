@@ -97,3 +97,27 @@ export function formatPlanSize(
   if (orientation === undefined) return size;
   return `${size} · ${orientation}°`;
 }
+
+const GRAMS_PER_POUND = 453.59237;
+
+/** The unit a harvest weight is typed in: pounds or kilograms (ADR 0038). */
+export function weightUnit(units: Units): 'lb' | 'kg' {
+  return units === 'metric' ? 'kg' : 'lb';
+}
+
+/** A typed harvest weight (pounds or kilograms) in whole grams; null when blank or not a number. */
+export function gramsFromInput(value: string | number | null, units: Units): number | null {
+  if (value === null || value === '') return null;
+  const n = typeof value === 'number' ? value : Number.parseFloat(value);
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(units === 'metric' ? n * 1000 : n * GRAMS_PER_POUND);
+}
+
+/** A harvest weight: "2.4 lb" or "6 oz"; "1.2 kg" or "450 g". */
+export function formatWeight(grams: number, units: Units): string {
+  if (units === 'metric') {
+    return grams >= 1000 ? `${Math.round(grams / 100) / 10} kg` : `${grams} g`;
+  }
+  const pounds = grams / GRAMS_PER_POUND;
+  return pounds >= 1 ? `${Math.round(pounds * 10) / 10} lb` : `${Math.round(pounds * 16)} oz`;
+}

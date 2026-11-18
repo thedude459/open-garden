@@ -70,7 +70,7 @@ test('reminders list: harvest, one water reminder, empty CTA, viewer read-only',
   ]);
 
   await goToReminders(owner);
-  await expect(owner.getByText('Harvest')).toBeVisible();
+  await expect(owner.getByText('Harvest', { exact: true })).toBeVisible();
   // Watering since January is one overdue reminder, not one per missed week.
   await expect(
     owner.locator('li').filter({ hasText: 'Tomato (Cherry)' }).getByText('Water', { exact: true }),
@@ -89,7 +89,7 @@ test('reminders list: harvest, one water reminder, empty CTA, viewer read-only',
   await viewer.goto('/gardens');
   await viewer.getByRole('link', { name: /Reminder list/ }).click();
   await viewer.getByRole('link', { name: 'Tasks', exact: true }).click();
-  await expect(viewer.getByText('Harvest')).toBeVisible();
+  await expect(viewer.getByText('Harvest', { exact: true })).toBeVisible();
   await expect(
     viewer.locator('li').filter({ hasText: 'Harvest' }).getByRole('button', { name: 'Complete' }),
   ).toHaveCount(0);

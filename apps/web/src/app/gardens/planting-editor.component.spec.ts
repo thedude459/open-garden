@@ -134,4 +134,33 @@ describe('PlantingEditor', () => {
       ).toBeUndefined();
     });
   });
+
+  describe('Harvests (ADR 0038)', () => {
+    it('logs a weight in grams and a count for the chosen day', async () => {
+      const view = await render(planting());
+      const logged: { harvestedOn: string; grams: number | null; count: number | null }[] = [];
+      view.fixture.componentInstance.logHarvest.subscribe((h) => logged.push(h));
+      await view.type('harvestOn', '2027-07-04');
+      await view.type('harvestWeight', '2');
+      await view.type('harvestCount', '6');
+      view.button('Log harvest')!.click();
+      expect(logged).toEqual([{ harvestedOn: '2027-07-04', grams: 907, count: 6 }]);
+    });
+
+    it('lists each harvest with a total, and deletes one', async () => {
+      const view = await render(
+        planting({
+          harvests: [
+            { harvestedOn: '2027-07-01', grams: 1000, count: null },
+            { harvestedOn: '2027-07-08', grams: 500, count: 4 },
+          ],
+        }),
+      );
+      expect(view.el.textContent).toContain('Total: 3.3 lb and 4 picked');
+      const deleted: string[] = [];
+      view.fixture.componentInstance.deleteHarvest.subscribe((d) => deleted.push(d));
+      view.el.querySelector<HTMLButtonElement>('button[aria-label^="Delete harvest of"]')!.click();
+      expect(deleted).toEqual(['2027-07-01']);
+    });
+  });
 });

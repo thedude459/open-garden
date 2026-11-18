@@ -443,10 +443,74 @@ export class PlantingRepository {
       .select({
         plantingId: gardenPlantingHarvests.plantingId,
         harvestedOn: gardenPlantingHarvests.harvestedOn,
+        grams: gardenPlantingHarvests.grams,
+        count: gardenPlantingHarvests.count,
       })
       .from(gardenPlantingHarvests)
       .innerJoin(gardenPlantings, eq(gardenPlantingHarvests.plantingId, gardenPlantings.id))
-      .where(eq(gardenPlantings.gardenId, gardenId));
+      .where(eq(gardenPlantings.gardenId, gardenId))
+      .orderBy(gardenPlantingHarvests.harvestedOn);
+  }
+
+  /**
+   * Record a day's harvest. A second harvest logged for the same day adds to
+   * that day's weight and count (picking twice), keeping one row per day.
+   */
+  async logHarvest(
+    plantingId: string,
+    harvestedOn: string,
+    grams: number | null,
+    count: number | null,
+  ) {
+    const add = (
+      column: typeof gardenPlantingHarvests.grams | typeof gardenPlantingHarvests.count,
+      incoming: string,
+    ) =>
+      sql`CASE WHEN excluded.${sql.raw(incoming)} IS NULL THEN ${column}
+        ELSE coalesce(${column}, 0) + excluded.${sql.raw(incoming)} END`;
+    await this.db
+      .insert(gardenPlantingHarvests)
+      .values({ plantingId, harvestedOn, grams, count })
+      .onConflictDoUpdate({
+        target: [gardenPlantingHarvests.plantingId, gardenPlantingHarvests.harvestedOn],
+        set: {
+          grams: add(gardenPlantingHarvests.grams, 'grams'),
+          count: add(gardenPlantingHarvests.count, 'count'),
+        },
+      });
+  }
+
+  /** Every harvest of one season at a property, with its crop (ADR 0038). */
+  async listHarvestsForSeason(gardenId: string, seasonYear: number) {
+    return this.db
+      .select({
+        plantingId: gardenPlantingHarvests.plantingId,
+        harvestedOn: gardenPlantingHarvests.harvestedOn,
+        grams: gardenPlantingHarvests.grams,
+        count: gardenPlantingHarvests.count,
+        plantId: plants.id,
+        cropId: plants.cropId,
+        commonName: plants.commonName,
+        cultivar: plants.cultivar,
+      })
+      .from(gardenPlantingHarvests)
+      .innerJoin(gardenPlantings, eq(gardenPlantingHarvests.plantingId, gardenPlantings.id))
+      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+      .where(
+        and(eq(gardenPlantings.gardenId, gardenId), eq(gardenPlantings.seasonYear, seasonYear)),
+      )
+      .orderBy(plants.commonName, gardenPlantingHarvests.harvestedOn);
+  }
+
+  /** The seasons at a property with any harvest, newest first. */
+  async harvestSeasons(gardenId: string): Promise<number[]> {
+    const rows = await this.db
+      .selectDistinct({ year: gardenPlantings.seasonYear })
+      .from(gardenPlantingHarvests)
+      .innerJoin(gardenPlantings, eq(gardenPlantingHarvests.plantingId, gardenPlantings.id))
+      .where(eq(gardenPlantings.gardenId, gardenId))
+      .orderBy(desc(gardenPlantings.seasonYear));
+    return rows.map((r) => r.year);
   }
 
   async deleteHarvest(plantingId: string, harvestedOn: string) {

@@ -83,9 +83,33 @@ export interface PlantingDto {
   rootstock?: string | null;
   yearsToFruit?: number | null;
   spacingFeet?: number | null;
-  harvests?: IsoDate[];
+  /** Each day something was picked from this planting, oldest first. */
+  harvests?: HarvestDto[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** One day's harvest from a planting (ADR 0038): a weight in grams, a count, both, or neither. */
+export interface HarvestDto {
+  harvestedOn: IsoDate;
+  grams: number | null;
+  count: number | null;
+}
+
+/** One crop's harvests in a season, with its totals. */
+export interface CropHarvestDto {
+  /** The crop's name (a variety's harvests count toward its crop). */
+  name: string;
+  grams: number;
+  count: number;
+  harvests: (HarvestDto & { plantingId: string; plantName: string })[];
+}
+
+/** A property's harvests for one season, by crop, and the seasons that have any. */
+export interface HarvestTotalsDto {
+  seasonYear: number;
+  seasons: number[];
+  crops: CropHarvestDto[];
 }
 
 /** What a succession series added, and the sowings it left out (ADR 0037). */

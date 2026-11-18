@@ -80,6 +80,12 @@ import { SOURCE_CODE_URL } from './source-link';
                     >Plantings</a
                   >
                   <a
+                    class="nav-sub"
+                    [routerLink]="['/gardens', id, 'harvests']"
+                    routerLinkActive="active"
+                    >Harvests</a
+                  >
+                  <a
                     [routerLink]="['/gardens', id, 'calendar']"
                     [class.active]="section() === 'calendar'"
                     >Calendar</a
@@ -125,6 +131,9 @@ import { SOURCE_CODE_URL } from './source-link';
                   <a [routerLink]="['/gardens', id, 'layout']" routerLinkActive="active">Layout</a>
                   <a [routerLink]="['/gardens', id, 'plantings']" routerLinkActive="active"
                     >Plantings</a
+                  >
+                  <a [routerLink]="['/gardens', id, 'harvests']" routerLinkActive="active"
+                    >Harvests</a
                   >
                 </nav>
               } @else if (section() === 'calendar') {
@@ -288,7 +297,7 @@ function bedIdFrom(url: string): string | null {
 
 function sectionFrom(url: string): 'plan' | 'calendar' | 'tasks' | 'settings' | null {
   const page = (url.split(/[?#]/)[0] ?? '').match(/^\/gardens\/[^/]+\/([^/]+)/)?.[1];
-  if (page === 'layout' || page === 'plantings') return 'plan';
+  if (page === 'layout' || page === 'plantings' || page === 'harvests') return 'plan';
   if (page === 'calendar' || page === 'transplants') return 'calendar';
   if (page === 'reminders') return 'tasks';
   if (page === 'configure') return 'settings';

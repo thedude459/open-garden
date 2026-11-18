@@ -33,6 +33,9 @@ export {
   lengthStep,
   lengthUnit,
   treeSpacingInput,
+  formatWeight,
+  gramsFromInput,
+  weightUnit,
 } from './lib/display-units';
 export { catalogDropOutcome } from './lib/catalog-drop';
 export { assertCompleteGeometry, isOrientation } from './lib/geometry';

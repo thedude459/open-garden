@@ -281,6 +281,10 @@ function createMemory(sowing?: SowingPlanner) {
     updatedAt: Date;
   };
   const plantingRows = new Map<string, PlantingRow>();
+  const harvests = new Map<
+    string,
+    { plantingId: string; harvestedOn: string; grams: number | null; count: number | null }
+  >();
   const bedRows = new Map<string, BedRow>();
   let seq = 0;
 
@@ -366,6 +370,59 @@ function createMemory(sowing?: SowingPlanner) {
     },
     async clearLayoutCoords() {
       return null;
+    },
+    async logHarvest(
+      plantingId: string,
+      harvestedOn: string,
+      grams: number | null,
+      count: number | null,
+    ) {
+      const key = `${plantingId}:${harvestedOn}`;
+      const old = harvests.get(key);
+      const add = (a: number | null | undefined, b: number | null) =>
+        b === null ? (a ?? null) : (a ?? 0) + b;
+      harvests.set(key, {
+        plantingId,
+        harvestedOn,
+        grams: add(old?.grams, grams),
+        count: add(old?.count, count),
+      });
+    },
+    async listHarvests(gId: string) {
+      return [...harvests.values()]
+        .filter((h) => plantingRows.get(h.plantingId)?.gardenId === gId)
+        .sort((a, b) => a.harvestedOn.localeCompare(b.harvestedOn));
+    },
+    async deleteHarvest(plantingId: string, harvestedOn: string) {
+      harvests.delete(`${plantingId}:${harvestedOn}`);
+    },
+    async listHarvestsForSeason(gId: string, year: number) {
+      return [...harvests.values()]
+        .map((h) => ({ h, row: plantingRows.get(h.plantingId)! }))
+        .filter(({ row }) => row.gardenId === gId && row.seasonYear === year)
+        .map(({ h, row }) => {
+          const plant = plants.get(row.plantId)!;
+          return {
+            ...h,
+            plantId: plant.id,
+            cropId: (plant as { cropId?: string | null }).cropId ?? null,
+            commonName: plant.commonName,
+            cultivar: plant.cultivar ?? null,
+          };
+        })
+        .sort(
+          (a, b) =>
+            a.commonName.localeCompare(b.commonName) || a.harvestedOn.localeCompare(b.harvestedOn),
+        );
+    },
+    async harvestSeasons(gId: string) {
+      const years = new Set(
+        [...harvests.values()]
+          .map((h) => plantingRows.get(h.plantingId)!)
+          .filter((row) => row.gardenId === gId)
+          .map((row) => row.seasonYear),
+      );
+      return [...years].sort((a, b) => b - a);
     },
     async delete(gId: string, id: string) {
       const row = plantingRows.get(id);
@@ -829,5 +886,87 @@ describe('PlantingService.repeat (succession planting)', () => {
     await expect(
       mem.service.repeat(mem.ownerId, mem.gardenId, id, 4, '2026-06-30'),
     ).rejects.toMatchObject({ message: expect.stringContaining('2026-08-01') });
+  });
+});
+
+describe('PlantingService harvests (ADR 0038)', () => {
+  async function planted(mem: ReturnType<typeof createMemory>, plantedOn = '2026-05-01') {
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      plantedOn,
+    });
+    return list.plantings[0]!.id;
+  }
+
+  it('logs harvests with a weight or a count and returns them on the planting', async () => {
+    const mem = createMemory();
+    const id = await planted(mem);
+    await mem.service.logHarvest(mem.ownerId, mem.gardenId, id, {
+      harvestedOn: '2026-07-01',
+      grams: 900,
+    });
+    const p = await mem.service.logHarvest(mem.ownerId, mem.gardenId, id, {
+      harvestedOn: '2026-07-08',
+      count: 6,
+    });
+    expect(p.harvests).toEqual([
+      { harvestedOn: '2026-07-01', grams: 900, count: null },
+      { harvestedOn: '2026-07-08', grams: null, count: 6 },
+    ]);
+  });
+
+  it('refuses a harvest before sowing, from a viewer, or on a missing planting', async () => {
+    const mem = createMemory();
+    const id = await planted(mem);
+    await expect(
+      mem.service.logHarvest(mem.ownerId, mem.gardenId, id, { harvestedOn: '2026-04-01' }),
+    ).rejects.toMatchObject({ message: 'Harvest date must be on or after planted date' });
+    await expect(
+      mem.service.logHarvest(mem.viewerId, mem.gardenId, id, { harvestedOn: '2026-07-01' }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    await expect(
+      mem.service.logHarvest(mem.ownerId, mem.gardenId, 'missing', { harvestedOn: '2026-07-01' }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+
+  it('deleting the day a planting was marked harvested clears that mark', async () => {
+    const mem = createMemory();
+    const id = await planted(mem);
+    await mem.service.update(mem.ownerId, mem.gardenId, id, { harvestedOn: '2026-08-01' });
+    await mem.service.logHarvest(mem.ownerId, mem.gardenId, id, {
+      harvestedOn: '2026-08-01',
+      grams: 300,
+    });
+    const p = await mem.service.deleteHarvest(mem.ownerId, mem.gardenId, id, '2026-08-01');
+    expect(p.harvestedOn).toBeNull();
+    expect(p.harvests).toEqual([]);
+  });
+
+  it('totals a season by crop for any member, the latest season by default', async () => {
+    const mem = createMemory();
+    const first = await planted(mem);
+    const second = await planted(mem, '2026-06-01');
+    await mem.service.logHarvest(mem.ownerId, mem.gardenId, first, {
+      harvestedOn: '2026-07-01',
+      grams: 900,
+      count: 2,
+    });
+    await mem.service.logHarvest(mem.ownerId, mem.gardenId, second, {
+      harvestedOn: '2026-08-01',
+      grams: 600,
+    });
+    const totals = await mem.service.harvestTotals(mem.viewerId, mem.gardenId);
+    expect(totals).toMatchObject({ seasonYear: 2026, seasons: [2026] });
+    expect(totals.crops).toEqual([
+      expect.objectContaining({ name: tomato.commonName, grams: 1500, count: 2 }),
+    ]);
+    expect(totals.crops[0]!.harvests.map((h) => h.harvestedOn)).toEqual([
+      '2026-07-01',
+      '2026-08-01',
+    ]);
+    expect((await mem.service.harvestTotals(mem.ownerId, mem.gardenId, 2025)).crops).toEqual([]);
+    await expect(mem.service.harvestTotals(mem.strangerId, mem.gardenId)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
   });
 });

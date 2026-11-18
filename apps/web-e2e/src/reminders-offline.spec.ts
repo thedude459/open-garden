@@ -53,7 +53,7 @@ async function openRemindersWithPlant(page: Page, gardenName: string) {
     tomato.getByRole('button', { name: 'Save planting' }).click(),
   ]);
   await goToReminders(page);
-  await expect(page.getByText('Harvest')).toBeVisible();
+  await expect(page.getByText('Harvest', { exact: true })).toBeVisible();
 }
 
 test('offline cache readable; pending complete syncs for another member', async ({ browser }) => {
@@ -65,7 +65,7 @@ test('offline cache readable; pending complete syncs for another member', async 
   await openRemindersWithPlant(owner, 'Offline reminders');
   await abortReminders(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
-  await expect(owner.getByText('Harvest')).toBeVisible();
+  await expect(owner.getByText('Harvest', { exact: true })).toBeVisible();
 
   await owner
     .locator('li')
@@ -77,7 +77,7 @@ test('offline cache readable; pending complete syncs for another member', async 
   await restoreReminders(owner);
   await owner.reload({ waitUntil: 'domcontentloaded' });
   await expect(owner.getByText('pending')).toHaveCount(0);
-  await expect(owner.getByText('Harvest')).toHaveCount(0);
+  await expect(owner.getByText('Harvest', { exact: true })).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-off-friend-${stamp}@example.com`);
@@ -88,7 +88,7 @@ test('offline cache readable; pending complete syncs for another member', async 
   await expect(friend.getByRole('link', { name: /Offline reminders/ })).toBeVisible();
   await friend.getByRole('link', { name: /Offline reminders/ }).click();
   await friend.getByRole('link', { name: 'Tasks', exact: true }).click();
-  await expect(friend.getByText('Harvest')).toHaveCount(0);
+  await expect(friend.getByText('Harvest', { exact: true })).toHaveCount(0);
 });
 
 test('viewer offline reads cache; membership loss drops cache', async ({ browser }) => {
@@ -107,12 +107,12 @@ test('viewer offline reads cache; membership loss drops cache', async ({ browser
   await collab.goto('/gardens');
   await collab.getByRole('link', { name: /Membership loss/ }).click();
   await collab.getByRole('link', { name: 'Tasks', exact: true }).click();
-  await expect(collab.getByText('Harvest')).toBeVisible();
+  await expect(collab.getByText('Harvest', { exact: true })).toBeVisible();
   const remindersUrl = collab.url();
 
   await abortReminders(collab);
   await collab.reload({ waitUntil: 'domcontentloaded' });
-  await expect(collab.getByText('Harvest')).toBeVisible();
+  await expect(collab.getByText('Harvest', { exact: true })).toBeVisible();
   await expect(
     collab.locator('li').filter({ hasText: 'Harvest' }).getByRole('button', { name: 'Complete' }),
   ).toBeVisible();

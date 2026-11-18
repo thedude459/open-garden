@@ -482,9 +482,13 @@ export const gardenPlantingHarvests = pgTable(
       .notNull()
       .references(() => gardenPlantings.id, { onDelete: 'cascade' }),
     harvestedOn: date('harvested_on', { mode: 'string' }).notNull(),
+    /** How much was picked that day (ADR 0038): a weight, a count, both, or neither. */
+    grams: integer('grams'),
+    count: integer('count'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    check('garden_planting_harvests_amounts', sql`${t.grams} >= 0 AND ${t.count} >= 0`),
     uniqueIndex('garden_planting_harvests_uidx').on(t.plantingId, t.harvestedOn),
     index('garden_planting_harvests_planting_id_idx').on(t.plantingId),
   ],

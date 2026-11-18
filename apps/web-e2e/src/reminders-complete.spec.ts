@@ -54,7 +54,7 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
   const friend = await newUser(browser, `rem-done-friend-${stamp}@example.com`);
 
   await setupGardenWithTomato(owner, 'Complete plot');
-  await expect(owner.getByText('Harvest')).toBeVisible();
+  await expect(owner.getByText('Harvest', { exact: true })).toBeVisible();
 
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.locator('input[name="inviteEmail"]').fill(`rem-done-friend-${stamp}@example.com`);
@@ -71,10 +71,10 @@ test('collaborator completes harvest; planting remains; viewer read-only', async
     .filter({ hasText: 'Harvest' })
     .getByRole('button', { name: 'Complete' })
     .click();
-  await expect(friend.getByText('Harvest')).toHaveCount(0);
+  await expect(friend.getByText('Harvest', { exact: true })).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Tasks', exact: true }).click();
-  await expect(owner.getByText('Harvest')).toHaveCount(0);
+  await expect(owner.getByText('Harvest', { exact: true })).toHaveCount(0);
 
   await owner.getByRole('link', { name: 'Settings', exact: true }).click();
   await owner.getByRole('link', { name: 'Plantings', exact: true }).click();

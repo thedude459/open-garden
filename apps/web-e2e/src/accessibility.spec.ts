@@ -78,6 +78,7 @@ test('the main pages have no serious accessibility problems', async ({ browser }
     heading('Bed View'),
   );
   await scan('plantings', `/gardens/${gardenId}/plantings`, heading(/Plantings/));
+  await scan('harvests', `/gardens/${gardenId}/harvests`, heading('Harvests'));
   await scan('calendar', `/gardens/${gardenId}/calendar`, heading('Planting calendar'));
   await scan('transplants', `/gardens/${gardenId}/transplants`, heading(/Transplants/));
   await scan('tasks', `/gardens/${gardenId}/reminders`, heading(/Tasks|Reminders/));

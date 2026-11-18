@@ -3,7 +3,7 @@ import { GardensController } from './gardens.controller';
 import { PlacesController } from './places.controller';
 import { GardenMembersController } from './garden-members.controller';
 import { GardenCalendarController } from './garden-calendar.controller';
-import { GardenPlantingsController } from './garden-plantings.controller';
+import { GardenHarvestsController, GardenPlantingsController } from './garden-plantings.controller';
 import { GardenBedsController } from './garden-beds.controller';
 import { GardenLayoutController } from './garden-layout.controller';
 import { GardenTransplantsController } from './garden-transplants.controller';
@@ -19,6 +19,7 @@ import { GardenMembershipGuard } from './garden-membership.guard';
     GardenMembersController,
     GardenCalendarController,
     GardenPlantingsController,
+    GardenHarvestsController,
     GardenBedsController,
     GardenLayoutController,
     GardenTransplantsController,
