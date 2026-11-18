@@ -28,10 +28,12 @@ automatically at release time, in both repositories.
    Dependabot's and those labelled `skip-changelog` (CI, tests, roadmap).
    `node scripts/ci/release-notes.js cut <version> <date>` renames Unreleased
    to the version in a release pull request, where the Summary is written.
-3. **The notes' layout.** Title ("Open Garden v0.2.0 release notes"), the
-   notes' own version and release date, Summary, then each section in order,
-   saying "None" when empty, an install line, and a compare link to the
-   previous release. A corrected entry gets `Release notes version: 2`.
+3. **The notes' layout.** The GitHub Release is titled with the version
+   (`v0.2.0`), which stands for the template's title; the notes start with
+   the Summary, then each section in order, saying "None" when empty, an
+   install line, and a compare link to the previous release. They carry no
+   title or notes version of their own (the maintainer's choice); GitHub
+   shows the release date.
 4. **Security.** The section names fixed vulnerabilities in Open Garden's own
    code by CVE or GHSA id; dependency vulnerabilities are left to Dependabot
    and OSV-Scanner. The Release workflow reads the repository's published

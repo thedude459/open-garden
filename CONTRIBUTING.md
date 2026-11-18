@@ -190,9 +190,10 @@ candidate (`0.4.0-rc.1`, marked pre-release) only to try a release first; it
 does not move the `latest` image tag or the README install link.
 
 **Release notes** come from [CHANGELOG.md](CHANGELOG.md), in the layout of
-The Good Docs Project's release notes template: a title, the notes' own
-version, a summary, then New features, Improvements, Bug fixes, Security,
-Known issues, and Deprecated features (each says "None" when empty).
+The Good Docs Project's release notes template: the GitHub Release is titled
+with the version (`v0.2.0`), and the notes start with the Summary, then New
+features, Improvements, Bug fixes, Security, Known issues, and Deprecated
+features (each says "None" when empty).
 
 - Every pull request adds a line under **Unreleased**, in the section it
   belongs to, in plain words for households first. The `changelog` CI job
@@ -204,9 +205,9 @@ Known issues, and Deprecated features (each says "None" when empty).
   OSV-Scanner scan track them). The Release workflow refuses to publish if a
   published advisory for this repository lists the version as patched but
   its id is not in the section.
-- To correct notes after a release, edit the version's entry, add
-  `Release notes version: 2` under its heading, and paste the output of
-  `node scripts/ci/release-notes.js notes 0.2.0` into the GitHub Release.
+- To correct notes after a release, edit the version's entry and paste the
+  output of `node scripts/ci/release-notes.js notes 0.2.0` into the GitHub
+  Release.
 
 **Steps:**
 
