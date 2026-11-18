@@ -4,8 +4,9 @@
 // Every pull request adds a line to the Unreleased entry, under one of the
 // SECTIONS below. A release renames that entry to its version, and the
 // Release workflow publishes it in the layout of The Good Docs Project's
-// release notes template: a title, the notes' own version, a summary, then
-// one section per heading, each saying "None" when empty.
+// release notes template: the GitHub Release's title is the version, and the
+// notes start with the summary, then one section per heading, each saying
+// "None" when empty.
 //
 //   node scripts/ci/release-notes.js check                  the file is well formed
 //   node scripts/ci/release-notes.js cut 0.2.0 2026-11-18   Unreleased becomes v0.2.0
@@ -26,6 +27,7 @@ const SECTIONS = [
   'New features',
   'Improvements',
   'Bug fixes',
+  'Documentation',
   'Security',
   'Known issues',
   'Deprecated features',
@@ -36,6 +38,7 @@ const EMPTY = {
   'New features': 'None in this release.',
   Improvements: 'None in this release.',
   'Bug fixes': 'None in this release.',
+  Documentation: 'None in this release.',
   Security:
     `No publicly known vulnerabilities in ${PRODUCT}'s own code (with a CVE or GitHub ` +
     'security advisory) were fixed in this release. Vulnerabilities in dependencies are ' +
@@ -58,12 +61,9 @@ function parse(text) {
       heading,
       version: heading === 'Unreleased' ? null : match ? match[1] : undefined,
       date: match ? match[2] : null,
-      notesVersion: 1,
       sections: {},
       unknown: [],
     };
-    const nv = /^Release notes version: (\d+)$/m.exec(body.split(/^### /m)[0]);
-    if (nv) entry.notesVersion = Number(nv[1]);
     for (const block of body.split(/^### /m).slice(1)) {
       const [name, ...lines] = block.split('\n');
       const title = name.trim();
@@ -114,15 +114,7 @@ function notes(text, version) {
   if (!entry.sections.Summary) throw new Error(`v${version} needs a Summary`);
   // Entries run newest first, so the previous release is the next one down.
   const previous = entries.slice(entries.indexOf(entry) + 1).find((e) => e.version) ?? null;
-  const out = [
-    `# ${PRODUCT} v${version} release notes`,
-    '',
-    `Release notes version ${entry.notesVersion} · Released ${entry.date}`,
-    '',
-    '## Summary',
-    '',
-    entry.sections.Summary,
-  ];
+  const out = ['## Summary', '', entry.sections.Summary];
   for (const name of SECTIONS.slice(1)) {
     out.push('', `## ${name}`, '', entry.sections[name] || EMPTY[name]);
   }
@@ -202,21 +194,14 @@ function selfcheck() {
   }
   assert(threw, 'cutting a version twice is refused');
   const out = notes(released, '0.2.0');
-  assert(out.startsWith('# Open Garden v0.2.0 release notes\n'), 'title');
-  assert(out.includes('Release notes version 1 · Released 2026-11-18'), 'notes version');
+  assert(
+    out.startsWith('## Summary\n\nHarvests and accounts.\n'),
+    `starts with the summary: ${out}`,
+  );
+  assert(!out.includes('release notes'), 'no title or notes version');
   assert(out.includes('## New features\n\nNone in this release.'), 'empty section');
   assert(out.includes('GHSA-aaaa-bbbb-cccc'), 'security line');
   assert(out.includes('compare/v0.1.0...v0.2.0'), `compare link: ${out}`);
-  assert(
-    notes(
-      released.replace(
-        '## v0.2.0 (2026-11-18)',
-        '## v0.2.0 (2026-11-18)\n\nRelease notes version: 2',
-      ),
-      '0.2.0',
-    ).includes('Release notes version 2'),
-    'a revised notes version',
-  );
   const advisory = (id, patched) => ({
     ghsa_id: id,
     cve_id: null,
