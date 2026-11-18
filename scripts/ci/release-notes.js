@@ -68,15 +68,11 @@ function parse(text) {
       const [name, ...lines] = block.split('\n');
       const title = name.trim();
       if (!SECTIONS.includes(title)) entry.unknown.push(title);
-      entry.sections[title] = stripComments(lines.join('\n')).trim();
+      entry.sections[title] = lines.join('\n').trim();
     }
     entries.push(entry);
   }
   return entries;
-}
-
-function stripComments(text) {
-  return text.replace(/<!--[\s\S]*?-->/g, '');
 }
 
 /** Problems that make the file unusable for release notes. */
