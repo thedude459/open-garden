@@ -4,15 +4,27 @@ export const TEST_PASSWORD = 'password123';
 const ORIGIN = 'http://localhost:4200';
 
 /**
- * Contexts the helpers below open on the worker's shared browser. Playwright
- * only closes the contexts it creates itself, so without this every signed-in
- * page stayed open until its worker exited, and a full run ran out of memory.
+ * Contexts the helpers below open on the worker's shared browser, with the
+ * test that opened each. Playwright only closes the contexts it creates
+ * itself, so without this every signed-in page stayed open until its worker
+ * exited, and a full run ran out of memory (#220).
  */
-const opened = new Set<BrowserContext>();
+const opened = new Map<BrowserContext, string>();
+
+async function closeContexts(which: (testId: string) => boolean) {
+  const done = [...opened].filter(([, testId]) => which(testId)).map(([context]) => context);
+  for (const context of done) opened.delete(context);
+  await Promise.all(done.map((context) => context.close()));
+}
 
 async function newContext(browser: Browser, locale: string): Promise<BrowserContext> {
+  // A hook declared in this module attaches only to the first test file a
+  // worker loads (the module is loaded once), so contexts from later files'
+  // tests are closed here, when the worker's next test opens one (#229).
+  const testId = test.info().testId;
+  await closeContexts((id) => id !== testId);
   const context = await browser.newContext({ baseURL: ORIGIN, serviceWorkers: 'block', locale });
-  opened.add(context);
+  opened.set(context, testId);
   // The property map is an OpenStreetMap page; tests never load the real site.
   await context.route(/openstreetmap\.org\/export\/embed/, (route) =>
     route.fulfill({
@@ -24,11 +36,7 @@ async function newContext(browser: Browser, locale: string): Promise<BrowserCont
   return context;
 }
 
-test.afterEach(async () => {
-  const contexts = [...opened];
-  opened.clear();
-  await Promise.all(contexts.map((context) => context.close()));
-});
+test.afterEach(() => closeContexts(() => true));
 
 export function uniqueEmail(prefix = 'e2e'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
