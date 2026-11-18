@@ -286,3 +286,44 @@ function createMemory(hasOrchard?: boolean, frostFree = false) {
   );
   return { service, ownerId, viewerId, strangerId, gardenId };
 }
+
+describe('CalendarService.sowingPlanFor (succession planting)', () => {
+  it('plans a crop at the property for the season of its first sowing', async () => {
+    const mem = createMemory();
+    // Tomato goes out Apr 22–29 after an Apr 15 last frost; 65 days to
+    // maturity and the 14-day fall factor back from the Oct 20 first frost.
+    expect(
+      await mem.service.sowingPlanFor(mem.gardenId, tomato.id, 'transplant', '2027-04-22'),
+    ).toEqual({ windows: [{ from: '2027-04-22', to: '2027-04-29' }], lastSowOn: '2027-08-02' });
+  });
+
+  it('allows two weeks more for a frost-tender crop', async () => {
+    const garden = {
+      lastFrostMonth: 4,
+      lastFrostDay: 15,
+      firstFrostMonth: 10,
+      firstFrostDay: 20,
+      monthlyMeanC: null,
+    };
+    const tender = { ...tomato, frostTolerance: 'tender' };
+    const service = new CalendarService(
+      { getById: async () => garden } as never,
+      {} as never,
+      { getById: async () => tender } as never,
+      {} as never,
+    );
+    expect(
+      (await service.sowingPlanFor('garden-1', tender.id, 'transplant', '2027-04-22'))?.lastSowOn,
+    ).toBe('2027-07-19');
+  });
+
+  it('is null for a property or crop that is gone', async () => {
+    const mem = createMemory();
+    expect(
+      await mem.service.sowingPlanFor('missing', tomato.id, 'transplant', '2027-04-22'),
+    ).toBeNull();
+    expect(
+      await mem.service.sowingPlanFor(mem.gardenId, 'missing', 'transplant', '2027-04-22'),
+    ).toBeNull();
+  });
+});
