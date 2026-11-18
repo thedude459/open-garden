@@ -179,34 +179,60 @@ own once checks pass, and majors wait for review.
 
 ## Releasing
 
-Releases use [semantic versioning](https://semver.org/) tags (`v0.1.0`).
-While the project is pre-1.0, releases are still normal (not pre-release)
-GitHub Releases: the 0.x number is what says "early". Bump the minor version
-for meaningful changes and the patch version for fixes; a minor bump may
-include breaking changes, so say so in the notes. Commit messages need no
-special format: the notes come from merged pull request titles.
+Releases use [semantic versioning](https://semver.org/) (`v0.2.0`). While the
+project is pre-1.0, releases are normal (not pre-release) GitHub Releases: the
+0.x number is what says "early".
 
-Use the pre-release flag only for release candidates (`v0.2.0-rc.1`) you want
-to try before the real release. Pre-releases do not become "latest", so the
-README install link and the `latest` image tag skip them.
+**When:** a minor release (`0.3.0`) once a roadmap step's pull requests are
+merged, and a patch release (`0.3.1`) for a fix that should not wait. A minor
+release may include breaking changes; say so in its Summary. Use a release
+candidate (`0.4.0-rc.1`, marked pre-release) only to try a release first; it
+does not move the `latest` image tag or the README install link.
 
-1. Make sure `main` is green.
-2. Publish a GitHub Release with a new tag, letting GitHub write the notes:
+**Release notes** come from [CHANGELOG.md](CHANGELOG.md), in the layout of
+The Good Docs Project's release notes template: a title, the notes' own
+version, a summary, then New features, Improvements, Bug fixes, Security,
+Known issues, and Deprecated features (each says "None" when empty).
+
+- Every pull request adds a line under **Unreleased**, in the section it
+  belongs to, in plain words for households first. The `changelog` CI job
+  checks it. Dependabot's updates are exempt; label a change households and
+  operators would not notice (CI, tests, the roadmap) `skip-changelog`.
+- **Security** names every publicly known vulnerability in Open Garden's own
+  code, with its CVE or GitHub security advisory id, that the release fixes.
+  Dependency vulnerabilities are not listed (Dependabot and the weekly
+  OSV-Scanner scan track them). The Release workflow refuses to publish if a
+  published advisory for this repository lists the version as patched but
+  its id is not in the section.
+- To correct notes after a release, edit the version's entry, add
+  `Release notes version: 2` under its heading, and paste the output of
+  `node scripts/ci/release-notes.js notes 0.2.0` into the GitHub Release.
+
+**Steps:**
+
+1. In a pull request, cut the entry and write its Summary:
 
    ```bash
-   gh release create v0.1.0 --target main --generate-notes
+   node scripts/ci/release-notes.js cut 0.2.0 "$(date +%F)"
    ```
 
-   Edit the notes to call out anything operators must do (new settings,
-   breaking changes). Mark a release candidate (`v0.2.0-rc.1`) as a
-   pre-release; it then does not move the `latest` tag.
-3. The [Release workflow](.github/workflows/release.yml) then:
-   - builds `api` and `web` for `linux/amd64` and `linux/arm64`
-   - pushes them to `ghcr.io/thedude459/open-garden-{api,web}` tagged `0.1.0`,
-     `0.1`, `0`, and `latest`, with an SBOM and build provenance
-   - records a GitHub attestation and scans the pushed images with Trivy
-   - attaches `compose.yaml` (from `deploy/compose.yaml`, with the version
-     pinned) to the release; the README install downloads it
+   This renames **Unreleased** to `## v0.2.0 (date)` and starts a new empty
+   **Unreleased** above it. Check the entry reads well, then merge.
+2. Make sure `main` is green, then run **Actions → Release → Run workflow**
+   on `main` with the version (`0.2.0`). The
+   [Release workflow](.github/workflows/release.yml):
+   - writes the notes from the entry and checks the security advisories
+   - creates a draft GitHub Release with them
+   - builds `api` and `web` for `linux/amd64` and `linux/arm64`, pushes them
+     to `ghcr.io/thedude459/open-garden-{api,web}` tagged `0.2.0`, `0.2`, `0`,
+     and `latest`, with an SBOM and build provenance, records an attestation,
+     and scans them with Trivy
+   - attaches `compose.yaml` (from `deploy/compose.yaml`, version pinned),
+     which the README install downloads
+   - publishes the release, which creates the `v0.2.0` tag
+
+   If a step fails, the draft stays unpublished: fix the cause, delete the
+   draft, and run the workflow again.
 
 The first time, check that both packages under the repository's **Packages**
 are **public** (Package settings → Change visibility), or installs cannot pull

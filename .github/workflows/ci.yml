@@ -60,6 +60,37 @@ jobs:
       - name: Build
         run: npx nx affected -t build --parallel=3
 
+  changelog:
+    name: changelog
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          filter: 'tree:0'
+      - name: CHANGELOG.md is well formed
+        run: |
+          node scripts/ci/release-notes.js selfcheck
+          node scripts/ci/release-notes.js check
+      - name: The pull request adds its line to CHANGELOG.md
+        # Dependabot's updates are tracked by Dependabot itself, and a change
+        # with nothing for households or operators (CI, tests, roadmap) takes
+        # the skip-changelog label.
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.user.login != 'dependabot[bot]' &&
+          !contains(github.event.pull_request.labels.*.name, 'skip-changelog')
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if ! git diff --name-only "${BASE_SHA}...HEAD" | grep -qx 'CHANGELOG.md'; then
+            echo "Add a line to CHANGELOG.md under Unreleased, in the section it belongs to," >&2
+            echo "or label the pull request skip-changelog if households and operators would not notice it." >&2
+            exit 1
+          fi
+
   workflows:
     # Lints the GitHub Actions workflows: actionlint for correctness, zizmor for
     # security (unpinned or impostor actions, credential leaks, injection).

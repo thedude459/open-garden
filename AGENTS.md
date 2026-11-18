@@ -198,6 +198,9 @@ Use one word per concept, in the UI and in code comments:
 - Plan a change in the pull request description: problem, approach, and how
   it is tested. Record lasting decisions as an ADR in `docs/adr/`.
 - The product roadmap lives in `docs/roadmap.md`.
+- Every change households or operators would notice adds a line to
+  `CHANGELOG.md` under **Unreleased**, in its section; releases are cut from
+  it (`CONTRIBUTING.md`, "Releasing").
 - `npm test` runs every unit test and the coverage gate; `npm run e2e` runs
   Playwright against a seeded stack. See `README.md` for setup.
 - While working, watch for performance gains, missing features, and pipeline
