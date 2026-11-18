@@ -24,7 +24,12 @@ import { applyPlantingDrop, type DropTarget } from '@open-garden/garden-layout/d
 import { dropTargetAt } from '@open-garden/garden-layout/plan-drawing';
 import { hitTestPlan } from '@open-garden/garden-layout/hit-test';
 import { planToLocal } from '@open-garden/garden-layout/plan-coords';
-import type { LayoutPlantingDto, PlantSummaryDto, SoilTestDto } from '@open-garden/shared-types';
+import type {
+  LayoutPlantingDto,
+  PlantSummaryDto,
+  PropertyAreaDto,
+  SoilTestDto,
+} from '@open-garden/shared-types';
 import { ROOTSTOCK_LABELS, type Rootstock } from '@open-garden/shared-types';
 import { GardenPlanCanvas } from './garden-plan-canvas';
 import { PlantingTray } from './planting-tray';
@@ -197,6 +202,8 @@ export class GardenBedViewPage implements OnInit {
   /** The rootstock a tree placed in this bed grows on; it sets the bed's size. */
   rootstock = signal<Rootstock>('semiDwarf');
   armedPlant = signal<PlantSummaryDto | null>(null);
+  /** The property's areas, for the name of the area whose soil test applies. */
+  areas = signal<PropertyAreaDto[]>([]);
   private trayDrag: { plantingId: string; before: LayoutPlantingDto } | null = null;
   private panelDrag: { plant: PlantSummaryDto; x: number; y: number } | null = null;
 
@@ -264,10 +271,9 @@ export class GardenBedViewPage implements OnInit {
 
   /** Its area's latest soil test, which applies while the bed has none of its own. */
   areaSoilTest(): { name: string; test: SoilTestDto } | null {
-    const d = this.draft();
     const areaId = this.bed()?.areaId;
-    const area = d?.areas.find((a) => a.id === areaId);
-    const test = d?.areaSoilTests?.find((t) => t.areaId === areaId);
+    const area = this.areas().find((a) => a.id === areaId);
+    const test = this.draft()?.areaSoilTests?.find((t) => t.areaId === areaId);
     return area && test ? { name: area.name, test } : null;
   }
 
@@ -337,10 +343,13 @@ export class GardenBedViewPage implements OnInit {
   }
 
   async load() {
-    const [, detail] = await Promise.all([
+    const [, detail, areas] = await Promise.all([
       this.planner.load(this.gardenId, { reuseDirty: true }),
       this.gardensApi.detail(this.gardenId),
+      // Offline or refused: the bed's own soil test still shows.
+      this.gardensApi.areas(this.gardenId).catch(() => []),
     ]);
+    this.areas.set(areas);
     await this.planner.syncWaitingTransplants();
     if (detail) {
       this.gardenName.set(detail.name);

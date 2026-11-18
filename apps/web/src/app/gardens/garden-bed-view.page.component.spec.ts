@@ -4,6 +4,7 @@ import type {
   GardenLayoutDto,
   GardenRole,
   LayoutPlantingDto,
+  PropertyAreaDto,
   SoilTestDto,
 } from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
@@ -73,6 +74,7 @@ async function render(
   myRole: GardenRole = 'owner',
   autosaveDelayMs = 60_000,
   extra: Partial<GardenLayoutDto> = {},
+  areas: PropertyAreaDto[] = [],
 ) {
   const plantingsApi = { remove: vi.fn(async () => undefined) };
   const layoutApi = { put: vi.fn(async () => planner.draft()!) };
@@ -81,7 +83,10 @@ async function render(
       provideRouter([]),
       { provide: PlantingsApiService, useValue: plantingsApi },
       { provide: LayoutApiService, useValue: layoutApi },
-      { provide: GardensApiService, useValue: { detail: async () => ({ name: 'Home' }) } },
+      {
+        provide: GardensApiService,
+        useValue: { detail: async () => ({ name: 'Home' }), areas: async () => areas },
+      },
       { provide: FavoritesApiService, useValue: { list: async () => ({ items: [] }) } },
       { provide: PlantsApiService, useValue: { list: async () => ({ items: [] }) } },
       {
@@ -140,38 +145,39 @@ describe('GardenBedViewPage', () => {
 
   it('shows the soil test that applies: the bed’s own, else its area’s', async () => {
     const geometry = layout('viewer').beds[0]!.geometry;
-    const area = {
-      id: 'a1',
-      name: 'Vegetable garden',
-      originXInches: 0,
-      originYInches: 0,
-      lengthInches: 240,
-      widthInches: 240,
-    };
+    const area: PropertyAreaDto = { id: 'a1', name: 'Vegetable garden', kind: 'vegetable' };
     const areaTest = soilTest('t1', { areaId: 'a1' }, 7.2);
-    let view = await render('viewer', 60_000, {
-      beds: [{ id: 'b1', name: 'North', geometry, areaId: 'a1' }],
-      areas: [area],
-      areaSoilTests: [areaTest],
-    });
+    let view = await render(
+      'viewer',
+      60_000,
+      {
+        beds: [{ id: 'b1', name: 'North', geometry, areaId: 'a1' }],
+        areaSoilTests: [areaTest],
+      },
+      [area],
+    );
     const panel = () => view.el.querySelector('[aria-label="Soil test of North"]')!;
     expect(panel().textContent).toContain('The Vegetable garden test applies:');
     expect(panel().textContent).toContain('pH 7.2');
     expect(panel().textContent).not.toContain('Record a soil test');
     TestBed.resetTestingModule();
-    view = await render('owner', 60_000, {
-      beds: [
-        {
-          id: 'b1',
-          name: 'North',
-          geometry,
-          areaId: 'a1',
-          soilTest: soilTest('t2', { bedId: 'b1' }, 6.5),
-        },
-      ],
-      areas: [area],
-      areaSoilTests: [areaTest],
-    });
+    view = await render(
+      'owner',
+      60_000,
+      {
+        beds: [
+          {
+            id: 'b1',
+            name: 'North',
+            geometry,
+            areaId: 'a1',
+            soilTest: soilTest('t2', { bedId: 'b1' }, 6.5),
+          },
+        ],
+        areaSoilTests: [areaTest],
+      },
+      [area],
+    );
     expect(panel().textContent).toContain('pH 6.5');
     expect(panel().textContent).not.toContain('Vegetable garden');
     TestBed.resetTestingModule();
