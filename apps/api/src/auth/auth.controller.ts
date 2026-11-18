@@ -131,7 +131,9 @@ export class AuthController {
     if (!reset) return;
     const { subject, text } = resetEmail(resetLink(this.appUrl, reset.token));
     void mail.send(reset.email, subject, text).catch((err: unknown) => {
-      this.logger.warn(`password_reset.email_failed ${err instanceof Error ? err.message : err}`);
+      this.logger.warn(
+        `password_reset.email_failed ${err instanceof Error ? err.message : String(err)}`,
+      );
     });
   }
 
