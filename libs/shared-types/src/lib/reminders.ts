@@ -42,6 +42,8 @@ export interface ReminderMutationDto {
   plantingId: string;
   kind: CareKind;
   dueOn: string;
+  /** The member's today, for a done Sow task: the planting was planted on it (ADR 0040). */
+  doneOn?: string;
 }
 
 /** A member's reminder settings and what this install can send. */

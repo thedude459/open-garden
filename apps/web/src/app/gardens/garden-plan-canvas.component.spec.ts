@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import type { LayoutBedDto } from '@open-garden/shared-types';
+import type { LayoutBedDto, LayoutPlantingDto } from '@open-garden/shared-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { frameAround, visibleArea } from '@open-garden/garden-layout';
 import { GardenPlanCanvas } from './garden-plan-canvas';
@@ -145,6 +145,40 @@ describe('GardenPlanCanvas keyboard', () => {
     const frame = (view.fixture.nativeElement as HTMLElement).querySelector('.layout-bed-frame')!;
     expect(frame.getAttribute('role')).toBe('img');
     expect(frame.hasAttribute('tabindex')).toBe(false);
+  });
+});
+
+describe('GardenPlanCanvas planting marks', () => {
+  it('draws a planned planting as an outline and says it is planned (ADR 0040)', async () => {
+    const view = await render();
+    const mark = (id: string, plantedOn: string | null) =>
+      ({
+        id,
+        plantId: id,
+        commonName: id,
+        species: id,
+        cultivar: null,
+        plantType: 'vegetable',
+        status: 'active',
+        bedId: 'b1',
+        spacingInches: 12,
+        startMethod: 'direct_seed',
+        indoorStartedOn: null,
+        plantedOn,
+        placement: { plantingId: id, bedId: 'b1', xInches: 24, yInches: 24 },
+      }) as LayoutPlantingDto;
+    view.fixture.componentRef.setInput('plantings', [
+      mark('Kale', null),
+      {
+        ...mark('Basil', '2026-05-01'),
+        placement: { plantingId: 'Basil', bedId: 'b1', xInches: 72, yInches: 24 },
+      },
+    ]);
+    await view.fixture.whenStable();
+    const el = view.fixture.nativeElement as HTMLElement;
+    const labelled = (name: string) => el.querySelector(`g[aria-label="${name}"] circle`);
+    expect(labelled('Kale, planned')?.classList.contains('layout-plant-planned')).toBe(true);
+    expect(labelled('Basil')?.classList.contains('layout-plant-planned')).toBe(false);
   });
 });
 

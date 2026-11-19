@@ -101,7 +101,11 @@ import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-
                           <span class="badge">{{ inTray(p) ? 'In a tray' : 'Transplant' }}</span>
                         }
                         <span class="badge">{{
-                          p.plantedOn ? 'Planted ' + p.plantedOn : 'Not planted'
+                          p.plantedOn
+                            ? 'Planted ' + formatDay(p.plantedOn)
+                            : p.plannedOn
+                              ? 'Planned for ' + formatDay(p.plannedOn)
+                              : 'Planned'
                         }}</span>
                         @if (p.harvestedOn) {
                           <span class="badge">Harvested {{ formatDay(p.harvestedOn) }}</span>

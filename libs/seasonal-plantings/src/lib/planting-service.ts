@@ -39,7 +39,7 @@ import type {
   TrayRepository,
 } from '@open-garden/plant-catalog-data';
 import { domainError, PLANTING_ERRORS } from './domain-error';
-import { assertDatePair } from './dates';
+import { addDays, assertDatePair, diffDays, plannedOrPlanted, utcToday } from './dates';
 import { normalizeBedName } from './beds';
 
 export class PlantingService {
@@ -90,7 +90,9 @@ export class PlantingService {
     if (!dto.plantId) throw PLANTING_ERRORS.plantRequired();
     const plant = await this.plants.getById(dto.plantId);
     if (!plant) throw PLANTING_ERRORS.plantNotFound();
-    const plantedOn = dto.plantedOn ?? null;
+    const dates = plannedOrPlanted(dto.plannedOn ?? null, dto.plantedOn ?? null, utcToday());
+    const plannedOn = dates.plannedOn ?? null;
+    const plantedOn = dates.plantedOn ?? null;
     const harvestedOn = dto.harvestedOn ?? null;
     assertDatePair(plantedOn, harvestedOn);
     const startMethod = dto.startMethod ?? 'direct_seed';
@@ -134,6 +136,7 @@ export class PlantingService {
       plantId: dto.plantId,
       bedId,
       trayId,
+      plannedOn,
       plantedOn,
       harvestedOn,
       startMethod,
@@ -159,7 +162,8 @@ export class PlantingService {
     await this.requirePlantingEditor(userId, gardenId);
     const current = await this.plantings.getInGarden(gardenId, plantingId);
     if (!current) throw PLANTING_ERRORS.plantingNotFound();
-    const plantedOn = dto.plantedOn !== undefined ? dto.plantedOn : current.plantedOn;
+    const dates = plannedOrPlanted(dto.plannedOn, dto.plantedOn, utcToday());
+    const plantedOn = dates.plantedOn !== undefined ? dates.plantedOn : current.plantedOn;
     const harvestedOn = dto.harvestedOn !== undefined ? dto.harvestedOn : current.harvestedOn;
     assertDatePair(plantedOn, harvestedOn);
     let bedId = dto.bedId;
@@ -198,7 +202,8 @@ export class PlantingService {
       await this.plantings.deleteHarvest(plantingId, current.harvestedOn);
     }
     const updated = await this.plantings.update(gardenId, plantingId, {
-      plantedOn: dto.plantedOn,
+      plannedOn: dates.plannedOn,
+      plantedOn: dates.plantedOn,
       harvestedOn: dto.harvestedOn,
       bedId,
       trayId,
@@ -257,7 +262,9 @@ export class PlantingService {
         plantId: current.plantId,
         bedId: null,
         trayId: null,
-        plantedOn: date,
+        // Each copy is a sowing still to come (ADR 0040).
+        plannedOn: date,
+        plantedOn: null,
         harvestedOn: null,
         startMethod: current.startMethod,
         indoorStartedOn: current.indoorStartedOn
@@ -290,9 +297,11 @@ export class PlantingService {
     await this.requirePlantingEditor(userId, gardenId);
     const current = await this.plantings.getInGarden(gardenId, plantingId);
     if (!current) throw PLANTING_ERRORS.plantingNotFound();
-    if (!current.plantedOn) throw PLANTING_ERRORS.repeatNeedsSowDate();
+    // A series counts from the first sowing, done or still planned.
+    const sowOn = current.plantedOn ?? current.plannedOn;
+    if (!sowOn) throw PLANTING_ERRORS.repeatNeedsSowDate();
     if (current.life !== 'annual') throw PLANTING_ERRORS.repeatAnnualsOnly();
-    return { ...current, plantedOn: current.plantedOn };
+    return { ...current, plantedOn: sowOn };
   }
 
   private planFor(
@@ -716,6 +725,7 @@ function toPlantingDto(row: {
   cultivar: string | null;
   plantType: string;
   status: string;
+  plannedOn?: string | null;
   plantedOn: string | null;
   harvestedOn: string | null;
   bedId: string | null;
@@ -742,6 +752,7 @@ function toPlantingDto(row: {
     cultivar: row.cultivar,
     plantType: row.plantType as PlantType,
     status: row.status as PlantStatus,
+    plannedOn: row.plannedOn ?? null,
     plantedOn: row.plantedOn,
     harvestedOn: row.harvestedOn,
     bedId: row.bedId,
@@ -817,14 +828,4 @@ export interface SowingPlanner {
 /** Inside one of the windows; with no windows known, any date is. */
 function inWindows(date: string, windows: { from: string; to: string }[] | undefined): boolean {
   return !windows?.length || windows.some((w) => w.from <= date && date <= w.to);
-}
-
-function diffDays(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
-}
-
-/** An ISO date `days` later. */
-function addDays(isoDate: string, days: number): string {
-  const [y, m, d] = isoDate.split('-').map(Number);
-  return new Date(Date.UTC(y!, m! - 1, d! + days)).toISOString().slice(0, 10);
 }

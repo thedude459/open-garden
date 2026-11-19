@@ -26,7 +26,7 @@ test('harvests logged on a planting and on a Harvest task add up by crop', async
   const y = new Date().getFullYear();
   const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await openPlanting(tomato);
-  await fillDate(tomato.locator('input[type="date"]').first(), `${y}-03-01`);
+  await fillDate(tomato.locator('input[name^="planted-"]'), `${y}-03-01`);
   await Promise.all([
     page.waitForResponse((r) => r.request().method() === 'PATCH' && r.ok()),
     tomato.getByRole('button', { name: 'Save planting' }).click(),

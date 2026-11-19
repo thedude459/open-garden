@@ -19,7 +19,13 @@ test('Today warns about frost ahead for tender plants in beds', async ({ browser
   };
   const tomato = plants.items.find((p) => p.commonName === 'Tomato' && !p.cultivar)!;
   const planted = await page.request.post(`/api/gardens/${garden.id}/plantings`, {
-    data: { id: crypto.randomUUID(), plantId: tomato.id, bedId: bed.id },
+    // Planted today: a planned planting is not in the ground, so it gets no alert.
+    data: {
+      id: crypto.randomUUID(),
+      plantId: tomato.id,
+      bedId: bed.id,
+      plantedOn: new Date().toISOString().slice(0, 10),
+    },
   });
   expect(planted.status()).toBe(201);
 

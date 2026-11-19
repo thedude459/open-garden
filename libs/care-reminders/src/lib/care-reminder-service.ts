@@ -20,9 +20,8 @@ export interface ReminderPlantingReader {
       cultivar: string | null;
       plantType: string;
       status: string;
+      plannedOn?: string | null;
       plantedOn: string | null;
-      /** When the planting was recorded; a sow date well after it was planned. */
-      createdAt?: Date | null;
       harvestedOn: string | null;
       daysToMaturity: number | null;
       waterIntervalDays: number | null;
@@ -95,8 +94,8 @@ export class CareReminderService {
       cultivar: row.cultivar,
       plantType: row.plantType as ReminderListDto['items'][0]['plantType'],
       status: row.status as ReminderListDto['items'][0]['status'],
+      plannedOn: row.plannedOn ?? null,
       plantedOn: row.plantedOn,
-      createdOn: row.createdAt ? row.createdAt.toISOString().slice(0, 10) : null,
       harvestedOn: row.harvestedOn,
       daysToMaturity: row.daysToMaturity,
       waterIntervalDays: row.waterIntervalDays,

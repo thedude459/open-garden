@@ -28,6 +28,7 @@ export const plantingCreateSchema = z
     plantId: z.uuid({ error: 'Plant is required' }),
     startMethod: startMethodSchema.default('direct_seed'),
     indoorStartedOn: optionalIsoDate,
+    plannedOn: optionalIsoDate,
     plantedOn: optionalIsoDate,
     harvestedOn: optionalIsoDate,
     bedId: z.uuid().nullable().optional(),
@@ -93,6 +94,7 @@ const photoField = z
   });
 
 export const plantingPatchSchema = z.object({
+  plannedOn: optionalIsoDate,
   plantedOn: optionalIsoDate,
   harvestedOn: optionalIsoDate,
   bedId: z.uuid().nullable().optional(),

@@ -36,6 +36,7 @@ export class PlantingRepository {
         plantId: gardenPlantings.plantId,
         bedId: gardenPlantings.bedId,
         trayId: gardenPlantings.trayId,
+        plannedOn: gardenPlantings.plannedOn,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
         startMethod: gardenPlantings.startMethod,
@@ -90,6 +91,7 @@ export class PlantingRepository {
         plantId: gardenPlantings.plantId,
         bedId: gardenPlantings.bedId,
         trayId: gardenPlantings.trayId,
+        plannedOn: gardenPlantings.plannedOn,
         plantedOn: gardenPlantings.plantedOn,
         harvestedOn: gardenPlantings.harvestedOn,
         layoutXInches: gardenPlantings.layoutXInches,
@@ -126,6 +128,7 @@ export class PlantingRepository {
     plantId: string;
     bedId: string | null;
     trayId?: string | null;
+    plannedOn?: string | null;
     plantedOn: string | null;
     harvestedOn: string | null;
     startMethod?: string;
@@ -148,6 +151,7 @@ export class PlantingRepository {
         plantId: input.plantId,
         bedId: input.bedId,
         trayId: input.trayId ?? null,
+        plannedOn: input.plannedOn ?? null,
         plantedOn: input.plantedOn,
         harvestedOn: input.harvestedOn,
         startMethod: input.startMethod ?? 'direct_seed',
@@ -179,6 +183,7 @@ export class PlantingRepository {
     gardenId: string,
     id: string,
     patch: {
+      plannedOn?: string | null;
       plantedOn?: string | null;
       harvestedOn?: string | null;
       bedId?: string | null;
@@ -197,6 +202,7 @@ export class PlantingRepository {
       .update(gardenPlantings)
       .set({
         updatedAt: new Date(),
+        ...(patch.plannedOn !== undefined ? { plannedOn: patch.plannedOn } : {}),
         ...(patch.plantedOn !== undefined ? { plantedOn: patch.plantedOn } : {}),
         ...(patch.harvestedOn !== undefined ? { harvestedOn: patch.harvestedOn } : {}),
         ...(patch.bedId !== undefined ? { bedId: patch.bedId } : {}),
@@ -237,6 +243,8 @@ export class PlantingRepository {
         layoutYInches: gardenPlantings.layoutYInches,
         startMethod: gardenPlantings.startMethod,
         indoorStartedOn: gardenPlantings.indoorStartedOn,
+        plannedOn: gardenPlantings.plannedOn,
+        plantedOn: gardenPlantings.plantedOn,
         trayId: gardenPlantings.trayId,
         createdAt: gardenPlantings.createdAt,
         updatedAt: gardenPlantings.updatedAt,
@@ -377,8 +385,8 @@ export class PlantingRepository {
         cultivar: plants.cultivar,
         plantType: plants.plantType,
         status: plants.status,
+        plannedOn: gardenPlantings.plannedOn,
         plantedOn: gardenPlantings.plantedOn,
-        createdAt: gardenPlantings.createdAt,
         harvestedOn: gardenPlantings.harvestedOn,
         daysToMaturity: plants.daysToMaturity,
         waterIntervalDays: plants.waterIntervalDays,

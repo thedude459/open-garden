@@ -9,6 +9,8 @@ export const reminderMutationSchema = z.object({
   plantingId: uuid,
   kind: careKindSchema,
   dueOn: isoDate,
+  /** The member's today, for a done Sow task: the planting was planted on it (ADR 0040). */
+  doneOn: isoDate.optional(),
 });
 
 export const asOfQuerySchema = z.object({

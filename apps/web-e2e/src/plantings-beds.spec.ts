@@ -143,6 +143,6 @@ test('named beds group, filter, rename, delete unassigns, viewer cannot manage',
   await expect(friend.getByRole('button', { name: /Delete bed/ })).toHaveCount(0);
   // A viewer sees each planting's status, without an editor.
   const friendBasil = friend.locator('article').filter({ hasText: 'Basil (Genovese)' });
-  await expect(friendBasil.getByText('Not planted')).toBeVisible();
+  await expect(friendBasil.getByText('Planned', { exact: true })).toBeVisible();
   await expect(friendBasil.getByRole('button', { name: /^Edit / })).toHaveCount(0);
 });

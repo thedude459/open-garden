@@ -38,6 +38,10 @@ type Life = NonNullable<ClientPlanting['life']>;
     @let p = planting();
     <div class="planting-editor">
       <label>
+        Planned for
+        <input #plannedInput type="date" [attr.name]="'planned-' + p.id" />
+      </label>
+      <label>
         Planted
         <input #plantedInput type="date" [attr.name]="'planted-' + p.id" />
       </label>
@@ -116,8 +120,20 @@ type Life = NonNullable<ClientPlanting['life']>;
         >
           Save planting
         </button>
+        @if (!p.plantedOn) {
+          <!-- Planned until it is in the ground (ADR 0040); care starts from this day. -->
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [attr.aria-label]="'Mark ' + plantName(p) + ' planted today'"
+            [disabled]="saving()"
+            (click)="markPlanted(bedSelect.value)"
+          >
+            Mark planted
+          </button>
+        }
         <button type="button" class="btn btn-secondary" (click)="sowAgain.emit()">Sow again</button>
-        @if (p.plantedOn && life() === 'annual') {
+        @if ((p.plantedOn || p.plannedOn) && life() === 'annual') {
           <button
             type="button"
             class="btn btn-secondary"
@@ -138,7 +154,7 @@ type Life = NonNullable<ClientPlanting['life']>;
           </button>
         }
       </div>
-      @if (repeating() && p.plantedOn) {
+      @if (repeating() && (p.plantedOn || p.plannedOn)) {
         <form class="filters repeat-form" (ngSubmit)="emitRepeat()">
           <label>
             Every
@@ -157,7 +173,7 @@ type Life = NonNullable<ClientPlanting['life']>;
             <input
               type="date"
               name="repeatUntil"
-              [min]="p.plantedOn"
+              [min]="p.plantedOn || p.plannedOn"
               [ngModel]="until()"
               (ngModelChange)="untilDraft.set($event)"
               required
@@ -286,11 +302,13 @@ export class PlantingEditor {
   spacing = signal<{ value: number | null; units: Units } | null>(null);
   confirmRemove = signal(false);
 
+  private readonly plannedInput = viewChild.required<ElementRef<HTMLInputElement>>('plannedInput');
   private readonly plantedInput = viewChild.required<ElementRef<HTMLInputElement>>('plantedInput');
   private readonly harvestInput = viewChild.required<ElementRef<HTMLInputElement>>('harvestInput');
 
   /** The dates last put in the inputs or sent to save; undefined before the first render. */
-  private shown: { planted?: string | null; harvested?: string | null } = {};
+  private shown: { planned?: string | null; planted?: string | null; harvested?: string | null } =
+    {};
 
   constructor() {
     // Date inputs are not bound. A reload after a rejected save must put the
@@ -298,6 +316,11 @@ export class PlantingEditor {
     // typed while it was in flight, so only a date that changed is written.
     afterRenderEffect(() => {
       const p = this.planting();
+      const planned = p.plannedOn ?? null;
+      if (planned !== this.shown.planned) {
+        syncDate(this.plannedInput().nativeElement, planned);
+        this.shown.planned = planned;
+      }
       if (p.plantedOn !== this.shown.planted) {
         syncDate(this.plantedInput().nativeElement, p.plantedOn);
         this.shown.planted = p.plantedOn;
@@ -367,14 +390,22 @@ export class PlantingEditor {
     this.repeat.emit({ everyWeeks, until });
   }
 
+  /** Sown or planted out today: the date goes in Planted, and the planting saves. */
+  markPlanted(bedId: string) {
+    this.plantedInput().nativeElement.value = localIso();
+    this.emitSave(bedId);
+  }
+
   emitSave(bedId: string) {
     const p = this.planting();
     const life = this.life();
     const spacing = this.spacing();
+    const plannedOn = this.plannedInput().nativeElement.value || null;
     const plantedOn = this.plantedInput().nativeElement.value || null;
     const harvestedOn = this.harvestInput().nativeElement.value || null;
-    this.shown = { planted: plantedOn, harvested: harvestedOn };
+    this.shown = { planned: plannedOn, planted: plantedOn, harvested: harvestedOn };
     this.save.emit({
+      plannedOn,
       plantedOn,
       harvestedOn,
       bedId: bedId || null,

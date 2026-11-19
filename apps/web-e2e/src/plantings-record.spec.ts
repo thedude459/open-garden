@@ -51,30 +51,30 @@ test('record plantings, dates, confirm remove, favorites picker, viewer read-onl
   await openPlantings(owner, 'Record bed');
   await addFromCatalog(owner, 'Tomato (Cherry)');
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
-  await expect(tomato.getByText('Not planted')).toBeVisible();
+  await expect(tomato.getByText('Planned', { exact: true })).toBeVisible();
   await openPlanting(tomato);
-  const planted = tomato.locator('input[type="date"]').first();
+  const planted = tomato.locator('input[name^="planted-"]');
   await expect(planted).toHaveValue('');
   const today = new Date().toISOString().slice(0, 10);
   await expect(planted).not.toHaveValue(today);
 
   await fillDate(planted, '2026-04-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
-  await expect(tomato.locator('input[type="date"]').first()).toHaveValue('2026-04-01');
+  await expect(tomato.locator('input[name^="planted-"]')).toHaveValue('2026-04-01');
 
-  await fillDate(planted, '2026-12-01');
+  await fillDate(planted, '2026-06-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
-  await expect(tomato.locator('input[type="date"]').first()).toHaveValue('2026-12-01');
+  await expect(tomato.locator('input[name^="planted-"]')).toHaveValue('2026-06-01');
 
-  await fillDate(tomato.locator('input[name^="harvested-"]'), '2026-12-15');
+  await fillDate(tomato.locator('input[name^="harvested-"]'), '2026-08-15');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
-  await expect(tomato.locator('input[name^="harvested-"]')).toHaveValue('2026-12-15');
+  await expect(tomato.locator('input[name^="harvested-"]')).toHaveValue('2026-08-15');
 
   await fillDate(tomato.locator('input[name^="harvested-"]'), '2026-01-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
   await expect(owner.getByText(/Harvest date must be on or after planted date/)).toBeVisible();
-  await expect(tomato.locator('input[type="date"]').first()).toHaveValue('2026-12-01');
-  await expect(tomato.locator('input[type="date"]').nth(1)).toHaveValue('2026-12-15');
+  await expect(tomato.locator('input[name^="planted-"]')).toHaveValue('2026-06-01');
+  await expect(tomato.locator('input[name^="harvested-"]')).toHaveValue('2026-08-15');
 
   await addFromCatalog(owner, 'Tomato (Cherry)');
   await expect(owner.locator('article').filter({ hasText: 'Tomato (Cherry)' })).toHaveCount(2);

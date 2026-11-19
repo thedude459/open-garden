@@ -10,6 +10,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ReminderItemDto, ReminderListDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardenRemindersCacheService, rainForDeviceDay } from './garden-reminders-cache.service';
+import { localIso } from '../today/today-groups';
 import { RemindersApiService, RemindersColdOfflineError } from './reminders-api.service';
 import { RemindersOfflineQueue, type ReminderQueueItem } from './reminders-offline.queue';
 
@@ -105,6 +106,22 @@ describe('RemindersApiService', () => {
     req.flush(list([item()]));
     expect((await loaded)?.items).toHaveLength(1);
     expect(t.cached.get('u1:g1')?.items).toHaveLength(1);
+  });
+
+  it('sends the device’s day with a done task, so a Sow task records when it was sown', async () => {
+    const t = setup();
+    const done = t.api.complete('g1', { plantingId: 'p1', kind: 'sow', dueOn: '2026-06-20' }, null);
+    await settle();
+    const req = t.backend.expectOne('/api/gardens/g1/reminders/complete');
+    expect(req.request.body).toMatchObject({
+      kind: 'sow',
+      dueOn: '2026-06-20',
+      doneOn: localIso(),
+    });
+    req.flush('');
+    await settle();
+    t.backend.expectOne(listUrl).flush(list([]));
+    await done;
   });
 
   it('queues a chore done offline and shows its next due day as pending', async () => {

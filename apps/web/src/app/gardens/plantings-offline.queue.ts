@@ -122,6 +122,7 @@ export class PlantingsOfflineQueue {
             cultivar: existing?.cultivar ?? item.preview?.cultivar ?? null,
             plantType: existing?.plantType ?? item.preview?.plantType ?? 'vegetable',
             status: existing?.status ?? item.preview?.status ?? 'active',
+            plannedOn: body.plannedOn ?? existing?.plannedOn ?? null,
             plantedOn: body.plantedOn ?? existing?.plantedOn ?? null,
             harvestedOn: body.harvestedOn ?? existing?.harvestedOn ?? null,
             bedId: body.bedId ?? existing?.bedId ?? null,
@@ -139,6 +140,7 @@ export class PlantingsOfflineQueue {
           const patch = item.body;
           plantings.set(id, {
             ...current,
+            plannedOn: patch.plannedOn !== undefined ? patch.plannedOn : current.plannedOn,
             plantedOn: patch.plantedOn !== undefined ? patch.plantedOn : current.plantedOn,
             harvestedOn: patch.harvestedOn !== undefined ? patch.harvestedOn : current.harvestedOn,
             bedId: patch.bedId !== undefined ? patch.bedId : current.bedId,

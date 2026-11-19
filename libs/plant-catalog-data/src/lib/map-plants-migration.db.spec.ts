@@ -29,6 +29,13 @@ async function plant(db: AppDatabase, varietyKey: string, commonName: string) {
   return { id: (result as unknown as { rows: { id: string }[] }).rows[0]!.id };
 }
 
+async function planting(db: AppDatabase, gardenId: string, plantId: string) {
+  const result = await db.execute<{ id: string }>(sql`
+    insert into garden_plantings (garden_id, plant_id) values (${gardenId}, ${plantId})
+    returning id`);
+  return { id: (result as unknown as { rows: { id: string }[] }).rows[0]!.id };
+}
+
 /** Migrations after 0003, so the code's schema matches the database again. */
 async function migrateRest(t: TestDb) {
   const folder = resolve(process.cwd(), MIGRATIONS_FOLDER);
@@ -57,11 +64,8 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     const { user, garden } = await household(t.db);
     const tomato = await plant(t.db, 'solanum lycopersicum|cherry', 'Cherry Tomato');
     const maple = await plant(t.db, 'acer rubrum|', 'Red Maple');
-    const [planting] = await t.db
-      .insert(schema.gardenPlantings)
-      .values({ gardenId: garden.id, plantId: tomato.id })
-      .returning();
-    await t.db.insert(schema.gardenPlantings).values({ gardenId: garden.id, plantId: maple.id });
+    const tomatoPlanting = await planting(t.db, garden.id, tomato.id);
+    await planting(t.db, garden.id, maple.id);
     await t.db.insert(schema.favorites).values({ userId: user.id, plantId: tomato.id });
 
     await t.exec(MIGRATION);
@@ -97,7 +101,7 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     const [kept] = await t.db
       .select()
       .from(schema.gardenPlantings)
-      .where(eq(schema.gardenPlantings.id, planting!.id));
+      .where(eq(schema.gardenPlantings.id, tomatoPlanting.id));
     expect(kept?.plantId).toBe(tomato.id);
   });
 
@@ -108,7 +112,7 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     const oldBasil = await plant(t.db, 'ocimum basilicum|genovese', 'Sweet Basil');
     const basil = await plant(t.db, 'dataset:basil-genovese', 'Basil');
     const tomato = await plant(t.db, 'dataset:tomato', 'Tomato');
-    await t.db.insert(schema.gardenPlantings).values({ gardenId: garden.id, plantId: oldBasil.id });
+    await planting(t.db, garden.id, oldBasil.id);
     // The garden already follows both on its calendar, and the user favorited both.
     await t.db.insert(schema.gardenCalendarEntries).values([
       { gardenId: garden.id, plantId: oldBasil.id },

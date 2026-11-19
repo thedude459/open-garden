@@ -69,6 +69,9 @@ export interface PlantingDto {
   cultivar: string | null;
   plantType: PlantType;
   status: PlantStatus;
+  /** The day the household means to sow or plant out (ADR 0040). */
+  plannedOn?: IsoDate | null;
+  /** The day it was really sown or planted out; null while it is planned. */
   plantedOn: IsoDate | null;
   harvestedOn: IsoDate | null;
   bedId: string | null;
@@ -141,6 +144,7 @@ export interface PlantingCreateDto {
   plantId: string;
   startMethod?: StartMethod;
   indoorStartedOn?: IsoDate | null;
+  plannedOn?: IsoDate | null;
   plantedOn?: IsoDate | null;
   harvestedOn?: IsoDate | null;
   bedId?: string | null;
@@ -156,6 +160,7 @@ export interface PlantingCreateDto {
 }
 
 export interface PlantingPatchDto {
+  plannedOn?: IsoDate | null;
   plantedOn?: IsoDate | null;
   harvestedOn?: IsoDate | null;
   bedId?: string | null;

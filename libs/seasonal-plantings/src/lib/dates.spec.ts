@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertDatePair, isIsoDate } from './dates';
+import { assertDatePair, isIsoDate, plannedOrPlanted } from './dates';
 
 describe('assertDatePair', () => {
   it('allows future dates and leaves null unset', () => {
@@ -17,5 +17,31 @@ describe('assertDatePair', () => {
     expect(() => assertDatePair(null, '2026-13-01')).toThrow(/Date must be YYYY-MM-DD/);
     expect(isIsoDate('2026-08-16')).toBe(true);
     expect(isIsoDate('not-a-date')).toBe(false);
+  });
+});
+
+describe('plannedOrPlanted (ADR 0040)', () => {
+  it('takes a planted date more than a day ahead as the plan', () => {
+    expect(plannedOrPlanted(undefined, '2026-12-01', '2026-11-19')).toEqual({
+      plannedOn: '2026-12-01',
+      plantedOn: null,
+    });
+  });
+
+  it('keeps today, tomorrow (a time zone ahead of UTC), and past days as planted', () => {
+    for (const day of ['2026-11-18', '2026-11-19', '2026-11-20']) {
+      expect(plannedOrPlanted('2026-11-01', day, '2026-11-19')).toEqual({
+        plannedOn: '2026-11-01',
+        plantedOn: day,
+      });
+    }
+    expect(plannedOrPlanted(undefined, undefined, '2026-11-19')).toEqual({
+      plannedOn: undefined,
+      plantedOn: undefined,
+    });
+  });
+
+  it('rejects a planned date that is not YYYY-MM-DD', () => {
+    expect(() => plannedOrPlanted('2026-02-30', null, '2026-11-19')).toThrow(/YYYY-MM-DD/);
   });
 });
