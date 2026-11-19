@@ -38,9 +38,10 @@ export function todaySources(db: AppDatabase): TodaySources {
     weather: async (gardenId, asOf) => {
       const garden = await gardenRows.getById(gardenId);
       if (garden?.latitude == null || garden.longitude == null) return [];
-      // Plants in beds still growing; trays and waiting transplants are under cover.
+      // Plants in beds still growing; trays and waiting transplants are under
+      // cover, and planned ones are not in the ground yet (ADR 0040).
       const inBeds = (await plantings.listAllForReminders(gardenId)).filter(
-        (p) => p.bedId != null && p.harvestedOn == null,
+        (p) => p.bedId != null && p.plantedOn != null && p.harvestedOn == null,
       );
       if (inBeds.length === 0) return [];
       return weatherAlerts(

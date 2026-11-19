@@ -27,6 +27,12 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **Planned or planted:** a planting has a planned date and, once it is in
+  the ground, a planted date. **Mark planted** (in the planting's editor and
+  in Bed View), or finishing its Sow task, records the day. Until then it is
+  drawn as an outline on the plan and has one task, to sow it; watering,
+  feeding, harvest, and weather alerts start once it is planted. Plantings
+  already dated in the future become planned when you upgrade.
 
 ### Improvements
 

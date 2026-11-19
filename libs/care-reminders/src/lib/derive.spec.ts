@@ -230,35 +230,34 @@ describe('deriveReminders: watering by water balance', () => {
   });
 });
 
-describe('Sow tasks', () => {
+describe('Sow tasks (ADR 0040)', () => {
   const sow = (items: ReturnType<typeof deriveReminders>) => items.filter((i) => i.kind === 'sow');
+  const planned = (extra: Partial<DerivePlantingInput> = {}) =>
+    planting({ plantingId: 'a', plantedOn: null, plannedOn: '2026-05-15', ...extra });
 
-  it('asks to sow a planting planned ahead, on its sow date', () => {
-    const items = deriveReminders(
-      [planting({ plantingId: 'a', plantedOn: '2026-05-15', createdOn: '2026-05-01' })],
-      [],
-      '2026-05-10',
-    );
-    expect(sow(items)).toEqual([
+  it('asks to sow a planned planting on its planned date, and nothing else', () => {
+    const items = deriveReminders([planned()], [], '2026-05-10');
+    // Watering, fertilizing, and harvest wait until it is in the ground.
+    expect(items).toEqual([
       expect.objectContaining({ kind: 'sow', dueOn: '2026-05-15', urgency: 'upcoming' }),
     ]);
   });
 
-  it('keeps a missed sowing as overdue until it is marked done', () => {
-    const planned = planting({ plantingId: 'a', plantedOn: '2026-05-15', createdOn: '2026-05-01' });
-    expect(sow(deriveReminders([planned], [], '2026-05-20'))[0]?.urgency).toBe('overdue');
+  it('keeps a missed sowing overdue until it is done, and asks again when the plan moves', () => {
+    expect(sow(deriveReminders([planned()], [], '2026-05-20'))[0]?.urgency).toBe('overdue');
     const done = [{ plantingId: 'a', kind: 'sow' as const, occurrenceOn: '2026-05-15' }];
-    expect(sow(deriveReminders([planned], done, '2026-05-20'))).toEqual([]);
+    expect(sow(deriveReminders([planned()], done, '2026-05-20'))).toEqual([]);
+    expect(
+      sow(deriveReminders([planned({ plannedOn: '2026-05-25' })], done, '2026-05-20')),
+    ).toEqual([expect.objectContaining({ dueOn: '2026-05-25' })]);
   });
 
-  it('does not ask to sow a planting recorded on or just before its sow date', () => {
+  it('does not ask to sow a planting that is planted, harvested, or has no planned date', () => {
     const items = deriveReminders(
       [
-        planting({ plantingId: 'same', plantedOn: '2026-05-15', createdOn: '2026-05-15' }),
-        // A day apart is the time zone between the server's date and the member's.
-        planting({ plantingId: 'next', plantedOn: '2026-05-15', createdOn: '2026-05-14' }),
-        planting({ plantingId: 'after', plantedOn: '2026-05-01', createdOn: '2026-05-15' }),
-        planting({ plantingId: 'unknown', plantedOn: '2026-05-15' }),
+        planted({ plantingId: 'planted' }),
+        planned({ plantingId: 'harvested', harvestedOn: '2026-07-01' }),
+        planting({ plantingId: 'undated', plantedOn: null }),
       ],
       [],
       '2026-05-15',
@@ -266,19 +265,7 @@ describe('Sow tasks', () => {
     expect(sow(items)).toEqual([]);
   });
 
-  it('drops the Sow task once the planting is harvested', () => {
-    const items = deriveReminders(
-      [
-        planting({
-          plantingId: 'a',
-          plantedOn: '2026-05-15',
-          createdOn: '2026-05-01',
-          harvestedOn: '2026-07-01',
-        }),
-      ],
-      [],
-      '2026-07-02',
-    );
-    expect(sow(items)).toEqual([]);
-  });
+  function planted(extra: Partial<DerivePlantingInput> & { plantingId: string }) {
+    return planting({ plannedOn: '2026-05-15', plantedOn: '2026-05-16', ...extra });
+  }
 });

@@ -17,9 +17,10 @@ export interface DerivePlantingInput {
   cultivar: string | null;
   plantType: PlantType;
   status: PlantStatus;
+  /** The day it is meant to be sown or planted out; only a planned planting has a Sow task. */
+  plannedOn?: string | null;
+  /** The day it was really sown or planted out (ADR 0040); care starts from it. */
   plantedOn: string | null;
-  /** The day the planting was recorded; a sow date well after it was planned ahead. */
-  createdOn?: string | null;
   harvestedOn: string | null;
   daysToMaturity: number | null;
   waterIntervalDays: number | null;
@@ -49,19 +50,6 @@ function lastWateredOn(events: DeriveEventInput[]): string | null {
     if (!last || day > last) last = day;
   }
   return last;
-}
-
-/**
- * A planting whose sow date is more than a day after it was recorded was
- * planned ahead (a later sowing, or one in a series), so it gets a Sow task
- * until marked done. One recorded on or just before its sow date was sown
- * already. ponytail: "more than a day" absorbs the time zone between the
- * server's record date and the member's sow date; a sowing planned for the
- * next day gets no task.
- */
-function plannedAhead(planting: DerivePlantingInput): boolean {
-  if (!planting.plantedOn || !planting.createdOn) return false;
-  return diffIsoDateDays(planting.createdOn, planting.plantedOn) > 1;
 }
 
 function urgency(dueOn: string, asOf: string): ReminderUrgency {
@@ -140,12 +128,16 @@ export function deriveReminders(
     const waterEvents = plantingEvents.filter((e) => e.kind === 'water');
     const fertilizeEvents = plantingEvents.filter((e) => e.kind === 'fertilize');
 
+    // A planned planting's one task (ADR 0040): sow it. Marking the task done
+    // marks it planted; dismissing it hides this date until the plan moves.
+    const plannedOn = planting.plannedOn;
     if (
-      plannedAhead(planting) &&
+      plannedOn &&
+      !planting.plantedOn &&
       !planting.harvestedOn &&
-      !plantingEvents.some((e) => e.kind === 'sow')
+      !plantingEvents.some((e) => e.kind === 'sow' && e.occurrenceOn === plannedOn)
     ) {
-      items.push(plantingItem(planting, 'sow', planting.plantedOn!, asOf, null));
+      items.push(plantingItem(planting, 'sow', plannedOn, asOf, null));
     }
 
     if (

@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type { ReminderListDto, ReminderMutationDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
+import { localIso } from '../today/today-groups';
 import { GardenRemindersCacheService } from './garden-reminders-cache.service';
 import {
   RemindersOfflineQueue,
@@ -76,7 +77,13 @@ export class RemindersApiService {
     body: ReminderMutationDto,
     intervalDays: number | null,
   ): Promise<ClientReminderList | null> {
-    return this.mutate(gardenId, body, 'complete', intervalDays);
+    // A done Sow task marks the planting planted on the member's today (ADR 0040).
+    return this.mutate(
+      gardenId,
+      { ...body, doneOn: body.doneOn ?? localIso() },
+      'complete',
+      intervalDays,
+    );
   }
 
   async undo(gardenId: string, body: ReminderMutationDto): Promise<void> {

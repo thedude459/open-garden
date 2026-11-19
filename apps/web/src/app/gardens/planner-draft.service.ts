@@ -144,10 +144,11 @@ export class PlannerDraftService {
   }
 
   /**
-   * Something was deleted on the server outright (a confirmed delete): apply
-   * it to the saved layout and the draft alike. Undo does not reach past it.
+   * Something changed on the server outright (a confirmed delete, a planting
+   * marked planted): apply it to the saved layout and the draft alike. Undo
+   * does not reach past it.
    */
-  applyServerDelete(change: (layout: GardenLayoutDto) => GardenLayoutDto) {
+  applyServerChange(change: (layout: GardenLayoutDto) => GardenLayoutDto) {
     if (this.saved) this.saved = change(this.saved);
     const d = this.draft();
     if (d) this.setDraft(change(d));
@@ -163,9 +164,22 @@ export class PlannerDraftService {
   async deletePlantingNow(plantingId: string): Promise<void> {
     await this.flush();
     await this.plantingsApi.remove(this.gardenId, plantingId);
-    this.applyServerDelete((l) => ({
+    this.applyServerChange((l) => ({
       ...l,
       plantings: l.plantings.filter((p) => p.id !== plantingId),
+    }));
+  }
+
+  /**
+   * Marks a planting planted on a day (ADR 0040), after saving pending edits
+   * so a planting placed a moment ago exists on the server.
+   */
+  async markPlantedNow(plantingId: string, plantedOn: string): Promise<void> {
+    await this.flush();
+    await this.plantingsApi.update(this.gardenId, plantingId, { plantedOn });
+    this.applyServerChange((l) => ({
+      ...l,
+      plantings: l.plantings.map((p) => (p.id === plantingId ? { ...p, plantedOn } : p)),
     }));
   }
 

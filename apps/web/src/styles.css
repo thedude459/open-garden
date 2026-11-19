@@ -721,6 +721,13 @@ og-garden-plan-canvas {
   pointer-events: none;
 }
 
+/* Planned, not yet sown or planted out (ADR 0040): an outline of what is coming. */
+.layout-plant-planned {
+  fill-opacity: 0.35;
+  stroke: #2f5d3a;
+  stroke-dasharray: 1.6 1.2;
+}
+
 .layout-plant-invalid {
   fill: #8a1f1f;
   stroke: #f4efe4;

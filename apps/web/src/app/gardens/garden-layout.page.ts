@@ -790,7 +790,7 @@ export class GardenLayoutPage implements OnInit {
       try {
         await this.planner.flush();
         await this.api.deleteArea(this.gardenId, area.id);
-        this.planner.applyServerDelete(without);
+        this.planner.applyServerChange(without);
       } catch (err) {
         this.fail(err);
       }
@@ -809,7 +809,7 @@ export class GardenLayoutPage implements OnInit {
       try {
         await this.planner.flush();
         await this.api.deleteBed(this.gardenId, bed.id);
-        this.planner.applyServerDelete((l) => withoutBed(l, bed.id));
+        this.planner.applyServerChange((l) => withoutBed(l, bed.id));
       } catch (err) {
         this.fail(err);
       }

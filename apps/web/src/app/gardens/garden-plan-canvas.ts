@@ -281,6 +281,7 @@ type Gesture =
                       [attr.cy]="m.y"
                       [attr.r]="m.r"
                       class="layout-plant"
+                      [class.layout-plant-planned]="!planting.plantedOn"
                       [class.layout-plant-invalid]="isPreviewInvalid(planting.id)"
                       [attr.data-planting-id]="planting.id"
                     />
@@ -745,7 +746,9 @@ export class GardenPlanCanvas {
   }
 
   plantingLabel(p: LayoutPlantingDto) {
-    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
+    const name = p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
+    // Not in the ground yet (ADR 0040): drawn as an outline, and said so.
+    return p.plantedOn ? name : `${name}, planned`;
   }
 
   onPointerDown(ev: PointerEvent) {

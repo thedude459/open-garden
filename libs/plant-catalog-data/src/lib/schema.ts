@@ -351,6 +351,9 @@ export const gardenPlantings = pgTable(
       .references(() => plants.id, { onDelete: 'restrict' }),
     bedId: uuid('bed_id').references(() => gardenBeds.id, { onDelete: 'set null' }),
     trayId: uuid('tray_id').references(() => gardenTrays.id, { onDelete: 'set null' }),
+    /** The day the household means to sow or plant out (ADR 0040). */
+    plannedOn: date('planned_on', { mode: 'string' }),
+    /** The day it really happened; empty while the planting is planned. */
     plantedOn: date('planted_on', { mode: 'string' }),
     harvestedOn: date('harvested_on', { mode: 'string' }),
     layoutXInches: integer('layout_x_inches'),

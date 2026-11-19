@@ -116,7 +116,7 @@ test('pending patch of a remotely deleted planting fails visibly and does not re
   await abortPlantingApis(owner);
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await openPlanting(tomato);
-  await fillDate(tomato.locator('input[type="date"]').first(), '2026-05-01');
+  await fillDate(tomato.locator('input[name^="planted-"]'), '2026-05-01');
   await tomato.getByRole('button', { name: 'Save planting' }).click();
   await expect(tomato.getByText('pending')).toBeVisible();
   await addFromCatalog(owner, 'Basil (Genovese)');

@@ -68,6 +68,12 @@ export class GardenRemindersController {
         /* the care event still stands when the harvest date cannot be stored */
       }
     }
+    // A done Sow task marks the planting planted (ADR 0040), on the day it was done.
+    if (parsed.data.kind === 'sow') {
+      await this.plantings.update(user.id, id, parsed.data.plantingId, {
+        plantedOn: parsed.data.doneOn ?? parsed.data.dueOn,
+      });
+    }
   }
 
   @Post('undo')
@@ -86,6 +92,10 @@ export class GardenRemindersController {
     );
     if (parsed.data.kind === 'harvest') {
       await this.plantings.update(user.id, id, parsed.data.plantingId, { harvestedOn: null });
+    }
+    // Undoing it makes the planting planned again.
+    if (parsed.data.kind === 'sow') {
+      await this.plantings.update(user.id, id, parsed.data.plantingId, { plantedOn: null });
     }
   }
 

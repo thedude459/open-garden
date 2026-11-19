@@ -263,6 +263,7 @@ function createMemory(sowing?: SowingPlanner) {
     gardenId: string;
     plantId: string;
     bedId: string | null;
+    plannedOn?: string | null;
     plantedOn: string | null;
     harvestedOn: string | null;
     startMethod: string;
@@ -330,6 +331,7 @@ function createMemory(sowing?: SowingPlanner) {
       gardenId: string;
       plantId: string;
       bedId: string | null;
+      plannedOn?: string | null;
       plantedOn: string | null;
       harvestedOn: string | null;
       startMethod?: string;
@@ -343,6 +345,7 @@ function createMemory(sowing?: SowingPlanner) {
         gardenId: input.gardenId,
         plantId: input.plantId,
         bedId: input.bedId,
+        plannedOn: input.plannedOn ?? null,
         plantedOn: input.plantedOn,
         harvestedOn: input.harvestedOn,
         startMethod: input.startMethod ?? 'direct_seed',
@@ -358,10 +361,16 @@ function createMemory(sowing?: SowingPlanner) {
     async update(
       gId: string,
       id: string,
-      patch: { plantedOn?: string | null; harvestedOn?: string | null; bedId?: string | null },
+      patch: {
+        plannedOn?: string | null;
+        plantedOn?: string | null;
+        harvestedOn?: string | null;
+        bedId?: string | null;
+      },
     ) {
       const row = plantingRows.get(id);
       if (!row || row.gardenId !== gId) return null;
+      if (patch.plannedOn !== undefined) row.plannedOn = patch.plannedOn;
       if (patch.plantedOn !== undefined) row.plantedOn = patch.plantedOn;
       if (patch.harvestedOn !== undefined) row.harvestedOn = patch.harvestedOn;
       if (patch.bedId !== undefined) row.bedId = patch.bedId;
@@ -532,6 +541,36 @@ function createMemory(sowing?: SowingPlanner) {
   );
   return { service, ownerId, viewerId, strangerId, gardenId, otherGardenId };
 }
+
+describe('PlantingService planned or planted (ADR 0040)', () => {
+  it('records a planned date, then the real one when it is marked planted', async () => {
+    const mem = createMemory();
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      plannedOn: '2099-05-01',
+    });
+    const planned = list.plantings[0]!;
+    expect(planned).toMatchObject({ plannedOn: '2099-05-01', plantedOn: null });
+    const planted = await mem.service.update(mem.ownerId, mem.gardenId, planned.id, {
+      plantedOn: '2026-05-03',
+    });
+    // The plan stays as history beside what happened.
+    expect(planted).toMatchObject({ plannedOn: '2099-05-01', plantedOn: '2026-05-03' });
+  });
+
+  it('takes a planted date in the future as the plan, from older clients', async () => {
+    const mem = createMemory();
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      plantedOn: '2099-05-01',
+    });
+    expect(list.plantings[0]).toMatchObject({ plannedOn: '2099-05-01', plantedOn: null });
+    const moved = await mem.service.update(mem.ownerId, mem.gardenId, list.plantings[0]!.id, {
+      plantedOn: '2099-06-01',
+    });
+    expect(moved).toMatchObject({ plannedOn: '2099-06-01', plantedOn: null });
+  });
+});
 
 describe('PlantingService area check after a catalog update', () => {
   // Saved in a vegetable bed as a fruit; the catalog now calls it a tree.
@@ -798,11 +837,13 @@ describe('PlantingService.repeat (succession planting)', () => {
     );
     expect(added).toBe(3);
     const copies = list.plantings.filter((p) => p.id !== id);
-    expect(copies.map((p) => p.plantedOn).sort()).toEqual([
+    // Each copy is a sowing still to come: planned, not planted (ADR 0040).
+    expect(copies.map((p) => p.plannedOn).sort()).toEqual([
       '2026-04-15',
       '2026-04-29',
       '2026-05-13',
     ]);
+    expect(copies.every((p) => p.plantedOn === null)).toBe(true);
     expect(copies.every((p) => p.bedId === null && p.plantId === tomato.id)).toBe(true);
   });
 
@@ -816,7 +857,7 @@ describe('PlantingService.repeat (succession planting)', () => {
     const copy = list.plantings.find((p) => p.id !== id)!;
     expect(copy).toMatchObject({
       startMethod: 'transplant',
-      plantedOn: '2026-05-22',
+      plannedOn: '2026-05-22',
       indoorStartedOn: '2026-04-10',
     });
   });
@@ -839,6 +880,17 @@ describe('PlantingService.repeat (succession planting)', () => {
     await expect(
       mem.service.repeat(mem.viewerId, mem.gardenId, id, 2, '2026-06-01'),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('repeats a planting that is only planned, from its planned date', async () => {
+    const mem = createMemory();
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      plannedOn: '2027-04-01',
+    });
+    const id = list.plantings[0]!.id;
+    const { added } = await mem.service.repeat(mem.ownerId, mem.gardenId, id, 2, '2027-04-30');
+    expect(added).toBe(2);
   });
 
   it('repeats only annual plantings', async () => {
@@ -865,7 +917,7 @@ describe('PlantingService.repeat (succession planting)', () => {
     expect(
       result.list.plantings
         .filter((p) => p.id !== id)
-        .map((p) => p.plantedOn)
+        .map((p) => p.plannedOn)
         .sort(),
     ).toEqual(['2026-04-29', '2026-05-27', '2026-08-19']);
     expect(result).toMatchObject({ added: 3, outOfWindow: 2, tooLate: 1, lastSowOn: '2026-09-01' });

@@ -26,7 +26,13 @@ describe.skipIf(!liveEnabled)('weather alerts http', () => {
 
   async function plant(client: LiveClient, gardenId: string, name: string, bedId: string | null) {
     const res = await client.post(`/api/gardens/${gardenId}/plantings`, {
-      data: { id: crypto.randomUUID(), plantId: await plantId(client, name), bedId },
+      // Planted today: a planned planting is not in the ground yet (ADR 0040).
+      data: {
+        id: crypto.randomUUID(),
+        plantId: await plantId(client, name),
+        bedId,
+        plantedOn: new Date().toISOString().slice(0, 10),
+      },
     });
     expect(res.status(), await res.text()).toBe(201);
   }

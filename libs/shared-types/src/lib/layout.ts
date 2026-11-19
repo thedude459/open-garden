@@ -50,6 +50,10 @@ export interface LayoutPlantingDto {
   spacingInches: number | null;
   startMethod: StartMethod;
   indoorStartedOn: IsoDate | null;
+  /** The planned sow or planting-out day; drawn as an outline until planted (ADR 0040). */
+  plannedOn?: IsoDate | null;
+  /** The day it was really sown or planted out; absent or null while planned. */
+  plantedOn?: IsoDate | null;
   placement: LayoutPlacementDto | null;
   /** A seedling growing in a greenhouse tray; still a waiting transplant until placed. */
   trayId?: string | null;

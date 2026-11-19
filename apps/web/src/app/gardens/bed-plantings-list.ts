@@ -1,7 +1,11 @@
 import { Component, input, output, signal } from '@angular/core';
 import { plantName, type LayoutPlantingDto } from '@open-garden/shared-types';
+import { formatDay } from '@open-garden/web-ui';
 
-/** The plants in one bed, each removable after a confirm. */
+/**
+ * The plants in one bed, each removable after a confirm. A planned one (not
+ * in the ground yet, ADR 0040) says so and can be marked planted.
+ */
 @Component({
   selector: 'og-bed-plantings-list',
   standalone: true,
@@ -13,6 +17,16 @@ import { plantName, type LayoutPlantingDto } from '@open-garden/shared-types';
           <li class="row">
             <span>{{ label(p) }}</span>
             @if (canEdit()) {
+              @if (!p.plantedOn && confirmId() !== p.id) {
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  [attr.aria-label]="'Mark ' + plantName(p) + ' planted today'"
+                  (click)="markPlanted.emit(p)"
+                >
+                  Mark planted
+                </button>
+              }
               @if (confirmId() !== p.id) {
                 <button
                   type="button"
@@ -49,10 +63,13 @@ export class BedPlantingsList {
   plantings = input<LayoutPlantingDto[]>([]);
   canEdit = input(false);
   remove = output<LayoutPlantingDto>();
+  markPlanted = output<LayoutPlantingDto>();
   confirmId = signal<string | null>(null);
 
   label(p: LayoutPlantingDto) {
-    return p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
+    const name = p.status === 'active' ? plantName(p) : `${plantName(p)} (removed from catalog)`;
+    if (p.plantedOn) return name;
+    return p.plannedOn ? `${name} · planned for ${formatDay(p.plannedOn)}` : `${name} · planned`;
   }
 
   confirm(p: LayoutPlantingDto) {

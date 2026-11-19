@@ -42,6 +42,7 @@ import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { PlaceMarker } from '../ui/place-marker';
+import { localIso } from '../today/today-groups';
 
 @Component({
   standalone: true,
@@ -159,6 +160,7 @@ import { PlaceMarker } from '../ui/place-marker';
               [plantings]="inBed()"
               [canEdit]="canEdit()"
               (remove)="removeFromBed($event)"
+              (markPlanted)="markPlanted($event)"
             />
             <og-planting-tray
               [plantings]="trayPlantings()"
@@ -542,6 +544,17 @@ export class GardenBedViewPage implements OnInit {
       this.applyDrop(planting.id, planting, { kind: 'tray' });
     }
     this.refreshFlags();
+  }
+
+  /** Sown or planted out today (ADR 0040): its care starts from today. */
+  async markPlanted(planting: LayoutPlantingDto) {
+    if (!this.guardMutate()) return;
+    try {
+      await this.planner.markPlantedNow(planting.id, localIso());
+      this.notices.success(`${plantName(planting)} planted`);
+    } catch (err) {
+      this.notices.error(messageFrom(err));
+    }
   }
 
   onTrayStart(ev: { plantingId: string }) {

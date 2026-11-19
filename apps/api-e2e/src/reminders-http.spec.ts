@@ -17,7 +17,12 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
   };
 
   type PlantingList = {
-    plantings: Array<{ id: string; plantedOn: string | null; harvestedOn: string | null }>;
+    plantings: Array<{
+      id: string;
+      plannedOn?: string | null;
+      plantedOn: string | null;
+      harvestedOn: string | null;
+    }>;
   };
 
   type GardenDetail = { id: string };
@@ -119,11 +124,27 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
     ]);
     expect((await reminders()).some((i) => i.plantingId === sownId)).toBe(false);
 
+    // Done today, ahead of plan: the planting is planted today (ADR 0040).
     const done = await owner.post(`/api/gardens/${garden.id}/reminders/complete`, {
-      data: { plantingId: plannedId, kind: 'sow', dueOn: later },
+      data: { plantingId: plannedId, kind: 'sow', dueOn: later, doneOn: asOf },
     });
     expect(done.status(), await done.text()).toBe(204);
     expect(await reminders()).toEqual([]);
+    const planting = async () =>
+      (
+        (await (await owner.get(`/api/gardens/${garden.id}/plantings`)).json()) as {
+          plantings: { id: string; plannedOn: string | null; plantedOn: string | null }[];
+        }
+      ).plantings.find((p) => p.id === plannedId);
+    expect(await planting()).toMatchObject({ plannedOn: later, plantedOn: asOf });
+
+    // Undone, it is planned again and its Sow task comes back.
+    const undone = await owner.post(`/api/gardens/${garden.id}/reminders/undo`, {
+      data: { plantingId: plannedId, kind: 'sow', dueOn: later },
+    });
+    expect(undone.status(), await undone.text()).toBe(204);
+    expect(await planting()).toMatchObject({ plannedOn: later, plantedOn: null });
+    expect((await reminders()).map((i) => i.plantingId)).toEqual([plannedId]);
   });
 
   test('a succession series adds dated sowings, each with its own Sow task', async () => {
@@ -163,7 +184,8 @@ describe.skipIf(!liveEnabled)('reminders http', () => {
     // and the two in October after the last useful sowing left out.
     expect(result).toMatchObject({ added: 5, outOfWindow: 9, tooLate: 2 });
     const copies = result.list.plantings.filter((p) => p.id !== firstId);
-    expect(copies.map((p) => p.plantedOn).sort()).toEqual(
+    // Each copy is a sowing still to come (ADR 0040).
+    expect(copies.map((p) => p.plannedOn).sort()).toEqual(
       ['03-25', '04-08', '04-22', '09-09', '09-23'].map((d) => `${y}-${d}`),
     );
 

@@ -25,15 +25,12 @@ async function setupGardenWithTomato(page: Page, name: string) {
   await page.getByRole('button', { name: 'Add Tomato (Cherry)' }).click();
   const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await openPlanting(tomato);
-  await tomato
-    .locator('input[type="date"]')
-    .first()
-    .evaluate((el) => {
-      const field = el as HTMLInputElement;
-      field.value = '2026-01-01';
-      field.dispatchEvent(new Event('input', { bubbles: true }));
-      field.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+  await tomato.locator('input[name^="planted-"]').evaluate((el) => {
+    const field = el as HTMLInputElement;
+    field.value = '2026-01-01';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   // Wait for the save to reach the server: Reminders reads the planting date from it.
   await Promise.all([
     page.waitForResponse(

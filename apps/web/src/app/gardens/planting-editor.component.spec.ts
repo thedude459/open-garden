@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { PlantingPatchDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import { PlantingEditor } from './planting-editor';
+import { localIso } from '../today/today-groups';
 import { planting } from './planting.testing';
 import type { ClientBed, ClientPlanting } from './plantings-offline.queue';
 
@@ -162,5 +163,20 @@ describe('PlantingEditor', () => {
       view.el.querySelector<HTMLButtonElement>('button[aria-label^="Delete harvest of"]')!.click();
       expect(deleted).toEqual(['2027-07-01']);
     });
+  });
+
+  it('records a planned date, and Mark planted puts today in Planted (ADR 0040)', async () => {
+    const view = await render(planting({ plantedOn: null, plannedOn: '2027-05-01' }));
+    expect(view.field<HTMLInputElement>('planned-p1').value).toBe('2027-05-01');
+    view.button('Mark planted')!.click();
+    expect(view.saved[0]).toMatchObject({
+      plannedOn: '2027-05-01',
+      plantedOn: localIso(),
+    });
+  });
+
+  it('offers Mark planted only while the planting is planned', async () => {
+    const view = await render(planting());
+    expect(view.button('Mark planted')).toBeUndefined();
   });
 });

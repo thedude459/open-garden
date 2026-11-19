@@ -24,15 +24,12 @@ test('Today is home: it explains itself when empty and completes due tasks', asy
   const tomato = page.locator('article').filter({ hasText: 'Tomato (Cherry)' }).first();
   await openPlanting(tomato);
   // Planted long ago, so its harvest is overdue.
-  await tomato
-    .locator('input[type="date"]')
-    .first()
-    .evaluate((el) => {
-      const field = el as HTMLInputElement;
-      field.value = '2026-01-01';
-      field.dispatchEvent(new Event('input', { bubbles: true }));
-      field.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+  await tomato.locator('input[name^="planted-"]').evaluate((el) => {
+    const field = el as HTMLInputElement;
+    field.value = '2026-01-01';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   await Promise.all([
     page.waitForResponse(
       (r) =>
