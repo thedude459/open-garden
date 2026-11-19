@@ -870,6 +870,8 @@ a.garden-card:focus-visible {
 
 .card-list {
   display: grid;
+  /* Rows shrink to the list's width, so a long name never pushes a button out of view. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.65rem;
   margin: 0;
   padding: 0;

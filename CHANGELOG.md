@@ -40,6 +40,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Bed View's Place buttons stay inside the plant panel, so plants can be
+  dragged onto the bed again; a long name pushed them off the screen (#236).
 
 ### Documentation
 
