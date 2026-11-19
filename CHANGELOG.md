@@ -45,6 +45,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- ADR 0040 plans the next season while this one grows, and keeps planned
+  and planted dates apart.
+
 ### Security
 
 
