@@ -1,18 +1,13 @@
 import { isWashingtonPoint } from './fixtures';
 import { shiftIsoDate } from './dates';
+import { OpenMeteoForecast, liveForecast, type ForecastBody } from './open-meteo-forecast';
 import type { DayTemperatures, TemperatureOutlook } from './ports';
 
 /** Days of forecast a weather alert looks at: today and the next three. */
 export const ALERT_FORECAST_DAYS = 4;
 
 /** Reads Open-Meteo's `temperature_2m_min` and `temperature_2m_max` by day. */
-export function parseDayTemperatures(body: {
-  daily?: {
-    time?: string[];
-    temperature_2m_min?: Array<number | null>;
-    temperature_2m_max?: Array<number | null>;
-  };
-}): Record<string, DayTemperatures> | null {
+export function parseDayTemperatures(body: ForecastBody): Record<string, DayTemperatures> | null {
   const time = body.daily?.time;
   const lows = body.daily?.temperature_2m_min;
   const highs = body.daily?.temperature_2m_max;
@@ -29,48 +24,16 @@ export function parseDayTemperatures(body: {
   return daily;
 }
 
-/** Cached forecasts kept for this long, so Today and the daily reminders share one request. */
-const CACHE_MS = 60 * 60 * 1000;
-
+/** Lows and highs for today and the next three days, from the shared forecast. */
 export class OpenMeteoTemperatureOutlook implements TemperatureOutlook {
-  // ponytail: an unbounded in-memory map, one entry per property and day;
-  // fine for a household install. Bound it (LRU) if one API serves many.
-  private readonly cache = new Map<
-    string,
-    { at: number; value: Record<string, DayTemperatures> }
-  >();
+  constructor(private readonly forecast: OpenMeteoForecast = liveForecast) {}
 
-  constructor(
-    private readonly fetchFn: typeof fetch = fetch,
-    private readonly now: () => number = Date.now,
-  ) {}
-
-  async daily(
-    latitude: number,
-    longitude: number,
-    asOf: string,
-  ): Promise<Record<string, DayTemperatures> | null> {
-    const key = `${latitude.toFixed(3)},${longitude.toFixed(3)},${asOf}`;
-    const hit = this.cache.get(key);
-    if (hit && this.now() - hit.at < CACHE_MS) return hit.value;
-    const url = new URL('https://api.open-meteo.com/v1/forecast');
-    url.searchParams.set('latitude', String(latitude));
-    url.searchParams.set('longitude', String(longitude));
-    url.searchParams.set('daily', 'temperature_2m_min,temperature_2m_max');
-    url.searchParams.set('timezone', 'auto');
-    url.searchParams.set('start_date', asOf);
-    url.searchParams.set('end_date', shiftIsoDate(asOf, ALERT_FORECAST_DAYS - 1));
-    try {
-      const response = await this.fetchFn(url, { signal: AbortSignal.timeout(3000) });
-      if (!response.ok) return null;
-      const value = parseDayTemperatures(
-        (await response.json()) as Parameters<typeof parseDayTemperatures>[0],
-      );
-      if (value) this.cache.set(key, { at: this.now(), value });
-      return value;
-    } catch {
-      return null;
-    }
+  async daily(latitude: number, longitude: number, asOf: string) {
+    const body = await this.forecast.daily(latitude, longitude, asOf);
+    const all = body && parseDayTemperatures(body);
+    if (!all) return null;
+    const last = shiftIsoDate(asOf, ALERT_FORECAST_DAYS - 1);
+    return Object.fromEntries(Object.entries(all).filter(([day]) => day >= asOf && day <= last));
   }
 }
 

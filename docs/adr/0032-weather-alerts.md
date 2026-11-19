@@ -27,7 +27,8 @@ read the second but not the first.
    days. `OpenMeteoTemperatureOutlook` asks Open-Meteo for
    `temperature_2m_min,temperature_2m_max` (3 s timeout, `null` on failure)
    and keeps each answer for an hour, so Today and the daily reminders share
-   one request per property. `PLACE_PROVIDER` picks it or
+   one request per property. (Since November 2026 that request is the water
+   outlook's, ADR 0035: one call per property covers both.) `PLACE_PROVIDER` picks it or
    `FixtureTemperatureOutlook` (a −2 °C night tomorrow at the Washington test
    address), as for places and climate.
 3. **The rules, in `care-reminders`** (`weatherAlerts`, pure):

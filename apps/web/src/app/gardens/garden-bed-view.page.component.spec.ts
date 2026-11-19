@@ -1,6 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import type { GardenLayoutDto, GardenRole, LayoutPlantingDto } from '@open-garden/shared-types';
+import type {
+  GardenLayoutDto,
+  GardenRole,
+  LayoutPlantingDto,
+  PropertyAreaDto,
+  SoilTestDto,
+} from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
@@ -28,6 +34,21 @@ const planting = (
   placement: { plantingId: id, bedId: 'b1', xInches: 12, yInches: 12 },
 });
 
+const soilTest = (id: string, owner: Partial<SoilTestDto>, ph: number): SoilTestDto => ({
+  id,
+  areaId: null,
+  bedId: null,
+  testedOn: '2026-04-01',
+  lab: null,
+  ph,
+  organicMatterPct: null,
+  nitrogen: null,
+  phosphorus: null,
+  potassium: null,
+  recommendations: null,
+  ...owner,
+});
+
 const layout = (myRole: GardenRole): GardenLayoutDto => ({
   gardenId: 'g1',
   myRole,
@@ -49,7 +70,12 @@ const layout = (myRole: GardenRole): GardenLayoutDto => ({
   flags: [],
 });
 
-async function render(myRole: GardenRole = 'owner', autosaveDelayMs = 60_000) {
+async function render(
+  myRole: GardenRole = 'owner',
+  autosaveDelayMs = 60_000,
+  extra: Partial<GardenLayoutDto> = {},
+  areas: PropertyAreaDto[] = [],
+) {
   const plantingsApi = { remove: vi.fn(async () => undefined) };
   const layoutApi = { put: vi.fn(async () => planner.draft()!) };
   TestBed.configureTestingModule({
@@ -57,7 +83,10 @@ async function render(myRole: GardenRole = 'owner', autosaveDelayMs = 60_000) {
       provideRouter([]),
       { provide: PlantingsApiService, useValue: plantingsApi },
       { provide: LayoutApiService, useValue: layoutApi },
-      { provide: GardensApiService, useValue: { detail: async () => ({ name: 'Home' }) } },
+      {
+        provide: GardensApiService,
+        useValue: { detail: async () => ({ name: 'Home' }), areas: async () => areas },
+      },
       { provide: FavoritesApiService, useValue: { list: async () => ({ items: [] }) } },
       { provide: PlantsApiService, useValue: { list: async () => ({ items: [] }) } },
       {
@@ -70,7 +99,7 @@ async function render(myRole: GardenRole = 'owner', autosaveDelayMs = 60_000) {
   planner.autosaveDelayMs = autosaveDelayMs;
   vi.spyOn(planner, 'load').mockImplementation(async () => {
     planner.gardenId = 'g1';
-    planner.hydrate(layout(myRole));
+    planner.hydrate({ ...layout(myRole), ...extra });
     planner.loading.set(false);
     return planner.draft();
   });
@@ -112,5 +141,47 @@ describe('GardenBedViewPage', () => {
     expect(view.el.textContent).toContain('Basil');
     expect(view.el.textContent).not.toContain('Add a plant');
     expect(view.el.textContent).not.toContain('Undo');
+  });
+
+  it('shows the soil test that applies: the bed’s own, else its area’s', async () => {
+    const geometry = layout('viewer').beds[0]!.geometry;
+    const area: PropertyAreaDto = { id: 'a1', name: 'Vegetable garden', kind: 'vegetable' };
+    const areaTest = soilTest('t1', { areaId: 'a1' }, 7.2);
+    let view = await render(
+      'viewer',
+      60_000,
+      {
+        beds: [{ id: 'b1', name: 'North', geometry, areaId: 'a1' }],
+        areaSoilTests: [areaTest],
+      },
+      [area],
+    );
+    const panel = () => view.el.querySelector('[aria-label="Soil test of North"]')!;
+    expect(panel().textContent).toContain('The Vegetable garden test applies:');
+    expect(panel().textContent).toContain('pH 7.2');
+    expect(panel().textContent).not.toContain('Record a soil test');
+    TestBed.resetTestingModule();
+    view = await render(
+      'owner',
+      60_000,
+      {
+        beds: [
+          {
+            id: 'b1',
+            name: 'North',
+            geometry,
+            areaId: 'a1',
+            soilTest: soilTest('t2', { bedId: 'b1' }, 6.5),
+          },
+        ],
+        areaSoilTests: [areaTest],
+      },
+      [area],
+    );
+    expect(panel().textContent).toContain('pH 6.5');
+    expect(panel().textContent).not.toContain('Vegetable garden');
+    TestBed.resetTestingModule();
+    view = await render('owner');
+    expect(panel().textContent).toContain('No soil test of this bed or its area yet');
   });
 });

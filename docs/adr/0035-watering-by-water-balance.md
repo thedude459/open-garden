@@ -65,7 +65,8 @@ FAO-56 Penman-Monteith).
   no dormant season for perennials.
 - A planting watered more than 30 days ago counts from the first day the
   weather covers, so its first reminder can come a little late.
-- The temperature outlook for frost and heat alerts (ADR 0032) still makes its
-  own request; folding it into the same one is under Ideas.
+- The temperature outlook for frost and heat alerts (ADR 0032) reads the same
+  request: `OpenMeteoForecast` asks for evapotranspiration, rain, and daily
+  lows and highs together, and both outlooks are views of it (November 2026).
 - Moisture sensor readings (Phase 4 item 6) would replace the estimate when
   they arrive.
