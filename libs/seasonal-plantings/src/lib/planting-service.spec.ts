@@ -572,6 +572,25 @@ describe('PlantingService planned or planted (ADR 0040)', () => {
   });
 });
 
+describe('PlantingService seasons (ADR 0040)', () => {
+  it('adds a planting to the next season to plan it, and refuses other years', async () => {
+    const mem = createMemory();
+    const year = new Date().getUTCFullYear();
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: tomato.id,
+      seasonYear: year + 1,
+    });
+    expect(list).toMatchObject({ seasonYear: year + 1, currentSeasonYear: year });
+    expect(list.plantings[0]).toMatchObject({ seasonYear: year + 1, plantedOn: null });
+    await expect(
+      mem.service.create(mem.ownerId, mem.gardenId, { plantId: tomato.id, seasonYear: year + 2 }),
+    ).rejects.toMatchObject({ message: 'Plan this season or the next one' });
+    await expect(
+      mem.service.list(mem.ownerId, mem.gardenId, 1, 200, year - 1),
+    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+  });
+});
+
 describe('PlantingService area check after a catalog update', () => {
   // Saved in a vegetable bed as a fruit; the catalog now calls it a tree.
   const apple = {

@@ -19,13 +19,21 @@ import { NoticeService } from '../ui/notice.service';
 import { PlantingAddSection, type PlantToAdd } from './planting-add.section';
 import { PlantingEditor } from './planting-editor';
 import { PlantingsApiService } from './plantings-api.service';
+import { SeasonPicker } from './season-picker';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
 
 @Component({
   standalone: true,
-  imports: [FormsModule, PlantingAddSection, PlantingEditor],
+  imports: [FormsModule, PlantingAddSection, PlantingEditor, SeasonPicker],
   template: `
     <h2>Plantings</h2>
+    @if (list()?.currentSeasonYear; as current) {
+      <og-season-picker
+        [current]="current"
+        [shown]="list()!.seasonYear ?? current"
+        (picked)="pickSeason($event)"
+      />
+    }
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -176,6 +184,8 @@ export class GardenPlantingsPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
   list = signal<ClientPlantingList | null>(null);
+  /** The next season, when it is the one shown (ADR 0040); null is the current one. */
+  readonly season = signal<number | null>(null);
   loading = signal(true);
   error = signal('');
   /** The planting whose editor is open; one at a time. */
@@ -237,7 +247,7 @@ export class GardenPlantingsPage implements OnInit {
       this.error.set('');
     }
     try {
-      const list = await this.api.list(this.gardenId);
+      const list = await this.api.list(this.gardenId, this.season());
       if (epoch !== this.listEpoch) return;
       this.list.set(list);
       this.failures.set(await this.api.syncFailures(this.gardenId));
@@ -245,6 +255,12 @@ export class GardenPlantingsPage implements OnInit {
       if (epoch === this.listEpoch) this.error.set(messageFrom(err));
     }
     if (!silent && epoch === this.listEpoch) this.loading.set(false);
+  }
+
+  /** Lists the next season, to plan it, or this one again. */
+  async pickSeason(year: number) {
+    this.season.set(year === this.list()?.currentSeasonYear ? null : year);
+    await this.load();
   }
 
   add(plant: PlantToAdd) {
@@ -265,13 +281,18 @@ export class GardenPlantingsPage implements OnInit {
     this.error.set('');
     const epoch = ++this.listEpoch;
     try {
-      const created = await this.api.create(this.gardenId, body, {
-        commonName: plant.commonName,
-        species: plant.species,
-        cultivar: plant.cultivar,
-        plantType: plant.plantType,
-        status: plant.status === 'deprecated' ? 'deprecated' : 'active',
-      });
+      const created = await this.api.create(
+        this.gardenId,
+        // Added while the next season is shown, it belongs to that season.
+        { ...body, seasonYear: this.season() ?? undefined },
+        {
+          commonName: plant.commonName,
+          species: plant.species,
+          cultivar: plant.cultivar,
+          plantType: plant.plantType,
+          status: plant.status === 'deprecated' ? 'deprecated' : 'active',
+        },
+      );
       if (epoch !== this.listEpoch) return;
       this.list.set(created);
       this.failures.set(await this.api.syncFailures(this.gardenId));

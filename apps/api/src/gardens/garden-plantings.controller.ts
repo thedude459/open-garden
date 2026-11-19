@@ -23,6 +23,7 @@ import {
   plantingPatchSchema,
   plantingRepeatSchema,
 } from '@open-garden/shared-types';
+import { season } from './season-query';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
@@ -43,12 +44,19 @@ export class GardenPlantingsController {
     @Param('id') id: string,
     @Query('page') pageRaw?: string,
     @Query('pageSize') pageSizeRaw?: string,
+    @Query('season') seasonRaw?: string,
   ) {
     const parsed = plantingListQuerySchema.safeParse({ page: pageRaw, pageSize: pageSizeRaw });
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Invalid list query');
     }
-    return this.plantings.list(user.id, id, parsed.data.page, parsed.data.pageSize);
+    return this.plantings.list(
+      user.id,
+      id,
+      parsed.data.page,
+      parsed.data.pageSize,
+      season(seasonRaw),
+    );
   }
 
   @Post()

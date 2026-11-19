@@ -26,6 +26,7 @@ export const plantingCreateSchema = z
   .object({
     id: z.uuid().optional(),
     plantId: z.uuid({ error: 'Plant is required' }),
+    seasonYear: z.number().int().min(1900).max(2500).optional(),
     startMethod: startMethodSchema.default('direct_seed'),
     indoorStartedOn: optionalIsoDate,
     plannedOn: optionalIsoDate,

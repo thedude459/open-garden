@@ -350,6 +350,64 @@ describe.skipIf(!liveEnabled)('layout http', () => {
     }
   });
 
+  test('next season is planned on its own plan, leaving this season’s placed (ADR 0040)', async () => {
+    const owner = new LiveClient();
+    await register(owner, `layout-season-${Date.now()}@example.com`);
+    const garden = (await (
+      await owner.post('/api/gardens', { data: { place: fixturePlace, name: 'Season plot' } })
+    ).json()) as GardenDetail;
+    const bed = await addBed(owner, garden.id, 'North');
+    const tomato = await findPlant(owner, 'Tomato');
+    const now = await addPlanting(owner, garden.id, tomato.id);
+    const year = new Date().getUTCFullYear();
+    const nextRes = await owner.post(`/api/gardens/${garden.id}/plantings`, {
+      data: { id: crypto.randomUUID(), plantId: tomato.id, seasonYear: year + 1 },
+    });
+    expect(nextRes.status(), await nextRes.text()).toBe(201);
+    const next = (
+      (await (
+        await owner.get(`/api/gardens/${garden.id}/plantings?season=${year + 1}`)
+      ).json()) as PlantingList
+    ).plantings[0]!;
+    const sized = {
+      id: bed.id,
+      originXInches: 0,
+      originYInches: 0,
+      lengthInches: 96,
+      widthInches: 48,
+      orientation: 0,
+    };
+    // This season: the tomato in the middle of the bed.
+    const placedNow = await owner.put(`/api/gardens/${garden.id}/layout`, {
+      data: {
+        beds: [sized],
+        placements: [{ plantingId: now.id, bedId: bed.id, xInches: 48, yInches: 24 }],
+      },
+    });
+    expect(placedNow.status(), await placedNow.text()).toBe(200);
+
+    // Next season: another tomato in the same spot is no spacing clash, and
+    // saving that plan does not take this season's tomato off the bed.
+    const placedNext = await owner.put(`/api/gardens/${garden.id}/layout?season=${year + 1}`, {
+      data: {
+        beds: [sized],
+        placements: [{ plantingId: next.id, bedId: bed.id, xInches: 48, yInches: 24 }],
+      },
+    });
+    expect(placedNext.status(), await placedNext.text()).toBe(200);
+    const nextPlan = (await placedNext.json()) as LayoutDto & { seasonYear: number };
+    expect(nextPlan.seasonYear).toBe(year + 1);
+    expect(nextPlan.plantings.map((p) => p.id)).toEqual([next.id]);
+
+    const nowPlan = (await (
+      await owner.get(`/api/gardens/${garden.id}/layout`)
+    ).json()) as LayoutDto;
+    expect(nowPlan.plantings.map((p) => [p.id, p.placement?.xInches])).toEqual([[now.id, 48]]);
+    // Not planning the year after next, nor last year.
+    const tooFar = await owner.get(`/api/gardens/${garden.id}/layout?season=${year + 2}`);
+    expect(tooFar.status()).toBe(400);
+  });
+
   test('area DELETE 401/403/404 and PUT empty/duplicate area names', async () => {
     const stamp = Date.now();
     const owner = new LiveClient();

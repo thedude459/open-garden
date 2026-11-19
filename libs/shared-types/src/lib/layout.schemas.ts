@@ -45,3 +45,8 @@ export const layoutPutSchema = z.object({
 });
 
 export type LayoutPutParsed = z.infer<typeof layoutPutSchema>;
+
+/** `?season=2027`: the season a plan or planting list shows (ADR 0040); absent is the current one. */
+export const seasonQuerySchema = z.object({
+  season: z.coerce.number().int().min(1900).max(2500).optional(),
+});

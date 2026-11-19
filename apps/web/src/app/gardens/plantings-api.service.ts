@@ -34,7 +34,20 @@ export class PlantingsApiService {
   private readonly queue = inject(PlantingsOfflineQueue);
   private readonly auth = inject(AuthApiService);
 
-  async list(gardenId: string): Promise<ClientPlantingList | null> {
+  /**
+   * The current season's plantings, kept for offline use with queued edits
+   * on top; or with `season`, the next season's (ADR 0040), which needs a
+   * connection and is not kept.
+   */
+  async list(gardenId: string, season?: number | null): Promise<ClientPlantingList | null> {
+    if (season) {
+      try {
+        return await this.fetchAllPages(gardenId, season);
+      } catch (err) {
+        if (isNotFound(err)) return null;
+        throw err;
+      }
+    }
     const userId = this.userId();
     if (typeof navigator === 'undefined' || navigator.onLine) {
       try {
@@ -84,7 +97,7 @@ export class PlantingsApiService {
         }),
       );
       await this.invalidateLayout(gardenId);
-      return this.listOrThrow(gardenId);
+      return this.listOrThrow(gardenId, body.seasonYear);
     } catch (err) {
       this.rethrowClientError(err);
       await this.enqueue({
@@ -313,19 +326,20 @@ export class PlantingsApiService {
     );
   }
 
-  private async fetchAllPages(gardenId: string): Promise<PlantingListDto> {
-    const first = await this.fetchPage(gardenId, 1, 200);
+  private async fetchAllPages(gardenId: string, season?: number): Promise<PlantingListDto> {
+    const first = await this.fetchPage(gardenId, 1, 200, season);
     const plantings = [...first.plantings];
     const pages = Math.max(1, Math.ceil(first.total / first.pageSize));
     for (let page = 2; page <= pages; page++) {
-      const next = await this.fetchPage(gardenId, page, first.pageSize);
+      const next = await this.fetchPage(gardenId, page, first.pageSize, season);
       plantings.push(...next.plantings);
     }
     return { ...first, plantings };
   }
 
-  private fetchPage(gardenId: string, page: number, pageSize: number) {
-    const params = new HttpParams().set('page', String(page)).set('pageSize', String(pageSize));
+  private fetchPage(gardenId: string, page: number, pageSize: number, season?: number) {
+    let params = new HttpParams().set('page', String(page)).set('pageSize', String(pageSize));
+    if (season) params = params.set('season', String(season));
     return firstValueFrom(
       this.http.get<PlantingListDto>(`${API}/gardens/${gardenId}/plantings`, {
         params,
@@ -334,8 +348,8 @@ export class PlantingsApiService {
     );
   }
 
-  private async listOrThrow(gardenId: string): Promise<ClientPlantingList> {
-    const list = await this.list(gardenId);
+  private async listOrThrow(gardenId: string, season?: number): Promise<ClientPlantingList> {
+    const list = await this.list(gardenId, season);
     if (!list) throw new Error('Garden not found');
     return list;
   }

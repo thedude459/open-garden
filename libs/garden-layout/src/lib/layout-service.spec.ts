@@ -29,6 +29,27 @@ describe('LayoutService beds', () => {
     expect(saved.beds.find((b) => b.name === 'Patio pots')?.geometry).toBeNull();
   });
 
+  it('plans this season or the next, and says which (ADR 0040)', async () => {
+    const mem = createLayoutMemory();
+    const year = new Date().getUTCFullYear();
+    expect(await mem.service.get(mem.ownerId, mem.gardenId)).toMatchObject({
+      seasonYear: year,
+      currentSeasonYear: year,
+    });
+    expect(await mem.service.get(mem.ownerId, mem.gardenId, year + 1)).toMatchObject({
+      seasonYear: year + 1,
+      currentSeasonYear: year,
+    });
+    for (const bad of [year - 1, year + 2]) {
+      await expect(mem.service.get(mem.ownerId, mem.gardenId, bad)).rejects.toMatchObject({
+        message: 'Plan this season or the next one',
+      });
+      await expect(
+        mem.service.put(mem.ownerId, mem.gardenId, { beds: [], areas: [], placements: [] }, bad),
+      ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    }
+  });
+
   it('omitting a bed from PUT keeps geometry (unsized beds are not recreated)', async () => {
     const mem = createLayoutMemory();
     const a = mem.addBed('East');

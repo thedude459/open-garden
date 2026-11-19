@@ -8,6 +8,7 @@ import {
   Logger,
   Param,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
@@ -25,6 +26,7 @@ import { layoutPutSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { season } from './season-query';
 
 @Controller()
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -44,15 +46,24 @@ export class GardenLayoutController {
   }
 
   @Get('gardens/:id/layout')
-  async get(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+  async get(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Query('season') seasonRaw?: string,
+  ) {
     const started = Date.now();
-    const result = await this.layouts.get(user.id, id);
+    const result = await this.layouts.get(user.id, id, season(seasonRaw));
     this.logger.log(`garden.layout.assembly_ms=${Date.now() - started}`);
     return result;
   }
 
   @Put('gardens/:id/layout')
-  put(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
+  put(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Query('season') seasonRaw?: string,
+  ) {
     const parsed = layoutPutSchema.safeParse(body);
     if (!parsed.success) {
       throw domainError(
@@ -60,7 +71,7 @@ export class GardenLayoutController {
         parsed.error.issues[0]?.message ?? 'Bed size and position are required',
       );
     }
-    return this.layouts.put(user.id, id, parsed.data);
+    return this.layouts.put(user.id, id, parsed.data, season(seasonRaw));
   }
 
   /** A walkway or other non-planting area; typed areas are under `areas/`. */

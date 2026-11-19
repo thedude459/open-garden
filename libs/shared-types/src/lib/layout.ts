@@ -97,6 +97,10 @@ export interface LayoutAreaPutDto {
 export interface GardenLayoutDto {
   gardenId: string;
   myRole: GardenRole;
+  /** The season this plan shows (ADR 0040): the current one or the next. */
+  seasonYear?: number;
+  /** The property's current season; the next one can be planned while it grows. */
+  currentSeasonYear?: number;
   beds: LayoutBedDto[];
   areas: LayoutAreaDto[];
   plantings: LayoutPlantingDto[];

@@ -3,21 +3,36 @@ import type { AppDatabase } from './db';
 import { gardenBeds, gardenPlantingHarvests, gardenPlantings, plants } from './schema';
 
 /** Plantings of the open season, plus perennials and trees carried across seasons. */
-export function visiblePlantings(gardenId: string) {
+/** The property's current season: its open one, or the calendar year before any is closed. */
+function currentSeasonSql(gardenId: string) {
+  return sql`coalesce((
+    SELECT year FROM garden_seasons
+    WHERE garden_id = ${gardenId} AND status = 'open'
+    ORDER BY year DESC
+    LIMIT 1
+  ), ${new Date().getUTCFullYear()})`;
+}
+
+/**
+ * Plantings of a season: its annuals, and every perennial and tree, which
+ * persist across seasons (principle VIII). Without a season, the current one.
+ * Before a property closes its first season, the current one also keeps
+ * annuals from earlier years, as it always has. `withNext` adds the next
+ * season's annuals, which are planned (ADR 0040).
+ */
+export function visiblePlantings(gardenId: string, seasonYear?: number, withNext = false) {
+  const current = currentSeasonSql(gardenId);
+  const year = seasonYear ?? current;
+  const neverClosed = sql`NOT EXISTS (
+    SELECT 1 FROM garden_seasons WHERE garden_id = ${gardenId} AND status = 'open'
+  )`;
   return and(
     eq(gardenPlantings.gardenId, gardenId),
     sql`(
       ${gardenPlantings.life} <> 'annual'
-      OR NOT EXISTS (
-        SELECT 1 FROM garden_seasons
-        WHERE garden_id = ${gardenPlantings.gardenId} AND status = 'open'
-      )
-      OR ${gardenPlantings.seasonYear} = (
-        SELECT year FROM garden_seasons
-        WHERE garden_id = ${gardenPlantings.gardenId} AND status = 'open'
-        ORDER BY year DESC
-        LIMIT 1
-      )
+      OR ${gardenPlantings.seasonYear} = ${year}
+      OR (${year} = ${current} AND ${neverClosed} AND ${gardenPlantings.seasonYear} < ${year})
+      ${withNext ? sql`OR ${gardenPlantings.seasonYear} = ${year} + 1` : sql``}
     )`,
   );
 }
@@ -25,9 +40,9 @@ export function visiblePlantings(gardenId: string) {
 export class PlantingRepository {
   constructor(private readonly db: AppDatabase) {}
 
-  async listByGarden(gardenId: string, page: number, pageSize: number) {
+  async listByGarden(gardenId: string, page: number, pageSize: number, seasonYear?: number) {
     const offset = (page - 1) * pageSize;
-    const where = visiblePlantings(gardenId);
+    const where = visiblePlantings(gardenId, seasonYear);
 
     const rows = await this.db
       .select({
@@ -232,7 +247,7 @@ export class PlantingRepository {
     return deleted.length > 0;
   }
 
-  async listAllForLayout(gardenId: string) {
+  async listAllForLayout(gardenId: string, seasonYear?: number) {
     return this.db
       .select({
         id: gardenPlantings.id,
@@ -263,7 +278,7 @@ export class PlantingRepository {
       })
       .from(gardenPlantings)
       .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
-      .where(visiblePlantings(gardenId))
+      .where(visiblePlantings(gardenId, seasonYear))
       .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
   }
 
@@ -376,41 +391,44 @@ export class PlantingRepository {
   }
 
   async listAllForReminders(gardenId: string) {
-    return this.db
-      .select({
-        id: gardenPlantings.id,
-        plantId: gardenPlantings.plantId,
-        commonName: plants.commonName,
-        species: plants.species,
-        cultivar: plants.cultivar,
-        plantType: plants.plantType,
-        status: plants.status,
-        plannedOn: gardenPlantings.plannedOn,
-        plantedOn: gardenPlantings.plantedOn,
-        harvestedOn: gardenPlantings.harvestedOn,
-        daysToMaturity: plants.daysToMaturity,
-        waterIntervalDays: plants.waterIntervalDays,
-        fertilizeIntervalDays: plants.fertilizeIntervalDays,
-        bedId: gardenPlantings.bedId,
-        bedName: gardenBeds.name,
-        frostTolerance: plants.frostTolerance,
-        growMaxC: plants.growMaxC,
-        life: gardenPlantings.life,
-        bedSun: gardenBeds.sun,
-        bedMulch: gardenBeds.mulch,
-        kcInitial: plants.kcInitial,
-        kcMid: plants.kcMid,
-        kcEnd: plants.kcEnd,
-        stageDaysInitial: plants.stageDaysInitial,
-        stageDaysDevelopment: plants.stageDaysDevelopment,
-        stageDaysMid: plants.stageDaysMid,
-        stageDaysLate: plants.stageDaysLate,
-      })
-      .from(gardenPlantings)
-      .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
-      .leftJoin(gardenBeds, eq(gardenPlantings.bedId, gardenBeds.id))
-      .where(visiblePlantings(gardenId))
-      .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id));
+    return (
+      this.db
+        .select({
+          id: gardenPlantings.id,
+          plantId: gardenPlantings.plantId,
+          commonName: plants.commonName,
+          species: plants.species,
+          cultivar: plants.cultivar,
+          plantType: plants.plantType,
+          status: plants.status,
+          plannedOn: gardenPlantings.plannedOn,
+          plantedOn: gardenPlantings.plantedOn,
+          harvestedOn: gardenPlantings.harvestedOn,
+          daysToMaturity: plants.daysToMaturity,
+          waterIntervalDays: plants.waterIntervalDays,
+          fertilizeIntervalDays: plants.fertilizeIntervalDays,
+          bedId: gardenPlantings.bedId,
+          bedName: gardenBeds.name,
+          frostTolerance: plants.frostTolerance,
+          growMaxC: plants.growMaxC,
+          life: gardenPlantings.life,
+          bedSun: gardenBeds.sun,
+          bedMulch: gardenBeds.mulch,
+          kcInitial: plants.kcInitial,
+          kcMid: plants.kcMid,
+          kcEnd: plants.kcEnd,
+          stageDaysInitial: plants.stageDaysInitial,
+          stageDaysDevelopment: plants.stageDaysDevelopment,
+          stageDaysMid: plants.stageDaysMid,
+          stageDaysLate: plants.stageDaysLate,
+        })
+        .from(gardenPlantings)
+        .innerJoin(plants, eq(gardenPlantings.plantId, plants.id))
+        .leftJoin(gardenBeds, eq(gardenPlantings.bedId, gardenBeds.id))
+        // The next season's planned sowings get their Sow tasks too.
+        .where(visiblePlantings(gardenId, undefined, true))
+        .orderBy(desc(gardenPlantings.createdAt), desc(gardenPlantings.id))
+    );
   }
 
   async clearLayoutForBed(gardenId: string, bedId: string) {

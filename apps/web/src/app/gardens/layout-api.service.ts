@@ -33,12 +33,17 @@ export class LayoutApiService {
     if (userId) await this.cache.delete(userId, gardenId);
   }
 
-  async get(gardenId: string): Promise<GardenLayoutDto | null> {
-    const userId = this.userId();
+  /**
+   * The plan of the current season, kept for offline use; or with `season`,
+   * the next one (ADR 0040), which needs a connection and is not kept.
+   */
+  async get(gardenId: string, season?: number | null): Promise<GardenLayoutDto | null> {
+    const userId = season ? null : this.userId();
     try {
       const layout = await firstValueFrom(
         this.http.get<GardenLayoutDto>(`${API}/gardens/${gardenId}/layout`, {
           withCredentials: true,
+          params: season ? { season: String(season) } : {},
         }),
       );
       if (userId) await this.cache.save(userId, layout);
@@ -49,6 +54,7 @@ export class LayoutApiService {
         return null;
       }
       if (userId) return this.cache.get(userId, gardenId);
+      if (season) throw err;
       return null;
     }
   }
@@ -101,17 +107,23 @@ export class LayoutApiService {
     }
   }
 
-  async put(gardenId: string, body: LayoutPutDto): Promise<GardenLayoutDto> {
+  async put(
+    gardenId: string,
+    body: LayoutPutDto,
+    season?: number | null,
+  ): Promise<GardenLayoutDto> {
     this.assertOnline();
     try {
       const layout = await firstValueFrom(
         this.http.put<GardenLayoutDto>(`${API}/gardens/${gardenId}/layout`, body, {
           withCredentials: true,
+          params: season ? { season: String(season) } : {},
         }),
       );
       const userId = this.userId();
       if (userId) {
-        await this.cache.save(userId, layout);
+        // Only the current season's plan is kept offline.
+        if (!season) await this.cache.save(userId, layout);
         await this.plantingsCache.delete(userId, gardenId);
       }
       return layout;

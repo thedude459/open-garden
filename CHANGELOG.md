@@ -33,6 +33,12 @@ Headings, in this order (leave one empty when nothing belongs there):
   drawn as an outline on the plan and has one task, to sow it; watering,
   feeding, harvest, and weather alerts start once it is planted. Plantings
   already dated in the future become planned when you upgrade.
+- **Plan next season while this one grows:** a Season picker on the plan, in
+  Bed View, and on Plantings shows this year or next year (planning). Plants
+  added to next year's plan belong to it, and its Sow tasks come up on Today;
+  beds, areas, perennials, and trees are the same in both. Closing this
+  season makes the planned one current, already laid out. Next year's plan
+  needs a connection.
 
 ### Improvements
 

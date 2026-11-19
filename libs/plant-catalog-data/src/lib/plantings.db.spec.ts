@@ -243,6 +243,38 @@ describe('PlantingRepository', () => {
     );
   });
 
+  it('lists the next season’s plan on its own, and its Sow tasks with this season’s (ADR 0040)', async () => {
+    const { garden, plant } = await setup();
+    await t.db.insert(gardenSeasons).values({ gardenId: garden.id, year: 2026, status: 'open' });
+    const add = (seasonYear: number, life = 'annual') =>
+      plantings.insert({
+        gardenId: garden.id,
+        plantId: plant.id,
+        bedId: null,
+        plantedOn: null,
+        harvestedOn: null,
+        seasonYear,
+        life,
+      });
+    const now = await add(2026);
+    const next = await add(2027);
+    const tree = await add(2026, 'tree');
+    const ids = (rows: { id: string }[]) => rows.map((r) => r.id).sort();
+    expect(ids((await plantings.listByGarden(garden.id, 1, 50)).items)).toEqual(
+      [now.id, tree.id].sort(),
+    );
+    // A tree persists across seasons, so it is on next year's plan too.
+    expect(ids((await plantings.listByGarden(garden.id, 1, 50, 2027)).items)).toEqual(
+      [next.id, tree.id].sort(),
+    );
+    expect(ids(await plantings.listAllForLayout(garden.id, 2027))).toEqual(
+      [next.id, tree.id].sort(),
+    );
+    expect(ids(await plantings.listAllForReminders(garden.id))).toEqual(
+      [now.id, next.id, tree.id].sort(),
+    );
+  });
+
   it('logs a day’s harvest, adding a second pick that day to it', async () => {
     const { garden, other, plant } = await setup();
     const p = await plantings.insert({
