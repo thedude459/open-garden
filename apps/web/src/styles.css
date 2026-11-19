@@ -1477,3 +1477,11 @@ legend {
 .weather-alert p {
   margin: var(--space-1) 0 0;
 }
+
+/* Which season the plan shows (ADR 0040): this one, or the next being planned. */
+.season-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}

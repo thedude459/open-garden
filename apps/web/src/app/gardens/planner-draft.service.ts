@@ -35,6 +35,8 @@ export class PlannerDraftService {
   private readonly history = signal<GardenLayoutDto[]>([]);
   readonly canUndo = computed(() => this.history().length > 0);
   gardenId = '';
+  /** The season shown when it is the next one (ADR 0040); null is the current season. */
+  readonly season = signal<number | null>(null);
   /** Quiet time after an edit before it is saved; edits inside it are one undo step. */
   autosaveDelayMs = 800;
   /**
@@ -69,13 +71,32 @@ export class PlannerDraftService {
     return this.saved?.areas.some((a) => a.id === areaId) ?? false;
   }
 
+  /**
+   * Shows the next season's plan, or the current one with null (ADR 0040),
+   * after saving pending edits to the plan shown now.
+   */
+  async setSeason(year: number | null): Promise<void> {
+    const d = this.draft();
+    const next = year === d?.currentSeasonYear ? null : year;
+    if (next === this.season()) return;
+    await this.flush();
+    this.season.set(next);
+    this.saved = null;
+    this.draft.set(null);
+    this.history.set([]);
+    await this.load(this.gardenId);
+  }
+
   async load(gardenId: string, opts?: { reuseDirty?: boolean }): Promise<GardenLayoutDto | null> {
     if (opts?.reuseDirty && this.gardenId === gardenId && this.draft() && this.dirty()) {
       this.loading.set(false);
       return this.draft();
     }
+    // Another property opens on its current season.
+    if (gardenId !== this.gardenId) this.season.set(null);
     this.gardenId = gardenId;
-    const cached = await this.api.peek(gardenId);
+    const season = this.season();
+    const cached = season ? null : await this.api.peek(gardenId);
     if (cached) {
       this.hydrate(cached);
       this.loading.set(false);
@@ -83,7 +104,7 @@ export class PlannerDraftService {
       this.loading.set(true);
     }
     const shown = this.draft();
-    const layout = await this.api.get(gardenId);
+    const layout = await this.api.get(gardenId, season);
     if (!layout) {
       this.draft.set(null);
       this.loading.set(false);
@@ -268,9 +289,11 @@ export class PlannerDraftService {
         createBed: (body) => this.api.createBed(this.gardenId, body),
         deleteBed: (id) => this.api.deleteBed(this.gardenId, id),
         createPlanting: (body) =>
-          this.plantingsApi.create(this.gardenId, body).then(() => undefined),
+          this.plantingsApi
+            .create(this.gardenId, { ...body, seasonYear: this.season() ?? undefined })
+            .then(() => undefined),
         deletePlanting: (id) => this.plantingsApi.remove(this.gardenId, id),
-        putLayout: (body) => this.api.put(this.gardenId, body),
+        putLayout: (body) => this.api.put(this.gardenId, body, this.season()),
       });
       this.saved = result;
       // Keep edits made while saving; otherwise show what the server stored.

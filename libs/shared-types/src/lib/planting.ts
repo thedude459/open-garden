@@ -130,6 +130,9 @@ export interface PlantingRepeatResultDto {
 export interface PlantingListDto {
   gardenId: string;
   myRole: GardenRole;
+  /** The season listed (ADR 0040): the current one or the next. */
+  seasonYear?: number;
+  currentSeasonYear?: number;
   beds: NamedBedDto[];
   plantings: PlantingDto[];
   areas?: PropertyAreaDto[];
@@ -142,6 +145,8 @@ export interface PlantingListDto {
 export interface PlantingCreateDto {
   id?: string;
   plantId: string;
+  /** The season it belongs to: the current one (default) or the next, to plan it. */
+  seasonYear?: number;
   startMethod?: StartMethod;
   indoorStartedOn?: IsoDate | null;
   plannedOn?: IsoDate | null;

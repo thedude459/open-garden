@@ -43,6 +43,7 @@ import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspecto
 import { AreaPanel, type AreaBed } from './area-panel';
 import { LayoutBedsList, LayoutWalkwaysList } from './layout-lists';
 import { PlanSaveStatus } from './plan-save-status';
+import { SeasonPicker } from './season-picker';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 import { PlantingsApiService } from './plantings-api.service';
@@ -68,6 +69,7 @@ const NO_AREA_BEDS: AreaBed[] = [];
     LayoutBedsList,
     LayoutWalkwaysList,
     PlanSaveStatus,
+    SeasonPicker,
     AreaPanel,
   ],
   template: `
@@ -80,6 +82,13 @@ const NO_AREA_BEDS: AreaBed[] = [];
             current="Garden Overview"
           />
           <h2>Garden Overview</h2>
+          @if (!loading() && draft()?.currentSeasonYear; as current) {
+            <og-season-picker
+              [current]="current"
+              [shown]="draft()!.seasonYear ?? current"
+              (picked)="pickSeason($event)"
+            />
+          }
         </div>
         @if (!loading() && draft()) {
           <div class="planner-toolbar">
@@ -585,6 +594,15 @@ export class GardenLayoutPage implements OnInit {
       this.planner.setDraft({ ...d, areaSoilTests: test ? [...others, test] : others });
     }
     this.refreshFlags();
+  }
+
+  /** Plans the next season, or goes back to this one (ADR 0040). */
+  async pickSeason(year: number) {
+    try {
+      await this.planner.setSeason(year);
+    } catch (err) {
+      this.notices.error(messageFrom(err));
+    }
   }
 
   zoomIn() {

@@ -20,6 +20,11 @@ export class YearRecordRepository {
     return row?.year ?? null;
   }
 
+  /** The current season: the open one, or the calendar year before any is closed. */
+  async currentYear(gardenId: string, now = new Date()): Promise<number> {
+    return (await this.openYear(gardenId)) ?? now.getUTCFullYear();
+  }
+
   async close(gardenId: string, now = new Date()) {
     const closedYear = (await this.openYear(gardenId)) ?? now.getUTCFullYear();
     const openYear = closedYear + 1;
@@ -88,11 +93,13 @@ export class YearRecordRepository {
     };
   }
 
+  /** Rotation hints from the season before `seasonYear` (the current one by default). */
   async layoutAdvice(
     gardenId: string,
+    seasonYear?: number,
   ): Promise<{ prior: PriorCropDto[]; pairs: CompanionPairDto[] }> {
-    const openYear = (await this.openYear(gardenId)) ?? new Date().getUTCFullYear();
-    const rows = await this.rowsForYear(gardenId, openYear - 1);
+    const year = seasonYear ?? (await this.currentYear(gardenId));
+    const rows = await this.rowsForYear(gardenId, year - 1);
     const seen = new Set<string>();
     const prior: PriorCropDto[] = [];
     for (const row of rows) {

@@ -37,6 +37,7 @@ import { PlannerDraftService } from './planner-draft.service';
 import { BedPlantPanel } from './bed-plant-panel';
 import { BedPlantingsList } from './bed-plantings-list';
 import { PlanSaveStatus } from './plan-save-status';
+import { SeasonPicker } from './season-picker';
 import { SoilTestPanel } from './soil-test-panel';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
@@ -55,6 +56,7 @@ import { localIso } from '../today/today-groups';
     BedPlantPanel,
     BedPlantingsList,
     PlanSaveStatus,
+    SeasonPicker,
     SoilTestPanel,
   ],
   template: `
@@ -68,6 +70,13 @@ import { localIso } from '../today/today-groups';
             [current]="bed()?.name ?? 'Bed'"
           />
           <h2>Bed View</h2>
+          @if (!loading() && draft()?.currentSeasonYear; as current) {
+            <og-season-picker
+              [current]="current"
+              [shown]="draft()!.seasonYear ?? current"
+              (picked)="pickSeason($event)"
+            />
+          }
         </div>
         @if (!loading() && draft() && bed()) {
           <div class="planner-toolbar">
@@ -321,6 +330,15 @@ export class GardenBedViewPage implements OnInit {
 
   onSelectPlanting(id: string | null) {
     this.selectedPlantingId.set(id);
+  }
+
+  /** Plans the next season, or goes back to this one (ADR 0040). */
+  async pickSeason(year: number) {
+    try {
+      await this.planner.setSeason(year);
+    } catch (err) {
+      this.notices.error(messageFrom(err));
+    }
   }
 
   zoomIn() {

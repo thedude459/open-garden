@@ -9,6 +9,7 @@ import {
   PlantRepository,
   SoilTestRepository,
   TrayRepository,
+  YearRecordRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
 import { domainError, PlantingService, SoilTestService } from '@open-garden/seasonal-plantings';
@@ -31,6 +32,7 @@ export function openPlantingService(db: AppDatabase) {
     new PlantingAreaRepository(db),
     new TrayRepository(db),
     { plan: (...args) => calendar.sowingPlanFor(...args) },
+    new YearRecordRepository(db),
   );
 }
 

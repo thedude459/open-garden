@@ -43,20 +43,37 @@ export class LayoutService {
     private readonly soilTests?: Pick<SoilTestRepository, 'latestByGarden'>,
   ) {}
 
-  async get(userId: string, gardenId: string): Promise<GardenLayoutDto> {
+  /**
+   * The plan of a season (ADR 0040): the current one, or the next, which is
+   * planned while this one grows. Beds and areas are the property's and the
+   * same in both; plantings are the season's annuals and every perennial.
+   */
+  async get(userId: string, gardenId: string, season?: number): Promise<GardenLayoutDto> {
     const membership = await this.memberships.get(gardenId, userId);
     if (!membership) throw LAYOUT_ERRORS.gardenNotFound();
-    return this.snapshot(gardenId, membership.role as GardenRole);
+    const seasons = await this.seasons(gardenId, season);
+    return this.snapshot(gardenId, membership.role as GardenRole, seasons);
   }
 
-  async put(userId: string, gardenId: string, dto: LayoutPutDto): Promise<GardenLayoutDto> {
+  async put(
+    userId: string,
+    gardenId: string,
+    dto: LayoutPutDto,
+    season?: number,
+  ): Promise<GardenLayoutDto> {
     const membership = await this.memberships.get(gardenId, userId);
     if (!membership) throw LAYOUT_ERRORS.gardenNotFound();
     if (membership.role === 'viewer') throw LAYOUT_ERRORS.viewerLayout();
+    const seasons = await this.seasons(gardenId, season);
 
+    // Only this season's plantings are placed, checked for spacing, or
+    // taken off the plan when missing; the other season's are left alone.
+    // ponytail: bed geometry is shared, so resizing a bed in one season does
+    // not re-check the other season's plants; checking both would need a
+    // second evaluation.
     const [bedRows, plantingRows, areaRows] = await Promise.all([
       this.beds.listByGarden(gardenId),
-      this.plantings.listAllForLayout(gardenId),
+      this.plantings.listAllForLayout(gardenId, seasons.query),
       this.areas.listByGarden(gardenId),
     ]);
     const bedIds = new Set(bedRows.map((b) => b.id));
@@ -166,7 +183,21 @@ export class LayoutService {
       }),
     );
 
-    return this.snapshot(gardenId, membership.role as GardenRole);
+    return this.snapshot(gardenId, membership.role as GardenRole, seasons);
+  }
+
+  /**
+   * The season asked for and the current one. Only the current season and
+   * the next may be planned. `query` is undefined for the current season,
+   * so a property that never closed one keeps its earlier years' annuals.
+   */
+  private async seasons(gardenId: string, season?: number) {
+    const current = this.years
+      ? await this.years.currentYear(gardenId)
+      : new Date().getUTCFullYear();
+    const year = season ?? current;
+    if (year !== current && year !== current + 1) throw LAYOUT_ERRORS.seasonOutOfRange();
+    return { year, current, query: year === current ? undefined : year };
   }
 
   async deleteArea(userId: string, gardenId: string, areaId: string): Promise<void> {
@@ -177,14 +208,18 @@ export class LayoutService {
     if (!deleted) throw LAYOUT_ERRORS.areaNotFound();
   }
 
-  private async snapshot(gardenId: string, role: GardenRole): Promise<GardenLayoutDto> {
+  private async snapshot(
+    gardenId: string,
+    role: GardenRole,
+    seasons: { year: number; current: number; query: number | undefined },
+  ): Promise<GardenLayoutDto> {
     const [bedRows, plantingRows, areaRows] = await Promise.all([
       this.beds.listByGarden(gardenId),
-      this.plantings.listAllForLayout(gardenId),
+      this.plantings.listAllForLayout(gardenId, seasons.query),
       this.areas.listByGarden(gardenId),
     ]);
     const [advice, soilTests] = await Promise.all([
-      this.years ? this.years.layoutAdvice(gardenId) : { prior: [], pairs: [] },
+      this.years ? this.years.layoutAdvice(gardenId, seasons.year) : { prior: [], pairs: [] },
       this.soilTests
         ? this.soilTests.latestByGarden(gardenId)
         : { areas: new Map<string, SoilTestDto>(), beds: new Map<string, SoilTestDto>() },
@@ -247,6 +282,8 @@ export class LayoutService {
     return {
       gardenId,
       myRole: role,
+      seasonYear: seasons.year,
+      currentSeasonYear: seasons.current,
       beds,
       areas,
       plantings,

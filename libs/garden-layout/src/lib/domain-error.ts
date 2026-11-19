@@ -15,6 +15,7 @@ export const LAYOUT_ERRORS = {
   gardenNotFound: () => domainError('NOT_FOUND', 'Garden not found'),
   bedNotFound: () => domainError('NOT_FOUND', 'Bed not found'),
   plantingNotFound: () => domainError('NOT_FOUND', 'Planting not found'),
+  seasonOutOfRange: () => domainError('VALIDATION_ERROR', 'Plan this season or the next one'),
   geometryRequired: () => domainError('VALIDATION_ERROR', 'Bed size and position are required'),
   sizeMin: () => domainError('VALIDATION_ERROR', 'Bed length and width must be at least 1 inch'),
   rotationInvalid: () =>

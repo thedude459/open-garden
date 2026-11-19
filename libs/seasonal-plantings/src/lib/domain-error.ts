@@ -28,6 +28,7 @@ export const PLANTING_ERRORS = {
     domainError('VALIDATION_ERROR', 'Indoor start date is required for transplants'),
   indoorStartForbidden: () =>
     domainError('VALIDATION_ERROR', 'Direct seed plantings cannot have an indoor start date'),
+  seasonOutOfRange: () => domainError('VALIDATION_ERROR', 'Plan this season or the next one'),
   repeatNeedsSowDate: () =>
     domainError('VALIDATION_ERROR', 'Give the planting a sow date before repeating it'),
   repeatAnnualsOnly: () => domainError('VALIDATION_ERROR', 'Only annual plantings repeat'),

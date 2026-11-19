@@ -51,16 +51,39 @@ export class PlantingService {
     private readonly areas?: PlantingAreaRepository,
     private readonly trays?: TrayRepository,
     private readonly sowing?: SowingPlanner,
+    /** The property's current season, for planning the next one (ADR 0040). */
+    private readonly seasons?: { currentYear(gardenId: string): Promise<number> },
   ) {}
 
-  async list(userId: string, gardenId: string, page = 1, pageSize = 200): Promise<PlantingListDto> {
+  /**
+   * The season asked for, which must be the current one or the next. The
+   * repository is given undefined for the current season, so a property that
+   * never closed one keeps its earlier years' annuals.
+   */
+  private async season(gardenId: string, seasonYear?: number) {
+    const current = this.seasons
+      ? await this.seasons.currentYear(gardenId)
+      : new Date().getUTCFullYear();
+    const year = seasonYear ?? current;
+    if (year !== current && year !== current + 1) throw PLANTING_ERRORS.seasonOutOfRange();
+    return { year, current, query: year === current ? undefined : year };
+  }
+
+  async list(
+    userId: string,
+    gardenId: string,
+    page = 1,
+    pageSize = 200,
+    seasonYear?: number,
+  ): Promise<PlantingListDto> {
     const membership = await this.memberships.get(gardenId, userId);
     if (!membership) throw PLANTING_ERRORS.gardenNotFound();
+    const season = await this.season(gardenId, seasonYear);
     const safePage = Math.max(1, page);
     const safeSize = Math.min(500, Math.max(1, pageSize));
     const [bedRows, result, areaRows, trayRows] = await Promise.all([
       this.beds.listByGarden(gardenId),
-      this.plantings.listByGarden(gardenId, safePage, safeSize),
+      this.plantings.listByGarden(gardenId, safePage, safeSize, season.query),
       this.areas ? this.areas.listByGarden(gardenId) : Promise.resolve([]),
       this.trays ? this.trays.listByGarden(gardenId) : Promise.resolve([]),
     ]);
@@ -68,6 +91,8 @@ export class PlantingService {
     return {
       gardenId,
       myRole: membership.role as GardenRole,
+      seasonYear: season.year,
+      currentSeasonYear: season.current,
       beds: bedRows.map(toBedDto),
       plantings: result.items.map((row) => ({
         ...toPlantingDto(row),
@@ -90,6 +115,7 @@ export class PlantingService {
     if (!dto.plantId) throw PLANTING_ERRORS.plantRequired();
     const plant = await this.plants.getById(dto.plantId);
     if (!plant) throw PLANTING_ERRORS.plantNotFound();
+    const season = await this.season(gardenId, dto.seasonYear);
     const dates = plannedOrPlanted(dto.plannedOn ?? null, dto.plantedOn ?? null, utcToday());
     const plannedOn = dates.plannedOn ?? null;
     const plantedOn = dates.plantedOn ?? null;
@@ -107,7 +133,10 @@ export class PlantingService {
       const existing = await this.plantings.getById(dto.id);
       if (existing) {
         if (existing.gardenId !== gardenId) throw PLANTING_ERRORS.idInUse();
-        return { created: false, list: await this.list(userId, gardenId) };
+        return {
+          created: false,
+          list: await this.list(userId, gardenId, 1, 200, dto.seasonYear),
+        };
       }
     }
     const bedId = dto.bedId ?? null;
@@ -143,6 +172,8 @@ export class PlantingService {
       indoorStartedOn,
       clientMutationId: dto.clientMutationId,
       life,
+      // A planting added while the next season is shown belongs to it.
+      seasonYear: season.query,
       note: dto.note ?? null,
       photo: dto.photo || null,
       plantedYear,
@@ -150,7 +181,7 @@ export class PlantingService {
       yearsToFruit: dto.yearsToFruit ?? null,
       spacingFeet: dto.spacingFeet ?? null,
     });
-    return { created: true, list: await this.list(userId, gardenId) };
+    return { created: true, list: await this.list(userId, gardenId, 1, 200, dto.seasonYear) };
   }
 
   async update(
