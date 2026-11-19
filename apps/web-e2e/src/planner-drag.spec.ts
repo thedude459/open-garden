@@ -48,6 +48,12 @@ test('planner drag: place, restore, direct-seed, miss-bed, viewer cannot drag', 
   await owner.getByRole('button', { name: 'Direct seed' }).click();
   await owner.getByLabel('Search plants').fill('Basil');
   await owner.getByRole('button', { name: 'Apply' }).click();
+  // A long name must not push Place out of the panel, where a person can't reach it.
+  const rail = (await owner.locator('.bed-rail').boundingBox())!;
+  const placeBox = (await owner
+    .getByRole('button', { name: 'Place Basil (Genovese)' })
+    .boundingBox())!;
+  expect(placeBox.x + placeBox.width).toBeLessThanOrEqual(rail.x + rail.width);
   await owner
     .getByRole('button', { name: 'Place Basil (Genovese)' })
     .dragTo(owner.locator('[data-bed-name="North"]'));
