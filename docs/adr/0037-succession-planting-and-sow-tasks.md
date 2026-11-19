@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted.
+Accepted. [ADR 0040](0040-planning-a-season-ahead.md) replaces the Sow task's
+"planned ahead" guess with a planned date, and a Sow task closes when the
+planting is marked planted.
 
 ## Context
 

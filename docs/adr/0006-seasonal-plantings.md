@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted
+Accepted. Point 3 is superseded for the calendar by
+[ADR 0040](0040-planning-a-season-ahead.md): picking a crop for the calendar
+adds a planned planting.
 
 ## Context
 
