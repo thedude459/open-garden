@@ -18,13 +18,21 @@ import { allowsPlant, PLANT_TYPES, type AreaKind } from '@open-garden/shared-typ
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
+import { SeasonPicker } from './season-picker';
 import { PlantingsApiService } from './plantings-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 @Component({
   standalone: true,
-  imports: [FormsModule, PlantPicker, RouterLink],
+  imports: [FormsModule, PlantPicker, RouterLink, SeasonPicker],
   template: `
     <h2>Planting calendar</h2>
+    @if (calendar()?.currentSeasonYear; as current) {
+      <og-season-picker
+        [current]="current"
+        [shown]="calendar()!.seasonYear ?? current"
+        (picked)="pickSeason($event)"
+      />
+    }
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -108,8 +116,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
         </div>
         @if (visible().length === 0 && cal.entries.length === 0) {
           <p class="muted">
-            Nothing planned or planted yet. Plants you put in your beds appear here; search the
-            catalog to plan a crop you have not planted.
+            Nothing planned or planted yet. Search the catalog to plan a crop: it goes on the plan,
+            ready to place in a bed, and plants you put in your beds appear here too.
           </p>
         } @else if (visible().length === 0) {
           <p class="muted">No plants match this type.</p>
@@ -184,6 +192,8 @@ export class GardenCalendarPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
   calendar = signal<CalendarDto | null>(null);
+  /** The next season, when it is the one shown (ADR 0040); null is the current one. */
+  readonly season = signal<number | null>(null);
   readonly recorded = signal<PlantingDto[]>([]);
   loading = signal(true);
   error = signal('');
@@ -264,8 +274,8 @@ export class GardenCalendarPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     const [calendar, plantings, areas] = await Promise.all([
-      this.api.get(this.gardenId),
-      this.plantingsApi.list(this.gardenId).catch(() => null),
+      this.api.get(this.gardenId, 1, 100, this.season()),
+      this.plantingsApi.list(this.gardenId, this.season()).catch(() => null),
       this.gardensApi.areas(this.gardenId).catch(() => []),
     ]);
     this.calendar.set(calendar);
@@ -286,6 +296,12 @@ export class GardenCalendarPage implements OnInit {
     this.error.set(messageFrom(err));
   }
 
+  /** Shows the next season, to plan it, or this one again. */
+  async pickSeason(year: number) {
+    this.season.set(year === this.calendar()?.currentSeasonYear ? null : year);
+    await this.load();
+  }
+
   async loadFavorites() {
     this.error.set('');
     const page = await this.favoritesApi.list();
@@ -295,7 +311,11 @@ export class GardenCalendarPage implements OnInit {
   async add(plantId: string) {
     this.error.set('');
     try {
-      const calendar = await this.api.add(this.gardenId, { plantId });
+      // Planned in the season shown, ready to place in a bed (ADR 0040).
+      const calendar = await this.api.add(this.gardenId, {
+        plantId,
+        seasonYear: this.season() ?? undefined,
+      });
       this.calendar.set(calendar);
     } catch (err) {
       this.error.set(messageFrom(err));
@@ -305,7 +325,7 @@ export class GardenCalendarPage implements OnInit {
   async remove(plantId: string) {
     this.error.set('');
     try {
-      await this.api.remove(this.gardenId, plantId);
+      await this.api.remove(this.gardenId, plantId, this.season());
       await this.load();
     } catch (err) {
       this.error.set(messageFrom(err));

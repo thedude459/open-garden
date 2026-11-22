@@ -84,8 +84,9 @@ import { starterCrops } from './starter-crops';
           </p>
         } @else {
           <p class="muted">
-            Easy crops that grow in this zone; those you can sow this week come first. They go on
-            the property's calendar, which says when to sow each one.
+            Easy crops that grow in this zone; those you can sow this week come first. They are
+            planned for this season: the calendar says when to sow each one, and Bed View offers
+            them to place in a bed.
           </p>
           <ul class="starter-list">
             @for (p of starters(); track p.id) {

@@ -184,4 +184,25 @@ describe('GardenBedViewPage', () => {
     view = await render('owner');
     expect(panel().textContent).toContain('No soil test of this bed or its area yet');
   });
+
+  it('offers crops planned for the season that are not in a bed yet (ADR 0040)', async () => {
+    const unplaced = (id: string, extra: Partial<LayoutPlantingDto> = {}) => ({
+      ...planting(id, 'direct_seed'),
+      bedId: null,
+      placement: null,
+      plantedOn: null,
+      ...extra,
+    });
+    const view = await render('owner', 60_000, {
+      plantings: [
+        unplaced('Kale'),
+        // Sown already, in a tray, or on another bed: not offered here.
+        unplaced('Dill', { plantedOn: '2026-05-01' }),
+        unplaced('Leek', { trayId: 't1' }),
+        unplaced('Okra', { bedId: 'b2' }),
+      ],
+    });
+    const list = view.el.querySelector('[aria-label="Planned, not in a bed"]')!;
+    expect([...list.querySelectorAll('button')].map((b) => b.textContent.trim())).toEqual(['Kale']);
+  });
 });

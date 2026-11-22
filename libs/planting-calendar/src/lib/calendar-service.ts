@@ -16,12 +16,12 @@ import type {
   PlantingAreaRepository,
   PlantRepository,
 } from '@open-garden/plant-catalog-data';
-import { allowsPlant, homeFor } from '@open-garden/shared-types';
+import { allowsPlant, homeFor, lifeForPlant } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
 import { overlapsThisWeek } from './this-week';
 import {
   computeWindows,
-  seasonYear,
+  seasonYear as windowYear,
   sowingPlan,
   windowsAvailable,
   type SowingPlan,
@@ -35,7 +35,19 @@ export class CalendarService {
     private readonly plants: PlantRepository,
     private readonly entries: CalendarEntryRepository,
     private readonly areas?: PlantingAreaRepository,
+    /** The property's current season, for planning the next one (ADR 0040). */
+    private readonly seasons?: { currentYear(gardenId: string): Promise<number> },
   ) {}
+
+  /** The season asked for, which must be the current one or the next. */
+  private async season(gardenId: string, seasonYear?: number) {
+    const current = this.seasons
+      ? await this.seasons.currentYear(gardenId)
+      : new Date().getUTCFullYear();
+    const year = seasonYear ?? current;
+    if (year !== current && year !== current + 1) throw CALENDAR_ERRORS.seasonOutOfRange();
+    return { year, current, query: year === current ? undefined : year };
+  }
 
   async list(
     userId: string,
@@ -43,6 +55,7 @@ export class CalendarService {
     page = 1,
     pageSize = 100,
     today = new Date(),
+    seasonYear?: number,
   ): Promise<CalendarDto> {
     const membership = await this.memberships.get(gardenId, userId);
     if (!membership) throw CALENDAR_ERRORS.gardenNotFound();
@@ -55,8 +68,10 @@ export class CalendarService {
     const firstFrost = pair(garden.firstFrostMonth, garden.firstFrostDay);
     const monthlyMeanC = garden.monthlyMeanC ?? null;
     const available = windowsAvailable({ lastFrost, firstFrost }, monthlyMeanC);
-    const year = seasonYear({ lastFrost, firstFrost }, today);
-    const result = await this.entries.listByGarden(gardenId, safePage, safeSize);
+    const season = await this.season(gardenId, seasonYear);
+    // Next season's windows fall a year after this one's.
+    const year = windowYear({ lastFrost, firstFrost }, today) + (season.year - season.current);
+    const result = await this.entries.listByGarden(gardenId, safePage, safeSize, season.query);
 
     return {
       gardenId: garden.id,
@@ -68,6 +83,8 @@ export class CalendarService {
       entries: result.items.map((row) =>
         toEntry(row, garden.hardinessZone, lastFrost, firstFrost, year, monthlyMeanC),
       ),
+      seasonYear: season.year,
+      currentSeasonYear: season.current,
       page: result.page,
       pageSize: result.pageSize,
       total: result.totalCount,
@@ -93,7 +110,7 @@ export class CalendarService {
       firstFrost: pair(garden.firstFrostMonth, garden.firstFrostDay),
     };
     const monthlyMeanC = garden.monthlyMeanC ?? null;
-    const year = seasonYear(frost, asOf);
+    const year = windowYear(frost, asOf);
     return (row) => {
       const w = computeWindows(
         frost,
@@ -131,15 +148,21 @@ export class CalendarService {
       plant.daysToMaturity,
       plant.frostTolerance === 'tender',
       startMethod,
-      seasonYear(frost, new Date(y!, m! - 1, d)),
+      windowYear(frost, new Date(y!, m! - 1, d)),
       warmClimate(plant, garden.monthlyMeanC ?? null),
     );
   }
 
+  /**
+   * Plans a crop for the season (ADR 0040): a planting with no bed and no
+   * date, which Bed View offers to place. A crop already planned or planted
+   * there is left as it is.
+   */
   async add(
     userId: string,
     gardenId: string,
     plantId: string,
+    seasonYear?: number,
   ): Promise<{ created: boolean; calendar: CalendarDto }> {
     await this.requireEditor(userId, gardenId);
     const plant = await this.plants.getById(plantId);
@@ -149,14 +172,27 @@ export class CalendarService {
       const home = homeFor(plant.plantType);
       if (!(await this.areas.hasKind(gardenId, home))) throw CALENDAR_ERRORS.areaRequired(home);
     }
-    const { created } = await this.entries.insert(gardenId, plantId);
-    const calendar = await this.list(userId, gardenId);
+    const season = await this.season(gardenId, seasonYear);
+    const { created } = await this.entries.addPlanned(
+      gardenId,
+      plantId,
+      lifeForPlant(plant.plantType),
+      season.query,
+    );
+    const calendar = await this.list(userId, gardenId, 1, 100, new Date(), seasonYear);
     return { created, calendar };
   }
 
-  async remove(userId: string, gardenId: string, plantId: string): Promise<void> {
+  /** Takes a crop's unplaced, planned plantings off the season. */
+  async remove(
+    userId: string,
+    gardenId: string,
+    plantId: string,
+    seasonYear?: number,
+  ): Promise<void> {
     await this.requireEditor(userId, gardenId);
-    await this.entries.delete(gardenId, plantId);
+    const season = await this.season(gardenId, seasonYear);
+    await this.entries.removePlanned(gardenId, plantId, season.query);
   }
 
   private async requireEditor(userId: string, gardenId: string) {

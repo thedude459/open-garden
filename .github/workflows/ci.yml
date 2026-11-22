@@ -101,6 +101,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Image scan exceptions expire and have an issue (ADR 0041)
+        run: |
+          node scripts/ci/trivyignore-check.js selfcheck
+          node scripts/ci/trivyignore-check.js check
       - name: actionlint
         run: |
           docker run --rm -v "${GITHUB_WORKSPACE}:/repo" -w /repo \
@@ -302,6 +306,8 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           scanners: vuln
+          # Time-limited exceptions with a tracking issue (ADR 0041).
+          trivyignores: .trivyignore
           exit-code: '1'
           format: table
 

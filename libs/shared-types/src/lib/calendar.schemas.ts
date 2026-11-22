@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const calendarAddSchema = z.object({
   plantId: z.uuid({ error: 'Plant is required' }),
+  seasonYear: z.number().int().min(1900).max(2500).optional(),
 });
 
 export const calendarListQuerySchema = z.object({

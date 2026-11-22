@@ -1,0 +1,12 @@
+# Vulnerabilities the image scans may skip for a short time (ADR 0041).
+#
+# Only for a fixable HIGH or CRITICAL finding in a base image when no allowed
+# base tag is clean yet (the daily Image scan issue says which are). Each entry
+# is a comment line with the tracking issue's URL, then the id and an expiry
+# at most 30 days ahead:
+#
+#   # https://github.com/thedude459/open-garden/issues/123
+#   CVE-2026-123456 exp:2026-12-20
+#
+# Once the date passes, the scan fails on it again. CI checks every entry
+# (node scripts/ci/trivyignore-check.js check).

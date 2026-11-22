@@ -116,9 +116,8 @@ test('a recorded planting is on the calendar without adding it there', async ({ 
   await owner.getByRole('link', { name: 'Calendar', exact: true }).click();
   await expect(owner.getByRole('heading', { name: 'Planting calendar' })).toBeVisible();
   const tomato = owner.locator('article').filter({ hasText: 'Tomato (Cherry)' });
-  await expect(tomato.getByText('Planted', { exact: true })).toBeVisible();
-  // It leaves the calendar with its planting, not from here.
-  await expect(tomato.getByRole('button', { name: 'Remove Tomato (Cherry)' })).toHaveCount(0);
+  // Added on Plantings without a date, it is planned, not in the ground (ADR 0040).
+  await expect(tomato.getByText('Planned', { exact: true })).toBeVisible();
 
   await addFromCatalog(owner, 'Basil (Genovese)');
   const basil = owner.locator('article').filter({ hasText: 'Basil (Genovese)' });

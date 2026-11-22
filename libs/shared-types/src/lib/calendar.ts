@@ -42,9 +42,9 @@ export interface CalendarEntryDto {
   zoneMax: number;
   zoneMismatch: boolean | null;
   windows: CalendarWindowsDto;
-  /** On the household's plan (added from the calendar's search). */
+  /** Has a planned planting this season: not in the ground yet (ADR 0040). */
   planned: boolean;
-  /** Has a planting this season; it stays on the calendar while it does. */
+  /** Has a planting in the ground this season. */
   planted: boolean;
 }
 
@@ -56,6 +56,9 @@ export interface CalendarDto {
   lastFrost: MonthDayDto | null;
   firstFrost: MonthDayDto | null;
   entries: CalendarEntryDto[];
+  /** The season shown (ADR 0040): the current one or the next. */
+  seasonYear?: number;
+  currentSeasonYear?: number;
   page: number;
   pageSize: number;
   total: number;
@@ -63,6 +66,8 @@ export interface CalendarDto {
 
 export interface CalendarAddDto {
   plantId: string;
+  /** The season to plan it in: the current one (default) or the next. */
+  seasonYear?: number;
 }
 
 /** A month averaging this or warmer seldom sees a frost night (ADR 0025). */

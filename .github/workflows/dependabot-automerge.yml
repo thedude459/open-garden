@@ -22,8 +22,21 @@ jobs:
       - name: Read update metadata
         id: meta
         uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
-      - name: Enable auto-merge (patch and minor only)
-        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor'
+      # A base image bumped to a newer digest of the same tag (Bump node from
+      # `01d566e` to `dc26ae9`): the rebuild that usually fixes what the image
+      # scan found (ADR 0041). It still waits for every required check.
+      - name: Is it a digest-only base-image bump?
+        id: digest
+        env:
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+          PREVIOUS: ${{ steps.meta.outputs.previous-version }}
+          NEW: ${{ steps.meta.outputs.new-version }}
+        run: |
+          if [[ "$ECOSYSTEM" == docker && "$PREVIOUS" =~ ^[0-9a-f]{7,64}$ && "$NEW" =~ ^[0-9a-f]{7,64}$ ]]; then
+            echo "only=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Enable auto-merge (patch, minor, and base-image digests only)
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch' || steps.meta.outputs.update-type == 'version-update:semver-minor' || steps.digest.outputs.only == 'true'
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -35,7 +48,7 @@ jobs:
           fi
           gh pr merge --auto --squash "$PR_URL"
       - name: Leave major updates for review
-        if: steps.meta.outputs.update-type != 'version-update:semver-patch' && steps.meta.outputs.update-type != 'version-update:semver-minor'
+        if: steps.meta.outputs.update-type != 'version-update:semver-patch' && steps.meta.outputs.update-type != 'version-update:semver-minor' && steps.digest.outputs.only != 'true'
         env:
           UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
           DEPS: ${{ steps.meta.outputs.dependency-names }}

@@ -6,10 +6,10 @@ import type { LayoutPlantingDto } from '@open-garden/shared-types';
   standalone: true,
   selector: 'og-planting-tray',
   template: `
-    <section class="unplaced-tray" aria-label="Waiting transplants">
-      <h3>Waiting transplants</h3>
+    <section class="unplaced-tray" [attr.aria-label]="title()">
+      <h3>{{ title() }}</h3>
       @if (!plantings().length) {
-        <p class="muted">No transplants waiting.</p>
+        <p class="muted">{{ emptyText() }}</p>
       } @else {
         @if (canEdit()) {
           <p class="muted">Drag a plant onto the bed.</p>
@@ -35,6 +35,8 @@ import type { LayoutPlantingDto } from '@open-garden/shared-types';
 })
 export class PlantingTray {
   readonly plantings = input<LayoutPlantingDto[]>([]);
+  readonly title = input('Waiting transplants');
+  readonly emptyText = input('No transplants waiting.');
   readonly canEdit = input(false);
   readonly online = input(true);
   readonly startDrag = output<{ plantingId: string; pointerId: number }>();

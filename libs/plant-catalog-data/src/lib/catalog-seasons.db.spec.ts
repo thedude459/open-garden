@@ -195,26 +195,34 @@ describe('PlantRepository', () => {
 });
 
 describe('CalendarEntryRepository and CareEventRepository', () => {
-  it('adds a plant to a property calendar once, lists, and removes it', async () => {
+  it('plans a crop once as a planting, lists it, and removes only what is unplaced (ADR 0040)', async () => {
     const owner = await insertUser(t.db);
     const garden = await new GardenRepository(t.db).createOwned(gardenInput(owner.id));
     const plant = await insertPlant(t.db, 'Calendar Plant');
     const calendar = new CalendarEntryRepository(t.db);
-    expect(await calendar.insert(garden.id, plant.id)).toEqual({ created: true });
-    expect(await calendar.insert(garden.id, plant.id)).toEqual({ created: false });
+    expect(await calendar.addPlanned(garden.id, plant.id, 'annual')).toEqual({ created: true });
+    expect(await calendar.addPlanned(garden.id, plant.id, 'annual')).toEqual({ created: false });
+    const [planned] = await new PlantingRepository(t.db).listAllForLayout(garden.id);
+    expect(planned).toMatchObject({ plantId: plant.id, bedId: null, plantedOn: null });
     expect((await calendar.listByGarden(garden.id, 1, 20)).totalCount).toBe(1);
-    await calendar.delete(garden.id, plant.id);
+    await calendar.removePlanned(garden.id, plant.id);
     expect((await calendar.listByGarden(garden.id, 1, 20)).totalCount).toBe(0);
   });
 
-  it('lists planted crops too, flagged, and keeps them after their plan entry is removed', async () => {
+  it('flags planned and planted crops, and keeps one in the ground when removed', async () => {
     const owner = await insertUser(t.db);
     const garden = await new GardenRepository(t.db).createOwned(gardenInput(owner.id));
     const planned = await insertPlant(t.db, 'Planned Plant');
     const both = await insertPlant(t.db, 'Both Plant');
     const calendar = new CalendarEntryRepository(t.db);
-    await calendar.insert(garden.id, planned.id);
-    await calendar.insert(garden.id, both.id);
+    await calendar.addPlanned(garden.id, planned.id, 'annual');
+    await new PlantingRepository(t.db).insert({
+      gardenId: garden.id,
+      plantId: both.id,
+      bedId: null,
+      plantedOn: '2026-04-01',
+      harvestedOn: null,
+    });
     await new PlantingRepository(t.db).insert({
       gardenId: garden.id,
       plantId: both.id,
@@ -232,12 +240,27 @@ describe('CalendarEntryRepository and CareEventRepository', () => {
       ['Both Plant', true, true],
       ['Planned Plant', true, false],
     ]);
-    await calendar.delete(garden.id, both.id);
+    await calendar.removePlanned(garden.id, both.id);
     expect(await flags()).toEqual([
       ['Both Plant', false, true],
       ['Planned Plant', true, false],
     ]);
     expect((await calendar.listByGarden(garden.id, 1, 1)).totalCount).toBe(2);
+  });
+
+  it('plans the next season apart from this one', async () => {
+    const owner = await insertUser(t.db);
+    const garden = await new GardenRepository(t.db).createOwned(gardenInput(owner.id));
+    const plant = await insertPlant(t.db, 'Next Plant');
+    const calendar = new CalendarEntryRepository(t.db);
+    const next = new Date().getUTCFullYear() + 1;
+    expect(await calendar.addPlanned(garden.id, plant.id, 'annual', next)).toEqual({
+      created: true,
+    });
+    expect((await calendar.listByGarden(garden.id, 1, 20)).totalCount).toBe(0);
+    expect((await calendar.listByGarden(garden.id, 1, 20, next)).totalCount).toBe(1);
+    // This season can still plan it too.
+    expect(await calendar.addPlanned(garden.id, plant.id, 'annual')).toEqual({ created: true });
   });
 
   it('records one care event per planting, kind, and day; later actions replace earlier ones', async () => {

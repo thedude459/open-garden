@@ -39,9 +39,17 @@ Headings, in this order (leave one empty when nothing belongs there):
   beds, areas, perennials, and trees are the same in both. Closing this
   season makes the planned one current, already laid out. Next year's plan
   needs a connection.
+- **Crops you pick are ready to place:** picking a crop on the welcome page,
+  the Calendar, or with Plant again adds it to the season's plan, and Bed
+  View lists it under "Planned, not in a bed" to drag in. The Calendar has
+  the Season picker too. Crops already on your calendar become planned
+  plantings when you upgrade.
 
 ### Improvements
 
+- The web image runs nginx mainline (1.31) instead of stable (1.30), which
+  carried six fixed high and critical nginx CVEs; nginx releases security
+  fixes to mainline first.
 - Release notes start with the Summary under a release titled with the
   version, and have a Documentation section for guide and install changes.
 - Bed View shows the soil test that applies to the bed: its own, otherwise
@@ -57,6 +65,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- ADR 0041: base-image vulnerabilities are found daily on images built from
+  `main`, tracked in one issue that names a clean base when there is one,
+  and may be skipped only with a tracking issue and an expiry.
 - ADR 0040 plans the next season while this one grows, and keeps planned
   and planted dates apart.
 
