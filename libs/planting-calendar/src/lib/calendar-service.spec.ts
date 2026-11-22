@@ -196,7 +196,11 @@ function createMemory(hasOrchard?: boolean, frostFree = false) {
     [`${gardenId}:${ownerId}`, { gardenId, userId: ownerId, role: 'owner' }],
     [`${gardenId}:${viewerId}`, { gardenId, userId: viewerId, role: 'viewer' }],
   ]);
-  const entries = new Map<string, { gardenId: string; plantId: string }>();
+  /** Planned plantings by garden, crop, and season (undefined: the current one). */
+  const entries = new Map<
+    string,
+    { gardenId: string; plantId: string; life: string; season: number | undefined }
+  >();
 
   const gardenRepo = {
     async getById(id: string) {
@@ -226,9 +230,9 @@ function createMemory(hasOrchard?: boolean, frostFree = false) {
   };
 
   const entryRepo = {
-    async listByGarden(gId: string, page: number, pageSize: number) {
+    async listByGarden(gId: string, page: number, pageSize: number, season?: number) {
       const items = [...entries.values()]
-        .filter((e) => e.gardenId === gId)
+        .filter((e) => e.gardenId === gId && e.season === season)
         .map((e) => {
           const plant = plants.get(e.plantId);
           if (!plant) return null;
@@ -266,14 +270,14 @@ function createMemory(hasOrchard?: boolean, frostFree = false) {
         pageSize,
       };
     },
-    async insert(gId: string, plantId: string) {
-      const key = `${gId}:${plantId}`;
+    async addPlanned(gId: string, plantId: string, life: string, season?: number) {
+      const key = `${gId}:${plantId}:${season}`;
       if (entries.has(key)) return { created: false };
-      entries.set(key, { gardenId: gId, plantId });
+      entries.set(key, { gardenId: gId, plantId, life, season });
       return { created: true };
     },
-    async delete(gId: string, plantId: string) {
-      entries.delete(`${gId}:${plantId}`);
+    async removePlanned(gId: string, plantId: string, season?: number) {
+      entries.delete(`${gId}:${plantId}:${season}`);
     },
   };
 
@@ -284,8 +288,30 @@ function createMemory(hasOrchard?: boolean, frostFree = false) {
     entryRepo as never,
     hasOrchard === undefined ? undefined : ({ hasKind: async () => hasOrchard } as never),
   );
-  return { service, ownerId, viewerId, strangerId, gardenId };
+  return { service, ownerId, viewerId, strangerId, gardenId, entries };
 }
+
+describe('CalendarService seasons (ADR 0040)', () => {
+  it('plans a crop in the next season apart from this one, and refuses other years', async () => {
+    const mem = createMemory();
+    const year = new Date().getUTCFullYear();
+    const { calendar } = await mem.service.add(mem.ownerId, mem.gardenId, tomato.id, year + 1);
+    expect(calendar).toMatchObject({ seasonYear: year + 1, currentSeasonYear: year });
+    expect(calendar.entries).toHaveLength(1);
+    expect([...mem.entries.values()]).toEqual([
+      { gardenId: mem.gardenId, plantId: tomato.id, life: 'annual', season: year + 1 },
+    ]);
+    const now = await mem.service.list(mem.ownerId, mem.gardenId);
+    expect(now.entries).toHaveLength(0);
+    await expect(
+      mem.service.add(mem.ownerId, mem.gardenId, tomato.id, year + 2),
+    ).rejects.toMatchObject({ message: 'Plan this season or the next one' });
+    await mem.service.remove(mem.ownerId, mem.gardenId, tomato.id, year + 1);
+    expect(
+      (await mem.service.list(mem.ownerId, mem.gardenId, 1, 100, new Date(), year + 1)).entries,
+    ).toEqual([]);
+  });
+});
 
 describe('CalendarService.sowingPlanFor (succession planting)', () => {
   it('plans a crop at the property for the season of its first sowing', async () => {

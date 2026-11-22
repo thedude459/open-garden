@@ -115,7 +115,7 @@ export class GardenSeasonSection implements OnInit {
   async plantAgain(plantId: string) {
     try {
       await this.calendarApi.add(this.gardenId(), { plantId });
-      this.notices.success('Added to this year’s calendar');
+      this.notices.success('Planned for this season; place it from Bed View');
     } catch {
       this.notices.error('Could not add that plant');
     }

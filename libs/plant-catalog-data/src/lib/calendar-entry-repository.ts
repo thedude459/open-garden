@@ -1,30 +1,27 @@
-import { and, asc, count, eq, exists, or } from 'drizzle-orm';
+import { and, asc, count, eq, exists, isNotNull, isNull, or } from 'drizzle-orm';
 import type { AppDatabase } from './db';
-import { visiblePlantings } from './planting-repository';
-import { gardenCalendarEntries, gardenPlantings, plants } from './schema';
+import { PlantingRepository, visiblePlantings } from './planting-repository';
+import { gardenPlantings, plants } from './schema';
 
+/**
+ * The calendar (ADR 0040): one row per crop with a planting in the season,
+ * planned or planted. Adding a crop adds a planned planting; there is no
+ * separate list. `seasonYear` undefined is the current season.
+ */
 export class CalendarEntryRepository {
   constructor(private readonly db: AppDatabase) {}
 
-  /**
-   * The calendar: crops on the household's plan, and crops planted this
-   * season (so placing a plant in a bed puts it on the calendar).
-   */
-  async listByGarden(gardenId: string, page: number, pageSize: number) {
+  async listByGarden(gardenId: string, page: number, pageSize: number, seasonYear?: number) {
     const offset = (page - 1) * pageSize;
-    const planned = this.db
-      .select({ one: gardenCalendarEntries.plantId })
-      .from(gardenCalendarEntries)
-      .where(
-        and(
-          eq(gardenCalendarEntries.gardenId, gardenId),
-          eq(gardenCalendarEntries.plantId, plants.id),
-        ),
-      );
-    const planted = this.db
-      .select({ one: gardenPlantings.plantId })
-      .from(gardenPlantings)
-      .where(and(visiblePlantings(gardenId), eq(gardenPlantings.plantId, plants.id)));
+    const ofCrop = (only?: ReturnType<typeof isNull>) =>
+      this.db
+        .select({ one: gardenPlantings.plantId })
+        .from(gardenPlantings)
+        .where(
+          and(visiblePlantings(gardenId, seasonYear), eq(gardenPlantings.plantId, plants.id), only),
+        );
+    const planned = ofCrop(isNull(gardenPlantings.plantedOn));
+    const planted = ofCrop(isNotNull(gardenPlantings.plantedOn));
     const where = or(exists(planned), exists(planted));
 
     const rows = await this.db
@@ -71,24 +68,51 @@ export class CalendarEntryRepository {
     };
   }
 
-  async insert(gardenId: string, plantId: string): Promise<{ created: boolean }> {
-    const [row] = await this.db
-      .insert(gardenCalendarEntries)
-      .values({ gardenId, plantId })
-      .onConflictDoNothing({
-        target: [gardenCalendarEntries.gardenId, gardenCalendarEntries.plantId],
-      })
-      .returning();
-    return { created: Boolean(row) };
+  /**
+   * Plans a crop for the season: a planting with no bed and no date, unless
+   * the crop already has one there. ponytail: two adds at the same moment
+   * can both insert; the second is an extra planned planting to remove.
+   */
+  async addPlanned(
+    gardenId: string,
+    plantId: string,
+    life: 'annual' | 'perennial' | 'tree',
+    seasonYear?: number,
+  ): Promise<{ created: boolean }> {
+    const [existing] = await this.db
+      .select({ id: gardenPlantings.id })
+      .from(gardenPlantings)
+      .where(and(visiblePlantings(gardenId, seasonYear), eq(gardenPlantings.plantId, plantId)))
+      .limit(1);
+    if (existing) return { created: false };
+    await new PlantingRepository(this.db).insert({
+      gardenId,
+      plantId,
+      bedId: null,
+      plantedOn: null,
+      harvestedOn: null,
+      life,
+      seasonYear,
+    });
+    return { created: true };
   }
 
-  async delete(gardenId: string, plantId: string): Promise<void> {
+  /**
+   * Takes a crop off the season's calendar: its planned plantings that are
+   * not in a bed or tray. One in the ground, or placed, stays, and so does
+   * the crop's row.
+   */
+  async removePlanned(gardenId: string, plantId: string, seasonYear?: number): Promise<void> {
     await this.db
-      .delete(gardenCalendarEntries)
+      .delete(gardenPlantings)
       .where(
         and(
-          eq(gardenCalendarEntries.gardenId, gardenId),
-          eq(gardenCalendarEntries.plantId, plantId),
+          visiblePlantings(gardenId, seasonYear),
+          eq(gardenPlantings.plantId, plantId),
+          isNull(gardenPlantings.plantedOn),
+          isNull(gardenPlantings.harvestedOn),
+          isNull(gardenPlantings.bedId),
+          isNull(gardenPlantings.trayId),
         ),
       );
   }

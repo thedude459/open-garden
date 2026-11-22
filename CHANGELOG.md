@@ -39,6 +39,11 @@ Headings, in this order (leave one empty when nothing belongs there):
   beds, areas, perennials, and trees are the same in both. Closing this
   season makes the planned one current, already laid out. Next year's plan
   needs a connection.
+- **Crops you pick are ready to place:** picking a crop on the welcome page,
+  the Calendar, or with Plant again adds it to the season's plan, and Bed
+  View lists it under "Planned, not in a bed" to drag in. The Calendar has
+  the Season picker too. Crops already on your calendar become planned
+  plantings when you upgrade.
 
 ### Improvements
 
