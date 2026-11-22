@@ -47,6 +47,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- The web image runs nginx mainline (1.31) instead of stable (1.30), which
+  carried six fixed high and critical nginx CVEs; nginx releases security
+  fixes to mainline first.
 - Release notes start with the Summary under a release titled with the
   version, and have a Documentation section for guide and install changes.
 - Bed View shows the soil test that applies to the bed: its own, otherwise
