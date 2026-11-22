@@ -1,0 +1,7 @@
+{
+  "api": { "image": "node", "tags": ["24-bookworm-slim", "24-trixie-slim"] },
+  "web": {
+    "image": "nginxinc/nginx-unprivileged",
+    "tags": ["mainline-alpine", "stable-alpine"]
+  }
+}

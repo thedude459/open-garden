@@ -86,11 +86,13 @@ updates:
         patterns:
           - '*'
 
-  # Base images (node, nginx) in Dockerfile.api / Dockerfile.web.
+  # Base images (node, nginx) in Dockerfile.api / Dockerfile.web. Daily: a
+  # rebuilt base is often the fix for a vulnerability the image scan found,
+  # and a digest-only bump merges on its own (ADR 0041).
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 5
     labels:
       - dependencies

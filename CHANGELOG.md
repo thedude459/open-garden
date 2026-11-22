@@ -65,6 +65,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- ADR 0041: base-image vulnerabilities are found daily on images built from
+  `main`, tracked in one issue that names a clean base when there is one,
+  and may be skipped only with a tracking issue and an expiry.
 - ADR 0040 plans the next season while this one grows, and keeps planned
   and planted dates apart.
 
