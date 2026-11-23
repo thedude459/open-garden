@@ -27,6 +27,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **Plan for a date from the Calendar:** a crop picked for the season with
+  no date gets a **Plan for …** button with the next day it can be sown
+  there (today while its window is open), which gives it a Sow task.
 
 ### Improvements
 
