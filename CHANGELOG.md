@@ -27,6 +27,40 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **Plan for a date from the Calendar:** a crop picked for the season with
+  no date gets a **Plan for …** button with the next day it can be sown
+  there (today while its window is open), which gives it a Sow task.
+
+### Improvements
+
+
+### Bug fixes
+
+
+### Documentation
+
+
+### Security
+
+
+### Known issues
+
+
+### Deprecated features
+
+## v0.3.0 (2026-11-22)
+
+### Summary
+
+Plan next season while this one grows, and keep what you planned apart from
+what you planted: a planting has a planned date until you mark it planted,
+and only then do watering, harvest, and weather alerts begin. Crops you pick
+on the walkthrough or the Calendar now wait in Bed View, ready to drag onto a
+bed. Database changes apply on their own when the API starts; back up first,
+as always.
+
+### New features
+
 - **Planned or planted:** a planting has a planned date and, once it is in
   the ground, a planted date. **Mark planted** (in the planting's editor and
   in Bed View), or finishing its Sow task, records the day. Until then it is
@@ -76,6 +110,14 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Known issues
 
+- Next season's plan, plantings, and calendar need a connection; only the
+  current season is kept for offline use.
+- A crop picked for the season has no planned date, so it gets no Sow task
+  until you give it one in its planting's editor.
+- Rate limits for sign-in and password changes are kept in the API process,
+  so a restart clears them.
+- Soil tests, harvest amounts, and succession series need a connection; they
+  are not queued offline.
 
 ### Deprecated features
 
