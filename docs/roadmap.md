@@ -745,7 +745,6 @@ Size is a rough guess: S is under a day, M a few days, L longer.
 |---|---|---|
 | **Pipeline:** copy crop icons from the pinned open-garden-data release in the build, instead of keeping a hand-copied set in `apps/web/src/assets/crops/` | A crop's new icon reaches the app with the catalog it belongs to; `crop-icons.ts` would read the list instead of repeating it. Needs releases to ship `icons/` first (data roadmap, before v0.3) | S |
 | **Pipeline:** generate the app icon PNGs and `favicon.ico` from `assets/mark.svg` in the web build, instead of committing exported files | The exports can drift from the SVG, as the empty `favicon.ico` showed; one source, no manual step | S |
-| **Calendar:** suggest a planned planting's date from its crop's window (a "Plan for May 1" button on the row), as ADR 0040 describes | A crop picked for the season has no date, so it gets no Sow task until someone dates it | S |
 | **Planting editor:** cap the Planted date at tomorrow, and say a later day goes in Planned for | A future planted date is taken as the plan (ADR 0040); the field could say so instead of the date moving to the other field on save | S |
 | **Pipeline:** have `npm run migrate:generate` run Prettier on the journal and snapshot it writes | drizzle-kit writes them unformatted, and `verify`'s format check failed on PR #230 for it | S |
 | **Accessibility:** move the plant to place with the arrow keys in Bed View before Enter places it | Keyboard placement today puts the plant in the middle of the visible area only | M |
