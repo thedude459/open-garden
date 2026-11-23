@@ -33,9 +33,16 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- **Plant catalog v0.2.3:** twelve more crops water by water balance
+  (kale, basil, cilantro, parsley, oregano, thyme, okra, rhubarb, chives,
+  leek, Swiss chard, and dill), and borage and calendula get sowing windows
+  where frost is rare. The API imports it when it starts.
 
 ### Bug fixes
 
+- A newer open-garden-data release mounted with `PLANT_CATALOG_FILE`
+  imports again: releases from v0.2.3 on are signed by the release workflow
+  run on `main`, which the catalog check refused.
 
 ### Documentation
 

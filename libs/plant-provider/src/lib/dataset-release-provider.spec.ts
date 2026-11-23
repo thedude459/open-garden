@@ -372,6 +372,16 @@ describe('the bundled open-garden-data release', () => {
       maxC: 35,
       minSoilC: 16,
     });
+    // v0.2.3: coefficients for herbs and kale, and borage's soil temperature.
+    expect(items.find((p) => p.varietyKey === 'dataset:basil')?.cropCoefficients).toEqual({
+      initial: 0.6,
+      mid: 1.05,
+      end: 1.0,
+      stageDays: null,
+    });
+    expect(items.find((p) => p.varietyKey === 'dataset:borage')?.sowingTemperature?.minSoilC).toBe(
+      10,
+    );
   });
 
   it('is accepted on its provenance attestation alone', async () => {

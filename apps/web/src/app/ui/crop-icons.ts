@@ -1,8 +1,8 @@
 /**
  * Crops with an icon in `assets/crops`, named by dataset crop id. The icons
- * are copied from open-garden-data's `icons/` (CC0; many from OpenFarm's
- * open-crop-icons), which keeps one per crop: copy new ones across with the
- * catalog.
+ * are copied from the open-garden-data release the catalog is pinned to
+ * (`open-garden-icons-<version>.zip`; CC0, many from OpenFarm's
+ * open-crop-icons), which has one per crop: copy them across with the catalog.
  */
 export const CROP_ICONS = new Set([
   'apple',

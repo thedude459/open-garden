@@ -3,9 +3,13 @@ import { TrustedRoot } from '@sigstore/protobuf-specs';
 import { toSignedEntity, toTrustMaterial, Verifier } from '@sigstore/verify';
 import tufSeeds from '@sigstore/tuf/seeds.json';
 
-/** Only the data repository's release workflow, run for a vX.Y.Z tag, may sign a catalog. */
-const RELEASE_WORKFLOW =
-  /^https:\/\/github\.com\/thedude459\/open-garden-data\/\.github\/workflows\/release\.yml@refs\/tags\/v\d+\.\d+\.\d+$/;
+/**
+ * Only the data repository's release workflow may sign a catalog: run on
+ * `main`, which creates the release and its tag (v0.2.3 on), or, up to
+ * v0.2.2, run for a vX.Y.Z tag.
+ */
+export const RELEASE_WORKFLOW =
+  /^https:\/\/github\.com\/thedude459\/open-garden-data\/\.github\/workflows\/release\.yml@refs\/(?:heads\/main|tags\/v\d+\.\d+\.\d+)$/;
 const GITHUB_ACTIONS_ISSUER = 'https://token.actions.githubusercontent.com';
 
 /**
