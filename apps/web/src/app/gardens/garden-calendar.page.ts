@@ -1,10 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { plantName } from '@open-garden/shared-types';
-import { formatMonthDay } from '@open-garden/web-ui';
+import { formatDay, formatMonthDay } from '@open-garden/web-ui';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
+import { overlapsThisWeek, suggestedPlannedOn } from '@open-garden/planting-calendar/this-week';
 import type {
   CalendarDto,
   CalendarEntryDto,
@@ -164,6 +164,21 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                     </button>
                   }
                 }
+                <!-- A crop picked for the season gets its Sow task once it has a date (ADR 0040). -->
+                @if (canEdit()) {
+                  @if (planFor(e); as suggestion) {
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [attr.aria-label]="
+                        'Plan ' + plantName(e) + ' for ' + formatDay(suggestion.on)
+                      "
+                      (click)="plan(suggestion.planting, suggestion.on)"
+                    >
+                      Plan for {{ formatDay(suggestion.on) }}
+                    </button>
+                  }
+                }
                 <!-- A planted crop leaves the calendar when its planting is removed. -->
                 @if (canEdit() && !e.planted) {
                   <button
@@ -235,6 +250,32 @@ export class GardenCalendarPage implements OnInit {
       this.recorded().find((planting) => planting.plantId === plantId && !planting.harvestedOn) ??
       null
     );
+  }
+
+  readonly formatDay = formatDay;
+
+  /**
+   * A crop picked for the season with no date yet, and the day to plan it
+   * for: today in an open start window, else the next one's first day.
+   */
+  planFor(entry: CalendarEntryDto): { planting: PlantingDto; on: string } | null {
+    const planting = this.recorded().find(
+      (p) => p.plantId === entry.plantId && !p.plantedOn && !p.plannedOn && !p.harvestedOn,
+    );
+    if (!planting) return null;
+    const season = this.calendar()?.seasonYear ?? new Date().getFullYear();
+    const on = suggestedPlannedOn(entry.windows, planting.startMethod, season, new Date());
+    return on ? { planting, on } : null;
+  }
+
+  async plan(planting: PlantingDto, on: string) {
+    this.error.set('');
+    try {
+      await this.plantingsApi.update(this.gardenId, planting.id, { plannedOn: on });
+      await this.load();
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
   }
 
   async record(entry: CalendarEntryDto) {
