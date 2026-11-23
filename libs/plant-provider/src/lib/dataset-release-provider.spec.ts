@@ -382,6 +382,9 @@ describe('the bundled open-garden-data release', () => {
     expect(items.find((p) => p.varietyKey === 'dataset:borage')?.sowingTemperature?.minSoilC).toBe(
       10,
     );
+    // v0.3.0: 32 more vegetables and herbs.
+    expect(items.find((p) => p.varietyKey === 'dataset:kohlrabi')?.frostTolerance).toBe('hardy');
+    expect(items.find((p) => p.varietyKey === 'dataset:rosemary')?.cropCoefficients?.mid).toBe(1);
   });
 
   it('is accepted on its provenance attestation alone', async () => {

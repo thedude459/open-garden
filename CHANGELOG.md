@@ -27,6 +27,11 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **32 more vegetables and herbs** from plant catalog v0.3.0, among them
+  kohlrabi, turnip, collards, arugula, bok choy, napa cabbage, tomatillo,
+  peanut, fava bean, shallot, lavender, rosemary, sage, and chamomile, each
+  with its icon. Most water by water balance. The API imports the catalog
+  when it starts.
 - **Plan for a date from the Calendar:** a crop picked for the season with
   no date gets a **Plan for …** button with the next day it can be sown
   there (today while its window is open), which gives it a Sow task.
