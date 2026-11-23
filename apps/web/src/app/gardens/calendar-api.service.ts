@@ -14,10 +14,20 @@ export class CalendarApiService {
   private readonly cache = inject(GardenCalendarCacheService);
   private readonly auth = inject(AuthApiService);
 
-  async get(gardenId: string, page = 1, pageSize = 100): Promise<CalendarDto | null> {
-    const userId = this.userId();
+  /**
+   * The current season's calendar, kept for offline use; or with `season`,
+   * the next one (ADR 0040), which needs a connection and is not kept.
+   */
+  async get(
+    gardenId: string,
+    page = 1,
+    pageSize = 100,
+    season?: number | null,
+  ): Promise<CalendarDto | null> {
+    const userId = season ? null : this.userId();
     try {
-      const params = new HttpParams().set('page', String(page)).set('pageSize', String(pageSize));
+      let params = new HttpParams().set('page', String(page)).set('pageSize', String(pageSize));
+      if (season) params = params.set('season', String(season));
       const calendar = await firstValueFrom(
         this.http.get<CalendarDto>(`${API}/gardens/${gardenId}/calendar`, {
           params,
@@ -32,6 +42,7 @@ export class CalendarApiService {
         return null;
       }
       if (userId) return this.cache.get(userId, gardenId);
+      if (season) throw err;
       return null;
     }
   }
@@ -44,7 +55,7 @@ export class CalendarApiService {
           withCredentials: true,
         }),
       );
-      const userId = this.userId();
+      const userId = body.seasonYear ? null : this.userId();
       if (userId) await this.cache.save(userId, calendar);
       return calendar;
     } catch (err) {
@@ -52,12 +63,14 @@ export class CalendarApiService {
     }
   }
 
-  async remove(gardenId: string, plantId: string): Promise<void> {
+  /** Takes a crop's unplaced, planned plantings off the season shown. */
+  async remove(gardenId: string, plantId: string, season?: number | null): Promise<void> {
     this.assertOnline();
     try {
       await firstValueFrom(
         this.http.delete(`${API}/gardens/${gardenId}/calendar/${plantId}`, {
           withCredentials: true,
+          params: season ? { season: String(season) } : {},
         }),
       );
     } catch (err) {

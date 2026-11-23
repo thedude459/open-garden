@@ -163,7 +163,7 @@ is a required check on `main`.
 | `secrets` | Gitleaks |
 | `workflows` | actionlint and zizmor on the GitHub Actions workflows |
 | `analyze` | CodeQL for JavaScript/TypeScript |
-| `images (api)`, `images (web)` | hadolint, image build, and Trivy image scan (fixable HIGH/CRITICAL fail); skipped for documentation-only changes |
+| `images (api)`, `images (web)` | hadolint, image build, and Trivy image scan (fixable HIGH/CRITICAL fail, except time-limited entries in `.trivyignore`, ADR 0041); skipped for documentation-only changes |
 | `e2e` | Live HTTP, then Playwright (4 workers, no retries) against a seeded API (run from the same bundle the Docker image ships) and web app; reports unit + live coverage |
 
 The `e2e` job passes without running browsers when a pull request only changes
@@ -171,7 +171,7 @@ documentation, editor or formatter config, the lockfile, development
 dependencies, or workflow pins (`scripts/ci/e2e-needed.js`). A failed run
 uploads the Playwright report and traces.
 
-Outside pull requests, [Scorecard](.github/workflows/scorecard.yml) checks supply-chain practices on every push to `main` and weekly, [Image scan](.github/workflows/image-scan.yml) scans the latest published images every week, and [Dataset compatibility](.github/workflows/dataset-compat.yml) imports the latest open-garden-data release every day, so a release this app cannot read is caught before anyone upgrades to it.
+Outside pull requests, [Scorecard](.github/workflows/scorecard.yml) checks supply-chain practices on every push to `main` and weekly, [Image scan](.github/workflows/image-scan.yml) scans the published images and the images built from `main` every day, keeps one `security` issue up to date with what it finds and which allowed base image would fix it ([ADR 0041](docs/adr/0041-base-image-vulnerabilities.md)), and [Dataset compatibility](.github/workflows/dataset-compat.yml) imports the latest open-garden-data release every day, so a release this app cannot read is caught before anyone upgrades to it.
 
 Actions are pinned by commit SHA. Dependabot opens weekly updates for npm,
 GitHub Actions, and the Docker images; patch and minor updates merge on their

@@ -171,6 +171,17 @@ import { localIso } from '../today/today-groups';
               (remove)="removeFromBed($event)"
               (markPlanted)="markPlanted($event)"
             />
+            @if (plannedPlantings().length) {
+              <!-- Crops picked for the season, ready to place (ADR 0040). -->
+              <og-planting-tray
+                title="Planned, not in a bed"
+                [plantings]="plannedPlantings()"
+                [canEdit]="canEdit()"
+                [online]="online()"
+                (startDrag)="onTrayStart($event)"
+                (offlineRequired)="onOfflineRequired()"
+              />
+            }
             <og-planting-tray
               [plantings]="trayPlantings()"
               [canEdit]="canEdit()"
@@ -292,6 +303,23 @@ export class GardenBedViewPage implements OnInit {
     return (
       this.draft()?.plantings.filter(
         (p) => p.startMethod === 'transplant' && p.placement === null,
+      ) ?? []
+    );
+  }
+
+  /**
+   * Planned direct seeds not on any bed's plan yet: crops picked for the
+   * season (ADR 0040). One dragged off this bed's plan comes back here.
+   */
+  plannedPlantings() {
+    return (
+      this.draft()?.plantings.filter(
+        (p) =>
+          p.startMethod === 'direct_seed' &&
+          p.placement === null &&
+          !p.plantedOn &&
+          !p.trayId &&
+          (p.bedId === null || p.bedId === this.bedId),
       ) ?? []
     );
   }

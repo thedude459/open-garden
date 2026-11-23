@@ -231,24 +231,6 @@ export const gardenMemberships = pgTable(
   ],
 );
 
-export const gardenCalendarEntries = pgTable(
-  'garden_calendar_entries',
-  {
-    id: uuid('id').defaultRandom().primaryKey(),
-    gardenId: uuid('garden_id')
-      .notNull()
-      .references(() => gardens.id, { onDelete: 'cascade' }),
-    plantId: uuid('plant_id')
-      .notNull()
-      .references(() => plants.id, { onDelete: 'restrict' }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [
-    uniqueIndex('garden_calendar_entries_garden_plant_uidx').on(t.gardenId, t.plantId),
-    index('garden_calendar_entries_garden_id_idx').on(t.gardenId),
-  ],
-);
-
 export const gardenAreas = pgTable(
   'garden_areas',
   {

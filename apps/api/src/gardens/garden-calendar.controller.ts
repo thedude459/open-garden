@@ -20,12 +20,14 @@ import {
   GardenRepository,
   PlantingAreaRepository,
   PlantRepository,
+  YearRecordRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
 import { calendarAddSchema, calendarListQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { season } from './season-query';
 
 @Controller('gardens/:id/calendar')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -39,6 +41,7 @@ export class GardenCalendarController {
       new PlantRepository(bundle.db),
       new CalendarEntryRepository(bundle.db),
       new PlantingAreaRepository(bundle.db),
+      new YearRecordRepository(bundle.db),
     );
   }
 
@@ -48,12 +51,20 @@ export class GardenCalendarController {
     @Param('id') id: string,
     @Query('page') pageRaw?: string,
     @Query('pageSize') pageSizeRaw?: string,
+    @Query('season') seasonRaw?: string,
   ) {
     const parsed = calendarListQuerySchema.safeParse({ page: pageRaw, pageSize: pageSizeRaw });
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Invalid list query');
     }
-    return this.calendar.list(user.id, id, parsed.data.page, parsed.data.pageSize);
+    return this.calendar.list(
+      user.id,
+      id,
+      parsed.data.page,
+      parsed.data.pageSize,
+      new Date(),
+      season(seasonRaw),
+    );
   }
 
   @Post()
@@ -67,7 +78,12 @@ export class GardenCalendarController {
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Plant is required');
     }
-    const result = await this.calendar.add(user.id, id, parsed.data.plantId);
+    const result = await this.calendar.add(
+      user.id,
+      id,
+      parsed.data.plantId,
+      parsed.data.seasonYear,
+    );
     res.status(result.created ? 201 : 200);
     return result.calendar;
   }
@@ -78,7 +94,8 @@ export class GardenCalendarController {
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
     @Param('plantId') plantId: string,
+    @Query('season') seasonRaw?: string,
   ) {
-    return this.calendar.remove(user.id, id, plantId);
+    return this.calendar.remove(user.id, id, plantId, season(seasonRaw));
   }
 }

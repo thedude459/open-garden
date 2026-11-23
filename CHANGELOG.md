@@ -27,6 +27,40 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **Plan for a date from the Calendar:** a crop picked for the season with
+  no date gets a **Plan for …** button with the next day it can be sown
+  there (today while its window is open), which gives it a Sow task.
+
+### Improvements
+
+
+### Bug fixes
+
+
+### Documentation
+
+
+### Security
+
+
+### Known issues
+
+
+### Deprecated features
+
+## v0.3.0 (2026-11-22)
+
+### Summary
+
+Plan next season while this one grows, and keep what you planned apart from
+what you planted: a planting has a planned date until you mark it planted,
+and only then do watering, harvest, and weather alerts begin. Crops you pick
+on the walkthrough or the Calendar now wait in Bed View, ready to drag onto a
+bed. Database changes apply on their own when the API starts; back up first,
+as always.
+
+### New features
+
 - **Planned or planted:** a planting has a planned date and, once it is in
   the ground, a planted date. **Mark planted** (in the planting's editor and
   in Bed View), or finishing its Sow task, records the day. Until then it is
@@ -39,9 +73,17 @@ Headings, in this order (leave one empty when nothing belongs there):
   beds, areas, perennials, and trees are the same in both. Closing this
   season makes the planned one current, already laid out. Next year's plan
   needs a connection.
+- **Crops you pick are ready to place:** picking a crop on the welcome page,
+  the Calendar, or with Plant again adds it to the season's plan, and Bed
+  View lists it under "Planned, not in a bed" to drag in. The Calendar has
+  the Season picker too. Crops already on your calendar become planned
+  plantings when you upgrade.
 
 ### Improvements
 
+- The web image runs nginx mainline (1.31) instead of stable (1.30), which
+  carried six fixed high and critical nginx CVEs; nginx releases security
+  fixes to mainline first.
 - Release notes start with the Summary under a release titled with the
   version, and have a Documentation section for guide and install changes.
 - Bed View shows the soil test that applies to the bed: its own, otherwise
@@ -57,6 +99,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- ADR 0041: base-image vulnerabilities are found daily on images built from
+  `main`, tracked in one issue that names a clean base when there is one,
+  and may be skipped only with a tracking issue and an expiry.
 - ADR 0040 plans the next season while this one grows, and keeps planned
   and planted dates apart.
 
@@ -65,6 +110,14 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Known issues
 
+- Next season's plan, plantings, and calendar need a connection; only the
+  current season is kept for offline use.
+- A crop picked for the season has no planned date, so it gets no Sow task
+  until you give it one in its planting's editor.
+- Rate limits for sign-in and password changes are kept in the API process,
+  so a restart clears them.
+- Soil tests, harvest amounts, and succession series need a connection; they
+  are not queued offline.
 
 ### Deprecated features
 

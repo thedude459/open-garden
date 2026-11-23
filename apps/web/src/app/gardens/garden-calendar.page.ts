@@ -1,10 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { plantName } from '@open-garden/shared-types';
-import { formatMonthDay } from '@open-garden/web-ui';
+import { formatDay, formatMonthDay } from '@open-garden/web-ui';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { overlapsThisWeek } from '@open-garden/planting-calendar/this-week';
+import { overlapsThisWeek, suggestedPlannedOn } from '@open-garden/planting-calendar/this-week';
 import type {
   CalendarDto,
   CalendarEntryDto,
@@ -18,13 +18,21 @@ import { allowsPlant, PLANT_TYPES, type AreaKind } from '@open-garden/shared-typ
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
+import { SeasonPicker } from './season-picker';
 import { PlantingsApiService } from './plantings-api.service';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 @Component({
   standalone: true,
-  imports: [FormsModule, PlantPicker, RouterLink],
+  imports: [FormsModule, PlantPicker, RouterLink, SeasonPicker],
   template: `
     <h2>Planting calendar</h2>
+    @if (calendar()?.currentSeasonYear; as current) {
+      <og-season-picker
+        [current]="current"
+        [shown]="calendar()!.seasonYear ?? current"
+        (picked)="pickSeason($event)"
+      />
+    }
     @if (error()) {
       <p class="error">{{ error() }}</p>
     }
@@ -108,8 +116,8 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
         </div>
         @if (visible().length === 0 && cal.entries.length === 0) {
           <p class="muted">
-            Nothing planned or planted yet. Plants you put in your beds appear here; search the
-            catalog to plan a crop you have not planted.
+            Nothing planned or planted yet. Search the catalog to plan a crop: it goes on the plan,
+            ready to place in a bed, and plants you put in your beds appear here too.
           </p>
         } @else if (visible().length === 0) {
           <p class="muted">No plants match this type.</p>
@@ -156,6 +164,21 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
                     </button>
                   }
                 }
+                <!-- A crop picked for the season gets its Sow task once it has a date (ADR 0040). -->
+                @if (canEdit()) {
+                  @if (planFor(e); as suggestion) {
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
+                      [attr.aria-label]="
+                        'Plan ' + plantName(e) + ' for ' + formatDay(suggestion.on)
+                      "
+                      (click)="plan(suggestion.planting, suggestion.on)"
+                    >
+                      Plan for {{ formatDay(suggestion.on) }}
+                    </button>
+                  }
+                }
                 <!-- A planted crop leaves the calendar when its planting is removed. -->
                 @if (canEdit() && !e.planted) {
                   <button
@@ -184,6 +207,8 @@ export class GardenCalendarPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   gardenId = '';
   calendar = signal<CalendarDto | null>(null);
+  /** The next season, when it is the one shown (ADR 0040); null is the current one. */
+  readonly season = signal<number | null>(null);
   readonly recorded = signal<PlantingDto[]>([]);
   loading = signal(true);
   error = signal('');
@@ -227,6 +252,32 @@ export class GardenCalendarPage implements OnInit {
     );
   }
 
+  readonly formatDay = formatDay;
+
+  /**
+   * A crop picked for the season with no date yet, and the day to plan it
+   * for: today in an open start window, else the next one's first day.
+   */
+  planFor(entry: CalendarEntryDto): { planting: PlantingDto; on: string } | null {
+    const planting = this.recorded().find(
+      (p) => p.plantId === entry.plantId && !p.plantedOn && !p.plannedOn && !p.harvestedOn,
+    );
+    if (!planting) return null;
+    const season = this.calendar()?.seasonYear ?? new Date().getFullYear();
+    const on = suggestedPlannedOn(entry.windows, planting.startMethod, season, new Date());
+    return on ? { planting, on } : null;
+  }
+
+  async plan(planting: PlantingDto, on: string) {
+    this.error.set('');
+    try {
+      await this.plantingsApi.update(this.gardenId, planting.id, { plannedOn: on });
+      await this.load();
+    } catch (err) {
+      this.error.set(messageFrom(err));
+    }
+  }
+
   async record(entry: CalendarEntryDto) {
     this.error.set('');
     try {
@@ -264,8 +315,8 @@ export class GardenCalendarPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     const [calendar, plantings, areas] = await Promise.all([
-      this.api.get(this.gardenId),
-      this.plantingsApi.list(this.gardenId).catch(() => null),
+      this.api.get(this.gardenId, 1, 100, this.season()),
+      this.plantingsApi.list(this.gardenId, this.season()).catch(() => null),
       this.gardensApi.areas(this.gardenId).catch(() => []),
     ]);
     this.calendar.set(calendar);
@@ -286,6 +337,12 @@ export class GardenCalendarPage implements OnInit {
     this.error.set(messageFrom(err));
   }
 
+  /** Shows the next season, to plan it, or this one again. */
+  async pickSeason(year: number) {
+    this.season.set(year === this.calendar()?.currentSeasonYear ? null : year);
+    await this.load();
+  }
+
   async loadFavorites() {
     this.error.set('');
     const page = await this.favoritesApi.list();
@@ -295,7 +352,11 @@ export class GardenCalendarPage implements OnInit {
   async add(plantId: string) {
     this.error.set('');
     try {
-      const calendar = await this.api.add(this.gardenId, { plantId });
+      // Planned in the season shown, ready to place in a bed (ADR 0040).
+      const calendar = await this.api.add(this.gardenId, {
+        plantId,
+        seasonYear: this.season() ?? undefined,
+      });
       this.calendar.set(calendar);
     } catch (err) {
       this.error.set(messageFrom(err));
@@ -305,7 +366,7 @@ export class GardenCalendarPage implements OnInit {
   async remove(plantId: string) {
     this.error.set('');
     try {
-      await this.api.remove(this.gardenId, plantId);
+      await this.api.remove(this.gardenId, plantId, this.season());
       await this.load();
     } catch (err) {
       this.error.set(messageFrom(err));

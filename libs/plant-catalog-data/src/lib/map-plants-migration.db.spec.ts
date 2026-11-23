@@ -114,10 +114,10 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     const tomato = await plant(t.db, 'dataset:tomato', 'Tomato');
     await planting(t.db, garden.id, oldBasil.id);
     // The garden already follows both on its calendar, and the user favorited both.
-    await t.db.insert(schema.gardenCalendarEntries).values([
-      { gardenId: garden.id, plantId: oldBasil.id },
-      { gardenId: garden.id, plantId: basil.id },
-    ]);
+    // Raw SQL: migration 0020 later folds the calendar into plantings.
+    await t.exec(`
+      insert into garden_calendar_entries (garden_id, plant_id) values
+        ('${garden.id}', '${oldBasil.id}'), ('${garden.id}', '${basil.id}')`);
     await t.db.insert(schema.favorites).values([
       { userId: user.id, plantId: oldBasil.id },
       { userId: user.id, plantId: basil.id },
@@ -158,10 +158,10 @@ describe('migration 0003: map plants to the dataset', { timeout: 30_000 }, () =>
     await t.exec(MIGRATION);
     await migrateRest(t);
 
+    // One basil: the calendar's two entries became one crop, which already
+    // had a planting, so migration 0020 added no planned one.
     const plantings = await t.db.select().from(schema.gardenPlantings);
     expect(plantings.map((p) => p.plantId)).toEqual([basil.id]);
-    const calendar = await t.db.select().from(schema.gardenCalendarEntries);
-    expect(calendar.map((c) => c.plantId)).toEqual([basil.id]);
     const favorites = await t.db.select().from(schema.favorites);
     expect(favorites.map((f) => f.plantId)).toEqual([basil.id]);
     const pairs = await t.db.select().from(schema.companionPairs);
