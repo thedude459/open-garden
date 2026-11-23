@@ -1,5 +1,5 @@
 {
-  "version": "0.2.2",
+  "version": "0.2.3",
   "license": "CC0-1.0",
   "units": {
     "length": "cm",
@@ -339,6 +339,11 @@
         "min": 6,
         "max": 7.5
       },
+      "cropCoefficients": {
+        "initial": 0.6,
+        "mid": 1.05,
+        "end": 1
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -366,7 +371,7 @@
           "name": "Genovese"
         }
       ],
-      "notes": "Leaves are ready to pick a few weeks after planting out. Pinch off flower buds to keep it leafy. Blackens at the first frost and sulks below about 10 °C.",
+      "notes": "Leaves are ready to pick a few weeks after planting out. Pinch off flower buds to keep it leafy. Blackens at the first frost and sulks below about 10 °C. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",
@@ -607,6 +612,7 @@
         "optimal": 18,
         "max": 29
       },
+      "minSoilTemperatureC": 10,
       "soilPh": {
         "min": 6,
         "max": 7.5
@@ -622,7 +628,7 @@
         "min": 50,
         "max": 60
       },
-      "notes": "Bees work its blue flowers all summer. Sow in place; the taproot makes it hard to move. Self-sows freely. Days to maturity are days to first bloom.",
+      "notes": "Bees work its blue flowers all summer. Sow in place; the taproot makes it hard to move. Self-sows freely. Days to maturity are days to first bloom. Soil temperature for sowing from the Ontario Ministry of Agriculture (OMAFRA) borage crop profile; a germination study at North Dakota State University found a 9 °C minimum.",
       "sources": [
         {
           "source": "wikidata",
@@ -1000,6 +1006,7 @@
         "optimal": 18,
         "max": 27
       },
+      "minSoilTemperatureC": 16,
       "soilPh": {
         "min": 6,
         "max": 7
@@ -1025,7 +1032,7 @@
         "min": 45,
         "max": 60
       },
-      "notes": "Pot marigold. Flowers best in cool weather and may stall in midsummer heat; cut back and it blooms again in fall. Days to maturity are days to first bloom.",
+      "notes": "Pot marigold. Flowers best in cool weather and may stall in midsummer heat; cut back and it blooms again in fall. Days to maturity are days to first bloom. Soil temperature for sowing from UNH Extension, \"How to grow calendula\".",
       "sources": [
         {
           "source": "wikidata",
@@ -1327,6 +1334,11 @@
         "min": 6,
         "max": 7
       },
+      "cropCoefficients": {
+        "initial": 0.7,
+        "mid": 1,
+        "end": 1
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1348,7 +1360,7 @@
         "min": 60,
         "max": 90
       },
-      "notes": "Cut leaves to a few centimetres above the soil and they regrow all season. Divide clumps every few years. The flowers are edible too.",
+      "notes": "Cut leaves to a few centimetres above the soil and they regrow all season. Divide clumps every few years. The flowers are edible too. Crop coefficients are FAO-56 Table 12's green onion values, with the small-vegetable initial value; FAO-56 does not list chives.",
       "sources": [
         {
           "source": "wikidata",
@@ -1396,6 +1408,11 @@
         "min": 6,
         "max": 7
       },
+      "cropCoefficients": {
+        "initial": 0.6,
+        "mid": 1.1,
+        "end": 1.05
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -1413,7 +1430,7 @@
           "name": "Santo"
         }
       ],
-      "notes": "Bolts quickly in heat, so sow small batches every few weeks in spring and again in fall. The seeds are coriander. Does not like being transplanted.",
+      "notes": "Bolts quickly in heat, so sow small batches every few weeks in spring and again in fall. The seeds are coriander. Does not like being transplanted. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",
@@ -1599,6 +1616,11 @@
         "min": 5.5,
         "max": 7
       },
+      "cropCoefficients": {
+        "initial": 0.7,
+        "mid": 1.05,
+        "end": 0.95
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -1616,7 +1638,7 @@
           "name": "Bouquet"
         }
       ],
-      "notes": "Sow where it will grow; it dislikes transplanting. Leaves are ready in about six weeks and seed heads later in summer. Left to flower, it self-seeds.",
+      "notes": "Sow where it will grow; it dislikes transplanting. Leaves are ready in about six weeks and seed heads later in summer. Left to flower, it self-seeds. Crop coefficients are FAO-56 Table 12's small-vegetable group values; FAO-56 does not list dill or other herbs.",
       "sources": [
         {
           "source": "wikidata",
@@ -1906,6 +1928,11 @@
         "min": 6,
         "max": 7.5
       },
+      "cropCoefficients": {
+        "initial": 0.6,
+        "mid": 0.95,
+        "end": 0.95
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -1937,7 +1964,7 @@
           }
         }
       ],
-      "notes": "Pick the outer leaves and let the centre keep growing. Light frost sweetens the leaves, and plants often crop into winter.",
+      "notes": "Pick the outer leaves and let the centre keep growing. Light frost sweetens the leaves, and plants often crop into winter. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",
@@ -1985,6 +2012,11 @@
         "min": 6,
         "max": 7.5
       },
+      "cropCoefficients": {
+        "initial": 0.7,
+        "mid": 1.05,
+        "end": 0.95
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -2011,7 +2043,7 @@
           }
         }
       ],
-      "notes": "Plant seedlings deep, or mound soil around the stems as they grow, to get long white shanks. Stands in the ground through frost for a late harvest.",
+      "notes": "Plant seedlings deep, or mound soil around the stems as they grow, to get long white shanks. Stands in the ground through frost for a late harvest. Crop coefficients are FAO-56 Table 12's small-vegetable group values; FAO-56 does not list leek.",
       "sources": [
         {
           "source": "wikidata",
@@ -2431,6 +2463,11 @@
         "min": 6,
         "max": 7
       },
+      "cropCoefficients": {
+        "initial": 0.5,
+        "mid": 0.95,
+        "end": 0.8
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -2462,7 +2499,7 @@
           }
         }
       ],
-      "notes": "A hot-weather crop. Soak seed overnight before sowing. Pick pods small and every day or two; they toughen quickly.",
+      "notes": "A hot-weather crop. Soak seed overnight before sowing. Pick pods small and every day or two; they toughen quickly. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",
@@ -2594,6 +2631,11 @@
         "min": 6,
         "max": 8
       },
+      "cropCoefficients": {
+        "initial": 0.4,
+        "mid": 0.9,
+        "end": 0.8
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -2616,7 +2658,7 @@
           "name": "Greek"
         }
       ],
-      "notes": "Flavor is strongest in lean, well-drained soil and full sun. Seed needs light to germinate, so press it onto the surface. Cut back after flowering.",
+      "notes": "Flavor is strongest in lean, well-drained soil and full sun. Seed needs light to germinate, so press it onto the surface. Cut back after flowering. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",
@@ -2664,6 +2706,11 @@
         "min": 6,
         "max": 7
       },
+      "cropCoefficients": {
+        "initial": 0.6,
+        "mid": 1,
+        "end": 0.9
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -2691,7 +2738,7 @@
           "name": "Giant of Italy"
         }
       ],
-      "notes": "Very slow to germinate; soaking seed overnight helps. Grows in part shade. It flowers and turns bitter in its second year, so most gardeners sow it fresh each year.",
+      "notes": "Very slow to germinate; soaking seed overnight helps. Grows in part shade. It flowers and turns bitter in its second year, so most gardeners sow it fresh each year. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",
@@ -3500,6 +3547,11 @@
         "min": 6,
         "max": 7
       },
+      "cropCoefficients": {
+        "initial": 0.5,
+        "mid": 1,
+        "end": 0.8
+      },
       "windows": {
         "transplant": {
           "frost": "last",
@@ -3513,7 +3565,7 @@
           "name": "Victoria"
         }
       ],
-      "notes": "Planted as crowns, with the buds just below the surface. Eat only the stalks; the leaves are poisonous. Skip harvest the first year, then pull stalks in spring and early summer. Needs a cold winter to do well.",
+      "notes": "Planted as crowns, with the buds just below the surface. Eat only the stalks; the leaves are poisonous. Skip harvest the first year, then pull stalks in spring and early summer. Needs a cold winter to do well. Crop coefficients are FAO-56 Table 12's values for perennial vegetables with winter dormancy; FAO-56 does not list rhubarb.",
       "sources": [
         {
           "source": "wikidata",
@@ -4216,6 +4268,11 @@
         "min": 6,
         "max": 7.5
       },
+      "cropCoefficients": {
+        "initial": 0.7,
+        "mid": 1.05,
+        "end": 0.95
+      },
       "windows": {
         "directSow": {
           "frost": "last",
@@ -4237,7 +4294,7 @@
           }
         }
       ],
-      "notes": "Leafy beet relative grown for its leaves and stems. Pick outer leaves and it keeps producing from spring into fall; it tolerates more heat than spinach.",
+      "notes": "Leafy beet relative grown for its leaves and stems. Pick outer leaves and it keeps producing from spring into fall; it tolerates more heat than spinach. Crop coefficients are FAO-56 Table 12's small-vegetable group values; FAO-56 does not list chard.",
       "sources": [
         {
           "source": "wikidata",
@@ -4337,6 +4394,11 @@
         "min": 6,
         "max": 8
       },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 0.95,
+        "end": 0.8
+      },
       "windows": {
         "indoorStart": {
           "frost": "last",
@@ -4353,7 +4415,7 @@
         "min": 60,
         "max": 90
       },
-      "notes": "A small woody subshrub. Needs sharp drainage and dislikes wet winters more than cold ones. Trim after flowering to keep it bushy; replace plants that turn woody after a few years.",
+      "notes": "A small woody subshrub. Needs sharp drainage and dislikes wet winters more than cold ones. Trim after flowering to keep it bushy; replace plants that turn woody after a few years. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
       "sources": [
         {
           "source": "wikidata",

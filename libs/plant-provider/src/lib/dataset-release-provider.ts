@@ -17,10 +17,10 @@ import type { PlantDataProvider, ProviderCompanion, ProviderPlant } from './plan
  * verify`); bump all three together.
  */
 export const BUNDLED_CATALOG = {
-  version: '0.2.2',
+  version: '0.2.3',
   /** Relative to the working directory: the repository root, or /app in the API image. */
-  file: 'libs/plant-provider/catalog/open-garden-catalog-0.2.2.json',
-  sha256: 'a585f9d9602357385957b5985b36257d9016be6267b936bf9b884ceca1b75adb',
+  file: 'libs/plant-provider/catalog/open-garden-catalog-0.2.3.json',
+  sha256: 'a91500afd4d55422ca11567202776fcde3c3b0c037c3f82cdd4b8fb11b83c824',
 } as const;
 
 /**
