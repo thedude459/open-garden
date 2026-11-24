@@ -10,17 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { CatalogPipelineService, PIPELINE_ERRORS } from '@open-garden/catalog-pipeline';
-import {
-  PipelineRunRepository,
-  PlantRepository,
-  PlantSourceRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { PipelineRunRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { pipelineRunListQuerySchema } from '@open-garden/shared-types';
 import { SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { AdminGuard } from './admin.guard';
-import { createPipelineSources } from './pipeline-sources';
+import { openCatalogPipeline } from './catalog-pipeline.factory';
 
 @Controller('admin/pipeline/runs')
 @UseGuards(SessionGuard, AdminGuard)
@@ -30,17 +25,7 @@ export class PipelineRunsController {
   private readonly runs: PipelineRunRepository;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    const plants = new PlantRepository(bundle.db);
-    const plantSources = new PlantSourceRepository(bundle.db);
-    this.runs = new PipelineRunRepository(bundle.db);
-    this.pipeline = new CatalogPipelineService(
-      this.runs,
-      {
-        listSnapshots: () => plants.listSnapshots(),
-        listSourceLinks: () => plantSources.listAll(),
-      },
-      createPipelineSources(),
-    );
+    ({ pipeline: this.pipeline, runs: this.runs } = openCatalogPipeline(bundle.db));
   }
 
   @Post()

@@ -68,7 +68,7 @@ export class CareReminderService {
     private readonly plantings: ReminderPlantingReader,
     private readonly events: CareEventWriter,
     /** A property's evapotranspiration and rain by day; null when it has no location or the weather cannot be read. */
-    private readonly weather?: (
+    private readonly weather: (
       gardenId: string,
       asOf: string,
     ) => Promise<Record<string, DayWater> | null>,
@@ -106,7 +106,7 @@ export class CareReminderService {
     }));
 
     // A forecast that cannot be read means fixed intervals, never a failed list.
-    const weather = this.weather ? await this.weather(gardenId, asOf).catch(() => null) : null;
+    const weather = await this.weather(gardenId, asOf).catch(() => null);
     const rain = weather
       ? Object.fromEntries(Object.entries(weather).map(([day, w]) => [day, w.rainMm]))
       : null;

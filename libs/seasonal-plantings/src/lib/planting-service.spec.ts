@@ -11,12 +11,13 @@ const tomato = {
   status: 'active',
 };
 
-const maple = {
-  id: 'plant-maple',
-  commonName: 'Red Maple',
-  species: 'Acer rubrum',
-  cultivar: null,
-  plantType: 'tree',
+/** A variety the catalog no longer lists. */
+const oldKale = {
+  id: 'plant-old-kale',
+  commonName: 'Kale',
+  species: 'Brassica oleracea',
+  cultivar: 'Retired',
+  plantType: 'vegetable',
   status: 'deprecated',
 };
 
@@ -29,6 +30,63 @@ const asparagus = {
   status: 'active',
   perennial: true,
 };
+
+type Deps = ConstructorParameters<typeof PlantingService>;
+
+/**
+ * A PlantingService over the given fakes. Every dependency it needs is
+ * filled in with an empty one, so a test sets up only what it is about.
+ */
+function buildService(parts: {
+  memberships?: object;
+  plants?: object;
+  plantings?: object;
+  beds?: object;
+  areas?: object;
+  trays?: object;
+  sowing?: Deps[6];
+  seasons?: Deps[7];
+}): PlantingService {
+  const none = async () => null;
+  const empty = async () => [];
+  const plantings = {
+    occupants: empty,
+    listHarvests: empty,
+    listHarvestsForSeason: empty,
+    harvestSeasons: empty,
+    listUnplacedTransplants: empty,
+    deleteHarvest: none,
+    assignLooseTransplants: none,
+    clearLayoutCoords: none,
+    ...parts.plantings,
+  };
+  const beds = { setSite: none, listByGarden: empty, ...parts.beds };
+  const areas = {
+    ensure: async (_g: string, kind: string) => ({ id: `${kind}-area`, name: kind, kind }),
+    getById: none,
+    getInGarden: none,
+    findByKind: none,
+    findByName: none,
+    listByGarden: empty,
+    ...parts.areas,
+  };
+  const trays = {
+    getInGarden: none,
+    listByGarden: empty,
+    open: async (_g: string, areaId: string, name: string) => ({ id: 'tray-1', areaId, name }),
+    ...parts.trays,
+  };
+  return new PlantingService(
+    (parts.memberships ?? {}) as Deps[0],
+    (parts.plants ?? {}) as Deps[1],
+    plantings as unknown as Deps[2],
+    beds as unknown as Deps[3],
+    areas as unknown as Deps[4],
+    trays as unknown as Deps[5],
+    parts.sowing ?? { plan: async () => null },
+    parts.seasons ?? { currentYear: async () => new Date().getUTCFullYear() },
+  );
+}
 
 describe('PlantingService', () => {
   it('requires indoor start date for transplants and forbids it for direct seed', async () => {
@@ -119,7 +177,7 @@ describe('PlantingService', () => {
     await expect(mem.service.list(mem.strangerId, mem.gardenId)).rejects.toMatchObject({
       message: 'Garden not found',
     });
-    const listed = await mem.service.create(mem.ownerId, mem.gardenId, { plantId: maple.id });
+    const listed = await mem.service.create(mem.ownerId, mem.gardenId, { plantId: oldKale.id });
     expect(listed.list.plantings[0]?.status).toBe('deprecated');
   });
 
@@ -269,7 +327,7 @@ function createMemory(sowing?: SowingPlanner) {
   const otherGardenId = 'garden-2';
   const plants = new Map([
     [tomato.id, tomato],
-    [maple.id, maple],
+    [oldKale.id, oldKale],
     [asparagus.id, asparagus],
   ]);
   const memberships = new Map<string, { gardenId: string; userId: string; role: GardenRole }>([
@@ -549,15 +607,13 @@ function createMemory(sowing?: SowingPlanner) {
     },
   };
 
-  const service = new PlantingService(
-    membershipRepo as never,
-    plantRepo as never,
-    plantingRepo as never,
-    bedRepo as never,
-    undefined,
-    undefined,
+  const service = buildService({
+    memberships: membershipRepo,
+    plants: plantRepo,
+    plantings: plantingRepo,
+    beds: bedRepo,
     sowing,
-  );
+  });
   return { service, ownerId, viewerId, strangerId, gardenId, otherGardenId };
 }
 
@@ -632,18 +688,17 @@ describe('PlantingService area check after a catalog update', () => {
     veg: { id: 'veg', station: null, areaId: null },
     veg2: { id: 'veg2', station: null, areaId: null },
   };
-  const service = new PlantingService(
-    { get: async () => ({ role: 'owner' }) } as never,
-    {} as never,
-    {
+  const service = buildService({
+    memberships: { get: async () => ({ role: 'owner' }) },
+    plantings: {
       getInGarden: async () => apple,
       update: async () => apple,
       clearLayoutCoords: async () => undefined,
       occupants: async () => [],
-    } as never,
-    { getInGarden: async (_g: string, id: 'veg' | 'veg2') => beds[id] ?? null } as never,
-    { getById: async () => null } as never,
-  );
+    },
+    beds: { getInGarden: async (_g: string, id: 'veg' | 'veg2') => beds[id] ?? null },
+    areas: { getById: async () => null },
+  });
 
   it('saves edits to a planting its bed would no longer accept', async () => {
     await expect(
@@ -681,18 +736,17 @@ describe('PlantingService area rules', () => {
     veg: { id: 'veg', station: null, areaId: null },
   };
   const inserted: Record<string, unknown>[] = [];
-  const service = new PlantingService(
-    { get: async () => ({ role: 'owner' }) } as never,
-    {} as never,
-    {
+  const service = buildService({
+    memberships: { get: async () => ({ role: 'owner' }) },
+    plantings: {
       getInGarden: async (_g: string, id: string) =>
         Object.values(rows).find((row) => row.id === id) ?? null,
       update: async (_g: string, id: string) =>
         Object.values(rows).find((row) => row.id === id) ?? null,
       clearLayoutCoords: async () => undefined,
       occupants: async () => [],
-    } as never,
-    {
+    },
+    beds: {
       getInGarden: async (_g: string, id: string) => beds[id] ?? null,
       findByNormalizedName: async () => null,
       getById: async () => null,
@@ -700,14 +754,14 @@ describe('PlantingService area rules', () => {
         inserted.push(input);
         return { ...input, id: 'new', createdAt: new Date(), updatedAt: new Date() };
       },
-    } as never,
-    {
+    },
+    areas: {
       getById: async (id: string) => (id === 'fruit-area' ? { kind: 'fruit' } : null),
       getInGarden: async (_g: string, id: string) =>
         id === 'fruit-area' ? { id, kind: 'fruit' } : null,
       ensure: async (_g: string, kind: string) => ({ id: `${kind}-area`, kind }),
-    } as never,
-  );
+    },
+  });
 
   it('takes cane fruit and trees in a fruit garden and keeps them out of a vegetable bed', async () => {
     await expect(service.update('u', 'g', rows.cane.id, { bedId: 'canes' })).resolves.toMatchObject(
@@ -759,19 +813,18 @@ describe('PlantingService areas: rename, delete, move a bed', () => {
     };
     const occupants: { id: string; plantType: string }[] = [{ id: 'p1', plantType: 'vegetable' }];
     const roles: Record<string, string> = { owner: 'owner', viewer: 'viewer' };
-    const service = new PlantingService(
-      { get: async (_g: string, u: string) => (roles[u] ? { role: roles[u] } : null) } as never,
-      {} as never,
-      { occupants: async () => occupants } as never,
-      {
+    const service = buildService({
+      memberships: { get: async (_g: string, u: string) => (roles[u] ? { role: roles[u] } : null) },
+      plantings: { occupants: async () => occupants },
+      beds: {
         getInGarden: async (_g: string, id: string) => (id === bed.id ? bed : null),
         findByNormalizedName: async () => null,
         rename: async () => bed,
         listByGarden: async () => [bed],
         setArea: async (_g: string, _id: string, areaId: string, station: string | null) =>
           Object.assign(bed, { areaId, station }),
-      } as never,
-      {
+      },
+      areas: {
         getInGarden: async (gardenId: string, id: string) =>
           gardenId === 'g' ? (areas.get(id) ?? null) : null,
         findByName: async (_g: string, name: string) =>
@@ -781,9 +834,9 @@ describe('PlantingService areas: rename, delete, move a bed', () => {
           return area ? Object.assign(area, { name }) : null;
         },
         delete: async (_g: string, id: string) => areas.delete(id),
-      } as never,
-      { listByGarden: async () => [{ id: 't1', areaId: 'glass', name: 'Tray' }] } as never,
-    );
+      },
+      trays: { listByGarden: async () => [{ id: 't1', areaId: 'glass', name: 'Tray' }] },
+    });
     return { service, areas, bed, occupants };
   }
 

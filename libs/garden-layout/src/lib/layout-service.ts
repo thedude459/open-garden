@@ -10,7 +10,6 @@ import {
   type PlantStatus,
   type PlantType,
   type SoilPhDto,
-  type SoilTestDto,
   type StartMethod,
 } from '@open-garden/shared-types';
 import type {
@@ -33,14 +32,18 @@ function normalizeAreaName(raw: string): { name: string; nameNormalized: string 
   return { name, nameNormalized: name.toLowerCase() };
 }
 
+/** Every dependency is required and typed as the slice this service uses. */
 export class LayoutService {
   constructor(
-    private readonly memberships: GardenMembershipRepository,
-    private readonly plantings: PlantingRepository,
-    private readonly beds: BedRepository,
-    private readonly areas: AreaRepository,
-    private readonly years?: YearRecordRepository,
-    private readonly soilTests?: Pick<SoilTestRepository, 'latestByGarden'>,
+    private readonly memberships: Pick<GardenMembershipRepository, 'get'>,
+    private readonly plantings: Pick<
+      PlantingRepository,
+      'clearLayoutCoords' | 'clearPlacement' | 'listAllForLayout' | 'setPlacement'
+    >,
+    private readonly beds: Pick<BedRepository, 'listByGarden' | 'setGeometry'>,
+    private readonly areas: Pick<AreaRepository, 'delete' | 'listByGarden' | 'upsert'>,
+    private readonly years: Pick<YearRecordRepository, 'currentYear' | 'layoutAdvice'>,
+    private readonly soilTests: Pick<SoilTestRepository, 'latestByGarden'>,
   ) {}
 
   /**
@@ -192,9 +195,7 @@ export class LayoutService {
    * so a property that never closed one keeps its earlier years' annuals.
    */
   private async seasons(gardenId: string, season?: number) {
-    const current = this.years
-      ? await this.years.currentYear(gardenId)
-      : new Date().getUTCFullYear();
+    const current = await this.years.currentYear(gardenId);
     const year = season ?? current;
     if (year !== current && year !== current + 1) throw LAYOUT_ERRORS.seasonOutOfRange();
     return { year, current, query: year === current ? undefined : year };
@@ -219,10 +220,8 @@ export class LayoutService {
       this.areas.listByGarden(gardenId),
     ]);
     const [advice, soilTests] = await Promise.all([
-      this.years ? this.years.layoutAdvice(gardenId, seasons.year) : { prior: [], pairs: [] },
-      this.soilTests
-        ? this.soilTests.latestByGarden(gardenId)
-        : { areas: new Map<string, SoilTestDto>(), beds: new Map<string, SoilTestDto>() },
+      this.years.layoutAdvice(gardenId, seasons.year),
+      this.soilTests.latestByGarden(gardenId),
     ]);
     const beds = bedRows.map((row): LayoutBedDto => ({
       id: row.id,

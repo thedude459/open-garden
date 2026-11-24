@@ -14,12 +14,8 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { climateLookupFor } from '@open-garden/garden-place';
-import { GardenService, domainError } from '@open-garden/gardens';
-import {
-  GardenMembershipRepository,
-  GardenRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { domainError, type GardenService } from '@open-garden/gardens';
+import { type AppDatabase } from '@open-garden/plant-catalog-data';
 import { todayFor, type TodaySources } from '@open-garden/reminder-delivery';
 import type { TodayDto } from '@open-garden/shared-types';
 import {
@@ -30,6 +26,7 @@ import {
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { openGardenService } from './garden-service.factory';
 import { todaySources } from './today-sources';
 
 @Controller('gardens')
@@ -41,11 +38,7 @@ export class GardensController {
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
     const climate = climateLookupFor();
-    this.gardens = new GardenService(
-      new GardenRepository(bundle.db),
-      new GardenMembershipRepository(bundle.db),
-      climate,
-    );
+    this.gardens = openGardenService(bundle.db, climate);
     this.todaySources = todaySources(bundle.db);
   }
 

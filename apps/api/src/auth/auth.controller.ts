@@ -22,8 +22,6 @@ import { domainError } from '@open-garden/gardens';
 import { notificationConfig } from '../notifications/notification-config';
 import { smtpEmailSender } from '../notifications/senders';
 import { resetEmail, resetLink } from './password-reset';
-import { DATABASE } from '../database/database.tokens';
-import type { AppDatabase } from '@open-garden/plant-catalog-data';
 import { CurrentUser, SessionGuard } from './session.guard';
 import { sessionCookieOptions } from './session-cookie';
 
@@ -43,8 +41,8 @@ export class AuthController {
   private readonly resetMail: EmailSender | null;
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.auth = new AuthService(bundle.db);
+  constructor(@Inject(AuthService) auth: AuthService) {
+    this.auth = auth;
     const config = notificationConfig();
     this.appUrl = config.appUrl;
     this.resetMail = config.smtp && config.appUrl ? smtpEmailSender(config.smtp) : null;

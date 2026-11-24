@@ -242,7 +242,10 @@ export function createLayoutMemory() {
     plantingRepo as never,
     bedRepo as never,
     areaRepo as never,
-    undefined,
+    {
+      currentYear: async () => new Date().getUTCFullYear(),
+      layoutAdvice: async () => ({ prior: [], pairs: [] }),
+    },
     { latestByGarden: async () => soilTests },
   );
 

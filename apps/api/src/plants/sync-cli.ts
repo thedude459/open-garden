@@ -1,14 +1,7 @@
 import { existsSync } from 'node:fs';
-import { CatalogPipelineService } from '@open-garden/catalog-pipeline';
-import {
-  createDb,
-  PipelineRunRepository,
-  PlantRepository,
-  PlantSourceRepository,
-  runMigrations,
-} from '@open-garden/plant-catalog-data';
+import { createDb, runMigrations } from '@open-garden/plant-catalog-data';
 import { AuthService } from '@open-garden/auth';
-import { createPipelineSources } from '../admin/pipeline-sources';
+import { openCatalogPipeline } from '../admin/catalog-pipeline.factory';
 
 if (existsSync('.env')) process.loadEnvFile();
 
@@ -34,18 +27,7 @@ async function main() {
     );
   }
 
-  const plants = new PlantRepository(db);
-
-  const plantSources = new PlantSourceRepository(db);
-  const runs = new PipelineRunRepository(db);
-  const pipeline = new CatalogPipelineService(
-    runs,
-    {
-      listSnapshots: () => plants.listSnapshots(),
-      listSourceLinks: () => plantSources.listAll(),
-    },
-    createPipelineSources(),
-  );
+  const { pipeline } = openCatalogPipeline(db);
   // Every boot: a run whose catalog matches the last one writes nothing, and
   // an upgraded image imports the release it bundles.
   await pipeline.failStaleRunning();
