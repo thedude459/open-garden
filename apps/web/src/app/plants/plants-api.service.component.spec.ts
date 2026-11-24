@@ -86,30 +86,45 @@ describe('PlantsApiService list pages', () => {
     expect((await second).items).toEqual([]);
   });
 
-  it('answers a filter from a remembered page that holds the whole catalog', async () => {
+  it('asks the server for a filtered page even with the whole catalog remembered', async () => {
     const { api, http } = setup();
     const first = api.list({ page: 1, pageSize: 2 });
     await settle();
     http.expectOne(() => true).flush({ ...page(1, ['a', 'b']), totalCount: 2 });
     await first;
 
-    const zoned = await api.list({ page: 1, pageSize: 2, zone: 5 });
-    expect(zoned.items.map((p) => p.id)).toEqual(['a', 'b']);
+    // Filtering on the client could miss what the server finds, so it asks.
+    const family = api.list({ page: 1, pageSize: 2, family: 'Cabbage family' });
+    await settle();
+    http.expectOne((r) => r.params.get('family') === 'Cabbage family').flush(page(1, ['c']));
+    expect((await family).items.map((p) => p.id)).toEqual(['c']);
+  });
+
+  it('answers the same query from its saved copy while the server refreshes it', async () => {
+    const { api, http } = setup();
+    const first = api.list({ page: 1, pageSize: 2, zone: 5 });
+    await settle();
+    http.expectOne(() => true).flush(page(1, ['a', 'b']));
+    await first;
+
+    const again = await api.list({ page: 1, pageSize: 2, zone: 5 });
+    expect(again.items.map((p) => p.id)).toEqual(['a', 'b']);
     await settle();
     http.expectOne((r) => r.params.get('zone') === '5').flush(page(1, ['a']));
   });
 
-  it('asks the server when the remembered page is only part of the catalog', async () => {
+  it('offline, filters the remembered catalog page rather than show nothing', async () => {
     const { api, http } = setup();
     const first = api.list({ page: 1, pageSize: 2 });
     await settle();
     http.expectOne(() => true).flush(page(1, ['a', 'b']));
     await first;
 
-    // Filtering two of three entries would miss a match on the page not held.
-    const family = api.list({ page: 1, pageSize: 2, family: 'Cabbage family' });
+    const zoned = api.list({ page: 1, pageSize: 2, zone: 5 });
     await settle();
-    http.expectOne((r) => r.params.get('family') === 'Cabbage family').flush(page(1, ['c']));
-    expect((await family).items.map((p) => p.id)).toEqual(['c']);
+    http
+      .expectOne((r) => r.params.get('zone') === '5')
+      .error(new ProgressEvent('error'), { status: 0 });
+    expect((await zoned).items.map((p) => p.id)).toEqual(['a', 'b']);
   });
 });

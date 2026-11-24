@@ -6,7 +6,6 @@ import type {
   PlantDetailDto,
   PlantListQueryDto,
   PlantSummaryDto,
-  PlantType,
 } from '@open-garden/shared-types';
 import { PlantCatalogCacheService } from './plant-catalog-cache.service';
 
@@ -16,76 +15,57 @@ const API = '/api';
 export class PlantsApiService {
   private readonly http = inject(HttpClient);
   private readonly cache = inject(PlantCatalogCacheService);
+  /** The last whole-catalog first page, kept to filter offline. */
   private memory: PageDto<PlantSummaryDto> | null = null;
-  private memoryMeta: { zone?: number; plantType?: PlantType } = {};
-  private lastBrowseKey: string | null = null;
+  private memoryKey: string | null = null;
 
+  /**
+   * Online, a page comes from the server, or from a saved copy of this exact
+   * query while the server refreshes it. Only offline does the app filter
+   * saved pages itself (offlineAnswer), since a filtered page can miss
+   * matches the server would find.
+   */
   async list(query: PlantListQueryDto = {}): Promise<PageDto<PlantSummaryDto>> {
     const key = this.cache.listKey(query as Record<string, string | number | undefined>);
-    const local = this.fromMemory(query);
-    if (local?.items.length) {
+    const exact = key === this.memoryKey ? this.memory : await this.cache.getList(key);
+    if (exact?.items.length) {
       void this.fetchList(query, key);
-      return local;
-    }
-    const idb = await this.fromIdb(query, key);
-    if (idb?.items.length) {
-      if (isBrowse(query)) this.remember(idb, query, key);
-      void this.fetchList(query, key);
-      return idb;
+      return exact;
     }
     return this.fetchList(query, key);
   }
 
-  private fromMemory(query: PlantListQueryDto): PageDto<PlantSummaryDto> | null {
-    if (!this.memory || !this.memoryCovers(query)) return null;
-    if (!standsIn(this.memory, this.memoryMeta, query)) return null;
-    return this.cache.filterCached(this.memory, query);
-  }
-
-  private memoryCovers(query: PlantListQueryDto): boolean {
-    // Sowing windows are worked out by the server; a cached page cannot answer.
-    if (query.sowNowFor || !isFirstPage(query)) return false;
-    if (this.memoryMeta.plantType && this.memoryMeta.plantType !== query.plantType) return false;
-    if (this.memoryMeta.zone !== undefined && this.memoryMeta.zone !== query.zone) return false;
-    return true;
-  }
-
-  private remember(page: PageDto<PlantSummaryDto>, query: PlantListQueryDto, key: string) {
+  private remember(page: PageDto<PlantSummaryDto>, key: string) {
     this.memory = page;
-    this.memoryMeta = { zone: query.zone, plantType: query.plantType };
-    this.lastBrowseKey = key;
+    this.memoryKey = key;
   }
 
-  private async fromIdb(
+  /**
+   * The best saved answer when the server cannot be reached: this exact
+   * query, else the first catalog page filtered here. It may miss matches
+   * past that page; offline, some answer beats none.
+   */
+  private async offlineAnswer(
     query: PlantListQueryDto,
     key: string,
   ): Promise<PageDto<PlantSummaryDto> | null> {
     const exact = await this.cache.getList(key);
     if (exact?.items.length) return exact;
+    // Sowing windows are worked out by the server; a later page would repeat the first.
     if (query.sowNowFor || !isFirstPage(query)) return null;
-    const own = { zone: query.zone, plantType: query.plantType };
-    const browseKeys: [string | null, BrowseMeta][] = [
-      [this.lastBrowseKey, this.memoryMeta],
-      [this.browseKey(query, 100), own],
-      [this.browseKey(query, 20), own],
-    ];
-    for (const [browseKey, meta] of browseKeys) {
+    for (const browseKey of [this.memoryKey, this.browseKey(100), this.browseKey(20)]) {
       if (!browseKey) continue;
-      const browse = await this.cache.getList(browseKey);
-      if (!browse || !standsIn(browse, meta, query)) continue;
+      const browse =
+        browseKey === this.memoryKey ? this.memory : await this.cache.getList(browseKey);
+      if (!browse) continue;
       const filtered = this.cache.filterCached(browse, query);
       if (filtered.items.length) return filtered;
     }
     return null;
   }
 
-  private browseKey(query: PlantListQueryDto, pageSize: number): string {
-    return this.cache.listKey({
-      page: 1,
-      pageSize,
-      zone: query.zone,
-      plantType: query.plantType,
-    });
+  private browseKey(pageSize: number): string {
+    return this.cache.listKey({ page: 1, pageSize });
   }
 
   private async fetchList(
@@ -110,15 +90,17 @@ export class PlantsApiService {
         }),
       );
       void this.cache.saveList(key, page);
-      if (isBrowse(query)) this.remember(page, query, key);
+      if (isWholeCatalog(query)) this.remember(page, key);
       return page;
     } catch {
-      const cached = await this.fromIdb(query, key);
-      if (cached) return cached;
-      if (this.memory && !query.sowNowFor && isFirstPage(query)) {
-        return this.cache.filterCached(this.memory, query);
-      }
-      return { items: [], page: 1, pageSize: query.pageSize ?? 20, totalCount: 0 };
+      return (
+        (await this.offlineAnswer(query, key)) ?? {
+          items: [],
+          page: 1,
+          pageSize: query.pageSize ?? 20,
+          totalCount: 0,
+        }
+      );
     }
   }
 
@@ -146,29 +128,21 @@ export class PlantsApiService {
   }
 }
 
-/** A page worth keeping in memory to filter offline: no search or narrowing filter. */
-/**
- * A cached browse page answers a narrower query only when it holds the whole
- * catalog; otherwise filtering it would drop matches past its first page.
- */
-type BrowseMeta = { zone?: number; plantType?: PlantType };
-
-function standsIn(
-  page: PageDto<PlantSummaryDto>,
-  meta: BrowseMeta,
-  query: PlantListQueryDto,
-): boolean {
-  if (page.items.length >= page.totalCount) return true;
-  return isBrowse(query) && meta.zone === query.zone && meta.plantType === query.plantType;
-}
-
-function isBrowse(query: PlantListQueryDto): boolean {
-  // An area query is a filtered page; it never stands in for the whole browse.
-  return !query.q && !query.family && !query.area && !query.sowNowFor && isFirstPage(query);
+/** The catalog's first page with nothing narrowing it: the page to filter offline. */
+function isWholeCatalog(query: PlantListQueryDto): boolean {
+  return (
+    !query.q &&
+    !query.family &&
+    !query.area &&
+    !query.plantType &&
+    query.zone === undefined &&
+    !query.sowNowFor &&
+    isFirstPage(query)
+  );
 }
 
 /**
- * Cached pages are first pages, filtered here; they cannot stand in for a
+ * Saved pages are first pages, filtered here; they cannot stand in for a
  * later page, which would repeat the first one's entries.
  */
 function isFirstPage(query: PlantListQueryDto): boolean {
