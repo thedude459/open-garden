@@ -80,7 +80,7 @@ describe.skipIf(!liveEnabled)('property, season, and session http', () => {
       (await viewer.post(`/api/gardens/${id}/trays`, { data: { name: 'Viewer tray' } })).status(),
     ).toBe(403);
     expect(
-      (await viewer.post(`/api/gardens/${id}/areas`, { data: { kind: 'orchard' } })).status(),
+      (await viewer.post(`/api/gardens/${id}/areas`, { data: { kind: 'fruit' } })).status(),
     ).toBe(403);
     expect((await stranger.get(`/api/gardens/${id}/areas`)).status()).toBe(404);
     expect((await stranger.get(`/api/gardens/${id}/trays`)).status()).toBe(404);

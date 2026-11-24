@@ -1,4 +1,9 @@
-export type PlantType = 'vegetable' | 'herb' | 'flower' | 'fruit' | 'cane' | 'shrub' | 'tree';
+/**
+ * Habit first: `cane`, `shrub`, `vine` (a woody perennial vine such as grape),
+ * and `tree` are that whatever their use; an herb of any habit is an herb.
+ */
+export type PlantType =
+  'vegetable' | 'herb' | 'flower' | 'fruit' | 'cane' | 'shrub' | 'vine' | 'tree';
 
 export type PlantStatus = 'active' | 'deprecated';
 
@@ -202,6 +207,7 @@ export const PLANT_TYPES: readonly PlantType[] = [
   'fruit',
   'cane',
   'shrub',
+  'vine',
   'tree',
 ] as const;
 

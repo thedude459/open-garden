@@ -41,6 +41,8 @@ export interface ProviderPlant {
   cropId?: string | null;
   /** How much frost the crop survives, for weather alerts. */
   frostTolerance?: FrostTolerance | null;
+  /** Lives for years (asparagus, rhubarb), so its planting outlives a season. */
+  perennial?: boolean | null;
 }
 
 /** A companion pair between two crops, by dataset crop id. */

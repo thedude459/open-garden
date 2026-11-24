@@ -307,6 +307,7 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
     family,
     cropId: crop.id,
     frostTolerance: crop.frostTolerance ?? null,
+    perennial: crop.lifeCycle === 'perennial',
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),
@@ -327,10 +328,14 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
   ];
 }
 
-/** Habit first, except that an herb of any habit (thyme is a subshrub) is an herb. */
+/**
+ * Habit first, except that an herb of any habit (thyme is a subshrub) is an
+ * herb. A perennial vine (grape) is woody; an annual one (squash) is not.
+ */
 function plantType(crop: Crop): PlantType {
   if (crop.use === 'herb') return 'herb';
   if (crop.habit === 'tree' || crop.habit === 'shrub' || crop.habit === 'cane') return crop.habit;
+  if (crop.habit === 'vine' && crop.lifeCycle === 'perennial') return 'vine';
   return crop.use === 'nut' ? 'fruit' : crop.use;
 }
 

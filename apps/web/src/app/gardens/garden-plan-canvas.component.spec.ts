@@ -197,7 +197,7 @@ describe('GardenPlanCanvas area outlines', () => {
     ]);
     fixture.componentRef.setInput('plantingAreas', [
       { id: 'veg', name: 'Vegetable garden', kind: 'vegetable' },
-      { id: 'orchard', name: 'Orchard', kind: 'orchard' },
+      { id: 'orchard', name: 'Orchard', kind: 'fruit' },
     ]);
     fixture.autoDetectChanges();
     await fixture.whenStable();

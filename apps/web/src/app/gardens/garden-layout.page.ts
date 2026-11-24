@@ -122,12 +122,8 @@ const NO_AREA_BEDS: AreaBed[] = [];
                     <button type="button" aria-label="Add tree" (click)="addStation('tree')">
                       Tree
                     </button>
-                    <button
-                      type="button"
-                      aria-label="Add bramble patch"
-                      (click)="addStation('berry')"
-                    >
-                      Bramble patch
+                    <button type="button" aria-label="Add fruit row" (click)="addStation('berry')">
+                      Fruit row
                     </button>
                     <button type="button" aria-label="Add tray" (click)="startAdding('tray')">
                       Tray
@@ -704,12 +700,15 @@ export class GardenLayoutPage implements OnInit {
     }
   }
 
-  /** A tree bed (8 × 8 ft), or a row of canes in a bramble patch (10 × 3 ft). */
+  /**
+   * In a fruit garden: a tree bed (8 × 8 ft), or a row of canes, bushes, or
+   * vines (10 × 3 ft).
+   */
   addStation(station: 'tree' | 'berry') {
     this.addMenuOpen.set(false);
     const tree = station === 'tree';
     this.createBed({
-      name: tree ? 'Tree' : 'Canes',
+      name: tree ? 'Tree' : 'Fruit row',
       lengthInches: tree ? 96 : 120,
       widthInches: tree ? 96 : 36,
       site: 'in_ground',

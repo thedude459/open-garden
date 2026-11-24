@@ -13,7 +13,7 @@ test('the plan outlines each area, and a viewer reads each area’s beds and pla
     await api.post('/api/gardens', { data: { name: 'Two areas', place: fixturePlace } })
   ).json()) as { id: string };
   const orchard = (await (
-    await api.post(`/api/gardens/${garden.id}/areas`, { data: { kind: 'orchard' } })
+    await api.post(`/api/gardens/${garden.id}/areas`, { data: { kind: 'fruit' } })
   ).json()) as { id: string };
   const north = (await (
     await api.post(`/api/gardens/${garden.id}/beds`, {
@@ -70,13 +70,13 @@ test('the plan outlines each area, and a viewer reads each area’s beds and pla
   await viewer.goto(`/gardens/${garden.id}`);
   await expect(viewer.getByRole('heading', { name: 'Garden Overview' })).toBeVisible();
   await expect(viewer.locator('[data-outline-of="Vegetable garden"]')).toHaveCount(1);
-  await expect(viewer.locator('[data-outline-of="Orchard"]')).toHaveCount(1);
+  await expect(viewer.locator('[data-outline-of="Fruit garden"]')).toHaveCount(1);
 
   const veg = viewer.getByRole('region', { name: 'Area Vegetable garden' });
   await expect(veg.getByText('1 bed')).toBeVisible();
   await expect(veg.getByText('North: Tomato')).toBeVisible();
   await expect(
-    viewer.getByRole('region', { name: 'Area Orchard' }).getByText('Apple: nothing planted'),
+    viewer.getByRole('region', { name: 'Area Fruit garden' }).getByText('Apple: nothing planted'),
   ).toBeVisible();
   await expect(veg.getByRole('button')).toHaveCount(0);
   await expect(veg.getByRole('textbox')).toHaveCount(0);

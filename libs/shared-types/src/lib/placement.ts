@@ -1,9 +1,12 @@
 import type { PlantType } from './plant';
 
-export const AREA_KINDS = ['vegetable', 'orchard', 'bramble', 'greenhouse'] as const;
+export const AREA_KINDS = ['vegetable', 'fruit', 'greenhouse'] as const;
 export type AreaKind = (typeof AREA_KINDS)[number];
 export type BedSite = 'raised' | 'in_ground';
-/** Which area a new bed goes in: `tree` an orchard, `berry` a bramble patch. */
+/**
+ * A bed's shape in a fruit garden: `tree` holds one tree (with underplanting),
+ * `berry` is a row of canes, bushes, or vines. Vegetable beds have none.
+ */
 export type BedStation = 'tree' | 'berry';
 
 export const MULCHES = [
@@ -35,31 +38,32 @@ const HERBACEOUS: readonly PlantType[] = ['vegetable', 'herb', 'flower', 'fruit'
 
 /**
  * What each area type takes. Plant types already put habit first (an herb of
- * any habit is an herb; a tree, shrub, or cane is that whatever its use), so
- * the rule is a list. A new area type is one entry here.
+ * any habit is an herb; a tree, shrub, cane, or woody vine is that whatever
+ * its use), so the rule is a list. A new area type is one entry here.
  */
 export const AREA_TYPES: Record<AreaKind, { name: string; accepts: readonly PlantType[] }> = {
+  // Herbaceous plants, perennials such as asparagus and strawberries included.
   vegetable: { name: 'a vegetable garden', accepts: HERBACEOUS },
-  // One tree per bed, with herbaceous underplanting.
-  orchard: { name: 'an orchard', accepts: ['tree', ...HERBACEOUS] },
-  // Cane fruit, and fruit bushes until they have an area of their own.
-  bramble: { name: 'a bramble patch', accepts: ['cane', 'shrub'] },
+  // Woody fruit (one tree per tree bed; rows of canes, bushes, and vines),
+  // with herbaceous underplanting.
+  fruit: { name: 'a fruit garden', accepts: ['tree', 'cane', 'shrub', 'vine', ...HERBACEOUS] },
   // Seedlings in trays.
   greenhouse: { name: 'a greenhouse', accepts: HERBACEOUS },
 };
 
+const WOODY: readonly string[] = ['tree', 'cane', 'shrub', 'vine'];
+
 /** The area a bed belongs to, from how it was created. */
 export function areaKindFor(station: BedStation | null | undefined): AreaKind {
-  if (station === 'tree') return 'orchard';
-  if (station === 'berry') return 'bramble';
-  return 'vegetable';
+  return station ? 'fruit' : 'vegetable';
 }
 
-/** A bed's station in an area of this kind; the inverse of `areaKindFor`. */
-export function stationFor(kind: AreaKind): BedStation | null {
-  if (kind === 'orchard') return 'tree';
-  if (kind === 'bramble') return 'berry';
-  return null;
+/**
+ * A bed's station in an area of this kind: a fruit garden keeps the bed's own
+ * (a tree bed when it has none), anything else has none.
+ */
+export function stationFor(kind: AreaKind, current?: BedStation | null): BedStation | null {
+  return kind === 'fruit' ? (current ?? 'tree') : null;
 }
 
 /** A picker may offer this plant for an area. Occupancy is checked on save. */
@@ -69,18 +73,21 @@ export function allowsPlant(area: AreaKind, plantType: string): boolean {
 
 /** Where a plant goes when this area will not take it. */
 export function homeFor(plantType: string): AreaKind {
-  if (plantType === 'tree') return 'orchard';
-  if (plantType === 'cane' || plantType === 'shrub') return 'bramble';
-  return 'vegetable';
+  return WOODY.includes(plantType) ? 'fruit' : 'vegetable';
 }
 
+/**
+ * A planting's life: what was asked for, else a tree, else perennial for
+ * woody plants and herbaceous perennials (asparagus, rhubarb), else annual.
+ */
 export function lifeForPlant(
   plantType: string,
   requested?: string | null,
+  perennial?: boolean | null,
 ): 'annual' | 'perennial' | 'tree' {
   if (requested === 'annual' || requested === 'perennial' || requested === 'tree') return requested;
   if (plantType === 'tree') return 'tree';
-  if (plantType === 'cane' || plantType === 'shrub') return 'perennial';
+  if (WOODY.includes(plantType) || perennial) return 'perennial';
   return 'annual';
 }
 
@@ -89,17 +96,22 @@ export function plantOutPatch(bedId: string): { bedId: string; trayId: null } {
   return { bedId, trayId: null };
 }
 
+/**
+ * Why a plant may not go in a bed, or null. `station` is the bed's: a tree bed
+ * holds one tree.
+ */
 export function placementRefusal(
   area: AreaKind,
   plantType: string,
   existing: { plantType: string }[],
+  station?: BedStation | null,
 ): string | null {
   if (!allowsPlant(area, plantType)) {
     const home = AREA_TYPES[homeFor(plantType)].name;
     return `${PLANT_TYPE_NAMES[plantType as PlantType] ?? 'This plant'} belongs in ${home}`;
   }
   if (
-    area === 'orchard' &&
+    station === 'tree' &&
     plantType === 'tree' &&
     existing.some((row) => row.plantType === 'tree')
   ) {
@@ -112,4 +124,5 @@ const PLANT_TYPE_NAMES: Partial<Record<PlantType, string>> = {
   tree: 'A tree',
   shrub: 'A fruit bush',
   cane: 'Cane fruit',
+  vine: 'A fruiting vine',
 };

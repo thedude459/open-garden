@@ -38,6 +38,14 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- **Fruit gardens:** orchards and bramble patches become one area type, the
+  fruit garden, for fruit trees, cane fruit, fruit bushes, and grapes and
+  kiwis, with herbs or flowers underneath. Existing orchards and bramble
+  patches keep their names and beds. **Add fruit row** on the Overview adds
+  a row for canes, bushes, or vines; **Add tree** still adds a tree's own
+  bed. Vegetable gardens keep taking strawberries, asparagus, and rhubarb,
+  and new plantings of those now last past the season.
+
 - **Plant catalog v0.2.3:** twelve more crops water by water balance
   (kale, basil, cilantro, parsley, oregano, thyme, okra, rhubarb, chives,
   leek, Swiss chard, and dill), and borage and calendula get sowing windows
@@ -51,6 +59,7 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [ADR 0042](docs/adr/0042-fruit-gardens.md): fruit gardens.
 
 ### Security
 

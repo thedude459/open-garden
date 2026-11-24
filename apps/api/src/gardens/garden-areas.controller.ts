@@ -46,7 +46,7 @@ export class GardenAreasController {
     if (!parsed.success)
       throw domainError(
         'VALIDATION_ERROR',
-        'Choose a vegetable garden, orchard, bramble patch, or greenhouse',
+        'Choose a vegetable garden, fruit garden, or greenhouse',
       );
     return this.plantings.createArea(user.id, id, parsed.data.kind);
   }

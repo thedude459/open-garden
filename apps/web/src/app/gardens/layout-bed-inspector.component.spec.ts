@@ -110,7 +110,7 @@ describe('LayoutBedInspector', () => {
     fixture.componentRef.setInput('deleteSoilTest', async () => true);
     fixture.componentRef.setInput('areas', [
       { id: 'veg', name: 'Vegetable garden', kind: 'vegetable' },
-      { id: 'canes', name: 'Bramble patch', kind: 'bramble' },
+      { id: 'canes', name: 'Fruit garden', kind: 'fruit' },
     ]);
     fixture.componentRef.setInput('moveToArea', async (_b: LayoutBedDto, areaId: string) => {
       moves.push(areaId);

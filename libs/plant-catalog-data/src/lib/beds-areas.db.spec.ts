@@ -157,11 +157,11 @@ describe('PlantingAreaRepository and TrayRepository', () => {
     expect(await plantingAreas.findByKind(other.id, 'vegetable')).toBeNull();
   });
 
-  it('names a first bramble patch and numbers the next', async () => {
+  it('names a first fruit garden and numbers the next', async () => {
     // Kinds are checked against AREA_KINDS at the API, not by a constraint.
     const { mine } = await twoGardens();
-    expect((await plantingAreas.ensure(mine.id, 'bramble')).name).toBe('Bramble patch');
-    expect((await plantingAreas.add(mine.id, 'bramble')).name).toBe('Bramble patch 2');
+    expect((await plantingAreas.ensure(mine.id, 'fruit')).name).toBe('Fruit garden');
+    expect((await plantingAreas.add(mine.id, 'fruit')).name).toBe('Fruit garden 2');
   });
 
   it('renames, finds by name, and deletes an area only in its own property', async () => {
@@ -180,7 +180,7 @@ describe('PlantingAreaRepository and TrayRepository', () => {
   it('moves a bed to another area with its new station', async () => {
     const { mine, other } = await twoGardens();
     const veg = await plantingAreas.ensure(mine.id, 'vegetable');
-    const orchard = await plantingAreas.ensure(mine.id, 'orchard');
+    const orchard = await plantingAreas.ensure(mine.id, 'fruit');
     const bed = await beds.insert({ ...bedInput(mine.id, 'North'), areaId: veg.id });
     expect(await beds.setArea(other.id, bed.id, orchard.id, 'tree')).toBeNull();
     expect(await beds.setArea(mine.id, bed.id, orchard.id, 'tree')).toMatchObject({

@@ -297,7 +297,7 @@ names the dataset version it needs:
 | Judging sensor readings | v0.3 | Soil moisture, light, and temperature ranges per crop |
 | Pest and disease advice on plant pages and in companion advice | v0.3 | `pests.yaml`, crops' pests, companion benefits that name a pest |
 | `crops` table (deferred from the importer) — **not needed so far** | v0.2 | Companion pairs name crops, not varieties. Met with a `crop_id` column on plants instead ([ADR 0030](adr/0030-companion-pairs-from-the-dataset.md)); a table waits for a feature that needs crop rows of their own |
-| Orchard and bramble areas with real plants | v0.3 | Fruit trees and cane fruit |
+| Fruit gardens with real plants — **area type done, [ADR 0042](adr/0042-fruit-gardens.md)** | v0.3 | Fruit trees, cane fruit, bushes, and woody vines |
 | Named rootstocks: pick M.9, Bud 9, G.41…; bed sized from its spacing; zone check uses the less hardy of variety and rootstock | v0.3 | Named rootstocks per tree crop, each with size, spacing, hardiness zones, and staking |
 | Worldwide sowing (Phase 2) — **done by temperature ([ADR 0025](adr/0025-sowing-by-temperature-where-frost-is-rare.md));** wet and dry seasons wait | Later | Frost-free windows |
 
@@ -318,17 +318,17 @@ source exists. The dataset stores metric units; the app converts for display.
 ### Area types
 
 Decided (November 2026): areas are typed, each type accepts plants by growth
-habit and use, mismatches are **blocked**, and bramble is its own type.
+habit and use, and mismatches are **blocked**. Orchards and bramble patches
+merged into one fruit garden ([ADR 0042](adr/0042-fruit-gardens.md)).
 
 | Area type | Accepts | Blocks |
 |---|---|---|
-| Vegetable | Herbaceous vegetables, herbs, flowers | Trees, shrubs, canes |
-| Orchard | Fruit and nut trees; herbaceous underplanting in a tree's bed | Canes, other shrubs, vegetables as main plantings |
-| Bramble | Cane fruit (raspberry, blackberry and hybrids) | Trees, vegetables |
-| Greenhouse (trays) | Seedlings of herbaceous plants | Trees, shrubs, canes |
+| Vegetable | Herbaceous vegetables, herbs, flowers, and fruit (strawberry, melon), perennials such as asparagus included | Trees, shrubs, canes, woody vines |
+| Fruit garden | Fruit and nut trees (one per tree bed), cane fruit, fruit bushes, woody vines, in rows; herbaceous underplanting | — |
+| Greenhouse (trays) | Seedlings of herbaceous plants | Trees, shrubs, canes, woody vines |
 | Containers (planned: patio, balcony, indoor) | Herbaceous vegetables, herbs, flowers, strawberries, and trees on dwarf rootstock | Trees on semi-dwarf or standard rootstock, canes |
 
-- **Containers** come after the four types above: pots and grow bags hold one
+- **Containers** come after the three types above: pots and grow bags hold one
   planting or a few, dry out faster (a watering factor on top of item 4's
   water balance), and take only compact plants. They serve households with a
   balcony or patio and no ground, an audience the houseplant apps
@@ -748,6 +748,8 @@ Size is a rough guess: S is under a day, M a few days, L longer.
 | **Planting editor:** cap the Planted date at tomorrow, and say a later day goes in Planned for | A future planted date is taken as the plan (ADR 0040); the field could say so instead of the date moving to the other field on save | S |
 | **Pipeline:** have `npm run migrate:generate` run Prettier on the journal and snapshot it writes | drizzle-kit writes them unformatted, and `verify`'s format check failed on PR #230 for it | S |
 | **Accessibility:** move the plant to place with the arrow keys in Bed View before Enter places it | Keyboard placement today puts the plant in the middle of the visible area only | M |
+| **Plantings:** offer once to mark existing plantings of perennial crops (asparagus, rhubarb, strawberry) as perennial | New ones default to perennial since ADR 0042; older ones stay annual until a household edits each, and a season close clears them | S |
+| **Data:** a `woody` flag on crops, if a herbaceous perennial vine (hops) joins the dataset | The app reads a perennial vine as woody (ADR 0042); hops would land in a fruit garden | S |
 
 ## Licensing
 

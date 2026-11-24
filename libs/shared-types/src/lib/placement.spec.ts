@@ -2,51 +2,59 @@ import { describe, expect, it } from 'vitest';
 import {
   allowsPlant,
   areaKindFor,
+  homeFor,
   lifeForPlant,
   mulchOrNone,
   placementRefusal,
   plantOutPatch,
+  stationFor,
 } from './placement';
 
 const apple = { plantType: 'tree' };
 
 describe('placementRefusal', () => {
-  it('keeps trees, canes, and fruit bushes out of vegetable gardens and trays', () => {
+  it('keeps woody plants out of vegetable gardens and trays', () => {
     for (const area of ['vegetable', 'greenhouse'] as const) {
-      expect(placementRefusal(area, 'tree', [])).toBe('A tree belongs in an orchard');
-      expect(placementRefusal(area, 'cane', [])).toBe('Cane fruit belongs in a bramble patch');
-      expect(placementRefusal(area, 'shrub', [])).toBe('A fruit bush belongs in a bramble patch');
-      // Herbs of any habit (thyme), and fruit that is not a tree, bush, or cane.
+      expect(placementRefusal(area, 'tree', [])).toBe('A tree belongs in a fruit garden');
+      expect(placementRefusal(area, 'cane', [])).toBe('Cane fruit belongs in a fruit garden');
+      expect(placementRefusal(area, 'shrub', [])).toBe('A fruit bush belongs in a fruit garden');
+      expect(placementRefusal(area, 'vine', [])).toBe('A fruiting vine belongs in a fruit garden');
+      // Herbs of any habit (thyme), and herbaceous fruit (strawberry, melon).
       expect(placementRefusal(area, 'herb', [])).toBeNull();
       expect(placementRefusal(area, 'fruit', [])).toBeNull();
     }
   });
 
-  it('lets an orchard bed hold one tree and herbaceous underplanting', () => {
-    expect(placementRefusal('orchard', 'tree', [])).toBeNull();
-    expect(placementRefusal('orchard', 'herb', [apple])).toBeNull();
-    expect(placementRefusal('orchard', 'vegetable', [apple])).toBeNull();
-    expect(placementRefusal('orchard', 'tree', [apple])).toBe('A tree bed holds one tree');
-    expect(placementRefusal('orchard', 'cane', [apple])).toBe(
-      'Cane fruit belongs in a bramble patch',
-    );
+  it('lets a fruit garden hold woody fruit and herbaceous underplanting', () => {
+    for (const type of ['tree', 'cane', 'shrub', 'vine', 'herb', 'vegetable', 'fruit']) {
+      expect(placementRefusal('fruit', type, [])).toBeNull();
+    }
   });
 
-  it('lets a bramble patch hold canes and fruit bushes only', () => {
-    expect(placementRefusal('bramble', 'cane', [{ plantType: 'cane' }])).toBeNull();
-    expect(placementRefusal('bramble', 'shrub', [])).toBeNull();
-    expect(placementRefusal('bramble', 'tree', [])).toBe('A tree belongs in an orchard');
-    expect(placementRefusal('bramble', 'vegetable', [])).toBe(
-      'This plant belongs in a vegetable garden',
-    );
+  it('holds one tree in a tree bed, and any number in a row', () => {
+    expect(placementRefusal('fruit', 'herb', [apple], 'tree')).toBeNull();
+    expect(placementRefusal('fruit', 'cane', [apple], 'tree')).toBeNull();
+    expect(placementRefusal('fruit', 'tree', [apple], 'tree')).toBe('A tree bed holds one tree');
+    expect(placementRefusal('fruit', 'tree', [apple], 'berry')).toBeNull();
   });
 
-  it("reads a bed's area from its station", () => {
-    expect(areaKindFor('tree')).toBe('orchard');
-    expect(areaKindFor('berry')).toBe('bramble');
+  it("reads a bed's area from its station, and keeps a station in a fruit garden", () => {
+    expect(areaKindFor('tree')).toBe('fruit');
+    expect(areaKindFor('berry')).toBe('fruit');
     expect(areaKindFor(null)).toBe('vegetable');
-    expect(allowsPlant(areaKindFor('berry'), 'cane')).toBe(true);
-    expect(allowsPlant(areaKindFor(undefined), 'cane')).toBe(false);
+    expect(stationFor('fruit', 'berry')).toBe('berry');
+    expect(stationFor('fruit')).toBe('tree');
+    expect(stationFor('vegetable', 'tree')).toBeNull();
+    expect(homeFor('vine')).toBe('fruit');
+    expect(homeFor('fruit')).toBe('vegetable');
+  });
+
+  it('keeps woody plants and herbaceous perennials past a season', () => {
+    expect(lifeForPlant('tree')).toBe('tree');
+    expect(lifeForPlant('vine')).toBe('perennial');
+    expect(lifeForPlant('vegetable', null, true)).toBe('perennial');
+    expect(lifeForPlant('vegetable', null, false)).toBe('annual');
+    expect(lifeForPlant('vegetable', 'annual', true)).toBe('annual');
   });
 
   it('moves a tray start onto a bed', () => {

@@ -176,7 +176,7 @@ export class CalendarService {
     const { created } = await this.entries.addPlanned(
       gardenId,
       plantId,
-      lifeForPlant(plant.plantType),
+      lifeForPlant(plant.plantType, null, plant.perennial),
       season.query,
     );
     const calendar = await this.list(userId, gardenId, 1, 100, new Date(), seasonYear);
