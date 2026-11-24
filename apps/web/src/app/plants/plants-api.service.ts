@@ -38,6 +38,7 @@ export class PlantsApiService {
 
   private fromMemory(query: PlantListQueryDto): PageDto<PlantSummaryDto> | null {
     if (!this.memory || !this.memoryCovers(query)) return null;
+    if (!standsIn(this.memory, this.memoryMeta, query)) return null;
     return this.cache.filterCached(this.memory, query);
   }
 
@@ -62,11 +63,16 @@ export class PlantsApiService {
     const exact = await this.cache.getList(key);
     if (exact?.items.length) return exact;
     if (query.sowNowFor || !isFirstPage(query)) return null;
-    const browseKeys = [this.lastBrowseKey, this.browseKey(query, 100), this.browseKey(query, 20)];
-    for (const browseKey of browseKeys) {
+    const own = { zone: query.zone, plantType: query.plantType };
+    const browseKeys: [string | null, BrowseMeta][] = [
+      [this.lastBrowseKey, this.memoryMeta],
+      [this.browseKey(query, 100), own],
+      [this.browseKey(query, 20), own],
+    ];
+    for (const [browseKey, meta] of browseKeys) {
       if (!browseKey) continue;
       const browse = await this.cache.getList(browseKey);
-      if (!browse) continue;
+      if (!browse || !standsIn(browse, meta, query)) continue;
       const filtered = this.cache.filterCached(browse, query);
       if (filtered.items.length) return filtered;
     }
@@ -141,6 +147,21 @@ export class PlantsApiService {
 }
 
 /** A page worth keeping in memory to filter offline: no search or narrowing filter. */
+/**
+ * A cached browse page answers a narrower query only when it holds the whole
+ * catalog; otherwise filtering it would drop matches past its first page.
+ */
+type BrowseMeta = { zone?: number; plantType?: PlantType };
+
+function standsIn(
+  page: PageDto<PlantSummaryDto>,
+  meta: BrowseMeta,
+  query: PlantListQueryDto,
+): boolean {
+  if (page.items.length >= page.totalCount) return true;
+  return isBrowse(query) && meta.zone === query.zone && meta.plantType === query.plantType;
+}
+
 function isBrowse(query: PlantListQueryDto): boolean {
   // An area query is a filtered page; it never stands in for the whole browse.
   return !query.q && !query.family && !query.area && !query.sowNowFor && isFirstPage(query);

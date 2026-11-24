@@ -86,16 +86,30 @@ describe('PlantsApiService list pages', () => {
     expect((await second).items).toEqual([]);
   });
 
-  it('answers a first page with a filter from the remembered page while it refreshes', async () => {
+  it('answers a filter from a remembered page that holds the whole catalog', async () => {
     const { api, http } = setup();
     const first = api.list({ page: 1, pageSize: 2 });
     await settle();
-    http.expectOne(() => true).flush(page(1, ['a', 'b']));
+    http.expectOne(() => true).flush({ ...page(1, ['a', 'b']), totalCount: 2 });
     await first;
 
     const zoned = await api.list({ page: 1, pageSize: 2, zone: 5 });
     expect(zoned.items.map((p) => p.id)).toEqual(['a', 'b']);
     await settle();
     http.expectOne((r) => r.params.get('zone') === '5').flush(page(1, ['a']));
+  });
+
+  it('asks the server when the remembered page is only part of the catalog', async () => {
+    const { api, http } = setup();
+    const first = api.list({ page: 1, pageSize: 2 });
+    await settle();
+    http.expectOne(() => true).flush(page(1, ['a', 'b']));
+    await first;
+
+    // Filtering two of three entries would miss a match on the page not held.
+    const family = api.list({ page: 1, pageSize: 2, family: 'Cabbage family' });
+    await settle();
+    http.expectOne((r) => r.params.get('family') === 'Cabbage family').flush(page(1, ['c']));
+    expect((await family).items.map((p) => p.id)).toEqual(['c']);
   });
 });
