@@ -1,0 +1,18 @@
+{
+  // `npm run typecheck`: builds skip specs and Vitest does not check types,
+  // so this is where specs are type-checked. Angular component specs are
+  // checked by their own runner (apps/web/tsconfig.spec.json).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "apps/api/**/*.ts",
+    "apps/api-e2e/**/*.ts",
+    "libs/**/*.ts",
+    "apps/web/src/**/*.spec.ts"
+  ],
+  "exclude": ["libs/web-ui/**", "apps/web/src/**/*.component.spec.ts"]
+}

@@ -13,6 +13,8 @@ function planting(partial: Partial<PlantingDto> & { id: string }): PlantingDto {
     plantedOn: null,
     harvestedOn: null,
     bedId: null,
+    startMethod: 'direct_seed',
+    indoorStartedOn: null,
     createdAt: '2026-08-16T10:00:00.000Z',
     updatedAt: '2026-08-16T10:00:00.000Z',
     ...partial,

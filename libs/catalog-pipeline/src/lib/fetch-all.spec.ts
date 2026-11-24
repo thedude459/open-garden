@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { PlantDataProvider } from '@open-garden/plant-provider';
 import { fetchAllFromProvider } from './fetch-all';
 import { MemoryProvider, samplePlant } from './test-memory';
 
@@ -18,9 +19,8 @@ describe('fetchAllFromProvider', () => {
   });
 
   it('ends the source on an empty page', async () => {
-    const provider: MemoryProvider = {
+    const provider: PlantDataProvider = {
       id: 'empty',
-      plants: [],
       searchByName: async () => [],
       listPage: async () => ({ items: [], nextCursor: '1' }),
     };
@@ -33,9 +33,8 @@ describe('fetchAllFromProvider', () => {
       { items: [samplePlant({ externalId: 'x' })], nextCursor: '1', skipped: 2 },
       { items: [samplePlant({ externalId: 'y' })], skipped: 1 },
     ];
-    const provider: MemoryProvider = {
+    const provider: PlantDataProvider = {
       id: 'partial',
-      plants: [],
       searchByName: async () => [],
       listPage: async ({ cursor } = {}) => pages[cursor ? 1 : 0]!,
     };

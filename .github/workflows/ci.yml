@@ -35,6 +35,8 @@ jobs:
         run: npm run format:check
       - name: Lint
         run: npx nx affected -t lint --parallel=3
+      - name: Type-check, specs included
+        run: npm run typecheck
       - name: Dependency licenses
         run: |
           node scripts/ci/license-check.js selfcheck

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BedRepository } from './bed-repository';
 import { GardenMembershipRepository } from './garden-membership-repository';
 import { GardenRepository } from './garden-repository';
+import { gardenBeds } from './schema';
 import { createTestDb, gardenInput, insertUser, vegetableAreaId, type TestDb } from './test-db';
 
 let t: TestDb;
@@ -101,7 +102,8 @@ describe('GardenRepository and GardenMembershipRepository', () => {
       widthInches: 36,
       orientation: 90,
     });
-    await beds.insert({
+    // A bed from before beds had a size; the repository no longer makes one.
+    await t.db.insert(gardenBeds).values({
       gardenId: g1.id,
       areaId: await vegetableAreaId(t.db, g1.id),
       name: 'No size',

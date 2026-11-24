@@ -137,7 +137,7 @@ describe('PlantingService', () => {
     expect(first.created).toBe(true);
     expect(second.created).toBe(true);
     expect(second.list.plantings).toHaveLength(2);
-    expect(second.list.plantings[0]?.createdAt >= second.list.plantings[1]!.createdAt).toBe(true);
+    expect(second.list.plantings[0]!.createdAt >= second.list.plantings[1]!.createdAt).toBe(true);
   });
 
   it('retries the same client id in this garden without a second row and conflicts in another garden', async () => {
@@ -347,7 +347,7 @@ function createMemory(sowing?: SowingPlanner) {
   const strangerId = 'stranger-1';
   const gardenId = 'garden-1';
   const otherGardenId = 'garden-2';
-  const plants = new Map([
+  const plants = new Map<string, typeof oldKale | typeof asparagus>([
     [tomato.id, tomato],
     [oldKale.id, oldKale],
     [asparagus.id, asparagus],

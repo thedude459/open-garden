@@ -18,6 +18,7 @@
     "test:coverage:all": "nx test web && vitest run --coverage --config vitest.coverage-all.config.ts && node scripts/ci/coverage-summary.js --check scripts/ci/coverage-floors.json",
     "test:all": "npm test && npm run e2e",
     "lint": "nx run-many -t lint --all",
+    "typecheck": "tsc -p tsconfig.spec.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "e2e": "bash scripts/ci/e2e.sh",
