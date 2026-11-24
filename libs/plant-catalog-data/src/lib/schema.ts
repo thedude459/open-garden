@@ -288,7 +288,10 @@ export const gardenBeds = pgTable(
     widthInches: integer('width_inches'),
     orientation: smallint('orientation').notNull().default(0),
     sun: text('sun'),
-    areaId: uuid('area_id').references(() => gardenAreas.id, { onDelete: 'cascade' }),
+    /** Every bed is in an area, which decides what it takes (migration 0022). */
+    areaId: uuid('area_id')
+      .notNull()
+      .references(() => gardenAreas.id, { onDelete: 'cascade' }),
     site: text('site').notNull().default('in_ground'),
     station: text('station'),
     mulch: text('mulch').notNull().default('none'),

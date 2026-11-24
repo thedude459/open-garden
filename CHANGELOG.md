@@ -46,6 +46,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- Every bed now belongs to an area, and its area alone decides what it
+  takes. Beds from before areas join their property's vegetable or fruit
+  garden (created if missing) when the API starts.
 - **Fruit gardens:** orchards and bramble patches become one area type, the
   fruit garden, for fruit trees, cane fruit, fruit bushes, and grapes and
   kiwis, with herbs or flowers underneath. Existing orchards and bramble

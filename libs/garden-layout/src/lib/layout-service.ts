@@ -1,5 +1,7 @@
 import {
+  AREA_KINDS,
   mulchOrNone,
+  type AreaKind,
   type BedGeometryDto,
   type BedOrientation,
   type GardenLayoutDto,
@@ -45,6 +47,10 @@ export class LayoutService {
     private readonly areas: Pick<AreaRepository, 'delete' | 'listByGarden' | 'upsert'>,
     private readonly years: Pick<YearRecordRepository, 'currentYear' | 'layoutAdvice'>,
     private readonly soilTests: Pick<SoilTestRepository, 'latestByGarden'>,
+    /** The property's typed areas: only each one's id and kind are read. */
+    private readonly plantingAreas: {
+      listByGarden(gardenId: string): Promise<{ id: string; kind: string }[]>;
+    },
   ) {}
 
   /**
@@ -220,10 +226,12 @@ export class LayoutService {
       this.plantings.listAllForLayout(gardenId, seasons.query),
       this.areas.listByGarden(gardenId),
     ]);
-    const [advice, soilTests] = await Promise.all([
+    const [advice, soilTests, plantingAreaRows] = await Promise.all([
       this.years.layoutAdvice(gardenId, seasons.year),
       this.soilTests.latestByGarden(gardenId),
+      this.plantingAreas.listByGarden(gardenId),
     ]);
+    const areaKinds = new Map(plantingAreaRows.map((row) => [row.id, row.kind]));
     const beds = bedRows.map((row): LayoutBedDto => ({
       id: row.id,
       name: row.name,
@@ -232,7 +240,8 @@ export class LayoutService {
       site: row.site === 'raised' ? 'raised' : 'in_ground',
       station: row.station === 'tree' ? 'tree' : row.station === 'berry' ? 'berry' : null,
       mulch: mulchOrNone(row.mulch),
-      areaId: (row as { areaId?: string | null }).areaId ?? null,
+      areaId: row.areaId,
+      areaKind: toAreaKind(areaKinds.get(row.areaId)),
       soilTest: soilTests.beds.get(row.id) ?? null,
     }));
     const plantings = plantingRows.map((row) => {
@@ -324,4 +333,9 @@ function toGeometry(row: {
     widthInches: row.widthInches,
     orientation: row.orientation as BedOrientation,
   };
+}
+
+/** An area's type as stored; an unknown one counts as a vegetable garden. */
+function toAreaKind(kind: string | undefined): AreaKind {
+  return (AREA_KINDS as readonly string[]).includes(kind ?? '') ? (kind as AreaKind) : 'vegetable';
 }

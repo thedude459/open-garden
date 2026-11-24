@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   areaKindFor,
+  bedAreaKind,
   homeFor,
   lifeForPlant,
   mulchOrNone,
@@ -54,6 +55,12 @@ describe('placementRefusal', () => {
     expect(lifeForPlant('vegetable', null, true)).toBe('perennial');
     expect(lifeForPlant('vegetable', null, false)).toBe('annual');
     expect(lifeForPlant('vegetable', 'annual', true)).toBe('annual');
+  });
+
+  it("takes a bed's area from its area, or from its station before it is saved", () => {
+    expect(bedAreaKind({ areaKind: 'vegetable', station: 'tree' })).toBe('vegetable');
+    expect(bedAreaKind({ station: 'berry' })).toBe('fruit');
+    expect(bedAreaKind({})).toBe('vegetable');
   });
 
   it('moves a tray start onto a bed', () => {

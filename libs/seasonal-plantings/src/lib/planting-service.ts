@@ -706,11 +706,10 @@ export class PlantingService {
       const bed = await this.beds.getInGarden(gardenId, bedId);
       if (!bed) throw PLANTING_ERRORS.bedNotFound();
       station = toStation(bed.station);
-      area = areaKindFor(station);
-      if (bed.areaId) {
-        const row = await this.areas.getById(bed.areaId);
-        if (row && isAreaKind(row.kind)) area = row.kind;
-      }
+      // The bed's area decides what it takes; its station only says whether
+      // it is a tree bed (one tree) or a row.
+      const row = await this.areas.getById(bed.areaId);
+      area = row && isAreaKind(row.kind) ? row.kind : 'vegetable';
       occupants = (await this.plantings.occupants(bedId)).filter((row) => row.id !== plantingId);
     }
     // With no bed yet, a planting must be one a vegetable garden takes.

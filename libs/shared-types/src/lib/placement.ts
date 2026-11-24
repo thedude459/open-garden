@@ -59,6 +59,18 @@ export function areaKindFor(station: BedStation | null | undefined): AreaKind {
 }
 
 /**
+ * The area type that decides what a bed takes: its area's, from the server.
+ * A bed drafted offline and not saved yet has none, so its station says
+ * which area it will go in, as when it is created.
+ */
+export function bedAreaKind(bed: {
+  areaKind?: AreaKind | null;
+  station?: BedStation | null;
+}): AreaKind {
+  return bed.areaKind ?? areaKindFor(bed.station);
+}
+
+/**
  * A bed's station in an area of this kind: a fruit garden keeps the bed's own
  * (a tree bed when it has none), anything else has none.
  */

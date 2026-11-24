@@ -66,6 +66,11 @@ grow in a vegetable garden as watermelon does.
 
 ## Consequences
 
++ Later (migration 0022): every bed has an area, and the area's kind, sent
+  with each bed as `areaKind`, decides what it takes. The station only says
+  whether a bed is a tree bed or a row, and picks the area when a bed is
+  created.
+
 + A grape, kiwi, currant, or blueberry has a home, and a vegetable bed no
   longer takes a grapevine. One already in a vegetable bed is flagged on the
   plan, not removed (ADR 0020).

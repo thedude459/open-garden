@@ -13,7 +13,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   allowsPlant,
-  areaKindFor,
+  bedAreaKind,
+  type AreaKind,
   plantName,
   ROOTSTOCK_LABELS,
   ROOTSTOCKS,
@@ -144,7 +145,10 @@ export class BedPlantPanel implements OnInit {
   readonly picker = viewChild(PlantPicker);
 
   gardenId = input.required<string>();
+  /** Whether the bed is a tree bed (asks for a rootstock) or a row. */
   station = input<BedStation | null | undefined>(null);
+  /** The type of the bed's area, which decides what it takes. */
+  areaKind = input<AreaKind | undefined>(undefined);
   canEdit = input(false);
   /** The plant waiting to be placed, if any. */
   armedId = input<string | null>(null);
@@ -175,8 +179,10 @@ export class BedPlantPanel implements OnInit {
       .catch(() => undefined);
   }
 
-  /** The area this bed is in, from its station. */
-  readonly area = computed(() => areaKindFor(this.station()));
+  /** What the bed takes: its area's type, or for an unsaved bed its station's. */
+  readonly area = computed(() =>
+    bedAreaKind({ areaKind: this.areaKind(), station: this.station() }),
+  );
 
   private accepts(plant: Pick<PlantSummaryDto, 'plantType'>) {
     return allowsPlant(this.area(), plant.plantType);

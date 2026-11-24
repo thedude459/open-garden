@@ -17,6 +17,7 @@ import {
   AreaRepository,
   BedRepository,
   GardenMembershipRepository,
+  PlantingAreaRepository,
   PlantingRepository,
   SoilTestRepository,
   YearRecordRepository,
@@ -42,6 +43,7 @@ export class GardenLayoutController {
       new AreaRepository(bundle.db),
       new YearRecordRepository(bundle.db),
       new SoilTestRepository(bundle.db),
+      new PlantingAreaRepository(bundle.db),
     );
   }
 

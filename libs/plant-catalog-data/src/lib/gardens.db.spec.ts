@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { BedRepository } from './bed-repository';
 import { GardenMembershipRepository } from './garden-membership-repository';
 import { GardenRepository } from './garden-repository';
-import { createTestDb, gardenInput, insertUser, type TestDb } from './test-db';
+import { createTestDb, gardenInput, insertUser, vegetableAreaId, type TestDb } from './test-db';
 
 let t: TestDb;
 let gardens: GardenRepository;
@@ -82,6 +82,7 @@ describe('GardenRepository and GardenMembershipRepository', () => {
     const g2 = await gardens.createOwned(gardenInput(owner.id));
     await beds.insert({
       gardenId: g1.id,
+      areaId: await vegetableAreaId(t.db, g1.id),
       name: 'One',
       nameNormalized: 'one',
       originXInches: 0,
@@ -91,6 +92,7 @@ describe('GardenRepository and GardenMembershipRepository', () => {
     });
     await beds.insert({
       gardenId: g1.id,
+      areaId: await vegetableAreaId(t.db, g1.id),
       name: 'Turned',
       nameNormalized: 'turned',
       originXInches: 120,
@@ -99,7 +101,12 @@ describe('GardenRepository and GardenMembershipRepository', () => {
       widthInches: 36,
       orientation: 90,
     });
-    await beds.insert({ gardenId: g1.id, name: 'No size', nameNormalized: 'no size' });
+    await beds.insert({
+      gardenId: g1.id,
+      areaId: await vegetableAreaId(t.db, g1.id),
+      name: 'No size',
+      nameNormalized: 'no size',
+    });
     const counts = await gardens.countsForGardenIds([g1.id, g2.id]);
     // Every bed counts; only sized ones have an outline, turned as drawn.
     const one = counts.get(g1.id)!;
@@ -140,6 +147,7 @@ describe('GardenRepository and GardenMembershipRepository', () => {
     await members.insert(garden.id, helper.id, 'viewer');
     await beds.insert({
       gardenId: garden.id,
+      areaId: await vegetableAreaId(t.db, garden.id),
       name: 'Gone',
       nameNormalized: 'gone',
       originXInches: 0,

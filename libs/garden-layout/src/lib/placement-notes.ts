@@ -1,6 +1,7 @@
 import {
   allowsPlant,
-  areaKindFor,
+  bedAreaKind,
+  type AreaKind,
   type BedStation,
   type CompanionPairDto,
   type LayoutFlagDto,
@@ -15,6 +16,7 @@ export type NoteBed = {
   sun?: string | null;
   station?: BedStation | null;
   areaId?: string | null;
+  areaKind?: AreaKind;
   soilTest?: SoilTestDto | null;
 };
 export type NotePlanting = {
@@ -67,7 +69,7 @@ export function placementNotes(input: {
 }): LayoutFlagDto[] {
   const flags: LayoutFlagDto[] = [];
   const bedSun = new Map(input.beds.map((bed) => [bed.id, bed.sun ?? null]));
-  const bedStation = new Map(input.beds.map((bed) => [bed.id, bed.station ?? null]));
+  const bedArea = new Map(input.beds.map((bed) => [bed.id, bedAreaKind(bed)]));
   const bedPh = new Map(
     input.beds.map((bed) => [bed.id, testForBed(bed, input.areaSoilTests)?.ph ?? null]),
   );
@@ -89,10 +91,7 @@ export function placementNotes(input: {
     }
     // Placing it there now would be refused (a catalog update changed the
     // plant's type); a saved planting is flagged, never blocked or removed.
-    if (
-      planting.plantType &&
-      !allowsPlant(areaKindFor(bedStation.get(bedId)), planting.plantType)
-    ) {
+    if (planting.plantType && !allowsPlant(bedArea.get(bedId) ?? 'vegetable', planting.plantType)) {
       flags.push({
         kind: 'area',
         plantingIds: [planting.id],
