@@ -46,6 +46,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- Online, a plant search always comes from the server, so it no longer
+  misses plants past the first saved page. Offline, saved pages still answer.
 - Every bed now belongs to an area, and its area alone decides what it
   takes. Beds from before areas join their property's vegetable or fruit
   garden (created if missing) when the API starts.
