@@ -8,7 +8,14 @@ import { FavoriteRepository } from './favorite-repository';
 import { GardenRepository } from './garden-repository';
 import { PlantingAreaRepository } from './planting-area-repository';
 import { TrayRepository } from './tray-repository';
-import { createTestDb, gardenInput, insertPlant, insertUser, type TestDb } from './test-db';
+import {
+  createTestDb,
+  gardenInput,
+  insertPlant,
+  insertUser,
+  vegetableAreaId,
+  type TestDb,
+} from './test-db';
 
 let t: TestDb;
 let gardens: GardenRepository;
@@ -36,8 +43,9 @@ async function twoGardens() {
   return { owner, mine, other };
 }
 
-const bedInput = (gardenId: string, name: string) => ({
+const bedInput = async (gardenId: string, name: string) => ({
   gardenId,
+  areaId: await vegetableAreaId(t.db, gardenId),
   name,
   nameNormalized: name.toLowerCase(),
   originXInches: 12,
@@ -49,7 +57,7 @@ const bedInput = (gardenId: string, name: string) => ({
 describe('BedRepository', () => {
   it('inserts with defaults and finds beds by garden and name', async () => {
     const { mine } = await twoGardens();
-    const bed = await beds.insert(bedInput(mine.id, 'North'));
+    const bed = await beds.insert(await bedInput(mine.id, 'North'));
     expect(bed).toMatchObject({ orientation: 0, sun: null, name: 'North' });
     expect((await beds.getById(bed.id))?.id).toBe(bed.id);
     expect((await beds.getInGarden(mine.id, bed.id))?.id).toBe(bed.id);
@@ -59,7 +67,7 @@ describe('BedRepository', () => {
 
   it('never reads or changes a bed through another property', async () => {
     const { mine, other } = await twoGardens();
-    const bed = await beds.insert(bedInput(mine.id, 'Guarded'));
+    const bed = await beds.insert(await bedInput(mine.id, 'Guarded'));
     expect(await beds.getInGarden(other.id, bed.id)).toBeNull();
     expect(await beds.findByNormalizedName(other.id, 'guarded')).toBeNull();
     expect(await beds.rename(other.id, bed.id, 'Hacked', 'hacked')).toBeNull();
@@ -80,7 +88,7 @@ describe('BedRepository', () => {
 
   it('renames, sets site details, moves, clears geometry, and deletes', async () => {
     const { mine } = await twoGardens();
-    const bed = await beds.insert(bedInput(mine.id, 'Old'));
+    const bed = await beds.insert(await bedInput(mine.id, 'Old'));
     expect((await beds.rename(mine.id, bed.id, 'New', 'new'))?.name).toBe('New');
     expect(
       await beds.setSite(mine.id, bed.id, { sun: 'part', site: 'raised', mulch: 'straw' }),
@@ -105,9 +113,11 @@ describe('BedRepository', () => {
 
   it('rejects a second bed with the same name in one property', async () => {
     const { mine, other } = await twoGardens();
-    await beds.insert(bedInput(mine.id, 'Same'));
-    await expect(beds.insert(bedInput(mine.id, 'Same'))).rejects.toThrow();
-    await expect(beds.insert(bedInput(other.id, 'Same'))).resolves.toMatchObject({ name: 'Same' });
+    await beds.insert(await bedInput(mine.id, 'Same'));
+    await expect(beds.insert(await bedInput(mine.id, 'Same'))).rejects.toThrow();
+    await expect(beds.insert(await bedInput(other.id, 'Same'))).resolves.toMatchObject({
+      name: 'Same',
+    });
   });
 });
 
@@ -181,7 +191,7 @@ describe('PlantingAreaRepository and TrayRepository', () => {
     const { mine, other } = await twoGardens();
     const veg = await plantingAreas.ensure(mine.id, 'vegetable');
     const orchard = await plantingAreas.ensure(mine.id, 'fruit');
-    const bed = await beds.insert({ ...bedInput(mine.id, 'North'), areaId: veg.id });
+    const bed = await beds.insert({ ...(await bedInput(mine.id, 'North')), areaId: veg.id });
     expect(await beds.setArea(other.id, bed.id, orchard.id, 'tree')).toBeNull();
     expect(await beds.setArea(mine.id, bed.id, orchard.id, 'tree')).toMatchObject({
       areaId: orchard.id,

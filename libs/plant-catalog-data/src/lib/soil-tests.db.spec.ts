@@ -7,7 +7,7 @@ import { GardenRepository } from './garden-repository';
 import { PlantingAreaRepository } from './planting-area-repository';
 import { SoilTestRepository } from './soil-test-repository';
 import { gardenSoilTests } from './schema';
-import { createTestDb, gardenInput, insertUser, type TestDb } from './test-db';
+import { createTestDb, gardenInput, insertUser, vegetableAreaId, type TestDb } from './test-db';
 
 let t: TestDb;
 let gardens: GardenRepository;
@@ -24,9 +24,10 @@ beforeAll(async () => {
 });
 afterAll(() => t.close());
 
-const bed = (gardenId: string, name: string) =>
+const bed = async (gardenId: string, name: string) =>
   beds.insert({
     gardenId,
+    areaId: await vegetableAreaId(t.db, gardenId),
     name,
     nameNormalized: name.toLowerCase(),
     originXInches: 0,

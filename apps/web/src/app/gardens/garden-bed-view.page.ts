@@ -155,6 +155,7 @@ import { localIso } from '../today/today-groups';
               <og-bed-plant-panel
                 [gardenId]="gardenId"
                 [station]="bed()?.station"
+                [areaKind]="bed()?.areaKind"
                 [canEdit]="canEdit()"
                 [armedId]="armedPlant()?.id ?? null"
                 [zone]="gardenZone()"

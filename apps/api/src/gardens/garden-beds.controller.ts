@@ -19,20 +19,16 @@ import { bedCreateSchema, bedPatchSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
-import {
-  openPlantingService,
-  openSoilTestService,
-  parseSoilTest,
-} from './planting-service.factory';
+import { openBedService, openSoilTestService, parseSoilTest } from './planting-service.factory';
 
 @Controller('gardens/:id/beds')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenBedsController {
-  private readonly plantings: ReturnType<typeof openPlantingService>;
+  private readonly beds: ReturnType<typeof openBedService>;
   private readonly soilTests: ReturnType<typeof openSoilTestService>;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.plantings = openPlantingService(bundle.db);
+    this.beds = openBedService(bundle.db);
     this.soilTests = openSoilTestService(bundle.db);
   }
 
@@ -47,7 +43,7 @@ export class GardenBedsController {
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Bed name is required');
     }
-    const result = await this.plantings.createBed(user.id, id, parsed.data);
+    const result = await this.beds.createBed(user.id, id, parsed.data);
     res.status(result.created ? 201 : 200);
     return result.bed;
   }
@@ -63,13 +59,13 @@ export class GardenBedsController {
     if (!parsed.success) {
       throw domainError('VALIDATION_ERROR', 'Bed name is required');
     }
-    return this.plantings.renameBed(user.id, id, bedId, parsed.data);
+    return this.beds.renameBed(user.id, id, bedId, parsed.data);
   }
 
   @Delete(':bedId')
   @HttpCode(204)
   remove(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('bedId') bedId: string) {
-    return this.plantings.deleteBed(user.id, id, bedId);
+    return this.beds.deleteBed(user.id, id, bedId);
   }
 
   @Post(':bedId/soil-tests')

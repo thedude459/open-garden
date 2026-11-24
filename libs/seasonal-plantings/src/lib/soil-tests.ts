@@ -1,3 +1,4 @@
+import { gardenAccess } from '@open-garden/shared-types';
 import type { SoilTestCreateDto, SoilTestDto, SoilTestOwner } from '@open-garden/shared-types';
 import type {
   BedRepository,
@@ -55,9 +56,7 @@ export class SoilTestService {
   }
 
   private async requireOwner(userId: string, gardenId: string, owner: SoilTestOwner) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw PLANTING_ERRORS.viewerBeds();
+    gardenAccess(await this.memberships.get(gardenId, userId), 'edit', PLANTING_ERRORS.viewerBeds);
     if ('bedId' in owner) {
       if (!(await this.beds.getInGarden(gardenId, owner.bedId))) {
         throw PLANTING_ERRORS.bedNotFound();

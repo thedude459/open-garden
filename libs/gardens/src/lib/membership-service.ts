@@ -1,3 +1,4 @@
+import { gardenAccess } from '@open-garden/shared-types';
 import type {
   GardenInviteDto,
   GardenMemberPatchDto,
@@ -114,11 +115,9 @@ export class MembershipService {
   }
 
   private async requireOwner(actorId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, actorId);
-    if (!membership) throw domainError('NOT_FOUND', 'Garden not found');
-    if (membership.role !== 'owner') {
-      throw domainError('FORBIDDEN', 'Only the owner can manage membership');
-    }
+    gardenAccess(await this.memberships.get(gardenId, actorId), 'own', () =>
+      domainError('FORBIDDEN', 'Only the owner can manage membership'),
+    );
   }
 
   private async memberDto(gardenId: string, userId: string): Promise<MemberDto> {

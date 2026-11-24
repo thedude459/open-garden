@@ -11,7 +11,14 @@ import { GardenRepository } from './garden-repository';
 import { PlantRepository, type PlantUpsertInput } from './plant-repository';
 import { PlantSourceRepository } from './plant-source-repository';
 import { PlantingRepository } from './planting-repository';
-import { createTestDb, gardenInput, insertPlant, insertUser, type TestDb } from './test-db';
+import {
+  createTestDb,
+  gardenInput,
+  insertPlant,
+  insertUser,
+  vegetableAreaId,
+  type TestDb,
+} from './test-db';
 import { YearRecordRepository } from './year-record-repository';
 
 let t: TestDb;
@@ -291,6 +298,7 @@ describe('YearRecordRepository', () => {
     const plant = await insertPlant(t.db, 'Season Plant');
     const bed = await new BedRepository(t.db).insert({
       gardenId: garden.id,
+      areaId: await vegetableAreaId(t.db, garden.id),
       name: 'Rotation bed',
       nameNormalized: 'rotation bed',
       originXInches: 0,

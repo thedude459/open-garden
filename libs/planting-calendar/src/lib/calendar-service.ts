@@ -16,7 +16,7 @@ import type {
   PlantingAreaRepository,
   PlantRepository,
 } from '@open-garden/plant-catalog-data';
-import { allowsPlant, homeFor, lifeForPlant } from '@open-garden/shared-types';
+import { allowsPlant, homeFor, lifeForPlant, gardenAccess } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
 import { overlapsThisWeek } from './this-week';
 import {
@@ -28,22 +28,32 @@ import {
   type WarmClimate,
 } from './windows';
 
+/** The property's current season, for planning the next one (ADR 0040). */
+export interface SeasonPort {
+  currentYear(gardenId: string): Promise<number>;
+}
+
+/**
+ * Every dependency is required and typed as the slice this service uses, so
+ * a caller cannot leave out the areas that enforce principle VIII, and a
+ * test fake needs only these methods.
+ */
 export class CalendarService {
   constructor(
-    private readonly gardens: GardenRepository,
-    private readonly memberships: GardenMembershipRepository,
-    private readonly plants: PlantRepository,
-    private readonly entries: CalendarEntryRepository,
-    private readonly areas?: PlantingAreaRepository,
-    /** The property's current season, for planning the next one (ADR 0040). */
-    private readonly seasons?: { currentYear(gardenId: string): Promise<number> },
+    private readonly gardens: Pick<GardenRepository, 'getById'>,
+    private readonly memberships: Pick<GardenMembershipRepository, 'get'>,
+    private readonly plants: Pick<PlantRepository, 'getById'>,
+    private readonly entries: Pick<
+      CalendarEntryRepository,
+      'addPlanned' | 'listByGarden' | 'removePlanned'
+    >,
+    private readonly areas: Pick<PlantingAreaRepository, 'hasKind'>,
+    private readonly seasons: SeasonPort,
   ) {}
 
   /** The season asked for, which must be the current one or the next. */
   private async season(gardenId: string, seasonYear?: number) {
-    const current = this.seasons
-      ? await this.seasons.currentYear(gardenId)
-      : new Date().getUTCFullYear();
+    const current = await this.seasons.currentYear(gardenId);
     const year = seasonYear ?? current;
     if (year !== current && year !== current + 1) throw CALENDAR_ERRORS.seasonOutOfRange();
     return { year, current, query: year === current ? undefined : year };
@@ -168,7 +178,7 @@ export class CalendarService {
     const plant = await this.plants.getById(plantId);
     if (!plant) throw CALENDAR_ERRORS.plantNotFound();
     // A property takes a plant when one of its areas does; vegetable is implied.
-    if (this.areas && !allowsPlant('vegetable', plant.plantType)) {
+    if (!allowsPlant('vegetable', plant.plantType)) {
       const home = homeFor(plant.plantType);
       if (!(await this.areas.hasKind(gardenId, home))) throw CALENDAR_ERRORS.areaRequired(home);
     }
@@ -196,9 +206,11 @@ export class CalendarService {
   }
 
   private async requireEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw CALENDAR_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw CALENDAR_ERRORS.viewerForbidden();
+    gardenAccess(
+      await this.memberships.get(gardenId, userId),
+      'edit',
+      CALENDAR_ERRORS.viewerForbidden,
+    );
   }
 }
 

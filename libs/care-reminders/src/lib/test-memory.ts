@@ -144,6 +144,8 @@ export function createReminderMemory() {
         });
       },
     },
+    // No weather: watering falls back to fixed intervals.
+    async () => null,
   );
 
   return {

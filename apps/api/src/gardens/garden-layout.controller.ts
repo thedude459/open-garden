@@ -12,11 +12,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
-import { LayoutService, domainError } from '@open-garden/garden-layout';
+import { domainError } from '@open-garden/garden-layout';
+import { LayoutService } from '@open-garden/garden-layout/server';
 import {
   AreaRepository,
   BedRepository,
   GardenMembershipRepository,
+  PlantingAreaRepository,
   PlantingRepository,
   SoilTestRepository,
   YearRecordRepository,
@@ -42,6 +44,7 @@ export class GardenLayoutController {
       new AreaRepository(bundle.db),
       new YearRecordRepository(bundle.db),
       new SoilTestRepository(bundle.db),
+      new PlantingAreaRepository(bundle.db),
     );
   }
 

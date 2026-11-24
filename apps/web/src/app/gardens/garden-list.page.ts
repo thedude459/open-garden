@@ -11,7 +11,7 @@ import {
   planOutlineFrame,
   snapHalfFoot,
 } from '@open-garden/garden-layout';
-import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
+import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place/embed-map';
 import type {
   GardenSummaryDto,
   PlaceCandidateDto,

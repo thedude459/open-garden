@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { PlantDetailService } from './plant-detail-service';
 
+/** A plant page with no companion pairs to show. */
+const noCompanions = { pairs: { listForCrops: async () => [] }, zonesForUser: async () => [] };
+
 describe('PlantDetailService', () => {
   it('returns null when plant missing', async () => {
     const plants = { getById: vi.fn().mockResolvedValue(null) };
     const favorites = { isFavorite: vi.fn() };
-    const svc = new PlantDetailService(plants as never, favorites as never);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions);
     await expect(svc.getById('missing', 'user-1')).resolves.toBeNull();
     expect(favorites.isFavorite).not.toHaveBeenCalled();
   });
@@ -50,7 +53,7 @@ describe('PlantDetailService', () => {
       listByCrop: vi.fn().mockResolvedValue([]),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(true) };
-    const svc = new PlantDetailService(plants as never, favorites as never);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions);
     const detail = await svc.getById('p1', 'user-1');
     expect(detail?.isFavorite).toBe(true);
     expect(detail?.commonName).toBe('Tomato');
@@ -84,11 +87,13 @@ describe('PlantDetailService', () => {
     const mint = await new PlantDetailService(
       { getById: vi.fn().mockResolvedValue(row) } as never,
       favorites as never,
+      noCompanions,
     ).getById('m', 'u');
     expect(mint?.cropCoefficients).toEqual({ initial: 0.6, mid: 1.15, end: 1.1, stageDays: null });
     const basil = await new PlantDetailService(
       { getById: vi.fn().mockResolvedValue({ ...row, kcMid: null }) } as never,
       favorites as never,
+      noCompanions,
     ).getById('m', 'u');
     expect(basil?.cropCoefficients).toBeNull();
   });
@@ -151,6 +156,7 @@ describe('PlantDetailService', () => {
     const svc = new PlantDetailService(
       plants as never,
       { isFavorite: vi.fn().mockResolvedValue(false) } as never,
+      noCompanions,
     );
     const cherry = await svc.getById('c', 'u');
     expect(listByCrop).toHaveBeenCalledWith('tomato');
@@ -187,7 +193,7 @@ describe('PlantDetailService', () => {
       }),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(false) };
-    const svc = new PlantDetailService(plants as never, favorites as never);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions);
     const detail = await svc.getById('old', 'user-1');
     expect(detail?.spacingInches).toBeNull();
     expect(detail?.commonName).toBe('Heirloom');
