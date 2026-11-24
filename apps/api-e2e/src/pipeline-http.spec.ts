@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest';
+import { createDb, PipelineRunRepository } from '@open-garden/plant-catalog-data';
 import { liveEnabled, LiveClient, waitUntil } from './live-http';
+
+const databaseUrl = process.env['DATABASE_URL'];
 
 type ErrorBody = { error?: { message?: string } };
 type RunList = { items: Array<{ status: string }> };
@@ -65,18 +68,38 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
     expect(plants.ok()).toBeTruthy();
   });
 
-  test('second overlapping POST is 409 already running', async () => {
+  // A run held open in the database, so the POST meets it however fast an
+  // import is (#257). That only one run may be running at once is the
+  // repository's rule, tested in pipeline-run-repository.db.spec.ts.
+  test.skipIf(!databaseUrl)('POST while a run is running is 409 already running', async () => {
     const request = new LiveClient();
     await request.login('admin@example.com');
-    await waitForPipelineIdle(request);
-    const [a, b] = await Promise.all([
-      request.post('/api/admin/pipeline/runs', { data: {} }),
-      request.post('/api/admin/pipeline/runs', { data: {} }),
-    ]);
-    const statuses = [a.status(), b.status()].sort((x, y) => x - y);
-    expect(statuses).toEqual([202, 409]);
-    const conflict = a.status() === 409 ? a : b;
-    expect(errorMessage(await json(conflict))).toBe('A pipeline run is already running');
+    const { db, pool } = createDb(databaseUrl!);
+    const runs = new PipelineRunRepository(db);
+    // Not annotated, so TS does not narrow it to null: the callback assigns it.
+    let held = null as { id: string } | null;
+    try {
+      await waitUntil(
+        async () => {
+          await waitForPipelineIdle(request);
+          held = await runs.insertRunning('operator').catch(() => null);
+          return held !== null;
+        },
+        30_000,
+        'could not hold a pipeline run open',
+      );
+      const res = await request.post('/api/admin/pipeline/runs', { data: {} });
+      expect(res.status()).toBe(409);
+      expect(errorMessage(await json(res))).toBe('A pipeline run is already running');
+    } finally {
+      if (held) {
+        await runs.markTerminal(held.id, {
+          status: 'failed',
+          errorMessage: 'Held open by a test',
+        });
+      }
+      await pool.end();
+    }
   });
 
   test('GET list is newest-first and unknown id is 404', async () => {
