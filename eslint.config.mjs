@@ -109,6 +109,13 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         {
+          paths: [
+            {
+              name: '@open-garden/garden-place',
+              message:
+                'Its main entry holds place and weather lookups; import a browser-safe subpath.',
+            },
+          ],
           patterns: [
             {
               group: ['@open-garden/plant-catalog-data', '@open-garden/*/server'],

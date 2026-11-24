@@ -13,7 +13,7 @@ import {
 } from '@open-garden/plant-catalog-data';
 import { WASHINGTON_PLACE } from '@open-garden/garden-place';
 import { GardenService } from '@open-garden/gardens';
-import { LayoutService } from '@open-garden/garden-layout';
+import { LayoutService } from '@open-garden/garden-layout/server';
 
 const databaseUrl = process.env['DATABASE_URL'];
 

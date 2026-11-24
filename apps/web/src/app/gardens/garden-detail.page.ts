@@ -12,7 +12,7 @@ import {
   lengthUnit,
   snapHalfFoot,
 } from '@open-garden/garden-layout';
-import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
+import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place/embed-map';
 import type { GardenDetailDto, PlaceCandidateDto, Units } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
