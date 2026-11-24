@@ -61,6 +61,11 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Bed View's plant search fills its list with plants the bed takes, instead
+  of hiding most of a page of ones it refuses.
+- Catalog filters such as family find every match again; once the catalog
+  passed 100 entries, a filter answered from the first page missed the
+  rest (Radish under the Cabbage family).
 - A newer open-garden-data release mounted with `PLANT_CATALOG_FILE`
   imports again: releases from v0.2.3 on are signed by the release workflow
   run on `main`, which the catalog check refused.
