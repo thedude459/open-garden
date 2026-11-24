@@ -11,6 +11,7 @@ import {
 } from '@open-garden/plant-catalog-data';
 import { plantListQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
+import { domainError } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
 import { openCalendarService } from '../gardens/calendar-service.factory';
 
@@ -59,11 +60,7 @@ export class PlantsController {
       pageSize: pageSizeRaw,
     });
     if (!parsed.success) {
-      const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid query') as Error & {
-        code: string;
-      };
-      err.code = 'VALIDATION_ERROR';
-      throw err;
+      throw domainError('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Invalid query');
     }
     const started = Date.now();
     const { sowNowFor: gardenId, asOf: asOfDate } = parsed.data;

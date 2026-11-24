@@ -11,6 +11,7 @@ import {
   type PlantType,
   type SoilPhDto,
   type StartMethod,
+  gardenAccess,
 } from '@open-garden/shared-types';
 import type {
   AreaRepository,
@@ -64,9 +65,11 @@ export class LayoutService {
     dto: LayoutPutDto,
     season?: number,
   ): Promise<GardenLayoutDto> {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw LAYOUT_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw LAYOUT_ERRORS.viewerLayout();
+    const membership = gardenAccess(
+      await this.memberships.get(gardenId, userId),
+      'edit',
+      LAYOUT_ERRORS.viewerLayout,
+    );
     const seasons = await this.seasons(gardenId, season);
 
     // Only this season's plantings are placed, checked for spacing, or
@@ -202,9 +205,7 @@ export class LayoutService {
   }
 
   async deleteArea(userId: string, gardenId: string, areaId: string): Promise<void> {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw LAYOUT_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw LAYOUT_ERRORS.viewerLayout();
+    gardenAccess(await this.memberships.get(gardenId, userId), 'edit', LAYOUT_ERRORS.viewerLayout);
     const deleted = await this.areas.delete(gardenId, areaId);
     if (!deleted) throw LAYOUT_ERRORS.areaNotFound();
   }

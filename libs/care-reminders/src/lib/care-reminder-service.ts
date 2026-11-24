@@ -1,3 +1,4 @@
+import { gardenAccess } from '@open-garden/shared-types';
 import type { CareAction, CareKind, ReminderListDto } from '@open-garden/shared-types';
 import { deriveReminders } from './derive';
 import { applyRainCover } from './rain-cover';
@@ -141,9 +142,11 @@ export class CareReminderService {
     dueOn: string,
   ): Promise<void> {
     if (!isIsoDate(dueOn)) throw CARE_ERRORS.dateRequired();
-    const membership = await this.memberships.getMembership(gardenId, userId);
-    if (!membership) throw CARE_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw CARE_ERRORS.viewerReminders();
+    gardenAccess(
+      await this.memberships.getMembership(gardenId, userId),
+      'edit',
+      CARE_ERRORS.viewerReminders,
+    );
     const planting = await this.plantings.getInGarden(gardenId, plantingId);
     if (!planting) throw CARE_ERRORS.plantingNotFound();
     if (typeof this.events.remove === 'function') {
@@ -172,13 +175,11 @@ export class CareReminderService {
     if (!isIsoDate(dueOn)) {
       throw CARE_ERRORS.dateRequired();
     }
-    const membership = await this.memberships.getMembership(gardenId, userId);
-    if (!membership) {
-      throw CARE_ERRORS.gardenNotFound();
-    }
-    if (membership.role === 'viewer') {
-      throw CARE_ERRORS.viewerReminders();
-    }
+    gardenAccess(
+      await this.memberships.getMembership(gardenId, userId),
+      'edit',
+      CARE_ERRORS.viewerReminders,
+    );
 
     const planting = await this.plantings.getInGarden(gardenId, plantingId);
     if (!planting) {

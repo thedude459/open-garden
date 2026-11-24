@@ -13,6 +13,7 @@ import { CatalogPipelineService, PIPELINE_ERRORS } from '@open-garden/catalog-pi
 import { PipelineRunRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { pipelineRunListQuerySchema } from '@open-garden/shared-types';
 import { SessionGuard } from '../auth/session.guard';
+import { domainError } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
 import { AdminGuard } from './admin.guard';
 import { openCatalogPipeline } from './catalog-pipeline.factory';
@@ -42,11 +43,7 @@ export class PipelineRunsController {
   async list(@Query('page') pageRaw?: string, @Query('pageSize') pageSizeRaw?: string) {
     const parsed = pipelineRunListQuerySchema.safeParse({ page: pageRaw, pageSize: pageSizeRaw });
     if (!parsed.success) {
-      const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid query') as Error & {
-        code: string;
-      };
-      err.code = 'VALIDATION_ERROR';
-      throw err;
+      throw domainError('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Invalid query');
     }
     return this.runs.list(parsed.data.page, parsed.data.pageSize);
   }

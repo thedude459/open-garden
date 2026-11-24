@@ -1,3 +1,4 @@
+import { gardenAccess } from '@open-garden/shared-types';
 import type { CompanionKind, SeasonDto } from '@open-garden/shared-types';
 import type {
   GardenMembershipRepository,
@@ -54,8 +55,10 @@ export class SeasonService {
   }
 
   private async requireEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw PLANTING_ERRORS.viewerPlantings();
+    gardenAccess(
+      await this.memberships.get(gardenId, userId),
+      'edit',
+      PLANTING_ERRORS.viewerPlantings,
+    );
   }
 }

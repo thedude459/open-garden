@@ -16,7 +16,7 @@ import type {
   PlantingAreaRepository,
   PlantRepository,
 } from '@open-garden/plant-catalog-data';
-import { allowsPlant, homeFor, lifeForPlant } from '@open-garden/shared-types';
+import { allowsPlant, homeFor, lifeForPlant, gardenAccess } from '@open-garden/shared-types';
 import { CALENDAR_ERRORS } from './domain-error';
 import { overlapsThisWeek } from './this-week';
 import {
@@ -206,9 +206,11 @@ export class CalendarService {
   }
 
   private async requireEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw CALENDAR_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw CALENDAR_ERRORS.viewerForbidden();
+    gardenAccess(
+      await this.memberships.get(gardenId, userId),
+      'edit',
+      CALENDAR_ERRORS.viewerForbidden,
+    );
   }
 }
 

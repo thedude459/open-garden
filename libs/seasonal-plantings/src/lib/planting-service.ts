@@ -29,6 +29,7 @@ import {
   placementRefusal,
   plantOutPatch,
   stationFor,
+  gardenAccess,
 } from '@open-garden/shared-types';
 import type {
   BedRepository,
@@ -668,15 +669,15 @@ export class PlantingService {
   }
 
   private async requirePlantingEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw PLANTING_ERRORS.viewerPlantings();
+    gardenAccess(
+      await this.memberships.get(gardenId, userId),
+      'edit',
+      PLANTING_ERRORS.viewerPlantings,
+    );
   }
 
   private async requireBedEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw PLANTING_ERRORS.viewerBeds();
+    gardenAccess(await this.memberships.get(gardenId, userId), 'edit', PLANTING_ERRORS.viewerBeds);
   }
 
   private async requireBedInGarden(gardenId: string, bedId: string) {

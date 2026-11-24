@@ -52,11 +52,10 @@ export class AuthController {
   async register(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const parsed = authRegisterSchema.safeParse(body);
     if (!parsed.success) {
-      const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid credentials') as Error & {
-        code: string;
-      };
-      err.code = 'VALIDATION_ERROR';
-      throw err;
+      throw domainError(
+        'VALIDATION_ERROR',
+        parsed.error.issues[0]?.message ?? 'Invalid credentials',
+      );
     }
     const { email, password, displayName } = parsed.data;
     const ip = `ip:${clientIp(res)}`;
@@ -79,11 +78,10 @@ export class AuthController {
   async login(@Body() body: unknown, @Res({ passthrough: true }) res: Response) {
     const parsed = authLoginSchema.safeParse(body);
     if (!parsed.success) {
-      const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid credentials') as Error & {
-        code: string;
-      };
-      err.code = 'VALIDATION_ERROR';
-      throw err;
+      throw domainError(
+        'VALIDATION_ERROR',
+        parsed.error.issues[0]?.message ?? 'Invalid credentials',
+      );
     }
     const email = `email:${parsed.data.email.trim().toLowerCase()}`;
     const ip = `ip:${clientIp(res)}`;
