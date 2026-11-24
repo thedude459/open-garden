@@ -30,7 +30,7 @@ describe('webPushSender', () => {
       keys: { p256dh: subscription.p256dh, auth: subscription.auth },
     });
     // What web-push would put on the wire with exactly these arguments.
-    const request = webpush.generateRequestDetails(target, payload, options);
+    const request = webpush.generateRequestDetails(target, payload ?? undefined, options);
     expect(request.endpoint).toBe(subscription.endpoint);
     expect(request.headers['Content-Encoding']).toBe('aes128gcm');
     expect(String(request.headers['Authorization'])).toMatch(/^vapid t=.+, k=/);

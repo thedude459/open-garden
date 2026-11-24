@@ -38,7 +38,8 @@ describe('CatalogPipelineService', () => {
     expect(run.status).toBe('succeeded');
     expect(run.plantsUpserted).toBe(1);
     expect(run.recordsRejected).toBe(2);
-    expect(run.sources[0]).toMatchObject({ recordsAccepted: 1, recordsRejected: 2 });
+    const detail = mem.runs.find((row) => row.id === run.id);
+    expect(detail?.sources[0]).toMatchObject({ recordsAccepted: 1, recordsRejected: 2 });
   });
 
   describe('an unchanged catalog', () => {

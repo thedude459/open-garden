@@ -108,17 +108,19 @@ describe.skipIf(!liveEnabled)('pipeline http', () => {
     const started = await startPipelineRun(request);
     expect(started.status()).toBe(202);
     const run = (await json(started)) as { id: string };
-    let detail: {
+    type RunDetail = {
       sources: Array<{ sourceId: string }>;
       merges: Array<{ varietyKey: string; fieldWinners: Record<string, string> }>;
       status: string;
       errorMessage: string | null;
-    } | null = null;
+    };
+    // Not annotated, so TS does not narrow it to null: the callback assigns it.
+    let detail = null as RunDetail | null;
     await waitUntil(
       async () => {
         const res = await request.get(`/api/admin/pipeline/runs/${run.id}`);
         if (!res.ok()) return false;
-        detail = (await json(res)) as typeof detail;
+        detail = (await json(res)) as RunDetail;
         return Boolean(detail && detail.status !== 'running');
       },
       30_000,

@@ -751,7 +751,6 @@ Size is a rough guess: S is under a day, M a few days, L longer.
 | **Accessibility:** move the plant to place with the arrow keys in Bed View before Enter places it | Keyboard placement today puts the plant in the middle of the visible area only | M |
 | **Plantings:** offer once to mark existing plantings of perennial crops (asparagus, rhubarb, strawberry) as perennial | New ones default to perennial since ADR 0042; older ones stay annual until a household edits each, and a season close clears them | S |
 | **Data:** a `woody` flag on crops, if a herbaceous perennial vine (hops) joins the dataset | The app reads a perennial vine as woody (ADR 0042); hops would land in a fruit garden | S |
-| **CI:** type-check specs (a `tsconfig.spec.json` for API and libs, run in `verify`) | `tsc` excludes specs and Vitest doesn't check types, so specs drift unseen: a layout test built LayoutService with 4 of its 7 dependencies; 14 errors today | S |
 
 ## Licensing
 
