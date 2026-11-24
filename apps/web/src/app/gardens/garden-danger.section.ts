@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 import type { GardenDetailDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
-import { gardenErrorMessage } from './garden-error-message';
 import { GardensApiService } from './gardens-api.service';
+import { errorMessage } from '../ui/error-message';
 
 /** Settings: leave a property you were invited to, or delete one you own. */
 @Component({
@@ -63,7 +63,7 @@ export class GardenDangerSection {
         await this.api.removeMember(this.garden().id, userId);
         await this.router.navigateByUrl('/gardens');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }
@@ -74,7 +74,7 @@ export class GardenDangerSection {
         await this.api.remove(this.garden().id);
         await this.router.navigateByUrl('/gardens');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }

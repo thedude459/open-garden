@@ -18,6 +18,28 @@ const DOMAIN_STATUS: Record<string, HttpStatus> = {
   SERVICE_UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
 };
 
+/** Codes for Nest's own exceptions (a bad route, bad JSON, a body too large). */
+const STATUS_CODE: Record<number, string> = {
+  ...Object.fromEntries(Object.entries(DOMAIN_STATUS).map(([code, status]) => [status, code])),
+  [HttpStatus.PAYLOAD_TOO_LARGE]: 'PAYLOAD_TOO_LARGE',
+};
+
+/**
+ * Every error leaves as `{ error: { code, message } }`. Ours already are;
+ * Nest's arrive as a string or `{ statusCode, message, error }`.
+ */
+function httpError(status: number, body: unknown): { code: string; message: string } {
+  const ours = (body as { error?: { code?: unknown; message?: unknown } } | null)?.error;
+  if (typeof ours?.code === 'string' && typeof ours.message === 'string') {
+    return { code: ours.code, message: ours.message };
+  }
+  const code = STATUS_CODE[status] ?? (status >= 500 ? 'INTERNAL' : 'BAD_REQUEST');
+  if (status >= 500) return { code, message: 'An unexpected error occurred' };
+  const raw = typeof body === 'string' ? body : (body as { message?: unknown } | null)?.message;
+  const message: unknown = Array.isArray(raw) ? (raw as unknown[])[0] : raw;
+  return { code, message: typeof message === 'string' && message ? message : 'Request failed' };
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -28,10 +50,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const body = exception.getResponse();
-      res
-        .status(status)
-        .json(typeof body === 'string' ? { error: { code: 'INTERNAL', message: body } } : body);
+      if (status >= 500) this.logger.error(exception);
+      res.status(status).json({ error: httpError(status, exception.getResponse()) });
       return;
     }
 

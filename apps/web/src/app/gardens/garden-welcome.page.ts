@@ -15,10 +15,10 @@ import { localIso } from '../today/today-groups';
 import { NoticeService } from '../ui/notice.service';
 import { PlantIcon } from '../ui/plant-icon';
 import { CalendarApiService } from './calendar-api.service';
-import { gardenErrorMessage } from './garden-error-message';
 import { GardensApiService } from './gardens-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { starterCrops } from './starter-crops';
+import { errorMessage } from '../ui/error-message';
 
 /**
  * A new property's first run: the climate its address gave it, a few easy
@@ -260,7 +260,7 @@ export class GardenWelcomePage implements OnInit {
         }
         this.notices.success(`Added ${ids.length} to the calendar`);
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err, 'Could not add to the calendar'));
+        this.notices.error(errorMessage(err, 'Could not add to the calendar'));
       }
     });
   }
@@ -282,7 +282,7 @@ export class GardenWelcomePage implements OnInit {
         this.bedAdded.set(name);
         this.notices.success(`${name} added`);
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err, 'Could not add the bed'));
+        this.notices.error(errorMessage(err, 'Could not add the bed'));
       }
     });
   }

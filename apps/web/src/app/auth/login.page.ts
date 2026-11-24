@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { apiMessage } from '../ui/error-message';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -105,8 +106,7 @@ export class LoginPage {
         const status = err instanceof HttpErrorResponse ? err.status : 0;
         const said =
           status === 429 || (this.mode() === 'register' && status === 409)
-            ? ((err as HttpErrorResponse).error as { error?: { message?: string } } | null)?.error
-                ?.message
+            ? apiMessage(err)
             : undefined;
         this.notices.error(said ?? 'Authentication failed');
       }

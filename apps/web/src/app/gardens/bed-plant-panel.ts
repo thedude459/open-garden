@@ -28,7 +28,7 @@ import { PlantPicker } from '../plants/plant-picker';
 import { EmptyState } from '../ui/empty-state';
 import { PlantIcon } from '../ui/plant-icon';
 import { NoticeService } from '../ui/notice.service';
-import { gardenErrorMessage } from './garden-error-message';
+import { errorMessage } from '../ui/error-message';
 
 /**
  * Bed View's plant panel: favorites and catalog search, filtered to what the
@@ -194,7 +194,7 @@ export class BedPlantPanel implements OnInit {
 
   onSearchFailed(err: unknown) {
     this.catalogHits.set([]);
-    this.notices.error(gardenErrorMessage(err, 'Could not search the catalog'));
+    this.notices.error(errorMessage(err, 'Could not search the catalog'));
   }
 
   /** Favorites the bed accepts, with known spacing, that are still in the catalog. */

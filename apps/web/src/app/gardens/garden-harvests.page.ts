@@ -5,9 +5,9 @@ import type { HarvestTotalsDto } from '@open-garden/shared-types';
 import { formatDay } from '@open-garden/web-ui';
 import { AuthApiService } from '../auth/auth-api.service';
 import { EmptyState } from '../ui/empty-state';
-import { gardenErrorMessage } from './garden-error-message';
 import { harvestAmount } from './harvest-amount';
 import { PlantingsApiService } from './plantings-api.service';
+import { errorMessage } from '../ui/error-message';
 
 /** What a property's crops yielded in a season, by crop (ADR 0038). */
 @Component({
@@ -87,7 +87,7 @@ export class GardenHarvestsPage implements OnInit {
     try {
       this.totals.set(await this.api.harvestTotals(this.gardenId, season));
     } catch (err) {
-      this.error.set(gardenErrorMessage(err, 'Could not load harvests'));
+      this.error.set(errorMessage(err, 'Could not load harvests'));
     }
   }
 }

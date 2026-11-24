@@ -203,9 +203,10 @@ fi
 LIVE_STATUS=0
 PW_STATUS=0
 E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache --output-style=static || LIVE_STATUS=$?
-# Kills the API's database connections, so it runs alone after the other live specs.
-E2E_LIVE=1 E2E_DB_RECONNECT=1 npx vitest run --config vitest.config.ts \
-  apps/api-e2e/src/db-reconnect-http.spec.ts || LIVE_STATUS=$?
+# These disturb the other live specs (one kills the API's database
+# connections, one starts and stops a second API), so they run alone after them.
+E2E_LIVE=1 E2E_ALONE=1 npx vitest run --config vitest.config.ts --no-file-parallelism \
+  apps/api-e2e/src/db-reconnect-http.spec.ts apps/api-e2e/src/shutdown.spec.ts || LIVE_STATUS=$?
 npx nx e2e web-e2e --output-style=static || PW_STATUS=$?
 if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
   # Stop the API cleanly so Node writes its coverage, then map it to the sources.

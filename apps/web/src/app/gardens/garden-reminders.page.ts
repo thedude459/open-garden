@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { formatDay } from '@open-garden/web-ui';
 import { CARE_VERBS, plantName } from '@open-garden/shared-types';
 import { Component, OnInit, inject, signal } from '@angular/core';
@@ -11,6 +10,7 @@ import { rainForDeviceDay } from './garden-reminders-cache.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { waterNote } from './water-note';
 import { gramsFromInput, weightUnit } from '@open-garden/garden-layout';
+import { errorMessage } from '../ui/error-message';
 @Component({
   standalone: true,
   imports: [RouterLink],
@@ -234,7 +234,7 @@ export class GardenRemindersPage implements OnInit {
       this.list.set(next ? rainForDeviceDay(next) : next);
       return true;
     } catch (err) {
-      this.error.set(readError(err));
+      this.error.set(errorMessage(err, 'Request failed'));
       return false;
     }
   }
@@ -255,21 +255,10 @@ export class GardenRemindersPage implements OnInit {
         this.coldOffline.set(true);
         this.list.set(null);
       } else {
-        this.error.set(readError(err));
+        this.error.set(errorMessage(err, 'Request failed'));
       }
     } finally {
       this.loading.set(false);
     }
   }
-}
-
-function readError(err: unknown): string {
-  if (err instanceof HttpErrorResponse) {
-    const body: unknown = err.error;
-    if (body && typeof body === 'object' && 'error' in body) {
-      return (body as { error?: { message?: string } }).error?.message ?? 'Request failed';
-    }
-  }
-  if (err instanceof Error) return err.message;
-  return 'Request failed';
 }

@@ -28,6 +28,7 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 import { openPlantingService } from './planting-service.factory';
+import { idOf } from '../common/ids';
 
 @Controller('gardens/:id/plantings')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -79,7 +80,7 @@ export class GardenPlantingsController {
   update(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantingId') plantingId: string,
+    @Param('plantingId', idOf('Planting')) plantingId: string,
     @Body() body: unknown,
   ) {
     const parsed = plantingPatchSchema.safeParse(body);
@@ -97,7 +98,7 @@ export class GardenPlantingsController {
   repeatPlan(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantingId') plantingId: string,
+    @Param('plantingId', idOf('Planting')) plantingId: string,
   ) {
     return this.plantings.repeatPlan(user.id, id, plantingId);
   }
@@ -108,7 +109,7 @@ export class GardenPlantingsController {
   repeat(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantingId') plantingId: string,
+    @Param('plantingId', idOf('Planting')) plantingId: string,
     @Body() body: unknown,
   ) {
     const parsed = plantingRepeatSchema.safeParse(body);
@@ -133,7 +134,7 @@ export class GardenPlantingsController {
   logHarvest(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantingId') plantingId: string,
+    @Param('plantingId', idOf('Planting')) plantingId: string,
     @Body() body: unknown,
   ) {
     const parsed = harvestLogSchema.safeParse(body);
@@ -150,7 +151,7 @@ export class GardenPlantingsController {
   deleteHarvest(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantingId') plantingId: string,
+    @Param('plantingId', idOf('Planting')) plantingId: string,
     @Param('harvestedOn') harvestedOn: string,
   ) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(harvestedOn)) {
@@ -164,7 +165,7 @@ export class GardenPlantingsController {
   remove(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantingId') plantingId: string,
+    @Param('plantingId', idOf('Planting')) plantingId: string,
   ) {
     return this.plantings.remove(user.id, id, plantingId);
   }

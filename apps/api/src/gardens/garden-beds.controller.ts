@@ -5,7 +5,6 @@ import {
   HttpCode,
   Inject,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Res,
@@ -20,6 +19,7 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 import { openBedService, openSoilTestService, parseSoilTest } from './planting-service.factory';
+import { idOf } from '../common/ids';
 
 @Controller('gardens/:id/beds')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -52,7 +52,7 @@ export class GardenBedsController {
   rename(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('bedId') bedId: string,
+    @Param('bedId', idOf('Bed')) bedId: string,
     @Body() body: unknown,
   ) {
     const parsed = bedPatchSchema.safeParse(body);
@@ -64,7 +64,11 @@ export class GardenBedsController {
 
   @Delete(':bedId')
   @HttpCode(204)
-  remove(@CurrentUser() user: AuthUser, @Param('id') id: string, @Param('bedId') bedId: string) {
+  remove(
+    @CurrentUser() user: AuthUser,
+    @Param('id') id: string,
+    @Param('bedId', idOf('Bed')) bedId: string,
+  ) {
     return this.beds.deleteBed(user.id, id, bedId);
   }
 
@@ -72,7 +76,7 @@ export class GardenBedsController {
   recordSoilTest(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('bedId', ParseUUIDPipe) bedId: string,
+    @Param('bedId', idOf('Bed')) bedId: string,
     @Body() body: unknown,
   ) {
     return this.soilTests.record(user.id, id, { bedId }, parseSoilTest(body));
@@ -83,8 +87,8 @@ export class GardenBedsController {
   removeSoilTest(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('bedId', ParseUUIDPipe) bedId: string,
-    @Param('testId', ParseUUIDPipe) testId: string,
+    @Param('bedId', idOf('Bed')) bedId: string,
+    @Param('testId', idOf('Soil test')) testId: string,
   ) {
     return this.soilTests.remove(user.id, id, { bedId }, testId);
   }

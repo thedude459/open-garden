@@ -5,7 +5,7 @@ import { LiveClient, liveEnabled, uniqueEmail } from './live-http';
 const databaseUrl = process.env['DATABASE_URL'];
 // Terminates the API's database connections, which would break requests from
 // other live specs running in parallel. scripts/ci/e2e.sh runs it on its own.
-const reconnectEnabled = process.env['E2E_DB_RECONNECT'] === '1';
+const reconnectEnabled = process.env['E2E_ALONE'] === '1';
 
 describe.skipIf(!liveEnabled || !databaseUrl || !reconnectEnabled)(
   'API survives dropped database connections',

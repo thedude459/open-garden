@@ -17,6 +17,7 @@ import { domainError } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
 import { AdminGuard } from './admin.guard';
 import { openCatalogPipeline } from './catalog-pipeline.factory';
+import { idOf } from '../common/ids';
 
 @Controller('admin/pipeline/runs')
 @UseGuards(SessionGuard, AdminGuard)
@@ -49,7 +50,7 @@ export class PipelineRunsController {
   }
 
   @Get(':id')
-  async detail(@Param('id') id: string) {
+  async detail(@Param('id', idOf('Pipeline run')) id: string) {
     const detail = await this.runs.getDetail(id);
     if (!detail) throw PIPELINE_ERRORS.runNotFound();
     return detail;

@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { alertAdvice, alertHeadline } from '@open-garden/reminder-delivery/messages';
@@ -10,6 +9,7 @@ import { EmptyState } from '../ui/empty-state';
 import { ReminderSettings } from './reminder-settings';
 import { NoticeService } from '../ui/notice.service';
 import { groupTodayTasks, localIso, type TodayGroup } from './today-groups';
+import { errorMessage } from '../ui/error-message';
 
 type Alert = NonNullable<TodayDto['alerts']>[number];
 
@@ -163,7 +163,7 @@ export class TodayPage implements OnInit {
       this.groups.set(groupTodayTasks(this.tasks));
       this.notices.success(`${task.title}: done`);
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not load today’s tasks'));
     }
   }
 
@@ -179,20 +179,9 @@ export class TodayPage implements OnInit {
       this.groups.set(groupTodayTasks(this.tasks));
       this.alerts.set([...(today.alerts ?? [])].sort((a, b) => a.date.localeCompare(b.date)));
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not load today’s tasks'));
     } finally {
       this.loading.set(false);
     }
   }
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof HttpErrorResponse) {
-    const body: unknown = err.error;
-    if (body && typeof body === 'object' && 'error' in body) {
-      return (body as { error?: { message?: string } }).error?.message ?? 'Request failed';
-    }
-    return 'Could not load today’s tasks';
-  }
-  return err instanceof Error ? err.message : 'Request failed';
 }

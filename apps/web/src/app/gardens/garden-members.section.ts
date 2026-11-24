@@ -2,8 +2,8 @@ import { Component, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { GardenDetailDto, GardenRole } from '@open-garden/shared-types';
 import { NoticeService } from '../ui/notice.service';
-import { gardenErrorMessage } from './garden-error-message';
 import { GardensApiService } from './gardens-api.service';
+import { errorMessage } from '../ui/error-message';
 
 /** Settings: who shares the property, their roles, and inviting someone. */
 @Component({
@@ -117,7 +117,7 @@ export class GardenMembersSection {
         this.changed.emit();
         this.notices.success('Member invited');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }
@@ -141,7 +141,7 @@ export class GardenMembersSection {
         this.changed.emit();
         this.notices.success(role === 'owner' ? 'Ownership transferred' : 'Role updated');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }
@@ -153,7 +153,7 @@ export class GardenMembersSection {
         this.changed.emit();
         this.notices.success('Member removed');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }
