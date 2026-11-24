@@ -113,6 +113,14 @@ garden.example.com {
 Any proxy works (nginx, Traefik, your NAS's reverse proxy, a Cloudflare
 Tunnel). Keep `WEB_HOST=127.0.0.1` if the proxy runs on the same machine.
 
+The `web` container takes each visitor's address from the `X-Forwarded-For`
+header your proxy adds, so sign-in limits apply per visitor rather than to
+everyone at once. It believes that header only from loopback and private
+addresses (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`), which
+covers a proxy on the same machine, in Docker, or on your network. A device on
+your own network could therefore claim another address; one on the internet
+cannot.
+
 Set `COOKIE_SECURE=true` explicitly: the `web` container's nginx passes its own
 scheme (`http`) to the API, so the API cannot tell from headers that the
 browser used HTTPS. The `web` container already sends a strict
