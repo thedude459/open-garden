@@ -83,6 +83,18 @@ describe('CatalogService', () => {
     });
   });
 
+  it('narrows to what an area takes, and refuses an unknown area', async () => {
+    const list = vi.fn().mockResolvedValue({ items: [], page: 1, pageSize: 20, totalCount: 0 });
+    const service = new CatalogService({ list } as never);
+    await service.list({ area: 'vegetable' });
+    expect(list.mock.calls[0]?.[0].plantTypes).toEqual(['vegetable', 'herb', 'flower', 'fruit']);
+    await service.list({});
+    expect(list.mock.calls[1]?.[0].plantTypes).toBeUndefined();
+    await expect(service.list({ area: 'toString' as never })).rejects.toMatchObject({
+      message: 'invalid area',
+    });
+  });
+
   it('omits null-spacing rows from summaries', async () => {
     const plants = {
       list: vi.fn().mockResolvedValue({

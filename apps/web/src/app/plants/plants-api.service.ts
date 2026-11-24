@@ -91,6 +91,7 @@ export class PlantsApiService {
       if (query.q) params = params.set('q', query.q);
       if (query.zone !== undefined) params = params.set('zone', String(query.zone));
       if (query.plantType) params = params.set('plantType', query.plantType);
+      if (query.area) params = params.set('area', query.area);
       if (query.family) params = params.set('family', query.family);
       if (query.sowNowFor) params = params.set('sowNowFor', query.sowNowFor);
       if (query.asOf) params = params.set('asOf', query.asOf);
@@ -141,7 +142,8 @@ export class PlantsApiService {
 
 /** A page worth keeping in memory to filter offline: no search or narrowing filter. */
 function isBrowse(query: PlantListQueryDto): boolean {
-  return !query.q && !query.family && !query.sowNowFor && isFirstPage(query);
+  // An area query is a filtered page; it never stands in for the whole browse.
+  return !query.q && !query.family && !query.area && !query.sowNowFor && isFirstPage(query);
 }
 
 /**
