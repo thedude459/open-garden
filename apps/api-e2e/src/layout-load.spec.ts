@@ -11,6 +11,7 @@ import {
   PlantRepository,
   plants as plantsTable,
   SoilTestRepository,
+  transactionOn,
   users,
   YearRecordRepository,
 } from '@open-garden/plant-catalog-data';
@@ -31,6 +32,11 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
     new YearRecordRepository(db),
     new SoilTestRepository(db),
     new PlantingAreaRepository(db),
+    transactionOn(db, (tx) => ({
+      beds: new BedRepository(tx),
+      plantings: new PlantingRepository(tx),
+      areas: new AreaRepository(tx),
+    })),
   );
   const plants = new PlantRepository(db);
   const beds = new BedRepository(db);

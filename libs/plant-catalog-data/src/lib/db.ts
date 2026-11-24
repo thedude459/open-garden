@@ -1,8 +1,13 @@
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
+import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import * as schema from './schema';
 
-export type AppDatabase = NodePgDatabase<typeof schema>;
+/**
+ * The database, or a transaction on it: Drizzle's transaction extends the same
+ * base, so a repository built on either reads and writes the same way.
+ */
+export type AppDatabase = PgDatabase<NodePgQueryResultHKT, typeof schema>;
 
 export interface CreateDbOptions {
   /** Called when an idle pooled client fails. Defaults to console.error. */
@@ -29,6 +34,17 @@ export function createDb(
   pool.on('error', options.onPoolError ?? logPoolError);
   const db = drizzle(pool, { schema });
   return { db, pool };
+}
+
+/**
+ * A `Transaction` port over this database: `repos` builds the repositories
+ * on the transaction, and a throw from the work rolls every write back.
+ */
+export function transactionOn<Repos>(
+  db: AppDatabase,
+  repos: (tx: AppDatabase) => Repos,
+): <T>(work: (repos: Repos) => Promise<T>) => Promise<T> {
+  return (work) => db.transaction((tx) => work(repos(tx)));
 }
 
 /** True when a query failed on a unique constraint (Postgres 23505), directly or wrapped by Drizzle. */

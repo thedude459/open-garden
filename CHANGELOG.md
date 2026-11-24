@@ -72,6 +72,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Deleting a bed, saving the plan, and repeating a sowing now save
+  completely or not at all. Before, a failure part-way could delete a bed's
+  plantings and keep the bed, or save half a plan.
 - Stopping or upgrading the app no longer cuts off the API mid-request: it
   finishes what it is doing and closes its database connections first. Compose
   files now run the API with `init: true`.
@@ -91,6 +94,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [ADR 0043](docs/adr/0043-atomic-writes.md): writes that span rows commit
+  together.
 - [Deployment](docs/deploy.md#https): which proxies the `web` container
   trusts to name the visitor's address.
 - [ADR 0042](docs/adr/0042-fruit-gardens.md): fruit gardens.
