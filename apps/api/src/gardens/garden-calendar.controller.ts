@@ -13,17 +13,10 @@ import {
 } from '@nestjs/common';
 import type { Response } from 'express';
 import type { AuthUser } from '@open-garden/auth';
-import { CalendarService, domainError } from '@open-garden/planting-calendar';
-import {
-  CalendarEntryRepository,
-  GardenMembershipRepository,
-  GardenRepository,
-  PlantingAreaRepository,
-  PlantRepository,
-  YearRecordRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import { domainError, type CalendarService } from '@open-garden/planting-calendar';
+import { type AppDatabase } from '@open-garden/plant-catalog-data';
 import { calendarAddSchema, calendarListQuerySchema } from '@open-garden/shared-types';
+import { openCalendarService } from './calendar-service.factory';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
@@ -35,14 +28,7 @@ export class GardenCalendarController {
   private readonly calendar: CalendarService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.calendar = new CalendarService(
-      new GardenRepository(bundle.db),
-      new GardenMembershipRepository(bundle.db),
-      new PlantRepository(bundle.db),
-      new CalendarEntryRepository(bundle.db),
-      new PlantingAreaRepository(bundle.db),
-      new YearRecordRepository(bundle.db),
-    );
+    this.calendar = openCalendarService(bundle.db);
   }
 
   @Get()

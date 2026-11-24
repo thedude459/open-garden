@@ -1,12 +1,10 @@
 import { Controller, Get, Inject, Logger, Param, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
-import { CalendarService } from '@open-garden/planting-calendar';
+import type { CalendarService } from '@open-garden/planting-calendar';
 import {
-  CalendarEntryRepository,
   CatalogCompanionRepository,
   FavoriteRepository,
-  GardenMembershipRepository,
   GardenRepository,
   PlantRepository,
   type AppDatabase,
@@ -14,6 +12,7 @@ import {
 import { plantListQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
+import { openCalendarService } from '../gardens/calendar-service.factory';
 
 @Controller('plants')
 @UseGuards(SessionGuard)
@@ -28,12 +27,7 @@ export class PlantsController {
     const favorites = new FavoriteRepository(bundle.db);
     this.catalog = new CatalogService(plants);
     const gardens = new GardenRepository(bundle.db);
-    this.calendar = new CalendarService(
-      gardens,
-      new GardenMembershipRepository(bundle.db),
-      plants,
-      new CalendarEntryRepository(bundle.db),
-    );
+    this.calendar = openCalendarService(bundle.db);
     this.details = new PlantDetailService(plants, favorites, {
       pairs: new CatalogCompanionRepository(bundle.db),
       zonesForUser: (userId) => gardens.zonesForUser(userId),

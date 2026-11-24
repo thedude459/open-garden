@@ -1,9 +1,7 @@
-import { CalendarService } from '@open-garden/planting-calendar';
+import { openCalendarService } from './calendar-service.factory';
 import {
   BedRepository,
-  CalendarEntryRepository,
   GardenMembershipRepository,
-  GardenRepository,
   PlantingAreaRepository,
   PlantingRepository,
   PlantRepository,
@@ -18,12 +16,7 @@ import { soilTestCreateSchema, type SoilTestCreateDto } from '@open-garden/share
 export function openPlantingService(db: AppDatabase) {
   const memberships = new GardenMembershipRepository(db);
   const plants = new PlantRepository(db);
-  const calendar = new CalendarService(
-    new GardenRepository(db),
-    memberships,
-    plants,
-    new CalendarEntryRepository(db),
-  );
+  const calendar = openCalendarService(db);
   return new PlantingService(
     memberships,
     plants,
