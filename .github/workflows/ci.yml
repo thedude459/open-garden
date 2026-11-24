@@ -281,6 +281,9 @@ jobs:
           trivyignores: .trivyignore
           exit-code: '1'
           format: table
+      - name: Smoke-test the web image (compression, caching, visitor address)
+        if: steps.gate.outputs.run == 'run' && matrix.image == 'web'
+        run: bash scripts/ci/web-image-smoke.sh open-garden-web:ci
 
   e2e:
     name: e2e

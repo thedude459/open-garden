@@ -46,6 +46,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- Pages load faster: the `web` container now compresses what it sends
+  (a first visit is about 113 kB instead of 408 kB) and lets browsers keep
+  the app's code files until a release changes them.
 - Online, a plant search always comes from the server, so it no longer
   misses plants past the first saved page. Offline, saved pages still answer.
 - Every bed now belongs to an area, and its area alone decides what it
@@ -66,6 +69,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Behind an HTTPS proxy, failed sign-ins now count against each visitor's
+  own address. Before, every visitor shared one limit, so anyone could lock
+  the whole household out of signing in for 15 minutes.
 - Bed View's plant search fills its list with plants the bed takes, instead
   of hiding most of a page of ones it refuses.
 - Catalog filters such as family find every match again; once the catalog
@@ -77,6 +83,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [Deployment](docs/deploy.md#https): which proxies the `web` container
+  trusts to name the visitor's address.
 - [ADR 0042](docs/adr/0042-fruit-gardens.md): fruit gardens.
 
 ### Security
