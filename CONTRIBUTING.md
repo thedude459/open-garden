@@ -198,7 +198,8 @@ and Deprecated features (each says "None" when empty).
 - Every pull request adds a line under **Unreleased**, in the section it
   belongs to, in plain words for households first. The `changelog` CI job
   checks it. Dependabot's updates are exempt; label a change households and
-  operators would not notice (CI, tests, the roadmap) `skip-changelog`.
+  operators would not notice (CI, tests, the roadmap) `skip-changelog`;
+  adding or removing the label re-runs the check on its own.
 - **Security** names every publicly known vulnerability in Open Garden's own
   code, with its CVE or GitHub security advisory id, that the release fixes.
   Dependency vulnerabilities are not listed (Dependabot and the weekly
