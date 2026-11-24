@@ -17,6 +17,7 @@ import { RemindersApiService } from './reminders-api.service';
 import { OnlineRequiredError, GardensApiService } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
+import { errorMessage } from '../ui/error-message';
 @Component({
   standalone: true,
   imports: [FormsModule, PlaceMarker, PlantPicker],
@@ -197,7 +198,7 @@ export class GardenTransplantsPage implements OnInit {
       this.loadError.set(
         isNetworkError(err)
           ? 'Could not load transplants while offline. They load again when you are back online.'
-          : `Could not load transplants: ${messageFrom(err)}`,
+          : `Could not load transplants: ${errorMessage(err, 'Something went wrong')}`,
       );
     } finally {
       this.loading.set(false);
@@ -304,17 +305,8 @@ export class GardenTransplantsPage implements OnInit {
   }
 
   private fail(err: unknown) {
-    this.notices.error(messageFrom(err));
+    this.notices.error(errorMessage(err, 'Something went wrong'));
   }
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const body = err.error as { error?: { message?: string } } | undefined;
-    return body?.error?.message ?? err.message;
-  }
-  return 'Something went wrong';
 }
 
 /** No response at all: offline, or the server could not be reached. */

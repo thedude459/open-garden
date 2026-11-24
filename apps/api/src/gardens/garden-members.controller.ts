@@ -21,6 +21,7 @@ import { gardenInviteSchema, gardenMemberPatchSchema } from '@open-garden/shared
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
+import { idOf } from '../common/ids';
 
 @Controller('gardens/:id/members')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -53,7 +54,7 @@ export class GardenMembersController {
   patchMember(
     @CurrentUser() user: AuthUser,
     @Param('id') gardenId: string,
-    @Param('userId') userId: string,
+    @Param('userId', idOf('Member')) userId: string,
     @Body() body: unknown,
   ) {
     const parsed = gardenMemberPatchSchema.safeParse(body);
@@ -68,7 +69,7 @@ export class GardenMembersController {
   removeMember(
     @CurrentUser() user: AuthUser,
     @Param('id') gardenId: string,
-    @Param('userId') userId: string,
+    @Param('userId', idOf('Member')) userId: string,
   ) {
     return this.memberships.removeMember(user.id, gardenId, userId);
   }

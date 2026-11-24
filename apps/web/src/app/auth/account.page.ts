@@ -2,8 +2,8 @@ import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NoticeService } from '../ui/notice.service';
-import { gardenErrorMessage } from '../gardens/garden-error-message';
 import { AuthApiService } from './auth-api.service';
+import { errorMessage } from '../ui/error-message';
 
 /** The signed-in member's own account: their password, and deleting it. */
 @Component({
@@ -133,7 +133,7 @@ export class AccountPage {
         this.currentPassword = this.newPassword = this.repeatPassword = '';
         this.notices.success('Password changed. Other devices are signed out.');
       } catch (err) {
-        this.error.set(gardenErrorMessage(err, 'Could not change the password.'));
+        this.error.set(errorMessage(err, 'Could not change the password.'));
       }
     });
   }
@@ -152,7 +152,7 @@ export class AccountPage {
         await this.router.navigateByUrl('/login');
         this.notices.success('Your account is deleted.');
       } catch (err) {
-        this.deleteError.set(gardenErrorMessage(err, 'Could not delete the account.'));
+        this.deleteError.set(errorMessage(err, 'Could not delete the account.'));
       }
     });
   }

@@ -19,6 +19,7 @@ import {
 } from '@open-garden/plant-catalog-data';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
+import { idOf } from '../common/ids';
 
 @Controller('favorites')
 @UseGuards(SessionGuard)
@@ -48,7 +49,7 @@ export class FavoritesController {
   @Put(':plantId')
   async add(
     @CurrentUser() user: AuthUser,
-    @Param('plantId') plantId: string,
+    @Param('plantId', idOf('Plant')) plantId: string,
     @Body() body: { clientMutationId?: string },
   ) {
     return this.favorites.add(user.id, plantId, body?.clientMutationId);
@@ -56,7 +57,7 @@ export class FavoritesController {
 
   @Delete(':plantId')
   @HttpCode(204)
-  async remove(@CurrentUser() user: AuthUser, @Param('plantId') plantId: string) {
+  async remove(@CurrentUser() user: AuthUser, @Param('plantId', idOf('Plant')) plantId: string) {
     await this.favorites.remove(user.id, plantId);
   }
 }

@@ -29,6 +29,7 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 import { season } from './season-query';
+import { idOf } from '../common/ids';
 
 @Controller()
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -83,7 +84,7 @@ export class GardenLayoutController {
   deleteWalkway(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('walkwayId') walkwayId: string,
+    @Param('walkwayId', idOf('Walkway')) walkwayId: string,
   ) {
     return this.layouts.deleteArea(user.id, id, walkwayId);
   }

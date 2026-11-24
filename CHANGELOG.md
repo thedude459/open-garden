@@ -46,6 +46,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- Error messages say what went wrong more often: the API sends every error in
+  one form, and the app no longer shows technical text such as "Http failure
+  response" in their place.
 - Pages load faster: the `web` container now compresses what it sends
   (a first visit is about 113 kB instead of 408 kB) and lets browsers keep
   the app's code files until a release changes them.
@@ -69,6 +72,11 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Stopping or upgrading the app no longer cuts off the API mid-request: it
+  finishes what it is doing and closes its database connections first. Compose
+  files now run the API with `init: true`.
+- A mistyped property, plant, or planting address in a link now shows "not
+  found" instead of a server error, and no longer fills the server log.
 - Behind an HTTPS proxy, failed sign-ins now count against each visitor's
   own address. Before, every visitor shared one limit, so anyone could lock
   the whole household out of signing in for 15 minutes.

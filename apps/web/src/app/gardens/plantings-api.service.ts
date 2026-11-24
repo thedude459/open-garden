@@ -23,6 +23,7 @@ import {
   type PlantingPreview,
   type QueueItem,
 } from './plantings-offline.queue';
+import { apiMessage, UserFacingError } from '../ui/error-message';
 
 const API = '/api';
 
@@ -350,7 +351,7 @@ export class PlantingsApiService {
 
   private async listOrThrow(gardenId: string, season?: number): Promise<ClientPlantingList> {
     const list = await this.list(gardenId, season);
-    if (!list) throw new Error('Garden not found');
+    if (!list) throw new UserFacingError('Garden not found');
     return list;
   }
 
@@ -489,10 +490,4 @@ function isGardenGone(err: unknown): boolean {
 
 function isClientError(err: unknown): boolean {
   return err instanceof HttpErrorResponse && err.status >= 400 && err.status < 500;
-}
-
-function apiMessage(err: unknown): string | undefined {
-  if (!(err instanceof HttpErrorResponse)) return undefined;
-  const body = err.error as { error?: { message?: string } } | null;
-  return body?.error?.message;
 }

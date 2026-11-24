@@ -6,7 +6,6 @@ import {
   HttpCode,
   Inject,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
@@ -19,6 +18,7 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 import { openBedService, openSoilTestService, parseSoilTest } from './planting-service.factory';
+import { idOf } from '../common/ids';
 
 @Controller('gardens/:id')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -51,7 +51,7 @@ export class GardenAreasController {
   renameArea(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('areaId', ParseUUIDPipe) areaId: string,
+    @Param('areaId', idOf('Area')) areaId: string,
     @Body() body: unknown,
   ) {
     const parsed = areaPatchSchema.safeParse(body);
@@ -70,7 +70,7 @@ export class GardenAreasController {
   deleteArea(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('areaId', ParseUUIDPipe) areaId: string,
+    @Param('areaId', idOf('Area')) areaId: string,
   ) {
     return this.beds.deleteArea(user.id, id, areaId);
   }
@@ -92,7 +92,7 @@ export class GardenAreasController {
   recordSoilTest(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('areaId', ParseUUIDPipe) areaId: string,
+    @Param('areaId', idOf('Area')) areaId: string,
     @Body() body: unknown,
   ) {
     return this.soilTests.record(user.id, id, { areaId }, parseSoilTest(body));
@@ -103,8 +103,8 @@ export class GardenAreasController {
   removeSoilTest(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('areaId', ParseUUIDPipe) areaId: string,
-    @Param('testId', ParseUUIDPipe) testId: string,
+    @Param('areaId', idOf('Area')) areaId: string,
+    @Param('testId', idOf('Soil test')) testId: string,
   ) {
     return this.soilTests.remove(user.id, id, { areaId }, testId);
   }

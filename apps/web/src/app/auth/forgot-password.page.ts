@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from './auth-api.service';
+import { apiMessage } from '../ui/error-message';
 
 /** Ask for a password reset link by email. */
 @Component({
@@ -53,14 +53,8 @@ export class ForgotPasswordPage {
         await this.auth.requestPasswordReset(this.email.trim());
         this.sent.set(true);
       } catch (err) {
-        this.error.set(serverMessage(err) ?? 'Could not send a reset link. Try again later.');
+        this.error.set(apiMessage(err) ?? 'Could not send a reset link. Try again later.');
       }
     });
   }
-}
-
-/** The API's own message for a refused request, when it gave one. */
-export function serverMessage(err: unknown): string | undefined {
-  if (!(err instanceof HttpErrorResponse)) return undefined;
-  return (err.error as { error?: { message?: string } } | null)?.error?.message;
 }

@@ -21,6 +21,7 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 import { season } from './season-query';
+import { idOf } from '../common/ids';
 
 @Controller('gardens/:id/calendar')
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -79,7 +80,7 @@ export class GardenCalendarController {
   remove(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('plantId') plantId: string,
+    @Param('plantId', idOf('Plant')) plantId: string,
     @Query('season') seasonRaw?: string,
   ) {
     return this.calendar.remove(user.id, id, plantId, season(seasonRaw));

@@ -28,6 +28,9 @@ services:
   api:
     image: ghcr.io/thedude459/open-garden-api:${OPEN_GARDEN_VERSION:-latest}
     restart: unless-stopped
+    # A small init as PID 1 passes the stop signal on to Node, so the API
+    # finishes its requests and closes its database pool before it exits.
+    init: true
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     env_file:

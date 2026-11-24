@@ -71,24 +71,25 @@ describe('AdminGuard', () => {
 });
 
 describe('GardenMembershipGuard', () => {
+  const G1 = '5c7d758d-75f2-489c-8e5b-780333c97c8f';
   afterEach(() => vi.restoreAllMocks());
   const guard = new GardenMembershipGuard({ db: {} as AppDatabase });
   const membership = (role: string) =>
     vi
       .spyOn(GardenMembershipRepository.prototype, 'get')
-      .mockResolvedValue(role ? ({ gardenId: 'g1', userId: 'u1', role } as never) : null);
+      .mockResolvedValue(role ? ({ gardenId: G1, userId: 'u1', role } as never) : null);
 
   it('records the member’s role for the route handler', async () => {
     const get = membership('viewer');
-    const req: Req = { [CURRENT_USER]: user(), params: { id: 'g1' } };
+    const req: Req = { [CURRENT_USER]: user(), params: { id: G1 } };
     await expect(guard.canActivate(contextFor(req))).resolves.toBe(true);
-    expect(get).toHaveBeenCalledWith('g1', 'u1');
-    expect(req[GARDEN_MEMBERSHIP]).toEqual({ gardenId: 'g1', userId: 'u1', role: 'viewer' });
+    expect(get).toHaveBeenCalledWith(G1, 'u1');
+    expect(req[GARDEN_MEMBERSHIP]).toEqual({ gardenId: G1, userId: 'u1', role: 'viewer' });
   });
 
   it('answers 404 to a non-member, as if the property did not exist', async () => {
     membership('');
-    const req: Req = { [CURRENT_USER]: user(), params: { id: 'g1' } };
+    const req: Req = { [CURRENT_USER]: user(), params: { id: G1 } };
     expect(await statusOf(() => guard.canActivate(contextFor(req)))).toBe(404);
     expect(req).not.toHaveProperty(GARDEN_MEMBERSHIP);
   });
@@ -98,7 +99,14 @@ describe('GardenMembershipGuard', () => {
     await expect(
       guard.canActivate(contextFor({ [CURRENT_USER]: user(), params: {} })),
     ).resolves.toBe(true);
-    await expect(guard.canActivate(contextFor({ params: { id: 'g1' } }))).resolves.toBe(true);
+    await expect(guard.canActivate(contextFor({ params: { id: G1 } }))).resolves.toBe(true);
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 to a malformed id without asking the database', async () => {
+    const get = membership('owner');
+    const req: Req = { [CURRENT_USER]: user(), params: { id: 'not-a-uuid' } };
+    expect(await statusOf(() => guard.canActivate(contextFor(req)))).toBe(404);
     expect(get).not.toHaveBeenCalled();
   });
 });

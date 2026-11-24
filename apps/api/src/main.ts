@@ -9,6 +9,9 @@ assertBootEnv();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Docker stops the API with SIGTERM: finish open requests and close the
+  // database pool rather than be killed after the grace period.
+  app.enableShutdownHooks();
   app.setGlobalPrefix('api');
   app.use(cookieParser());
   app.enableCors({
