@@ -1,11 +1,16 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "CC0-1.0",
   "units": {
     "length": "cm",
     "temperature": "C"
   },
   "families": [
+    {
+      "id": "actinidiaceae",
+      "name": "Actinidiaceae",
+      "commonName": "Kiwi family (kiwi)"
+    },
     {
       "id": "amaranthaceae",
       "name": "Amaranthaceae",
@@ -15,6 +20,11 @@
       "id": "amaryllidaceae",
       "name": "Amaryllidaceae",
       "commonName": "Onion family (onion, garlic, leek)"
+    },
+    {
+      "id": "annonaceae",
+      "name": "Annonaceae",
+      "commonName": "Custard apple family (pawpaw)"
     },
     {
       "id": "apiaceae",
@@ -32,6 +42,11 @@
       "commonName": "Daisy family (lettuce, sunflower, endive)"
     },
     {
+      "id": "betulaceae",
+      "name": "Betulaceae",
+      "commonName": "Birch family (hazelnut)"
+    },
+    {
       "id": "boraginaceae",
       "name": "Boraginaceae",
       "commonName": "Borage family (borage, comfrey)"
@@ -40,6 +55,11 @@
       "id": "brassicaceae",
       "name": "Brassicaceae",
       "commonName": "Cabbage family (cabbage, kale, broccoli, radish)"
+    },
+    {
+      "id": "caprifoliaceae",
+      "name": "Caprifoliaceae",
+      "commonName": "Honeysuckle family (haskap)"
     },
     {
       "id": "convolvulaceae",
@@ -52,6 +72,11 @@
       "commonName": "Gourd family (cucumber, squash, melon)"
     },
     {
+      "id": "ebenaceae",
+      "name": "Ebenaceae",
+      "commonName": "Ebony family (persimmon)"
+    },
+    {
       "id": "ericaceae",
       "name": "Ericaceae",
       "commonName": "Heath family (blueberry)"
@@ -62,6 +87,11 @@
       "commonName": "Legume family (bean, pea)"
     },
     {
+      "id": "grossulariaceae",
+      "name": "Grossulariaceae",
+      "commonName": "Currant family (currant, gooseberry)"
+    },
+    {
       "id": "lamiaceae",
       "name": "Lamiaceae",
       "commonName": "Mint family (basil, mint, oregano)"
@@ -70,6 +100,11 @@
       "id": "malvaceae",
       "name": "Malvaceae",
       "commonName": "Mallow family (okra)"
+    },
+    {
+      "id": "moraceae",
+      "name": "Moraceae",
+      "commonName": "Mulberry family (fig, mulberry)"
     },
     {
       "id": "poaceae",
@@ -95,6 +130,16 @@
       "id": "tropaeolaceae",
       "name": "Tropaeolaceae",
       "commonName": "Nasturtium family (nasturtium)"
+    },
+    {
+      "id": "viburnaceae",
+      "name": "Viburnaceae",
+      "commonName": "Viburnum family (elderberry)"
+    },
+    {
+      "id": "vitaceae",
+      "name": "Vitaceae",
+      "commonName": "Grape family (grape)"
     }
   ],
   "sources": [
@@ -131,6 +176,84 @@
   ],
   "crops": [
     {
+      "id": "almond",
+      "names": {
+        "en": "Almond"
+      },
+      "scientificName": "Prunus dulcis",
+      "wikidataId": "Q39918",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "nut",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 6,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 460,
+        "betweenRows": 610
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 460,
+            "betweenRows": 610
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 4
+          }
+        }
+      },
+      "cropCoefficients": {
+        "initial": 0.4,
+        "mid": 0.9,
+        "end": 0.65
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "almond-nonpareil",
+          "name": "Nonpareil",
+          "notes": "The leading California almond, with flat kernels of excellent quality; ripens late August there."
+        },
+        {
+          "id": "almond-mission",
+          "name": "Mission",
+          "notes": "Also sold as Texas. Ripens 40 to 60 days after Nonpareil, with a hard shell and strongly flavored kernels."
+        },
+        {
+          "id": "almond-all-in-one",
+          "name": "All-in-One",
+          "notes": "Paper-shelled and sweet; sold as hardy to zone 5, partly dwarfing, and self-fruitful."
+        }
+      ],
+      "notes": "Not self-fruitful; plant a second almond variety, or a peach that blooms at the same time. It blooms very early, and frost below about -2 °C during or after bloom kills the flowers, so it suits warm, low sites with mild springs and needs 400 to 500 hours below 7 °C in winter. Values from Utah State, University of California, and Oregon State guides; crop coefficients from FAO-56 Table 12.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "apple",
       "names": {
         "en": "Apple"
@@ -166,7 +289,100 @@
           "yearsToFruit": {
             "min": 2,
             "max": 3
-          }
+          },
+          "named": [
+            {
+              "id": "bud-9",
+              "name": "Bud 9 (B.9)",
+              "sizePercent": {
+                "min": 25,
+                "max": 45
+              },
+              "support": "always",
+              "notes": "Very winter hardy (zone 4), with the least spring-frost bud loss in Virginia Tech trials. Prone to collar rot and replant disease, so plant it on well-drained, fresh ground."
+            },
+            {
+              "id": "m9",
+              "name": "M.9",
+              "sizePercent": {
+                "min": 30,
+                "max": 50
+              },
+              "support": "always",
+              "notes": "Brittle roots, so stake it for life; extremely sensitive to fire blight. Occasionally winter injured in Kentucky, and among the least cold hardy in Cornell and Virginia Tech trials."
+            },
+            {
+              "id": "g41",
+              "name": "G.41",
+              "sizePercent": {
+                "min": 30,
+                "max": 45
+              },
+              "support": "always",
+              "notes": "Winter hardy; tolerates fire blight, collar rot, woolly apple aphid, and replant disease. Needs irrigation on light soils."
+            },
+            {
+              "id": "g11",
+              "name": "G.11",
+              "sizePercent": {
+                "min": 35,
+                "max": 50
+              },
+              "support": "always",
+              "notes": "Between M.9 and M.26 in size; winter hardy (zone 4 to 5) and resists fire blight and collar rot, but not woolly apple aphid."
+            },
+            {
+              "id": "g16",
+              "name": "G.16",
+              "sizePercent": {
+                "min": 35,
+                "max": 45
+              },
+              "support": "always",
+              "notes": "Like M.9 in size, with better anchorage; resists fire blight and collar rot. Use only virus-free scion wood."
+            },
+            {
+              "id": "m26",
+              "name": "M.26",
+              "sizePercent": {
+                "min": 40,
+                "max": 60
+              },
+              "spacingCm": {
+                "inRow": 240,
+                "betweenRows": 490
+              },
+              "support": "always",
+              "notes": "Very winter hardy, but very prone to fire blight and collar rot, and grows burr knots. Kentucky and New Hampshire advise a stake for life."
+            },
+            {
+              "id": "g935",
+              "name": "G.935",
+              "sizePercent": {
+                "min": 40,
+                "max": 55
+              },
+              "spacingCm": {
+                "inRow": 230,
+                "betweenRows": 400
+              },
+              "support": "always",
+              "notes": "Slightly larger than M.26 and very productive; resists fire blight and collar rot but not woolly apple aphid. Cornell found it loses winter hardiness early."
+            },
+            {
+              "id": "bud-10",
+              "name": "Bud 10 (B.10)",
+              "sizePercent": {
+                "min": 40,
+                "max": 40
+              },
+              "spacingCm": {
+                "inRow": 230,
+                "betweenRows": 400
+              },
+              "notes": "Cold hardy and well anchored; tolerates fire blight."
+            }
+          ]
         },
         "semiDwarf": {
           "spacingCm": {
@@ -180,7 +396,95 @@
           "yearsToFruit": {
             "min": 3,
             "max": 5
-          }
+          },
+          "named": [
+            {
+              "id": "g202",
+              "name": "G.202",
+              "sizePercent": {
+                "min": 50,
+                "max": 55
+              },
+              "notes": "Resists fire blight, collar rot, and woolly apple aphid."
+            },
+            {
+              "id": "g30",
+              "name": "G.30",
+              "sizePercent": {
+                "min": 50,
+                "max": 70
+              },
+              "notes": "Very winter hardy and better anchored than M.7, but the graft union is weak in early years with some varieties; support depends on the site."
+            },
+            {
+              "id": "m7",
+              "name": "M.7",
+              "sizePercent": {
+                "min": 60,
+                "max": 90
+              },
+              "spacingCm": {
+                "inRow": 360,
+                "betweenRows": 600
+              },
+              "support": "young",
+              "notes": "Cold hardy and tolerates many soils, but not heavy clay; shallow roots and many suckers. Stake it for the first four or five years."
+            },
+            {
+              "id": "g969",
+              "name": "G.969",
+              "sizePercent": {
+                "min": 60,
+                "max": 70
+              },
+              "support": "none",
+              "notes": "Winter hardy, with few suckers or burr knots; tolerates fire blight, collar rot, and woolly apple aphid."
+            },
+            {
+              "id": "g890",
+              "name": "G.890",
+              "sizePercent": {
+                "min": 60,
+                "max": 80
+              },
+              "support": "none",
+              "notes": "Cold hardy and very productive; resists fire blight, collar rot, and woolly apple aphid."
+            },
+            {
+              "id": "mm106",
+              "name": "MM.106",
+              "sizePercent": {
+                "min": 60,
+                "max": 80
+              },
+              "support": "none",
+              "notes": "Well anchored and productive, but prone to collar and root rot, so not for poorly drained soil, and to injury from early winter freezes."
+            },
+            {
+              "id": "mm111",
+              "name": "MM.111",
+              "sizePercent": {
+                "min": 70,
+                "max": 90
+              },
+              "spacingCm": {
+                "inRow": 550,
+                "betweenRows": 790
+              },
+              "support": "none",
+              "notes": "Very cold hardy (zone 3 to 4) and the best semi-dwarf for heavy soil; tolerates drier soil and resists woolly apple aphid. Slow to come into bearing."
+            },
+            {
+              "id": "bud-118",
+              "name": "Bud 118 (B.118)",
+              "sizePercent": {
+                "min": 75,
+                "max": 90
+              },
+              "support": "none",
+              "notes": "Extremely winter hardy (zone 3), well anchored, and productive; suits spur-type varieties and poor soil."
+            }
+          ]
         },
         "standard": {
           "spacingCm": {
@@ -194,7 +498,31 @@
           "yearsToFruit": {
             "min": 5,
             "max": 8
-          }
+          },
+          "named": [
+            {
+              "id": "antonovka",
+              "name": "Antonovka",
+              "sizePercent": {
+                "min": 100,
+                "max": 100
+              },
+              "spacingCm": {
+                "inRow": 610,
+                "betweenRows": 910
+              },
+              "notes": "A hardy Russian seedling rootstock for full-size trees, rated to zone 3; the hardiest of the common apple rootstocks."
+            },
+            {
+              "id": "apple-seedling",
+              "name": "Seedling",
+              "sizePercent": {
+                "min": 100,
+                "max": 100
+              },
+              "notes": "Grown from seed of a hardy variety (zone 3); excellent hardiness, anchorage, and soil tolerance."
+            }
+          ]
         }
       },
       "soilPh": {
@@ -226,6 +554,154 @@
         }
       ],
       "notes": "The rootstock sets the final size, so check it when buying; the default spacing is for a semi-dwarf tree. Most apples need a second, different variety nearby that blooms at the same time. Trees start fruiting in two to five years.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "apricot",
+      "names": {
+        "en": "Apricot"
+      },
+      "scientificName": "Prunus armeniaca",
+      "wikidataId": "Q37453",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 550,
+        "betweenRows": 670
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 550,
+            "betweenRows": 670
+          }
+        }
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.45,
+        "mid": 0.9,
+        "end": 0.65
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "apricot-goldrich",
+          "name": "Goldrich",
+          "notes": "Winter hardy and among the latest to bloom, so it escapes more spring frosts."
+        },
+        {
+          "id": "apricot-harglow",
+          "name": "Harglow",
+          "notes": "Winter hardy and late blooming."
+        },
+        {
+          "id": "apricot-harogem",
+          "name": "Harogem",
+          "notes": "Does well on warmer sites in New Hampshire."
+        },
+        {
+          "id": "apricot-moorpark",
+          "name": "Moorpark",
+          "notes": "An old winter-hardy, later-blooming variety."
+        }
+      ],
+      "notes": "Usually self-fruitful, but crops better with a second variety that blooms at the same time. It blooms very early, so spring frost often takes the crop even in zones where the tree is hardy; choose later-blooming varieties and a slope, not a frost pocket. Poor in wet or heavy soil. Values from Utah State and New Hampshire extension; crop coefficients from FAO-56 Table 12 (stone fruit).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "aronia",
+      "names": {
+        "en": "Aronia"
+      },
+      "scientificName": "Aronia melanocarpa",
+      "wikidataId": "Q162774",
+      "family": "rosaceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 180,
+        "betweenRows": 300
+      },
+      "soilPh": {
+        "min": 5.1,
+        "max": 6.5
+      },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 1.05,
+        "end": 0.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "aronia-viking",
+          "name": "Viking",
+          "notes": "Large, abundant fruit clusters and fall color."
+        },
+        {
+          "id": "aronia-autumn-magic",
+          "name": "Autumn Magic",
+          "notes": "Compact, with large, abundant fruit clusters and fall color."
+        }
+      ],
+      "notes": "Black chokeberry, a native shrub that spreads to 2 to 3 m across, with tart, dark berries for juice and jam. Self-compatible, though a second variety can improve fruit set. Fruits best in full sun. Values from Illinois, Minnesota, and Oregon State guides; crop coefficients from FAO-56 Table 12 (berries, bushes).",
       "sources": [
         {
           "source": "wikidata",
@@ -281,6 +757,101 @@
         "max": 45
       },
       "notes": "Fast and frost tolerant. Sow every two to three weeks for a steady supply, and cut leaves young; older leaves grow strong and bitter. Heat above about 27 °C and dry soil make it bolt, so light shade helps in summer. Values from Wisconsin, Utah State, Clemson, and Maryland extension guides. Crop coefficients from Pereira et al. (2024), Irrigation Science 42:1199–1228, doi:10.1007/s00271-024-00960-4 (CC BY 4.0).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "asian-pear",
+      "names": {
+        "en": "Asian pear"
+      },
+      "scientificName": "Pyrus pyrifolia",
+      "wikidataId": "Q838963",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 610,
+        "betweenRows": 610
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 610,
+            "betweenRows": 610
+          },
+          "named": [
+            {
+              "id": "calleryana",
+              "name": "Calleryana (Pyrus calleryana)",
+              "notes": "Good in California and the Southeast, but lacks winter hardiness in most colder areas."
+            },
+            {
+              "id": "betulifolia",
+              "name": "Betulifolia (Pyrus betulifolia)",
+              "notes": "Takes every Asian pear variety; vigorous and tolerates heavy, wet soil."
+            }
+          ]
+        }
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 6.5
+      },
+      "cropCoefficients": {
+        "initial": 0.45,
+        "mid": 0.95,
+        "end": 0.7
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "asian-pear-hosui",
+          "name": "Hosui",
+          "notes": "Large russet fruit of excellent quality; thin the fruit for size. Ripens mid to late August."
+        },
+        {
+          "id": "asian-pear-kosui",
+          "name": "Kosui",
+          "notes": "Small to medium, apple-shaped brown fruit; ripens mid to late August."
+        },
+        {
+          "id": "asian-pear-shinseiki",
+          "name": "Shinseiki",
+          "notes": "Also called New Century. Partly self-fruitful; sweet, yellow fruit ripens early to mid August."
+        },
+        {
+          "id": "asian-pear-olympic",
+          "name": "Olympic",
+          "notes": "Also called Korean Giant. Large, late, golden russet fruit."
+        }
+      ],
+      "notes": "Partly self-fruitful, but crops much better with two or more varieties planted together. About as winter hardy as Bosc pear, to roughly -29 °C, though less hardy than Bartlett. The crisp fruit has tender skin that bruises easily. European pear rootstocks such as OHxF 87 and 97 also take it and dwarf it somewhat. Values from University of California, North Carolina State, Georgia, and Penn State extension guides; crop coefficients from FAO-56 Table 12 (pears).",
       "sources": [
         {
           "source": "wikidata",
@@ -2195,6 +2766,76 @@
       ]
     },
     {
+      "id": "elderberry",
+      "names": {
+        "en": "Elderberry"
+      },
+      "scientificName": "Sambucus canadensis",
+      "wikidataId": "Q21877280",
+      "family": "viburnaceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 120,
+        "betweenRows": 240
+      },
+      "soilPh": {
+        "min": 5.5,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 1.05,
+        "end": 0.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "elderberry-wyldewood",
+          "name": "Wyldewood",
+          "notes": "Selected in Missouri; fairly tolerant of alkaline soil, with large clusters of medium to large berries."
+        },
+        {
+          "id": "elderberry-adams-2",
+          "name": "Adams 2",
+          "notes": "Tolerates alkaline soil; medium berries in large clusters."
+        },
+        {
+          "id": "elderberry-york",
+          "name": "York",
+          "notes": "An older variety with the largest berries of the American kinds; ripens early."
+        }
+      ],
+      "notes": "American elderberry, a large shrub 2 to 2.5 m tall and wide. Only partly self-fruitful, so plant two varieties for good crops. Tolerates some shade but fruits best in full sun; prune every year. In zone 3 it survives but may not ripen. Values from Utah State, Minnesota, and Wisconsin extension guides; crop coefficients from FAO-56 Table 12 (berries, bushes).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "endive",
       "names": {
         "en": "Endive"
@@ -2285,6 +2926,71 @@
         }
       },
       "notes": "Broad bean, a cool-season crop grown like peas rather than like warm-season beans; plants take frost down to about -7 to -9 °C and grow 60 to 120 cm tall. The guides say to sow in early spring as soon as the soil can be worked, so the window here is pea's. Where winters are mild it is also sown in fall to overwinter. Values from Oregon State and University of California guides; crop coefficients from FAO-56 Table 12 (fresh faba bean).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "fig",
+      "names": {
+        "en": "Fig"
+      },
+      "scientificName": "Ficus carica",
+      "wikidataId": "Q36146",
+      "family": "moraceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "half-hardy",
+      "hardinessZones": {
+        "min": 7,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 300,
+        "betweenRows": 460
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 6.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": 0,
+          "weeksLatest": 4
+        }
+      },
+      "varieties": [
+        {
+          "id": "fig-celeste",
+          "name": "Celeste",
+          "notes": "Fairly hardy; small violet-brown fruit with pink pulp, ripening from mid-July in North Carolina."
+        },
+        {
+          "id": "fig-brown-turkey",
+          "name": "Brown Turkey",
+          "notes": "Also sold as Texas Everbearing. Medium to large coppery fruit; regrows and fruits on suckers after a freeze."
+        },
+        {
+          "id": "fig-brunswick",
+          "name": "Brunswick",
+          "notes": "Also called Magnolia. Large fruit that splits in hot, humid weather, so best for preserves; fairly cold hardy."
+        }
+      ],
+      "notes": "Grown as a bush or small tree. Choose a variety that sets fruit without pollination, such as Celeste, Brown Turkey, or Marseilles. Temperatures near -18 °C kill parts of the plant, so give it a sunny, sheltered spot; it starts bearing in about five or six years. Values from North Carolina State, Georgia, and Oregon State guides.",
       "sources": [
         {
           "source": "wikidata",
@@ -2481,6 +3187,321 @@
         }
       ],
       "notes": "Grown from cloves planted in fall, pointed end up, and harvested the next summer when the lower leaves turn brown. Grown as an annual crop. Hardneck types such as Music suit cold winters; softneck types suit mild ones.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "gooseberry",
+      "names": {
+        "en": "Gooseberry"
+      },
+      "scientificName": "Ribes uva-crispa",
+      "wikidataId": "Q41503",
+      "family": "grossulariaceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 6
+      },
+      "sun": "part",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 120,
+        "betweenRows": 270
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 1.05,
+        "end": 0.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "gooseberry-poorman",
+          "name": "Poorman",
+          "notes": "An American type, very productive and very cold hardy, with medium red fruit; resists powdery mildew."
+        },
+        {
+          "id": "gooseberry-hinnomaki-red",
+          "name": "Hinnomaki Red",
+          "notes": "Sweet berries with tart skins; resists powdery mildew and may fruit the year it is planted."
+        },
+        {
+          "id": "gooseberry-invicta",
+          "name": "Invicta",
+          "notes": "A European type with heavy crops of large green berries on very spiny bushes; resists powdery mildew."
+        },
+        {
+          "id": "gooseberry-captivator",
+          "name": "Captivator",
+          "notes": "Large, sweet, reddish fruit on tall bushes with few spines; resists powdery mildew."
+        }
+      ],
+      "notes": "A thorny bush 1 to 1.5 m tall and wide; self-fertile, so one plant bears. Needs at least 1,000 hours of winter chill and does best with some shade in the hottest part of the day. Fruits on one-year-old wood and older spurs. Values from Utah State and Minnesota extension guides; crop coefficients from FAO-56 Table 12 (berries, bushes).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "grape",
+      "names": {
+        "en": "Grape"
+      },
+      "scientificName": "Vitis",
+      "wikidataId": "Q191019",
+      "family": "vitaceae",
+      "habit": "vine",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 240,
+        "betweenRows": 300
+      },
+      "soilPh": {
+        "min": 5.5,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 0.85,
+        "end": 0.45
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "grape-concord",
+          "name": "Concord"
+        },
+        {
+          "id": "grape-marquette",
+          "name": "Marquette"
+        },
+        {
+          "id": "grape-bluebell",
+          "name": "Bluebell"
+        }
+      ],
+      "notes": "American and cold-hardy hybrid grapes for eating, juice, and wine; hardiness depends on the variety, from Marquette and Bluebell (zone 3 to 4) to Concord (zone 5). American varieties are the hardiest and most disease resistant; European wine grapes need milder winters. Needs a trellis and pruning every year. Values from Illinois, Minnesota, Oregon State, and Penn State guides and the Fedco Trees catalog (2026); crop coefficients from FAO-56 Table 12 (table grapes).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "hardy-kiwi",
+      "names": {
+        "en": "Hardy kiwi"
+      },
+      "scientificName": "Actinidia arguta",
+      "wikidataId": "Q848074",
+      "family": "actinidiaceae",
+      "habit": "vine",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 300,
+        "betweenRows": 300
+      },
+      "soilPh": {
+        "min": 5.6,
+        "max": 6.5
+      },
+      "cropCoefficients": {
+        "initial": 0.4,
+        "mid": 1.05,
+        "end": 1.05
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 2
+        }
+      },
+      "varieties": [
+        {
+          "id": "hardy-kiwi-anna",
+          "name": "Anna (Ananasnaya)"
+        },
+        {
+          "id": "hardy-kiwi-issai",
+          "name": "Issai"
+        }
+      ],
+      "notes": "Kiwiberry, a vigorous vine up to 12 m long with smooth, grape-sized fruit. Plants are male or female, so plant a male within about 12 m of the females; only Issai sets some fruit alone. Needs a sturdy trellis. Hardy to about -23 to -32 °C, but late spring frost can kill new shoots. Values from Utah State and Oregon State extension and the Fedco Trees catalog (2026); crop coefficients from FAO-56 Table 12 (kiwi).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "haskap",
+      "names": {
+        "en": "Haskap"
+      },
+      "scientificName": "Lonicera caerulea",
+      "wikidataId": "Q157699",
+      "family": "caprifoliaceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 6
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 110,
+        "betweenRows": 240
+      },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 1.05,
+        "end": 0.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "haskap-tundra",
+          "name": "Tundra",
+          "notes": "Firm, fairly large fruit; resists powdery mildew."
+        },
+        {
+          "id": "haskap-borealis",
+          "name": "Borealis",
+          "notes": "About 1.2 m tall, with large, very good-tasting fruit; suits a home garden."
+        },
+        {
+          "id": "haskap-indigo-gem",
+          "name": "Indigo Gem",
+          "notes": "Heavy crops of smaller, tangier fruit; somewhat prone to powdery mildew."
+        }
+      ],
+      "notes": "Honeyberry, an extremely hardy shrub up to 1.8 m that lives about 30 years and ripens blue berries early in summer. Needs an unrelated variety that blooms at the same time for pollination. Above zone 6 it suffers leaf scorch, mildew, and early leaf drop. Values from Utah State extension; crop coefficients from FAO-56 Table 12 (berries, bushes).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "hazelnut",
+      "names": {
+        "en": "Hazelnut"
+      },
+      "scientificName": "Corylus americana",
+      "wikidataId": "Q468659",
+      "family": "betulaceae",
+      "habit": "shrub",
+      "use": "nut",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 9
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 300,
+        "betweenRows": 460
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "notes": "American hazelnut and its hybrids, hardy to zone 3 or 4; European filberts are less hardy. Every hazelnut needs another to pollinate it, so plant two or three within about 15 m. Starts bearing in about five or six years. Usually kept as a shrub about 4.5 m tall and 3 m wide; in orchards space plants 4.5 to 6 m apart. Values from Utah State and Oregon State guides.",
       "sources": [
         {
           "source": "wikidata",
@@ -3639,6 +4660,79 @@
       ]
     },
     {
+      "id": "nectarine",
+      "names": {
+        "en": "Nectarine"
+      },
+      "scientificName": "Prunus persica var. nucipersica",
+      "wikidataId": "Q3408651",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 450,
+        "betweenRows": 550
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 450,
+            "betweenRows": 550
+          },
+          "named": [
+            {
+              "id": "guardian",
+              "name": "Guardian",
+              "notes": "Preferred in the Southeast for tolerance of peach tree short life."
+            },
+            {
+              "id": "lovell",
+              "name": "Lovell",
+              "notes": "The long-standing reference peach rootstock, also used for nectarines."
+            }
+          ]
+        }
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 6.5
+      },
+      "cropCoefficients": {
+        "initial": 0.45,
+        "mid": 0.9,
+        "end": 0.65
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "notes": "A smooth-skinned peach, grown the same way; self-fruitful. Like peach it blooms early, so spring frost can take the crop, and it is prone to brown rot and blight. Prune every year to an open centre. Values from Oregon State, Alabama, and Penn State extension guides; crop coefficients from FAO-56 Table 12 (stone fruit).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "okra",
       "names": {
         "en": "Okra"
@@ -4036,6 +5130,84 @@
       ]
     },
     {
+      "id": "pawpaw",
+      "names": {
+        "en": "Pawpaw"
+      },
+      "scientificName": "Asimina triloba",
+      "wikidataId": "Q948827",
+      "family": "annonaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "part",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 300,
+        "betweenRows": 300
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 300,
+            "betweenRows": 300
+          }
+        }
+      },
+      "soilPh": {
+        "min": 5.5,
+        "max": 6.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -2,
+          "weeksLatest": 2
+        }
+      },
+      "varieties": [
+        {
+          "id": "pawpaw-sunflower",
+          "name": "Sunflower",
+          "notes": "Among the highest-yielding in north Alabama trials."
+        },
+        {
+          "id": "pawpaw-overleese",
+          "name": "Overleese",
+          "notes": "An older named variety grown in Alabama trials."
+        },
+        {
+          "id": "pawpaw-shenandoah",
+          "name": "Shenandoah",
+          "notes": "One of the Peterson pawpaw varieties."
+        },
+        {
+          "id": "pawpaw-ksu-atwood",
+          "name": "KSU-Atwood",
+          "notes": "A Kentucky State University release."
+        }
+      ],
+      "notes": "A native understory tree up to about 9 m in full sun. Not self-pollinating, so plant two unrelated trees within about 9 m of each other; hand pollination helps where pollinators are scarce. Young own-root plants need shade to establish, and it suckers into a patch. Grafted trees bear in a few years, seedlings in up to 10. Values from Clemson, Maryland, Penn State, Illinois, Missouri, Alabama, and North Carolina State guides.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "pea",
       "names": {
         "en": "Pea"
@@ -4170,7 +5342,18 @@
           "yearsToFruit": {
             "min": 3,
             "max": 4
-          }
+          },
+          "named": [
+            {
+              "id": "mp-29",
+              "name": "MP-29",
+              "sizePercent": {
+                "min": 40,
+                "max": 75
+              },
+              "notes": "Semi-dwarf, about 40 to 75 percent the size of trees on Guardian depending on site; resists peach tree short life and Armillaria root rot."
+            }
+          ]
         },
         "standard": {
           "spacingCm": {
@@ -4184,7 +5367,43 @@
           "yearsToFruit": {
             "min": 3,
             "max": 5
-          }
+          },
+          "named": [
+            {
+              "id": "lovell",
+              "name": "Lovell",
+              "sizePercent": {
+                "min": 100,
+                "max": 100
+              },
+              "notes": "The long-standing reference rootstock, with good anchorage, high survival in northern trials, and more cold hardiness than Nemaguard, but suffers in waterlogged soil."
+            },
+            {
+              "id": "bailey",
+              "name": "Bailey",
+              "notes": "Recommended in Ontario; gives uniform medium to large trees, lends some cold hardiness to the variety, and survives severe winters well. Slightly dwarfing."
+            },
+            {
+              "id": "guardian",
+              "name": "Guardian",
+              "notes": "Preferred in the Southeast for tolerance of peach tree short life."
+            },
+            {
+              "id": "krymsk-86",
+              "name": "Krymsk 86",
+              "notes": "Hardy to USDA zone 4 with excellent anchorage, and tolerates wet soil; prone to bacterial canker in the Southeast."
+            },
+            {
+              "id": "halford",
+              "name": "Halford",
+              "notes": "An older, vigorous rootstock."
+            },
+            {
+              "id": "nemaguard",
+              "name": "Nemaguard",
+              "notes": "Needs well-drained soil, as it is very susceptible to wet feet, and is less cold hardy than Lovell; best only where stone fruit has not been grown before."
+            }
+          ]
         }
       },
       "soilPh": {
@@ -4320,7 +5539,27 @@
           "yearsToFruit": {
             "min": 3,
             "max": 4
-          }
+          },
+          "named": [
+            {
+              "id": "pyrodwarf",
+              "name": "Pyrodwarf",
+              "sizePercent": {
+                "min": 40,
+                "max": 50
+              },
+              "notes": "Winter hardy, very precocious, and highly tolerant of fire blight; does not sucker."
+            },
+            {
+              "id": "quince",
+              "name": "Quince",
+              "sizePercent": {
+                "min": 55,
+                "max": 55
+              },
+              "notes": "The European dwarfing root, but not recommended in the U.S. as it is sensitive to cold; very prone to fire blight, and Bartlett and Bosc are incompatible with it."
+            }
+          ]
         },
         "semiDwarf": {
           "spacingCm": {
@@ -4334,7 +5573,41 @@
           "yearsToFruit": {
             "min": 4,
             "max": 6
-          }
+          },
+          "named": [
+            {
+              "id": "ohxf-333",
+              "name": "OHxF 333",
+              "sizePercent": {
+                "min": 50,
+                "max": 70
+              },
+              "notes": "Winter hardy and well anchored, replacing quince; resists fire blight, collar rot, and woolly aphid."
+            },
+            {
+              "id": "pyro-222",
+              "name": "Pyro 222",
+              "sizePercent": {
+                "min": 70,
+                "max": 80
+              },
+              "notes": "Precocious and productive; tolerates a wide range of soils."
+            },
+            {
+              "id": "ohxf-87",
+              "name": "OHxF 87",
+              "sizePercent": {
+                "min": 85,
+                "max": 90
+              },
+              "notes": "The most precocious Old Home x Farmingdale; winter hardy, well anchored, does not sucker, and resists fire blight."
+            },
+            {
+              "id": "ohxf-40",
+              "name": "OHxF 40",
+              "notes": "About two-thirds of standard size; resists fire blight, crown rot, and pear decline."
+            }
+          ]
         },
         "standard": {
           "spacingCm": {
@@ -4348,7 +5621,41 @@
           "yearsToFruit": {
             "min": 5,
             "max": 8
-          }
+          },
+          "named": [
+            {
+              "id": "pear-seedling",
+              "name": "Seedling",
+              "sizePercent": {
+                "min": 100,
+                "max": 100
+              },
+              "spacingCm": {
+                "inRow": 610,
+                "betweenRows": 850
+              },
+              "notes": "Bartlett seedlings are the standard; winter hardy and very productive, but tree size varies."
+            },
+            {
+              "id": "ohxf-97",
+              "name": "OHxF 97",
+              "sizePercent": {
+                "min": 90,
+                "max": 100
+              },
+              "notes": "Vigorous, near seedling size but more uniform; winter hardy (zone 3 to 4) and well anchored, resists fire blight, and suits Asian pears."
+            },
+            {
+              "id": "calleryana",
+              "name": "Calleryana (Pyrus calleryana)",
+              "notes": "Preferred in the Southeast for European and Asian pears."
+            },
+            {
+              "id": "betulifolia",
+              "name": "Betulifolia (Pyrus betulifolia)",
+              "notes": "Vigorous and tolerates heavy, wet soil; suits Asian pears, but is less winter hardy than other pear rootstocks. Sources differ on its fire blight tolerance."
+            }
+          ]
         }
       },
       "soilPh": {
@@ -4380,6 +5687,169 @@
         }
       ],
       "notes": "Needs a second variety nearby for pollination. Pick European pears mature but still firm and let them ripen indoors; tree-ripened pears turn gritty at the core. Starts fruiting in three to six years.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "persimmon",
+      "names": {
+        "en": "American persimmon"
+      },
+      "scientificName": "Diospyros virginiana",
+      "wikidataId": "Q158356",
+      "family": "ebenaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "light",
+      "spacingCm": {
+        "inRow": 460,
+        "betweenRows": 610
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 460,
+            "betweenRows": 610
+          }
+        }
+      },
+      "soilPh": {
+        "min": 4.4,
+        "max": 7
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "persimmon-prok",
+          "name": "Prok",
+          "notes": "Grafted and self-pollinating, with large crops of sweet fruit from mid-September."
+        },
+        {
+          "id": "persimmon-yates",
+          "name": "Yates",
+          "notes": "Grafted and self-pollinating; fast-growing, with sweet fruit ripening in early September."
+        }
+      ],
+      "notes": "A native fruit tree hardy to zone 5. Sources differ on pollination; some named varieties bear alone, but planting two trees gives the most reliable crop. Fruit ripens late in fall and is astringent until fully soft. Asian persimmons are less hardy, surviving only to about -12 °C. Values from Illinois, Oregon State, Penn State, Missouri, North Carolina State, and Mississippi State guides.",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "plum",
+      "names": {
+        "en": "Plum"
+      },
+      "scientificName": "Prunus domestica",
+      "wikidataId": "Q44120",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 5,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 550,
+        "betweenRows": 670
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 550,
+            "betweenRows": 670
+          },
+          "named": [
+            {
+              "id": "lovell",
+              "name": "Lovell (peach)",
+              "notes": "The preferred rootstock for European plums in Alabama."
+            },
+            {
+              "id": "myrobalan",
+              "name": "Myrobalan",
+              "notes": "A plum seedling rootstock for European plums, hardy to zone 3."
+            }
+          ]
+        }
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.45,
+        "mid": 0.9,
+        "end": 0.65
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "plum-stanley",
+          "name": "Stanley",
+          "notes": "A European plum that grows well in New Hampshire."
+        },
+        {
+          "id": "plum-early-italian",
+          "name": "Early Italian",
+          "notes": "A European plum that grows well in New Hampshire."
+        },
+        {
+          "id": "plum-green-gage",
+          "name": "Green Gage",
+          "notes": "A European plum that grows well in New Hampshire."
+        },
+        {
+          "id": "plum-castleton",
+          "name": "Castleton",
+          "notes": "A European plum that grows well in New Hampshire."
+        }
+      ],
+      "notes": "European plum. Many are self-fruitful but bear more with a second European variety nearby. Japanese plums (zones 5 to 9) need a Japanese or American plum to pollinate them, as European plum pollen does not work. Poor in wet or heavy soil. Values from Utah State, Alabama, and New Hampshire extension guides; crop coefficients from FAO-56 Table 12 (stone fruit).",
       "sources": [
         {
           "source": "wikidata",
@@ -4848,6 +6318,76 @@
       ]
     },
     {
+      "id": "red-currant",
+      "names": {
+        "en": "Red currant"
+      },
+      "scientificName": "Ribes rubrum",
+      "wikidataId": "Q146661",
+      "family": "grossulariaceae",
+      "habit": "shrub",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 3,
+        "max": 6
+      },
+      "sun": "part",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 120,
+        "betweenRows": 270
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.3,
+        "mid": 1.05,
+        "end": 0.5
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "red-currant-red-lake",
+          "name": "Red Lake",
+          "notes": "Widely available and vigorous, with large, bright red berries; prone to powdery mildew."
+        },
+        {
+          "id": "red-currant-rovada",
+          "name": "Rovada",
+          "notes": "Large berries in long clusters; flowers late, so it misses frosts, and resists powdery mildew."
+        },
+        {
+          "id": "red-currant-honeyqueen",
+          "name": "Honeyqueen",
+          "notes": "A long harvest of tender, juicy fruit; resists powdery mildew."
+        }
+      ],
+      "notes": "A bush 1 to 1.5 m tall that stays productive for 20 years; self-fertile. Grows best with morning sun and afternoon shade and good air flow; heat above about 29 °C and strong sun scorch the leaves. Blooms very early, so avoid frost pockets. Values from Utah State and Minnesota extension guides; crop coefficients from FAO-56 Table 12 (berries, bushes).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
       "id": "rhubarb",
       "names": {
         "en": "Rhubarb"
@@ -5186,6 +6726,95 @@
         "max": 75
       },
       "notes": "Usually planted as bulb sets, 2.5 to 5 cm deep. Close spacing gives single bulbs, wider spacing clusters of up to a dozen. Lift when the tops fall over, and stop feeding by midsummer so the bulbs store. Plant in early spring or, where winters allow, in fall. Values from Utah State, Washington State, and Maryland extension guides; crop coefficients from FAO-56 Table 12 (dry onions).",
+      "sources": [
+        {
+          "source": "wikidata",
+          "fields": [
+            "scientificName",
+            "family"
+          ]
+        },
+        {
+          "source": "hand-curation"
+        }
+      ]
+    },
+    {
+      "id": "sour-cherry",
+      "names": {
+        "en": "Sour cherry"
+      },
+      "scientificName": "Prunus cerasus",
+      "wikidataId": "Q131517",
+      "family": "rosaceae",
+      "habit": "tree",
+      "use": "fruit",
+      "lifeCycle": "perennial",
+      "frostTolerance": "hardy",
+      "hardinessZones": {
+        "min": 4,
+        "max": 8
+      },
+      "sun": "full",
+      "water": "moderate",
+      "feeding": "moderate",
+      "spacingCm": {
+        "inRow": 430,
+        "betweenRows": 670
+      },
+      "rootstocks": {
+        "standard": {
+          "spacingCm": {
+            "inRow": 430,
+            "betweenRows": 670
+          },
+          "yearsToFruit": {
+            "min": 3,
+            "max": 5
+          },
+          "named": [
+            {
+              "id": "mahaleb",
+              "name": "Mahaleb",
+              "notes": "The usual rootstock for standard sour cherries; Gisela semi-dwarfs are becoming common."
+            }
+          ]
+        }
+      },
+      "soilPh": {
+        "min": 6,
+        "max": 7
+      },
+      "cropCoefficients": {
+        "initial": 0.45,
+        "mid": 0.95,
+        "end": 0.7
+      },
+      "windows": {
+        "transplant": {
+          "frost": "last",
+          "weeksEarliest": -4,
+          "weeksLatest": -2
+        }
+      },
+      "varieties": [
+        {
+          "id": "sour-cherry-montmorency",
+          "name": "Montmorency",
+          "notes": "The standard tart cherry."
+        },
+        {
+          "id": "sour-cherry-north-star",
+          "name": "North Star",
+          "notes": "Naturally dwarf, so it suits a home orchard."
+        },
+        {
+          "id": "sour-cherry-meteor",
+          "name": "Meteor",
+          "notes": "Naturally dwarf, so it suits a home orchard."
+        }
+      ],
+      "notes": "Tart or pie cherry, such as Montmorency. Self-fruitful, so one tree is enough, and hardier than sweet cherry. Sweet and sour cherries cannot pollinate each other. Compact varieties such as North Star stay near 3 m. Values from Penn State, Oregon State, Illinois, Minnesota, and New Hampshire extension guides; crop coefficients from FAO-56 Table 12 (cherries).",
       "sources": [
         {
           "source": "wikidata",
@@ -5585,7 +7214,18 @@
           "yearsToFruit": {
             "min": 2,
             "max": 4
-          }
+          },
+          "named": [
+            {
+              "id": "gisela-3",
+              "name": "Gisela 3",
+              "sizePercent": {
+                "min": 35,
+                "max": 40
+              },
+              "notes": "The most dwarfing Gisela; only for the best soils, with fair anchorage. USDA zone 5."
+            }
+          ]
         },
         "semiDwarf": {
           "spacingCm": {
@@ -5599,7 +7239,56 @@
           "yearsToFruit": {
             "min": 3,
             "max": 5
-          }
+          },
+          "named": [
+            {
+              "id": "gisela-5",
+              "name": "Gisela 5",
+              "sizePercent": {
+                "min": 50,
+                "max": 60
+              },
+              "support": "always",
+              "notes": "Needs well-drained soil and does poorly in heavy soil; fair to good anchorage, and trees lean away from strong wind."
+            },
+            {
+              "id": "gisela-12",
+              "name": "Gisela 12",
+              "sizePercent": {
+                "min": 50,
+                "max": 90
+              },
+              "notes": "Very winter hardy (to about -29 °C), precocious, and adapts to a wide range of soils."
+            },
+            {
+              "id": "gisela-6",
+              "name": "Gisela 6",
+              "sizePercent": {
+                "min": 60,
+                "max": 95
+              },
+              "support": "always",
+              "notes": "Tolerates heavier soil; very productive, so West Virginia advises support. Smaller in the eastern U.S. than in the Pacific Northwest."
+            },
+            {
+              "id": "krymsk-6",
+              "name": "Krymsk 6",
+              "sizePercent": {
+                "min": 70,
+                "max": 90
+              },
+              "notes": "Winter hardy (USDA zone 5) and heat tolerant, with good anchorage; needs good drainage."
+            },
+            {
+              "id": "krymsk-5",
+              "name": "Krymsk 5",
+              "sizePercent": {
+                "min": 80,
+                "max": 90
+              },
+              "notes": "Winter hardy (USDA zone 5), with good anchorage; tolerates heavy, wet soil and drought better than the Gisela rootstocks."
+            }
+          ]
         },
         "standard": {
           "spacingCm": {
@@ -5613,7 +7302,28 @@
           "yearsToFruit": {
             "min": 5,
             "max": 7
-          }
+          },
+          "named": [
+            {
+              "id": "mazzard",
+              "name": "Mazzard",
+              "sizePercent": {
+                "min": 100,
+                "max": 100
+              },
+              "notes": "Winter hardy (zone 4), with good anchorage and wide soil tolerance given good drainage; not precocious."
+            },
+            {
+              "id": "mahaleb",
+              "name": "Mahaleb",
+              "notes": "Slightly dwarfing, drought tolerant, and winter hardy, but very sensitive to waterlogged soil. Some newer varieties, such as Chelan and Tieton, are incompatible with it."
+            },
+            {
+              "id": "colt",
+              "name": "Colt",
+              "notes": "Tolerates wet, heavy soil better than Mahaleb or Gisela 5, but is not winter hardy; semi-vigorous in Europe, full size in the Pacific Northwest."
+            }
+          ]
         }
       },
       "soilPh": {
@@ -7285,6 +8995,343 @@
         }
       ],
       "reference": "Clemson",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "strawberry",
+        "tomato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Do not plant strawberries where this crop grew recently, or next to it.",
+      "shownIn": [
+        {
+          "where": "Utah, USA"
+        },
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Utah State University Extension, \"How to Grow Strawberries in Your Garden\"; Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "strawberry",
+        "potato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Do not plant strawberries where this crop grew recently, or next to it.",
+      "shownIn": [
+        {
+          "where": "Utah, USA"
+        },
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Utah State University Extension, \"How to Grow Strawberries in Your Garden\"; Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "strawberry",
+        "eggplant"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Do not plant strawberries where this crop grew recently, or next to it.",
+      "shownIn": [
+        {
+          "where": "Utah, USA"
+        },
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Utah State University Extension, \"How to Grow Strawberries in Your Garden\"; Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "strawberry",
+        "sweet-pepper"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Do not plant strawberries where this crop grew recently, or next to it.",
+      "shownIn": [
+        {
+          "where": "Utah, USA"
+        },
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Utah State University Extension, \"How to Grow Strawberries in Your Garden\"; Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "strawberry",
+        "hot-pepper"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Do not plant strawberries where this crop grew recently, or next to it.",
+      "shownIn": [
+        {
+          "where": "Utah, USA"
+        },
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Utah State University Extension, \"How to Grow Strawberries in Your Garden\"; Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "raspberry",
+        "tomato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant raspberries where this crop has not grown for four or five years, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        },
+        {
+          "where": "Illinois, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"; University of Illinois Extension, \"Growing Raspberries\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "raspberry",
+        "potato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant raspberries where this crop has not grown for four or five years, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        },
+        {
+          "where": "Illinois, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"; University of Illinois Extension, \"Growing Raspberries\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "raspberry",
+        "eggplant"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant raspberries where this crop has not grown for four or five years, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        },
+        {
+          "where": "Illinois, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"; University of Illinois Extension, \"Growing Raspberries\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "raspberry",
+        "sweet-pepper"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant raspberries where this crop has not grown for four or five years, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        },
+        {
+          "where": "Illinois, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"; University of Illinois Extension, \"Growing Raspberries\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "raspberry",
+        "hot-pepper"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant raspberries where this crop has not grown for four or five years, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        },
+        {
+          "where": "Illinois, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"; University of Illinois Extension, \"Growing Raspberries\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "raspberry",
+        "strawberry"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant raspberries where this crop has not grown for four or five years, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        },
+        {
+          "where": "Illinois, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"; University of Illinois Extension, \"Growing Raspberries\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "blackberry",
+        "tomato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant blackberries where this crop has not grown recently, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "blackberry",
+        "potato"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant blackberries where this crop has not grown recently, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "blackberry",
+        "eggplant"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant blackberries where this crop has not grown recently, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "blackberry",
+        "sweet-pepper"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant blackberries where this crop has not grown recently, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    },
+    {
+      "crops": [
+        "blackberry",
+        "hot-pepper"
+      ],
+      "kind": "hinders",
+      "benefits": [
+        "shares-pests"
+      ],
+      "evidence": "extension",
+      "reason": "Both get Verticillium wilt, which stays in the soil for years. Plant blackberries where this crop has not grown recently, and not beside it.",
+      "shownIn": [
+        {
+          "where": "Pennsylvania, USA"
+        }
+      ],
+      "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
       "source": "hand-curation"
     }
   ]

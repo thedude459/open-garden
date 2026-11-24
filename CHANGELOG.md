@@ -27,6 +27,14 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **17 more fruits and nuts** from plant catalog v0.3.1 for fruit gardens:
+  apricot, plum, nectarine, sour cherry, almond, Asian pear, pawpaw, and
+  American persimmon trees; fig, hazelnut, red currant, gooseberry,
+  elderberry, haskap, and aronia bushes; and grape and hardy kiwi vines,
+  each with its icon, most with soil pH and varieties. Strawberries,
+  raspberries, and blackberries now warn against tomatoes, potatoes,
+  eggplant, and peppers (Verticillium wilt). The API imports the catalog
+  when it starts.
 - **32 more vegetables and herbs** from plant catalog v0.3.0, among them
   kohlrabi, turnip, collards, arugula, bok choy, napa cabbage, tomatillo,
   peanut, fava bean, shallot, lavender, rosemary, sage, and chamomile, each
