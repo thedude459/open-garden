@@ -18,26 +18,22 @@ import { areaCreateSchema, areaPatchSchema, trayCreateSchema } from '@open-garde
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
-import {
-  openPlantingService,
-  openSoilTestService,
-  parseSoilTest,
-} from './planting-service.factory';
+import { openBedService, openSoilTestService, parseSoilTest } from './planting-service.factory';
 
 @Controller('gardens/:id')
 @UseGuards(SessionGuard, GardenMembershipGuard)
 export class GardenAreasController {
-  private readonly plantings: ReturnType<typeof openPlantingService>;
+  private readonly beds: ReturnType<typeof openBedService>;
   private readonly soilTests: ReturnType<typeof openSoilTestService>;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.plantings = openPlantingService(bundle.db);
+    this.beds = openBedService(bundle.db);
     this.soilTests = openSoilTestService(bundle.db);
   }
 
   @Get('areas')
   listAreas(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.plantings.listAreas(user.id, id);
+    return this.beds.listAreas(user.id, id);
   }
 
   @Post('areas')
@@ -48,7 +44,7 @@ export class GardenAreasController {
         'VALIDATION_ERROR',
         'Choose a vegetable garden, fruit garden, or greenhouse',
       );
-    return this.plantings.createArea(user.id, id, parsed.data.kind);
+    return this.beds.createArea(user.id, id, parsed.data.kind);
   }
 
   @Patch('areas/:areaId')
@@ -65,7 +61,7 @@ export class GardenAreasController {
         parsed.error.issues[0]?.message ?? 'Area name is required',
       );
     }
-    return this.plantings.renameArea(user.id, id, areaId, parsed.data.name);
+    return this.beds.renameArea(user.id, id, areaId, parsed.data.name);
   }
 
   /** Only an empty area can go: one that holds beds or trays is refused (409). */
@@ -76,19 +72,19 @@ export class GardenAreasController {
     @Param('id') id: string,
     @Param('areaId', ParseUUIDPipe) areaId: string,
   ) {
-    return this.plantings.deleteArea(user.id, id, areaId);
+    return this.beds.deleteArea(user.id, id, areaId);
   }
 
   @Get('trays')
   listTrays(@CurrentUser() user: AuthUser, @Param('id') id: string) {
-    return this.plantings.listTrays(user.id, id);
+    return this.beds.listTrays(user.id, id);
   }
 
   @Post('trays')
   createTray(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
     const parsed = trayCreateSchema.safeParse(body);
     if (!parsed.success) throw domainError('VALIDATION_ERROR', 'Tray name is required');
-    return this.plantings.createTray(user.id, id, parsed.data.name);
+    return this.beds.createTray(user.id, id, parsed.data.name);
   }
 
   /** One sample of the area's ground; a bed whose soil differs takes its own (ADR 0033). */
