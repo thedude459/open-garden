@@ -114,13 +114,13 @@ describe('CalendarService', () => {
     });
   });
 
-  it('refuses a tree until the property has an orchard', async () => {
+  it('refuses a tree until the property has a fruit garden', async () => {
     const blocked = createMemory(false);
     await expect(
       blocked.service.add(blocked.ownerId, blocked.gardenId, maple.id),
     ).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
-      message: 'Add an orchard for this plant first',
+      message: 'Add a fruit garden for this plant first',
     });
     const open = createMemory(true);
     const added = await open.service.add(open.ownerId, open.gardenId, maple.id);

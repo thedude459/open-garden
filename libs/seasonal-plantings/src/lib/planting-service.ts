@@ -150,7 +150,7 @@ export class PlantingService {
       const greenhouse = await this.areas.findByKind(gardenId, 'greenhouse');
       if (greenhouse) trayId = (await this.trays.open(gardenId, greenhouse.id, 'Tray')).id;
     }
-    const life = lifeForPlant(plant.plantType, dto.life);
+    const life = lifeForPlant(plant.plantType, dto.life, plant.perennial);
     await this.assertFits(gardenId, plant, bedId, trayId, null);
     const plantedYear =
       dto.plantedYear !== undefined
@@ -472,7 +472,7 @@ export class PlantingService {
         const area = await this.areas.getInGarden(gardenId, areaId);
         if (!area) throw domainError('NOT_FOUND', 'Area not found');
         // The station follows the area, so the bed's rules are the area's.
-        station = stationFor(isAreaKind(area.kind) ? area.kind : 'vegetable');
+        station = stationFor(isAreaKind(area.kind) ? area.kind : 'vegetable', station);
       } else {
         areaId = (await this.areas.ensure(gardenId, areaKindFor(station))).id;
       }
@@ -520,7 +520,7 @@ export class PlantingService {
       if (site) row = site;
     }
     if (dto.areaId !== undefined && dto.areaId !== row.areaId) {
-      row = await this.moveBed(gardenId, bedId, dto.areaId);
+      row = await this.moveBed(gardenId, bedId, dto.areaId, toStation(row.station));
     }
     return toBedDto(row);
   }
@@ -530,7 +530,12 @@ export class PlantingService {
    * the new area, as when it was placed (a hard gate, principle VIII); its
    * station follows the area's kind.
    */
-  private async moveBed(gardenId: string, bedId: string, areaId: string) {
+  private async moveBed(
+    gardenId: string,
+    bedId: string,
+    areaId: string,
+    current: BedStation | null,
+  ) {
     if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
     const area = await this.areas.getInGarden(gardenId, areaId);
     if (!area) throw domainError('NOT_FOUND', 'Area not found');
@@ -538,14 +543,15 @@ export class PlantingService {
     if (kind === 'greenhouse') {
       throw domainError('VALIDATION_ERROR', 'A greenhouse holds trays, not beds');
     }
+    const station = stationFor(kind, current);
     const occupants =
       typeof this.plantings.occupants === 'function' ? await this.plantings.occupants(bedId) : [];
     for (const [i, plant] of occupants.entries()) {
-      const reason = placementRefusal(kind, plant.plantType, occupants.slice(0, i));
+      const reason = placementRefusal(kind, plant.plantType, occupants.slice(0, i), station);
       if (reason)
         throw domainError('VALIDATION_ERROR', `${area.name} will not take this bed: ${reason}`);
     }
-    const moved = await this.beds.setArea(gardenId, bedId, areaId, stationFor(kind));
+    const moved = await this.beds.setArea(gardenId, bedId, areaId, station);
     if (!moved) throw PLANTING_ERRORS.bedNotFound();
     return moved;
   }
@@ -673,12 +679,14 @@ export class PlantingService {
     if (!this.areas) return;
     let area: AreaKind = 'vegetable';
     let occupants: { id: string; plantType: string }[] = [];
+    let station: BedStation | null = null;
     if (trayId) {
       area = 'greenhouse';
     } else if (bedId) {
       const bed = await this.beds.getInGarden(gardenId, bedId);
       if (!bed) throw PLANTING_ERRORS.bedNotFound();
-      area = areaKindFor(toStation(bed.station));
+      station = toStation(bed.station);
+      area = areaKindFor(station);
       if (bed.areaId) {
         const row = await this.areas.getById(bed.areaId);
         if (row && isAreaKind(row.kind)) area = row.kind;
@@ -688,7 +696,7 @@ export class PlantingService {
       }
     }
     // With no bed yet, a planting must be one a vegetable garden takes.
-    const reason = placementRefusal(area, plant.plantType, occupants);
+    const reason = placementRefusal(area, plant.plantType, occupants, station);
     if (reason) throw domainError('VALIDATION_ERROR', reason);
   }
 

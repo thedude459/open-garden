@@ -20,6 +20,16 @@ const maple = {
   status: 'deprecated',
 };
 
+const asparagus = {
+  id: 'plant-asparagus',
+  commonName: 'Asparagus',
+  species: 'Asparagus officinalis',
+  cultivar: null,
+  plantType: 'vegetable',
+  status: 'active',
+  perennial: true,
+};
+
 describe('PlantingService', () => {
   it('requires indoor start date for transplants and forbids it for direct seed', async () => {
     const mem = createMemory();
@@ -111,6 +121,14 @@ describe('PlantingService', () => {
     });
     const listed = await mem.service.create(mem.ownerId, mem.gardenId, { plantId: maple.id });
     expect(listed.list.plantings[0]?.status).toBe('deprecated');
+  });
+
+  it('keeps a herbaceous perennial past the season unless asked otherwise', async () => {
+    const mem = createMemory();
+    const { list } = await mem.service.create(mem.ownerId, mem.gardenId, {
+      plantId: asparagus.id,
+    });
+    expect(list.plantings.find((p) => p.plantId === asparagus.id)?.life).toBe('perennial');
   });
 
   it('creates unique bed names, unassigns plantings on delete, and refuses viewer bed mutate', async () => {
@@ -252,6 +270,7 @@ function createMemory(sowing?: SowingPlanner) {
   const plants = new Map([
     [tomato.id, tomato],
     [maple.id, maple],
+    [asparagus.id, asparagus],
   ]);
   const memberships = new Map<string, { gardenId: string; userId: string; role: GardenRole }>([
     [`${gardenId}:${ownerId}`, { gardenId, userId: ownerId, role: 'owner' }],
@@ -634,7 +653,7 @@ describe('PlantingService area check after a catalog update', () => {
 
   it('still refuses moving it to another bed that does not accept it', async () => {
     await expect(service.update('u', 'g', apple.id, { bedId: 'veg2' })).rejects.toMatchObject({
-      message: 'A tree belongs in an orchard',
+      message: 'A tree belongs in a fruit garden',
     });
   });
 });
@@ -658,7 +677,8 @@ describe('PlantingService area rules', () => {
   });
   const rows = { cane: planting('cane'), tree: planting('tree') };
   const beds: Record<string, { id: string; station: string | null; areaId: string | null }> = {
-    canes: { id: 'canes', station: null, areaId: 'bramble-area' },
+    canes: { id: 'canes', station: 'berry', areaId: 'fruit-area' },
+    veg: { id: 'veg', station: null, areaId: null },
   };
   const inserted: Record<string, unknown>[] = [];
   const service = new PlantingService(
@@ -682,29 +702,39 @@ describe('PlantingService area rules', () => {
       },
     } as never,
     {
-      getById: async (id: string) => (id === 'bramble-area' ? { kind: 'bramble' } : null),
+      getById: async (id: string) => (id === 'fruit-area' ? { kind: 'fruit' } : null),
       getInGarden: async (_g: string, id: string) =>
-        id === 'bramble-area' ? { id, kind: 'bramble' } : null,
+        id === 'fruit-area' ? { id, kind: 'fruit' } : null,
       ensure: async (_g: string, kind: string) => ({ id: `${kind}-area`, kind }),
     } as never,
   );
 
-  it('takes cane fruit in a bramble patch and refuses a tree there', async () => {
+  it('takes cane fruit and trees in a fruit garden and keeps them out of a vegetable bed', async () => {
     await expect(service.update('u', 'g', rows.cane.id, { bedId: 'canes' })).resolves.toMatchObject(
       { id: rows.cane.id },
     );
-    await expect(service.update('u', 'g', rows.tree.id, { bedId: 'canes' })).rejects.toMatchObject({
-      message: 'A tree belongs in an orchard',
+    await expect(service.update('u', 'g', rows.tree.id, { bedId: 'canes' })).resolves.toMatchObject(
+      { id: rows.tree.id },
+    );
+    await expect(service.update('u', 'g', rows.cane.id, { bedId: 'veg' })).rejects.toMatchObject({
+      message: 'Cane fruit belongs in a fruit garden',
     });
   });
 
-  it('gives a bed the station of the area it is created in', async () => {
+  it('gives a bed in a fruit garden its own station, a tree bed by default', async () => {
     const size = { lengthInches: 48, widthInches: 48 };
-    await service.createBed('u', 'g', { name: 'Canes', areaId: 'bramble-area', ...size });
+    await service.createBed('u', 'g', { name: 'Apple', areaId: 'fruit-area', ...size });
     await service.createBed('u', 'g', { name: 'Raspberries', station: 'berry', ...size });
+    await service.createBed('u', 'g', {
+      name: 'Grapes',
+      areaId: 'fruit-area',
+      station: 'berry',
+      ...size,
+    });
     expect(inserted.map((row) => [row['areaId'], row['station']])).toEqual([
-      ['bramble-area', 'berry'],
-      ['bramble-area', 'berry'],
+      ['fruit-area', 'tree'],
+      ['fruit-area', 'berry'],
+      ['fruit-area', 'berry'],
     ]);
   });
 });
@@ -715,8 +745,7 @@ describe('PlantingService areas: rename, delete, move a bed', () => {
     const areas = new Map<string, Area>([
       ['veg', { id: 'veg', name: 'Vegetable garden', kind: 'vegetable' }],
       ['veg2', { id: 'veg2', name: 'Vegetable garden 2', kind: 'vegetable' }],
-      ['orchard', { id: 'orchard', name: 'Orchard', kind: 'orchard' }],
-      ['canes', { id: 'canes', name: 'Bramble patch', kind: 'bramble' }],
+      ['orchard', { id: 'orchard', name: 'Orchard', kind: 'fruit' }],
       ['glass', { id: 'glass', name: 'Greenhouse', kind: 'greenhouse' }],
     ]);
     const bed = {
@@ -805,17 +834,18 @@ describe('PlantingService areas: rename, delete, move a bed', () => {
       service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'veg2' }),
     ).resolves.toMatchObject({ areaId: 'veg2', station: null });
     await expect(
-      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'canes' }),
-    ).rejects.toMatchObject({
-      message: 'Bramble patch will not take this bed: This plant belongs in a vegetable garden',
-    });
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'orchard' }),
+    ).resolves.toMatchObject({ areaId: 'orchard', station: 'tree' });
+    await expect(
+      service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'veg' }),
+    ).resolves.toMatchObject({ areaId: 'veg', station: null });
     await expect(
       service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'glass' }),
     ).rejects.toMatchObject({ message: 'A greenhouse holds trays, not beds' });
     await expect(
       service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'missing' }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    // An orchard takes herbaceous underplanting but one tree per bed.
+    // A fruit garden takes herbaceous underplanting, but a tree bed one tree.
     occupants.splice(0, 1, { id: 't1', plantType: 'tree' }, { id: 't2', plantType: 'tree' });
     await expect(
       service.renameBed('owner', 'g', 'north', { name: 'North', areaId: 'orchard' }),

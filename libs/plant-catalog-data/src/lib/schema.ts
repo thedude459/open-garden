@@ -130,6 +130,8 @@ export const plants = pgTable(
     cropId: text('crop_id'),
     /** How much frost the crop survives: tender, half-hardy, or hardy. */
     frostTolerance: text('frost_tolerance'),
+    /** Lives for years, so a planting of it outlives a season by default. */
+    perennial: boolean('perennial').notNull().default(false),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
     indoorWeeksLatest: integer('indoor_weeks_latest'),

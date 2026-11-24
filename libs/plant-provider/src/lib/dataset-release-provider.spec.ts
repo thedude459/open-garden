@@ -248,17 +248,27 @@ describe('DatasetReleaseProvider', () => {
     };
     const thyme = { ...tomato, id: 'thyme', use: 'herb', habit: 'shrub', varieties: [] };
     const melon = { ...tomato, id: 'melon', use: 'fruit', habit: 'vine', varieties: [] };
+    const grape = {
+      ...melon,
+      id: 'grape',
+      lifeCycle: 'perennial',
+      hardinessZones: { min: 4, max: 9 },
+    };
     const { items } = await pinned(
-      catalog([apple, rhubarb, raspberry, blueberry, thyme, melon]),
+      catalog([apple, rhubarb, raspberry, blueberry, thyme, melon, grape]),
     ).listPage();
-    expect(items.map((p) => [p.externalId, p.plantType, p.zoneMin, p.zoneMax])).toEqual([
-      ['apple', 'tree', 3, 8],
-      ['rhubarb', 'vegetable', null, null],
-      ['raspberry', 'cane', 1, 13],
-      ['blueberry', 'shrub', 4, 7],
-      // Herbs of any habit are herbs; other fruit goes by habit.
-      ['thyme', 'herb', 1, 13],
-      ['melon', 'fruit', 1, 13],
+    expect(
+      items.map((p) => [p.externalId, p.plantType, p.zoneMin, p.zoneMax, p.perennial]),
+    ).toEqual([
+      ['apple', 'tree', 3, 8, true],
+      ['rhubarb', 'vegetable', null, null, true],
+      ['raspberry', 'cane', 1, 13, false],
+      ['blueberry', 'shrub', 4, 7, true],
+      // Herbs of any habit are herbs; other fruit goes by habit, and a
+      // perennial vine is woody where an annual one is not.
+      ['thyme', 'herb', 1, 13, false],
+      ['melon', 'fruit', 1, 13, false],
+      ['grape', 'vine', 4, 9, true],
     ]);
     expect(items[0]?.rootstockSpacingInches).toEqual({ dwarf: 94, semiDwarf: null, standard: 295 });
     expect(items[1]?.rootstockSpacingInches).toBeNull();
