@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type { AreaKind, PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
+import { allowsPlant } from '@open-garden/shared-types';
 import { withCompanionDefaults } from './cached-detail';
 
 interface CatalogCacheDb extends DBSchema {
@@ -59,7 +60,7 @@ export class PlantCatalogCacheService {
   /** Offline filters apply only to an already-cached browse page. */
   filterCached(
     page: PageDto<PlantSummaryDto>,
-    opts: { zone?: number; plantType?: string; family?: string; q?: string },
+    opts: { zone?: number; plantType?: string; area?: AreaKind; family?: string; q?: string },
   ): PageDto<PlantSummaryDto> {
     let items = page.items;
     if (opts.family) {
@@ -67,6 +68,10 @@ export class PlantCatalogCacheService {
     }
     if (opts.plantType) {
       items = items.filter((p) => p.plantType === opts.plantType);
+    }
+    if (opts.area) {
+      const area = opts.area;
+      items = items.filter((p) => allowsPlant(area, p.plantType));
     }
     if (opts.zone !== undefined) {
       items = items.filter((p) => p.zoneMin <= opts.zone! && opts.zone! <= p.zoneMax);

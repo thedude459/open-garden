@@ -55,6 +55,8 @@ export interface PlantListFilters {
   q?: string;
   zone?: number;
   plantType?: PlantType;
+  /** Any of these types (an area's accepts list). */
+  plantTypes?: readonly PlantType[];
   family?: string;
   page: number;
   pageSize: number;
@@ -228,6 +230,9 @@ export class PlantRepository {
     conditions.push(isNotNull(plants.spacingInches));
     if (filters.plantType) {
       conditions.push(eq(plants.plantType, filters.plantType));
+    }
+    if (filters.plantTypes) {
+      conditions.push(inArray(plants.plantType, [...filters.plantTypes]));
     }
     if (filters.family) {
       conditions.push(eq(plants.family, filters.family));

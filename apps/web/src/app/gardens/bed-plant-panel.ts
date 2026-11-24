@@ -1,4 +1,14 @@
-import { Component, OnInit, inject, input, model, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -81,6 +91,7 @@ import { gardenErrorMessage } from './garden-error-message';
         [filters]="true"
         [live]="true"
         [zone]="zone()"
+        [area]="area()"
         (results)="onCatalog($event)"
         (searched)="searched.set(true)"
         (zoneChange)="activeZone.set($event)"
@@ -164,8 +175,11 @@ export class BedPlantPanel implements OnInit {
       .catch(() => undefined);
   }
 
+  /** The area this bed is in, from its station. */
+  readonly area = computed(() => areaKindFor(this.station()));
+
   private accepts(plant: Pick<PlantSummaryDto, 'plantType'>) {
-    return allowsPlant(areaKindFor(this.station()), plant.plantType);
+    return allowsPlant(this.area(), plant.plantType);
   }
 
   onCatalog(items: PlantSummaryDto[]) {

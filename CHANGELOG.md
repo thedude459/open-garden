@@ -27,6 +27,14 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **17 more fruits and nuts** from plant catalog v0.3.1 for fruit gardens:
+  apricot, plum, nectarine, sour cherry, almond, Asian pear, pawpaw, and
+  American persimmon trees; fig, hazelnut, red currant, gooseberry,
+  elderberry, haskap, and aronia bushes; and grape and hardy kiwi vines,
+  each with its icon, most with soil pH and varieties. Strawberries,
+  raspberries, and blackberries now warn against tomatoes, potatoes,
+  eggplant, and peppers (Verticillium wilt). The API imports the catalog
+  when it starts.
 - **32 more vegetables and herbs** from plant catalog v0.3.0, among them
   kohlrabi, turnip, collards, arugula, bok choy, napa cabbage, tomatillo,
   peanut, fava bean, shallot, lavender, rosemary, sage, and chamomile, each
@@ -53,6 +61,11 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Bed View's plant search fills its list with plants the bed takes, instead
+  of hiding most of a page of ones it refuses.
+- Catalog filters such as family find every match again; once the catalog
+  passed 100 entries, a filter answered from the first page missed the
+  rest (Radish under the Cabbage family).
 - A newer open-garden-data release mounted with `PLANT_CATALOG_FILE`
   imports again: releases from v0.2.3 on are signed by the release workflow
   run on `main`, which the catalog check refused.
