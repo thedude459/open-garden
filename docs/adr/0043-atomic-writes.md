@@ -46,5 +46,6 @@ transaction themselves.
   the member can retry.
 - A new multi-row write should take a `Transaction` port the same way.
 - A transaction holds one connection for its length. Layout save still
-  writes row by row inside it; the layout load test (100 placements) keeps
-  it inside its 1-second budget.
+  writes row by row inside it, one round trip per changed bed, planting, and
+  area. That is not timed by any test yet (the layout load test times
+  reading a layout); if saves grow slow, write each table in one statement.
