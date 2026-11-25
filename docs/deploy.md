@@ -57,6 +57,7 @@ variables in your host's Docker UI (common on a NAS). Never commit a real `.env`
 | `PLANT_CATALOG_FILE` | unset | Not needed: the image bundles the [open-garden-data](https://github.com/thedude459/open-garden-data/releases) release it was tested with and imports it when the API starts. To use a newer release before the app ships it, mount `open-garden-catalog-<version>.json` and its `open-garden-catalog-<version>.json.sigstore.json` (both from the release) into the API container and set this to the JSON file's path. A file whose provenance attestation does not verify, or that does not match the schema, fails that import and nothing changes. |
 | `CLIMATE_SOURCE` | `open-meteo` | Where a property's zone, frost dates, and monthly temperatures come from. `open-meteo` uses Open-Meteo's historical weather and falls back to NASA POWER when it is unreachable; `nasa-power` uses NASA POWER only (public domain, no usage limits), for installs whose use does not fit Open-Meteo's non-commercial terms. Watering still uses Open-Meteo's forecast for rain and evapotranspiration. |
 | `REMINDER_HOUR` | `7` | Hour of the day (0–23) the daily reminders go out, in the API container's time zone. |
+| `LOG_LEVEL` | `log` | How much the API logs: `error`, `warn`, `log`, `debug` (adds per-request timings and health checks), or `verbose`. |
 | `TZ` | `UTC` | The API container's time zone, for example `Europe/Berlin`. Reminders and "today" on the server follow it. |
 | `APP_URL` | unset | The address people open the app at, for example `https://garden.example.com`. Used for the links in reminder and password reset emails. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | unset (push off) | Turn on push reminders. Generate a pair once with `docker run --rm node:24-alpine npx -y web-push generate-vapid-keys` and keep it: a new pair makes every device turn push on again. Set both or neither. People reach the app over HTTPS for push to work in browsers. |
@@ -198,6 +199,26 @@ It prints the link (with `APP_URL` in front when set; otherwise put the
 address you open Open Garden at in front of the path). Using the link signs
 that person out everywhere. A member who still knows their password changes it
 on the **Account** page, which also has **Delete account**.
+
+## Logs
+
+`docker compose logs api` shows one line per request, with its method, path,
+status, time in milliseconds, and an id. The same id is sent back in the
+`X-Request-Id` header, and an error's line repeats it, so a failure can be
+traced to the request that caused it. Paths are logged without their query.
+
+Sign-ins, lockouts, password changes and resets, account deletions, and
+catalog runs each log a line starting `security.`:
+
+```bash
+docker compose logs api | grep security.
+```
+
+They name an account by its id, or, before sign-in, by `account=`: a short
+fingerprint of the email address, the same for every attempt on that
+address, so the address itself is never written. Passwords, tokens, and
+reset links are never logged. Many `security.sign_in_failed` or
+`security.locked_out` lines from one `ip=` mean someone is guessing passwords.
 
 ## Troubleshooting
 

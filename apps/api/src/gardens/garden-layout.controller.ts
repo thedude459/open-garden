@@ -41,7 +41,7 @@ export class GardenLayoutController {
   ) {
     const started = Date.now();
     const result = await this.layouts.get(user.id, id, season(seasonRaw));
-    this.logger.log(`garden.layout.assembly_ms=${Date.now() - started}`);
+    this.logger.debug(`garden.layout.assembly_ms=${Date.now() - started}`);
     return result;
   }
 

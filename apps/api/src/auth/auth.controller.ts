@@ -23,6 +23,7 @@ import { notificationConfig } from '../notifications/notification-config';
 import { smtpEmailSender } from '../notifications/senders';
 import { resetEmail, resetLink } from './password-reset';
 import { CurrentUser, SessionGuard } from './session.guard';
+import { accountRef, securityEvent } from '../common/security-log';
 import { sessionCookieOptions } from './session-cookie';
 
 const FIFTEEN_MINUTES = 15 * 60 * 1000;
@@ -59,7 +60,7 @@ export class AuthController {
     }
     const { email, password, displayName } = parsed.data;
     const ip = `ip:${clientIp(res)}`;
-    throwIfLimited(this.byIp.retryAfterMs(ip));
+    throwIfLimited(this.byIp.retryAfterMs(ip), 'sign_up', { ip: clientIp(res) });
     let user: AuthUser;
     try {
       user = await this.auth.register(email, password, displayName);
@@ -67,6 +68,7 @@ export class AuthController {
       if ((err as { code?: string }).code === 'CONFLICT') this.byIp.fail(ip);
       throw err;
     }
+    securityEvent('signed_up', { user: user.id, ip: clientIp(res) });
     const login = await this.auth.login(email, password);
     if (!login) throw new Error('Login after register failed');
     setSessionCookie(res, login.token);
@@ -85,9 +87,15 @@ export class AuthController {
     }
     const email = `email:${parsed.data.email.trim().toLowerCase()}`;
     const ip = `ip:${clientIp(res)}`;
-    throwIfLimited(Math.max(this.byEmail.retryAfterMs(email), this.byIp.retryAfterMs(ip)));
+    const who = { account: accountRef(parsed.data.email), ip: clientIp(res) };
+    throwIfLimited(
+      Math.max(this.byEmail.retryAfterMs(email), this.byIp.retryAfterMs(ip)),
+      'sign_in',
+      who,
+    );
     const result = await this.auth.login(parsed.data.email, parsed.data.password);
     if (!result) {
+      securityEvent('sign_in_failed', who, 'warn');
       this.byEmail.fail(email);
       this.byIp.fail(ip);
       const err = new Error('Invalid credentials') as Error & { code: string };
@@ -95,6 +103,7 @@ export class AuthController {
       throw err;
     }
     this.byEmail.clear(email);
+    securityEvent('signed_in', { user: result.user.id, ip: clientIp(res) });
     setSessionCookie(res, result.token);
     return { user: result.user };
   }
@@ -120,7 +129,14 @@ export class AuthController {
     }
     const email = `email:${parsed.data.email.trim().toLowerCase()}`;
     const ip = `ip:${clientIp(res)}`;
-    throwIfLimited(Math.max(this.resetsByEmail.retryAfterMs(email), this.byIp.retryAfterMs(ip)));
+    const who = { account: accountRef(parsed.data.email), ip: clientIp(res) };
+    throwIfLimited(
+      Math.max(this.resetsByEmail.retryAfterMs(email), this.byIp.retryAfterMs(ip)),
+      'password_reset_request',
+      who,
+    );
+    // Logged whether or not an account has the address, as the answer is.
+    securityEvent('password_reset_requested', who);
     this.resetsByEmail.fail(email);
     this.byIp.fail(ip);
     const reset = await this.auth.createPasswordReset(parsed.data.email);
@@ -142,14 +158,16 @@ export class AuthController {
       throw domainError('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Invalid request');
     }
     const ip = `ip:${clientIp(res)}`;
-    throwIfLimited(this.byIp.retryAfterMs(ip));
+    throwIfLimited(this.byIp.retryAfterMs(ip), 'password_reset', { ip: clientIp(res) });
     if (!(await this.auth.resetPassword(parsed.data.token, parsed.data.password))) {
+      securityEvent('password_reset_failed', { ip: clientIp(res) }, 'warn');
       this.byIp.fail(ip);
       throw domainError(
         'VALIDATION_ERROR',
         'This reset link has expired or was already used. Ask for a new one.',
       );
     }
+    securityEvent('password_reset', { ip: clientIp(res) });
     clearSessionCookie(res);
   }
 
@@ -173,8 +191,14 @@ function clientIp(res: Response): string {
   return (Array.isArray(real) ? real[0] : real) ?? res.req.socket.remoteAddress ?? 'unknown';
 }
 
-export function throwIfLimited(retryAfterMs: number) {
+/** Refuses a request over its limit, and logs the lockout: `on` names what was refused. */
+export function throwIfLimited(
+  retryAfterMs: number,
+  on: string,
+  who: Record<string, string | undefined> = {},
+) {
   if (retryAfterMs <= 0) return;
+  securityEvent('locked_out', { on, ...who }, 'warn');
   const minutes = Math.max(1, Math.ceil(retryAfterMs / 60_000));
   const err = new Error(
     `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,

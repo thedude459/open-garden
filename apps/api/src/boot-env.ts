@@ -28,6 +28,10 @@ export function assertBootEnv(env: NodeJS.ProcessEnv = process.env): void {
   if (climate && climate !== 'open-meteo' && climate !== 'nasa-power') {
     throw new Error(`CLIMATE_SOURCE must be open-meteo or nasa-power: ${climate}`);
   }
+  const logLevel = env['LOG_LEVEL']?.trim();
+  if (logLevel && !['error', 'warn', 'log', 'debug', 'verbose'].includes(logLevel)) {
+    throw new Error(`LOG_LEVEL must be error, warn, log, debug, or verbose: ${logLevel}`);
+  }
   const adminEmail = env['ADMIN_EMAIL']?.trim();
   if (adminEmail && !/^[^\s@]+@[^\s@]+$/.test(adminEmail)) {
     throw new Error(`ADMIN_EMAIL is not an email address: ${adminEmail}`);

@@ -49,4 +49,11 @@ describe('assertBootEnv', () => {
       }),
     ).not.toThrow();
   });
+
+  it('accepts a known LOG_LEVEL and refuses anything else', () => {
+    expect(() => assertBootEnv({ DATABASE_URL: 'postgres://x', LOG_LEVEL: 'debug' })).not.toThrow();
+    expect(() => assertBootEnv({ DATABASE_URL: 'postgres://x', LOG_LEVEL: 'loud' })).toThrow(
+      /LOG_LEVEL/,
+    );
+  });
 });
