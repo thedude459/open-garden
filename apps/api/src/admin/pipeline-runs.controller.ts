@@ -12,11 +12,14 @@ import {
 import { CatalogPipelineService, PIPELINE_ERRORS } from '@open-garden/catalog-pipeline';
 import { PipelineRunRepository, type AppDatabase } from '@open-garden/plant-catalog-data';
 import { pipelineRunListQuerySchema } from '@open-garden/shared-types';
-import { SessionGuard } from '../auth/session.guard';
+import type { AuthUser } from '@open-garden/auth';
+import { CurrentUser, SessionGuard } from '../auth/session.guard';
+import { securityEvent } from '../common/security-log';
 import { domainError } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
 import { AdminGuard } from './admin.guard';
 import { openCatalogPipeline } from './catalog-pipeline.factory';
+import { idOf } from '../common/ids';
 
 @Controller('admin/pipeline/runs')
 @UseGuards(SessionGuard, AdminGuard)
@@ -31,10 +34,14 @@ export class PipelineRunsController {
 
   @Post()
   @HttpCode(202)
-  async start() {
+  async start(@CurrentUser() user: AuthUser) {
     const run = await this.pipeline.start('operator');
-    void this.pipeline.executeRun(run.id).catch((err) => {
-      this.logger.error(err);
+    securityEvent('catalog_run_started', { user: user.id, run: run.id });
+    void this.pipeline.executeRun(run.id).catch((err: unknown) => {
+      this.logger.error(
+        `catalog_run.failed run=${run.id} ${err instanceof Error ? err.message : String(err)}`,
+        err instanceof Error ? err.stack : undefined,
+      );
     });
     return { ...run, sources: [] };
   }
@@ -49,7 +56,7 @@ export class PipelineRunsController {
   }
 
   @Get(':id')
-  async detail(@Param('id') id: string) {
+  async detail(@Param('id', idOf('Pipeline run')) id: string) {
     const detail = await this.runs.getDetail(id);
     if (!detail) throw PIPELINE_ERRORS.runNotFound();
     return detail;

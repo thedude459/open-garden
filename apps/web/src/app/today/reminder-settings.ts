@@ -1,9 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { SwPush } from '@angular/service-worker';
 import type { NotificationSettingsDto } from '@open-garden/shared-types';
 import { firstValueFrom } from 'rxjs';
 import { NotificationsApiService } from './notifications-api.service';
+import { errorMessage, UserFacingError } from '../ui/error-message';
 
 /** Push on this device and the daily email, for the signed-in member. */
 @Component({
@@ -93,7 +93,7 @@ export class ReminderSettings implements OnInit {
         await this.push.requestSubscription({ serverPublicKey: s.vapidPublicKey! })
       ).toJSON();
       if (!sub.endpoint || !sub.keys?.['p256dh'] || !sub.keys?.['auth']) {
-        throw new Error('This browser did not give a push subscription');
+        throw new UserFacingError('This browser did not give a push subscription');
       }
       await this.api.subscribe({
         endpoint: sub.endpoint,
@@ -136,16 +136,9 @@ export class ReminderSettings implements OnInit {
 }
 
 function messageFrom(err: unknown): string {
-  if (err instanceof HttpErrorResponse) {
-    const body: unknown = err.error;
-    if (body && typeof body === 'object' && 'error' in body) {
-      return (body as { error?: { message?: string } }).error?.message ?? 'Request failed';
-    }
-    return 'Could not save the reminder setting';
-  }
   // A blocked notification permission lands here.
   if (err instanceof Error && /denied|permission/i.test(err.message)) {
     return 'Notifications are blocked for this site. Allow them in the browser settings.';
   }
-  return err instanceof Error ? err.message : 'Request failed';
+  return errorMessage(err, 'Could not save the reminder setting');
 }

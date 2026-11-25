@@ -13,22 +13,15 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { domainError } from '@open-garden/garden-layout';
-import { LayoutService } from '@open-garden/garden-layout/server';
-import {
-  AreaRepository,
-  BedRepository,
-  GardenMembershipRepository,
-  PlantingAreaRepository,
-  PlantingRepository,
-  SoilTestRepository,
-  YearRecordRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import type { LayoutService } from '@open-garden/garden-layout/server';
+import type { AppDatabase } from '@open-garden/plant-catalog-data';
+import { openLayoutService } from './layout-service.factory';
 import { layoutPutSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
 import { season } from './season-query';
+import { idOf } from '../common/ids';
 
 @Controller()
 @UseGuards(SessionGuard, GardenMembershipGuard)
@@ -37,15 +30,7 @@ export class GardenLayoutController {
   private readonly layouts: LayoutService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.layouts = new LayoutService(
-      new GardenMembershipRepository(bundle.db),
-      new PlantingRepository(bundle.db),
-      new BedRepository(bundle.db),
-      new AreaRepository(bundle.db),
-      new YearRecordRepository(bundle.db),
-      new SoilTestRepository(bundle.db),
-      new PlantingAreaRepository(bundle.db),
-    );
+    this.layouts = openLayoutService(bundle.db);
   }
 
   @Get('gardens/:id/layout')
@@ -56,7 +41,7 @@ export class GardenLayoutController {
   ) {
     const started = Date.now();
     const result = await this.layouts.get(user.id, id, season(seasonRaw));
-    this.logger.log(`garden.layout.assembly_ms=${Date.now() - started}`);
+    this.logger.debug(`garden.layout.assembly_ms=${Date.now() - started}`);
     return result;
   }
 
@@ -83,7 +68,7 @@ export class GardenLayoutController {
   deleteWalkway(
     @CurrentUser() user: AuthUser,
     @Param('id') id: string,
-    @Param('walkwayId') walkwayId: string,
+    @Param('walkwayId', idOf('Walkway')) walkwayId: string,
   ) {
     return this.layouts.deleteArea(user.id, id, walkwayId);
   }

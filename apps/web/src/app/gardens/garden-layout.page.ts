@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   computed,
@@ -51,6 +50,7 @@ import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { EmptyState } from '../ui/empty-state';
+import { errorMessage } from '../ui/error-message';
 
 const NO_AREA_BEDS: AreaBed[] = [];
 
@@ -597,7 +597,7 @@ export class GardenLayoutPage implements OnInit {
     try {
       await this.planner.setSeason(year);
     } catch (err) {
-      this.notices.error(messageFrom(err));
+      this.notices.error(errorMessage(err, 'Could not update layout'));
     }
   }
 
@@ -682,7 +682,7 @@ export class GardenLayoutPage implements OnInit {
       this.areas.set(areas);
       this.trays.set(trays);
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update layout'));
     } finally {
       this.areasLoaded.set(true);
     }
@@ -696,7 +696,7 @@ export class GardenLayoutPage implements OnInit {
       await this.gardensApi.createArea(this.gardenId, 'vegetable');
       await this.loadAreas();
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update layout'));
     }
   }
 
@@ -727,7 +727,7 @@ export class GardenLayoutPage implements OnInit {
       this.adding.set(null);
       await this.loadAreas();
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update layout'));
     }
   }
 
@@ -934,7 +934,7 @@ export class GardenLayoutPage implements OnInit {
   }
 
   private fail(err: unknown) {
-    this.notices.error(messageFrom(err));
+    this.notices.error(errorMessage(err, 'Could not update layout'));
   }
 
   private guardMutate(): boolean {
@@ -953,16 +953,6 @@ export class GardenLayoutPage implements OnInit {
       throw new OnlineRequiredError();
     }
   }
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
-  }
-  if (err instanceof Error) return err.message;
-  return 'Could not update layout';
 }
 
 /**

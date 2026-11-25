@@ -13,6 +13,7 @@ import {
   type PlantType,
   type SoilPhDto,
   type StartMethod,
+  type Transaction,
   gardenAccess,
 } from '@open-garden/shared-types';
 import type {
@@ -35,22 +36,29 @@ function normalizeAreaName(raw: string): { name: string; nameNormalized: string 
   return { name, nameNormalized: name.toLowerCase() };
 }
 
+/** What a layout save writes, inside one transaction. */
+export interface LayoutWrites {
+  beds: Pick<BedRepository, 'setGeometry'>;
+  plantings: Pick<PlantingRepository, 'clearLayoutCoords' | 'clearPlacement' | 'setPlacement'>;
+  areas: Pick<AreaRepository, 'upsert'>;
+}
+
 /** Every dependency is required and typed as the slice this service uses. */
 export class LayoutService {
   constructor(
     private readonly memberships: Pick<GardenMembershipRepository, 'get'>,
-    private readonly plantings: Pick<
-      PlantingRepository,
-      'clearLayoutCoords' | 'clearPlacement' | 'listAllForLayout' | 'setPlacement'
-    >,
-    private readonly beds: Pick<BedRepository, 'listByGarden' | 'setGeometry'>,
-    private readonly areas: Pick<AreaRepository, 'delete' | 'listByGarden' | 'upsert'>,
+    // Layout writes go through `transaction` only, so these read.
+    private readonly plantings: Pick<PlantingRepository, 'listAllForLayout'>,
+    private readonly beds: Pick<BedRepository, 'listByGarden'>,
+    private readonly areas: Pick<AreaRepository, 'delete' | 'listByGarden'>,
     private readonly years: Pick<YearRecordRepository, 'currentYear' | 'layoutAdvice'>,
     private readonly soilTests: Pick<SoilTestRepository, 'latestByGarden'>,
     /** The property's typed areas: only each one's id and kind are read. */
     private readonly plantingAreas: {
       listByGarden(gardenId: string): Promise<{ id: string; kind: string }[]>;
     },
+    /** A layout save writes beds, placements, and areas; all of it or none. */
+    private readonly transaction: Transaction<LayoutWrites>,
   ) {}
 
   /**
@@ -153,47 +161,49 @@ export class LayoutService {
     const flags = evaluateLayout(proposedBeds, proposedPlantings, saved);
     if (flags.some((f) => f.blocking)) throw LAYOUT_ERRORS.spacingProblems();
 
-    await Promise.all(
-      bedRows.flatMap((row) => {
-        const put = dto.beds.find((b) => b.id === row.id);
-        return put ? [this.beds.setGeometry(gardenId, row.id, put)] : [];
-      }),
-    );
-    await Promise.all(
-      plantingRows.map(async (row) => {
-        const put = dto.placements.find((p) => p.plantingId === row.id);
-        if (put) {
-          await this.plantings.setPlacement(gardenId, row.id, {
-            bedId: put.bedId,
-            xInches: put.xInches,
-            yInches: put.yInches,
-          });
-          return;
-        }
-        if (row.layoutXInches === null) return;
-        const startMethod = (row as { startMethod?: string }).startMethod ?? 'direct_seed';
-        if (startMethod === 'transplant') {
-          await this.plantings.clearPlacement(gardenId, row.id);
-        } else {
-          await this.plantings.clearLayoutCoords(gardenId, row.id);
-        }
-      }),
-    );
+    await this.transaction(async ({ beds, plantings, areas }) => {
+      await Promise.all(
+        bedRows.flatMap((row) => {
+          const put = dto.beds.find((b) => b.id === row.id);
+          return put ? [beds.setGeometry(gardenId, row.id, put)] : [];
+        }),
+      );
+      await Promise.all(
+        plantingRows.map(async (row) => {
+          const put = dto.placements.find((p) => p.plantingId === row.id);
+          if (put) {
+            await plantings.setPlacement(gardenId, row.id, {
+              bedId: put.bedId,
+              xInches: put.xInches,
+              yInches: put.yInches,
+            });
+            return;
+          }
+          if (row.layoutXInches === null) return;
+          const startMethod = (row as { startMethod?: string }).startMethod ?? 'direct_seed';
+          if (startMethod === 'transplant') {
+            await plantings.clearPlacement(gardenId, row.id);
+          } else {
+            await plantings.clearLayoutCoords(gardenId, row.id);
+          }
+        }),
+      );
 
-    await Promise.all(
-      (dto.areas ?? []).map((area) => {
-        const names = normalizeAreaName(area.name);
-        return this.areas.upsert(gardenId, {
-          id: area.id,
-          name: names.name,
-          nameNormalized: names.nameNormalized,
-          originXInches: area.originXInches,
-          originYInches: area.originYInches,
-          lengthInches: area.lengthInches,
-          widthInches: area.widthInches,
-        });
-      }),
-    );
+      await Promise.all(
+        (dto.areas ?? []).map((area) => {
+          const names = normalizeAreaName(area.name);
+          return areas.upsert(gardenId, {
+            id: area.id,
+            name: names.name,
+            nameNormalized: names.nameNormalized,
+            originXInches: area.originXInches,
+            originYInches: area.originYInches,
+            lengthInches: area.lengthInches,
+            widthInches: area.widthInches,
+          });
+        }),
+      );
+    });
 
     return this.snapshot(gardenId, membership.role as GardenRole, seasons);
   }

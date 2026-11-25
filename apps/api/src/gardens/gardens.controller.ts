@@ -54,7 +54,7 @@ export class GardensController {
     }
     const started = Date.now();
     const result = await this.gardens.list(user.id, parsed.data.page, parsed.data.pageSize);
-    this.logger.log(`garden.list.assembly_ms=${Date.now() - started}`);
+    this.logger.debug(`garden.list.assembly_ms=${Date.now() - started}`);
     return result;
   }
 

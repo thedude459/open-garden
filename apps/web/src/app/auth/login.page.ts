@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { apiMessage } from '../ui/error-message';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -95,9 +96,10 @@ export class LoginPage {
           await this.auth.register(this.email, this.password, this.displayName.trim() || undefined);
         }
         this.auth.markAuthenticated();
-        await this.router.navigateByUrl(
-          safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl')),
-        );
+        const next = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+        // Another member's gardens may still be held in memory: load afresh.
+        if (this.auth.replacedOtherMember) window.location.assign(next);
+        else await this.router.navigateByUrl(next);
       } catch (err) {
         // Sign-in keeps one generic message. Sign-up says when the email is
         // already registered, so people know to sign in instead, and both say
@@ -105,8 +107,7 @@ export class LoginPage {
         const status = err instanceof HttpErrorResponse ? err.status : 0;
         const said =
           status === 429 || (this.mode() === 'register' && status === 409)
-            ? ((err as HttpErrorResponse).error as { error?: { message?: string } } | null)?.error
-                ?.message
+            ? apiMessage(err)
             : undefined;
         this.notices.error(said ?? 'Authentication failed');
       }

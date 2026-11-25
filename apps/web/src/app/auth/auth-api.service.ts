@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type { Units } from '@open-garden/shared-types';
+import { clearDeviceData, recordDeviceOwner } from '../device-data';
 
 const API = '/api';
 
@@ -13,6 +14,11 @@ export class AuthApiService {
   private user: SignedInUser | null = null;
   /** Counts sign-ins, so a reply to a request sent before one can be told apart. */
   private signIns = 0;
+  /**
+   * True when the last sign-in replaced another member's data on this device.
+   * Their gardens may still be held in memory, so the page loads afresh.
+   */
+  replacedOtherMember = false;
   /** How the signed-in member sees lengths; saved on their account. */
   readonly units = signal<Units>(storedUnits());
 
@@ -32,6 +38,7 @@ export class AuthApiService {
         { withCredentials: true },
       ),
     );
+    await this.claimDevice(res.user.id);
     this.persistUser(res.user);
     return res.user;
   }
@@ -44,6 +51,7 @@ export class AuthApiService {
         { withCredentials: true },
       ),
     );
+    await this.claimDevice(res.user.id);
     this.persistUser(res.user);
     return res.user;
   }
@@ -53,6 +61,20 @@ export class AuthApiService {
       () => undefined,
     );
     this.forget();
+    // The next person on this device must not see this member's gardens.
+    await clearDeviceData();
+  }
+
+  /**
+   * Makes this device the member's: whatever another member left here (or
+   * anyone, when no owner was recorded) is deleted first.
+   */
+  private async claimDevice(userId: string) {
+    const before = recordDeviceOwner(userId);
+    this.replacedOtherMember = before === 'other';
+    if (before === 'same') return;
+    await clearDeviceData();
+    recordDeviceOwner(userId);
   }
 
   /** Forget the signed-in member in this browser, as when the server ended the session. */

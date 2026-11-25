@@ -46,6 +46,15 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- The API log shows each request with an id that errors repeat, and a
+  `security.` line for sign-ins, lockouts, password changes and resets, account
+  deletions, and catalog runs. `LOG_LEVEL` sets how much is logged.
+- Error messages say what went wrong more often: the API sends every error in
+  one form, and the app no longer shows technical text such as "Http failure
+  response" in their place.
+- Pages load faster: the `web` container now compresses what it sends
+  (a first visit is about 113 kB instead of 408 kB) and lets browsers keep
+  the app's code files until a release changes them.
 - Online, a plant search always comes from the server, so it no longer
   misses plants past the first saved page. Offline, saved pages still answer.
 - Every bed now belongs to an area, and its area alone decides what it
@@ -66,6 +75,21 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- On a shared device, the next member no longer sees the last one's
+  properties. Signing out deletes what the app saved on the device for
+  offline use, and so does signing in as a different member after a session
+  ended.
+- Deleting a bed, saving the plan, and repeating a sowing now save
+  completely or not at all. Before, a failure part-way could delete a bed's
+  plantings and keep the bed, or save half a plan.
+- Stopping or upgrading the app no longer cuts off the API mid-request: it
+  finishes what it is doing and closes its database connections first. Compose
+  files now run the API with `init: true`.
+- A mistyped property, plant, or planting address in a link now shows "not
+  found" instead of a server error, and no longer fills the server log.
+- Behind an HTTPS proxy, failed sign-ins now count against each visitor's
+  own address. Before, every visitor shared one limit, so anyone could lock
+  the whole household out of signing in for 15 minutes.
 - Bed View's plant search fills its list with plants the bed takes, instead
   of hiding most of a page of ones it refuses.
 - Catalog filters such as family find every match again; once the catalog
@@ -77,6 +101,11 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [Deployment](docs/deploy.md#logs): reading the API log, and `LOG_LEVEL`.
+- [ADR 0043](docs/adr/0043-atomic-writes.md): writes that span rows commit
+  together.
+- [Deployment](docs/deploy.md#https): which proxies the `web` container
+  trusts to name the visitor's address.
 - [ADR 0042](docs/adr/0042-fruit-gardens.md): fruit gardens.
 
 ### Security

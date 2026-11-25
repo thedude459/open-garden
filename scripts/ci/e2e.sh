@@ -133,6 +133,13 @@ ensure_port_free() {
   fi
 }
 
+show_api_log() {
+  if [[ -s "${API_LOG:-}" ]]; then
+    echo "--- last 200 lines of the API log (${API_LOG}) ---"
+    tail -n 200 "${API_LOG}"
+  fi
+}
+
 wait_for_services() {
   local web api proxy
   for _ in $(seq 1 90); do
@@ -146,6 +153,7 @@ wait_for_services() {
     sleep 2
   done
   echo "Services did not become ready (web=${web:-?} api=${api:-?} proxy=${proxy:-?})"
+  show_api_log
   exit 1
 }
 
@@ -185,7 +193,11 @@ if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
   API_ENV+=("NODE_V8_COVERAGE=${ROOT}/coverage/e2e/v8")
   API_NODE_ARGS+=(--import ./scripts/ci/coverage-flush.mjs)
 fi
-env "${API_ENV[@]}" node "${API_NODE_ARGS[@]}" dist/api-runtime/main.js &
+# The API logs every request. Written to the job log, those lines slowed every
+# request in CI (a slow pipe) and buried the test output, so they go to a file:
+# its tail is printed when something fails, and CI uploads it.
+API_LOG="${ROOT}/e2e-api.log"
+env "${API_ENV[@]}" node "${API_NODE_ARGS[@]}" dist/api-runtime/main.js >"${API_LOG}" 2>&1 &
 API_PID=$!
 
 PORT=4200 npx nx serve web --configuration=production --host=0.0.0.0 --port=4200 &
@@ -195,6 +207,7 @@ wait_for_services
 if [[ "${E2E_STACK_ONLY:-}" == "1" ]]; then
   # `npm run e2e:stack`: keep the seeded stack running for `npm run e2e:only`.
   echo "Stack ready: web http://localhost:4200, API http://localhost:3000. Ctrl-C stops both."
+  echo "API log: ${API_LOG} (tail -f it to follow requests)"
   wait "${WEB_PID}"
   exit 0
 fi
@@ -203,9 +216,10 @@ fi
 LIVE_STATUS=0
 PW_STATUS=0
 E2E_LIVE=1 npx nx test api-e2e --skip-nx-cache --output-style=static || LIVE_STATUS=$?
-# Kills the API's database connections, so it runs alone after the other live specs.
-E2E_LIVE=1 E2E_DB_RECONNECT=1 npx vitest run --config vitest.config.ts \
-  apps/api-e2e/src/db-reconnect-http.spec.ts || LIVE_STATUS=$?
+# These disturb the other live specs (one kills the API's database
+# connections, one starts and stops a second API), so they run alone after them.
+E2E_LIVE=1 E2E_ALONE=1 npx vitest run --config vitest.config.ts --no-file-parallelism \
+  apps/api-e2e/src/db-reconnect-http.spec.ts apps/api-e2e/src/api-process.spec.ts || LIVE_STATUS=$?
 npx nx e2e web-e2e --output-style=static || PW_STATUS=$?
 if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
   # Stop the API cleanly so Node writes its coverage, then map it to the sources.
@@ -215,6 +229,7 @@ if [[ "${E2E_COVERAGE:-}" == "1" ]]; then
   node scripts/ci/coverage-e2e.mjs coverage/e2e/v8 coverage/e2e/coverage-final.json || true
 fi
 if [[ "${LIVE_STATUS}" -ne 0 || "${PW_STATUS}" -ne 0 ]]; then
+  show_api_log
   echo "e2e failed (live HTTP=${LIVE_STATUS} playwright=${PW_STATUS})"
   exit 1
 fi

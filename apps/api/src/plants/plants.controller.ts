@@ -14,6 +14,7 @@ import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { domainError } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
 import { openCalendarService } from '../gardens/calendar-service.factory';
+import { idOf } from '../common/ids';
 
 @Controller('plants')
 @UseGuards(SessionGuard)
@@ -68,7 +69,7 @@ export class PlantsController {
       ? await this.calendar.sowableNow(user.id, gardenId, localDate(asOfDate))
       : undefined;
     const result = await this.catalog.list(parsed.data, keep);
-    this.logger.log(`plants.list.assembly_ms=${Date.now() - started}`);
+    this.logger.debug(`plants.list.assembly_ms=${Date.now() - started}`);
     return result;
   }
 
@@ -78,7 +79,7 @@ export class PlantsController {
   }
 
   @Get(':id')
-  async detail(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+  async detail(@Param('id', idOf('Plant')) id: string, @CurrentUser() user: AuthUser) {
     const plant = await this.details.getById(id, user.id);
     if (!plant) {
       const err = new Error('Plant not found') as Error & { code: string };

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import type { GardenLayoutDto } from '@open-garden/shared-types';
+import { deviceStore } from '../device-data';
 
 interface LayoutCacheDb extends DBSchema {
   layouts: {
@@ -11,17 +12,12 @@ interface LayoutCacheDb extends DBSchema {
 
 @Injectable({ providedIn: 'root' })
 export class GardenLayoutCacheService {
-  private dbPromise: Promise<IDBPDatabase<LayoutCacheDb>> | null = null;
+  private readonly store = deviceStore<LayoutCacheDb>('og-layout', 1, (db) => {
+    db.createObjectStore('layouts', { keyPath: 'key' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<LayoutCacheDb>('og-layout', 1, {
-        upgrade(db) {
-          db.createObjectStore('layouts', { keyPath: 'key' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   cacheKey(userId: string, gardenId: string): string {

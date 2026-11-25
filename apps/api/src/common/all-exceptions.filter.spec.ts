@@ -1,12 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Logger, type ArgumentsHost } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  PayloadTooLargeException,
+  type ArgumentsHost,
+} from '@nestjs/common';
 import { AllExceptionsFilter } from './all-exceptions.filter';
 
 function respond(exception: unknown) {
   const json = vi.fn();
   const status = vi.fn().mockReturnValue({ json });
   const host = {
-    switchToHttp: () => ({ getResponse: () => ({ status }) }),
+    switchToHttp: () => ({ getResponse: () => ({ status, locals: { requestId: 'req-7' } }) }),
   } as unknown as ArgumentsHost;
   new AllExceptionsFilter().catch(exception, host);
   return { status: status.mock.calls[0]?.[0], body: json.mock.calls[0]?.[0] };
@@ -46,10 +53,63 @@ describe('AllExceptionsFilter', () => {
     expect(JSON.stringify(body)).not.toContain('secrethash');
   });
 
-  it('logs the unexpected error on the server', () => {
+  it('logs the unexpected error on the server, with its stack and request id', () => {
     const log = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     const err = new Error('Failed query: boom');
     respond(err);
-    expect(log).toHaveBeenCalledWith(err);
+    expect(log).toHaveBeenCalledWith('request.failed id=req-7 Failed query: boom', err.stack);
+  });
+
+  describe("Nest's own exceptions leave in the app's error shape", () => {
+    it('an unknown route', () => {
+      expect(respond(new NotFoundException('Cannot GET /api/nope'))).toEqual({
+        status: 404,
+        body: { error: { code: 'NOT_FOUND', message: 'Cannot GET /api/nope' } },
+      });
+    });
+
+    it('malformed JSON', () => {
+      const { status, body } = respond(
+        new BadRequestException("Expected property name or '}' in JSON at position 1"),
+      );
+      expect(status).toBe(400);
+      expect(body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('a body that is too large, raised with a plain string', () => {
+      expect(respond(new PayloadTooLargeException('request entity too large'))).toEqual({
+        status: 413,
+        body: { error: { code: 'PAYLOAD_TOO_LARGE', message: 'request entity too large' } },
+      });
+    });
+
+    it('a list of validation messages: the first one', () => {
+      const { body } = respond(new BadRequestException(['name is required', 'size is required']));
+      expect(body.error.message).toBe('name is required');
+    });
+
+    it("keeps an exception already in the app's shape", () => {
+      const err = new NotFoundException({
+        error: { code: 'NOT_FOUND', message: 'Garden not found' },
+      });
+      expect(respond(err).body).toEqual({
+        error: { code: 'NOT_FOUND', message: 'Garden not found' },
+      });
+    });
+
+    it('hides and logs a server error', () => {
+      const log = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      const { status, body } = respond(
+        new InternalServerErrorException('pool exhausted at db:5432'),
+      );
+      expect(status).toBe(500);
+      expect(body).toEqual({
+        error: { code: 'INTERNAL', message: 'An unexpected error occurred' },
+      });
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining('request.failed id=req-7 pool exhausted'),
+        expect.any(String),
+      );
+    });
   });
 });

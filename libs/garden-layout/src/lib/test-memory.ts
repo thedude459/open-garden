@@ -250,6 +250,8 @@ export function createLayoutMemory() {
     },
     { latestByGarden: async () => soilTests },
     { listByGarden: async () => plantingAreas },
+    // In memory there is nothing to roll back; the db specs test that.
+    (work) => work({ beds: bedRepo, plantings: plantingRepo, areas: areaRepo } as never),
   );
 
   function addBed(name: string, id?: string) {

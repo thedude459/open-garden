@@ -281,6 +281,9 @@ jobs:
           trivyignores: .trivyignore
           exit-code: '1'
           format: table
+      - name: Smoke-test the web image (compression, caching, visitor address)
+        if: steps.gate.outputs.run == 'run' && matrix.image == 'web'
+        run: bash scripts/ci/web-image-smoke.sh open-garden-web:ci
 
   e2e:
     name: e2e
@@ -385,7 +388,7 @@ jobs:
           name: coverage-e2e
           path: coverage/e2e/coverage-final.json
           retention-days: 14
-      - name: Upload Playwright results
+      - name: Upload Playwright results and the API log
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -396,3 +399,4 @@ jobs:
             test-results/
             apps/web-e2e/playwright-report/
             apps/web-e2e/test-results/
+            e2e-api.log
