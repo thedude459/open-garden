@@ -1,6 +1,6 @@
 import type { GardenRole } from './garden';
 import type { PlantStatus, PlantType, SoilPhDto } from './plant';
-import type { BedSite, BedStation, Mulch } from './placement';
+import type { AreaKind, BedSite, BedStation, Mulch } from './placement';
 import type { IsoDate, SoilTestDto, StartMethod } from './planting';
 import type { ReminderItemDto } from './reminders';
 
@@ -27,6 +27,8 @@ export interface LayoutBedDto {
   mulch?: Mulch;
   /** The typed area the bed belongs to. */
   areaId?: string | null;
+  /** That area's type, which decides what the bed takes (principle VIII). */
+  areaKind?: AreaKind;
   /** The bed's own latest soil test; without one, its area's applies. */
   soilTest?: SoilTestDto | null;
 }

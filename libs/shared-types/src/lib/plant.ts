@@ -1,4 +1,9 @@
-export type PlantType = 'vegetable' | 'herb' | 'flower' | 'fruit' | 'cane' | 'shrub' | 'tree';
+/**
+ * Habit first: `cane`, `shrub`, `vine` (a woody perennial vine such as grape),
+ * and `tree` are that whatever their use; an herb of any habit is an herb.
+ */
+export type PlantType =
+  'vegetable' | 'herb' | 'flower' | 'fruit' | 'cane' | 'shrub' | 'vine' | 'tree';
 
 export type PlantStatus = 'active' | 'deprecated';
 
@@ -158,6 +163,8 @@ export interface PlantListQueryDto {
   q?: string;
   zone?: number;
   plantType?: PlantType;
+  /** Only plants this area type takes (`AREA_TYPES`), so a page is not filled with ones it refuses. */
+  area?: import('./placement').AreaKind;
   /** Botanical family, as the catalog names it. */
   family?: string;
   /** A property: only crops whose sowing or planting window there is open this week. */
@@ -202,6 +209,7 @@ export const PLANT_TYPES: readonly PlantType[] = [
   'fruit',
   'cane',
   'shrub',
+  'vine',
   'tree',
 ] as const;
 

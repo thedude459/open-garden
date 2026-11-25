@@ -19,10 +19,11 @@ import type {
   PlaceLookupDto,
 } from '@open-garden/shared-types';
 import { GardenCacheService } from './garden-cache.service';
+import { UserFacingError } from '../ui/error-message';
 
 const API = '/api';
 
-export class OnlineRequiredError extends Error {
+export class OnlineRequiredError extends UserFacingError {
   readonly code = 'ONLINE_REQUIRED';
   constructor() {
     super('You need to be online to make this change');

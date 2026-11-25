@@ -1,19 +1,20 @@
 import { Controller, Get, Inject, Logger, Param, Query, UseGuards } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
-import { CalendarService } from '@open-garden/planting-calendar';
+import type { CalendarService } from '@open-garden/planting-calendar';
 import {
-  CalendarEntryRepository,
   CatalogCompanionRepository,
   FavoriteRepository,
-  GardenMembershipRepository,
   GardenRepository,
   PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
 import { plantListQuerySchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
+import { domainError } from '@open-garden/shared-types';
 import { DATABASE } from '../database/database.tokens';
+import { openCalendarService } from '../gardens/calendar-service.factory';
+import { idOf } from '../common/ids';
 
 @Controller('plants')
 @UseGuards(SessionGuard)
@@ -28,12 +29,7 @@ export class PlantsController {
     const favorites = new FavoriteRepository(bundle.db);
     this.catalog = new CatalogService(plants);
     const gardens = new GardenRepository(bundle.db);
-    this.calendar = new CalendarService(
-      gardens,
-      new GardenMembershipRepository(bundle.db),
-      plants,
-      new CalendarEntryRepository(bundle.db),
-    );
+    this.calendar = openCalendarService(bundle.db);
     this.details = new PlantDetailService(plants, favorites, {
       pairs: new CatalogCompanionRepository(bundle.db),
       zonesForUser: (userId) => gardens.zonesForUser(userId),
@@ -46,6 +42,7 @@ export class PlantsController {
     @Query('q') q?: string,
     @Query('zone') zoneRaw?: string,
     @Query('plantType') plantType?: string,
+    @Query('area') area?: string,
     @Query('family') family?: string,
     @Query('sowNowFor') sowNowFor?: string,
     @Query('asOf') asOf?: string,
@@ -56,6 +53,7 @@ export class PlantsController {
       q,
       zone: blankToUndefined(zoneRaw),
       plantType: blankToUndefined(plantType),
+      area: blankToUndefined(area),
       family: blankToUndefined(family),
       sowNowFor: blankToUndefined(sowNowFor),
       asOf: blankToUndefined(asOf),
@@ -63,11 +61,7 @@ export class PlantsController {
       pageSize: pageSizeRaw,
     });
     if (!parsed.success) {
-      const err = new Error(parsed.error.issues[0]?.message ?? 'Invalid query') as Error & {
-        code: string;
-      };
-      err.code = 'VALIDATION_ERROR';
-      throw err;
+      throw domainError('VALIDATION_ERROR', parsed.error.issues[0]?.message ?? 'Invalid query');
     }
     const started = Date.now();
     const { sowNowFor: gardenId, asOf: asOfDate } = parsed.data;
@@ -75,7 +69,7 @@ export class PlantsController {
       ? await this.calendar.sowableNow(user.id, gardenId, localDate(asOfDate))
       : undefined;
     const result = await this.catalog.list(parsed.data, keep);
-    this.logger.log(`plants.list.assembly_ms=${Date.now() - started}`);
+    this.logger.debug(`plants.list.assembly_ms=${Date.now() - started}`);
     return result;
   }
 
@@ -85,7 +79,7 @@ export class PlantsController {
   }
 
   @Get(':id')
-  async detail(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+  async detail(@Param('id', idOf('Plant')) id: string, @CurrentUser() user: AuthUser) {
     const plant = await this.details.getById(id, user.id);
     if (!plant) {
       const err = new Error('Plant not found') as Error & { code: string };

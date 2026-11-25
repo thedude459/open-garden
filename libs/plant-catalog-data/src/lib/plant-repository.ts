@@ -48,12 +48,15 @@ export interface PlantUpsertInput {
   family?: string | null;
   cropId?: string | null;
   frostTolerance?: FrostTolerance | null;
+  perennial?: boolean | null;
 }
 
 export interface PlantListFilters {
   q?: string;
   zone?: number;
   plantType?: PlantType;
+  /** Any of these types (an area's accepts list). */
+  plantTypes?: readonly PlantType[];
   family?: string;
   page: number;
   pageSize: number;
@@ -177,6 +180,7 @@ export class PlantRepository {
           family: sql`excluded.family`,
           cropId: sql`excluded.crop_id`,
           frostTolerance: sql`excluded.frost_tolerance`,
+          perennial: sql`excluded.perennial`,
           provider: sql`excluded.provider`,
           providerExternalId: sql`excluded.provider_external_id`,
           status: sql`excluded.status`,
@@ -226,6 +230,9 @@ export class PlantRepository {
     conditions.push(isNotNull(plants.spacingInches));
     if (filters.plantType) {
       conditions.push(eq(plants.plantType, filters.plantType));
+    }
+    if (filters.plantTypes) {
+      conditions.push(inArray(plants.plantType, [...filters.plantTypes]));
     }
     if (filters.family) {
       conditions.push(eq(plants.family, filters.family));
@@ -342,6 +349,7 @@ function catalogColumns(input: {
   family?: string | null;
   cropId?: string | null;
   frostTolerance?: FrostTolerance | null;
+  perennial?: boolean | null;
 }) {
   const r = input.rootstockSpacingInches;
   const t = input.sowingTemperature;
@@ -362,6 +370,7 @@ function catalogColumns(input: {
     family: input.family ?? null,
     cropId: input.cropId ?? null,
     frostTolerance: input.frostTolerance ?? null,
+    perennial: input.perennial ?? false,
     dwarfSpacingInches: r?.dwarf ?? null,
     semiDwarfSpacingInches: r?.semiDwarf ?? null,
     standardSpacingInches: r?.standard ?? null,

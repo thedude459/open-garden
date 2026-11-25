@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import { addIsoDateDays, sortReminders } from '@open-garden/care-reminders/derive';
 import type {
   CareKind,
@@ -7,6 +7,7 @@ import type {
   ReminderListDto,
   ReminderUrgency,
 } from '@open-garden/shared-types';
+import { deviceStore } from '../device-data';
 
 export type ReminderQueueAction = 'complete' | 'dismiss';
 
@@ -46,17 +47,12 @@ function urgency(dueOn: string, asOf: string): ReminderUrgency {
 
 @Injectable({ providedIn: 'root' })
 export class RemindersOfflineQueue {
-  private dbPromise: Promise<IDBPDatabase<QueueDb>> | null = null;
+  private readonly store = deviceStore<QueueDb>('og-reminders-queue', 1, (db) => {
+    db.createObjectStore('pending', { keyPath: 'key' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<QueueDb>('og-reminders-queue', 1, {
-        upgrade(db) {
-          db.createObjectStore('pending', { keyPath: 'key' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   itemKey(plantingId: string, kind: CareKind, dueOn: string) {

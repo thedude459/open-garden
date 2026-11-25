@@ -61,16 +61,30 @@ async function query<T extends Record<string, unknown>>(url: string, text: strin
   }
 }
 
-/** Insert one bed; old migration 0012 deleted orchard beds on every boot. */
-async function insertOrchardBed(url: string): Promise<void> {
+/**
+ * Insert one bed; old migration 0012 deleted orchard beds on every boot.
+ * `inArea`: give it a vegetable garden, as every bed needs once migration
+ * 0022 has run. Without one, the bed is from before areas.
+ */
+async function insertOrchardBed(url: string, inArea = false): Promise<void> {
   await query(
     url,
     `with u as (insert into users (email, password_hash) values ('m@example.com', 'x') returning id),
-          g as (insert into gardens (owner_id, name, name_normalized) select id, 'G', 'g' from u returning id)
-     insert into garden_beds (garden_id, name, name_normalized,
+          g as (insert into gardens (owner_id, name, name_normalized) select id, 'G', 'g' from u returning id),
+          a as (insert into garden_areas (garden_id, name, name_normalized, kind)
+                select id, 'Veg', 'veg', 'vegetable' from g where ${inArea} returning id)
+     insert into garden_beds (garden_id, name, name_normalized, area_id,
                               origin_x_inches, origin_y_inches, length_inches, width_inches)
-     select id, 'Old orchard bed', 'old orchard bed', 0, 0, 96, 48 from g`,
+     select g.id, 'Old orchard bed', 'old orchard bed', (select id from a), 0, 0, 96, 48 from g`,
   );
+}
+
+async function bedsWithoutArea(url: string): Promise<number> {
+  const rows = await query<{ n: string }>(
+    url,
+    `select count(*) as n from garden_beds where area_id is null`,
+  );
+  return Number(rows[0]?.n);
 }
 
 async function orchardBeds(url: string): Promise<number> {
@@ -151,7 +165,7 @@ describe.skipIf(!databaseUrl)('migrations run once per database', { timeout: 30_
     await migrate(url);
     expect(await recorded(url)).toBe(sqlFiles.length);
 
-    await insertOrchardBed(url);
+    await insertOrchardBed(url, true);
     await migrate(url);
     expect(await recorded(url)).toBe(sqlFiles.length);
     // Under the old run-every-file loop, 0012 deleted this bed on every boot.
@@ -168,6 +182,8 @@ describe.skipIf(!databaseUrl)('migrations run once per database', { timeout: 30_
     // The baseline is skipped; every migration added since v0.1.0 applies.
     expect(await recorded(url)).toBe(12 + laterMigrations);
     expect(await orchardBeds(url)).toBe(1);
+    // Migration 0022 gave the bed from before areas an area.
+    expect(await bedsWithoutArea(url)).toBe(0);
 
     await migrate(url, foldersWithNextMigration());
     expect(await recorded(url)).toBe(12 + laterMigrations + 1);

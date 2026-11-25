@@ -6,14 +6,18 @@ import {
   createDb,
   GardenMembershipRepository,
   GardenRepository,
+  PlantingAreaRepository,
   PlantingRepository,
   PlantRepository,
   plants as plantsTable,
+  SoilTestRepository,
+  transactionOn,
   users,
+  YearRecordRepository,
 } from '@open-garden/plant-catalog-data';
 import { WASHINGTON_PLACE } from '@open-garden/garden-place';
 import { GardenService } from '@open-garden/gardens';
-import { LayoutService } from '@open-garden/garden-layout';
+import { LayoutService } from '@open-garden/garden-layout/server';
 
 const databaseUrl = process.env['DATABASE_URL'];
 
@@ -25,6 +29,14 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
     new PlantingRepository(db),
     new BedRepository(db),
     new AreaRepository(db),
+    new YearRecordRepository(db),
+    new SoilTestRepository(db),
+    new PlantingAreaRepository(db),
+    transactionOn(db, (tx) => ({
+      beds: new BedRepository(tx),
+      plantings: new PlantingRepository(tx),
+      areas: new AreaRepository(tx),
+    })),
   );
   const plants = new PlantRepository(db);
   const beds = new BedRepository(db);
@@ -73,8 +85,10 @@ describe.skipIf(!databaseUrl)('layout assembly budget', () => {
     if (!plant) throw new Error('failed to upsert plant');
     created.plantId = plant.id;
 
+    const area = await new PlantingAreaRepository(db).ensure(garden.id, 'vegetable');
     const bed = await beds.insert({
       gardenId: garden.id,
+      areaId: area.id,
       name: 'Load bed',
       nameNormalized: 'load bed',
       originXInches: 0,

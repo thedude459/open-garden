@@ -10,7 +10,7 @@ import {
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantPicker } from '../plants/plant-picker';
 import { NoticeService } from '../ui/notice.service';
-import { gardenErrorMessage } from './garden-error-message';
+import { errorMessage } from '../ui/error-message';
 
 export type PlantToAdd = Pick<
   PlantSummaryDto,
@@ -29,7 +29,7 @@ export type PlantToAdd = Pick<
       placeholder="Search catalog to add"
       submitLabel="Search catalog"
       (results)="onCatalog($event)"
-      (failed)="notices.error(gardenErrorMessage($event, 'Could not search the catalog'))"
+      (failed)="notices.error(errorMessage($event, 'Could not search the catalog'))"
     >
       <button type="button" class="btn btn-secondary" (click)="loadFavorites()">
         Show favorites
@@ -94,7 +94,7 @@ export type PlantToAdd = Pick<
 })
 export class PlantingAddSection {
   readonly plantName = plantName;
-  readonly gardenErrorMessage = gardenErrorMessage;
+  readonly errorMessage = errorMessage;
   readonly notices = inject(NoticeService);
   private readonly favoritesApi = inject(FavoritesApiService);
 
@@ -119,7 +119,7 @@ export class PlantingAddSection {
     try {
       this.favorites.set((await this.favoritesApi.list()).items);
     } catch (err) {
-      this.notices.error(gardenErrorMessage(err, 'Could not load your favorites'));
+      this.notices.error(errorMessage(err, 'Could not load your favorites'));
     }
   }
 }

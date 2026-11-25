@@ -27,18 +27,86 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **17 more fruits and nuts** from plant catalog v0.3.1 for fruit gardens:
+  apricot, plum, nectarine, sour cherry, almond, Asian pear, pawpaw, and
+  American persimmon trees; fig, hazelnut, red currant, gooseberry,
+  elderberry, haskap, and aronia bushes; and grape and hardy kiwi vines,
+  each with its icon, most with soil pH and varieties. Strawberries,
+  raspberries, and blackberries now warn against tomatoes, potatoes,
+  eggplant, and peppers (Verticillium wilt). The API imports the catalog
+  when it starts.
+- **32 more vegetables and herbs** from plant catalog v0.3.0, among them
+  kohlrabi, turnip, collards, arugula, bok choy, napa cabbage, tomatillo,
+  peanut, fava bean, shallot, lavender, rosemary, sage, and chamomile, each
+  with its icon. Most water by water balance. The API imports the catalog
+  when it starts.
 - **Plan for a date from the Calendar:** a crop picked for the season with
   no date gets a **Plan for …** button with the next day it can be sown
   there (today while its window is open), which gives it a Sow task.
 
 ### Improvements
 
+- The API log shows each request with an id that errors repeat, and a
+  `security.` line for sign-ins, lockouts, password changes and resets, account
+  deletions, and catalog runs. `LOG_LEVEL` sets how much is logged.
+- Error messages say what went wrong more often: the API sends every error in
+  one form, and the app no longer shows technical text such as "Http failure
+  response" in their place.
+- Pages load faster: the `web` container now compresses what it sends
+  (a first visit is about 113 kB instead of 408 kB) and lets browsers keep
+  the app's code files until a release changes them.
+- Online, a plant search always comes from the server, so it no longer
+  misses plants past the first saved page. Offline, saved pages still answer.
+- Every bed now belongs to an area, and its area alone decides what it
+  takes. Beds from before areas join their property's vegetable or fruit
+  garden (created if missing) when the API starts.
+- **Fruit gardens:** orchards and bramble patches become one area type, the
+  fruit garden, for fruit trees, cane fruit, fruit bushes, and grapes and
+  kiwis, with herbs or flowers underneath. Existing orchards and bramble
+  patches keep their names and beds. **Add fruit row** on the Overview adds
+  a row for canes, bushes, or vines; **Add tree** still adds a tree's own
+  bed. Vegetable gardens keep taking strawberries, asparagus, and rhubarb,
+  and new plantings of those now last past the season.
+
+- **Plant catalog v0.2.3:** twelve more crops water by water balance
+  (kale, basil, cilantro, parsley, oregano, thyme, okra, rhubarb, chives,
+  leek, Swiss chard, and dill), and borage and calendula get sowing windows
+  where frost is rare. The API imports it when it starts.
 
 ### Bug fixes
 
+- On a shared device, the next member no longer sees the last one's
+  properties. Signing out deletes what the app saved on the device for
+  offline use, and so does signing in as a different member after a session
+  ended.
+- Deleting a bed, saving the plan, and repeating a sowing now save
+  completely or not at all. Before, a failure part-way could delete a bed's
+  plantings and keep the bed, or save half a plan.
+- Stopping or upgrading the app no longer cuts off the API mid-request: it
+  finishes what it is doing and closes its database connections first. Compose
+  files now run the API with `init: true`.
+- A mistyped property, plant, or planting address in a link now shows "not
+  found" instead of a server error, and no longer fills the server log.
+- Behind an HTTPS proxy, failed sign-ins now count against each visitor's
+  own address. Before, every visitor shared one limit, so anyone could lock
+  the whole household out of signing in for 15 minutes.
+- Bed View's plant search fills its list with plants the bed takes, instead
+  of hiding most of a page of ones it refuses.
+- Catalog filters such as family find every match again; once the catalog
+  passed 100 entries, a filter answered from the first page missed the
+  rest (Radish under the Cabbage family).
+- A newer open-garden-data release mounted with `PLANT_CATALOG_FILE`
+  imports again: releases from v0.2.3 on are signed by the release workflow
+  run on `main`, which the catalog check refused.
 
 ### Documentation
 
+- [Deployment](docs/deploy.md#logs): reading the API log, and `LOG_LEVEL`.
+- [ADR 0043](docs/adr/0043-atomic-writes.md): writes that span rows commit
+  together.
+- [Deployment](docs/deploy.md#https): which proxies the `web` container
+  trusts to name the visitor's address.
+- [ADR 0042](docs/adr/0042-fruit-gardens.md): fruit gardens.
 
 ### Security
 

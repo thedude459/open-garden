@@ -63,6 +63,7 @@ npm run e2e:stack     # Postgres, seed, API + production web, left running (Ctrl
 npm run e2e:only      # Playwright only, against a running stack (e.g. from e2e:stack)
 npx nx affected -t test   # faster local pass over what you changed
 npm run format        # format with Prettier (CI runs npm run format:check)
+npm run typecheck     # type-check API, libraries, and every spec (builds skip specs)
 ```
 
 The one-time Prettier reformat is listed in `.git-blame-ignore-revs`; run
@@ -198,7 +199,8 @@ and Deprecated features (each says "None" when empty).
 - Every pull request adds a line under **Unreleased**, in the section it
   belongs to, in plain words for households first. The `changelog` CI job
   checks it. Dependabot's updates are exempt; label a change households and
-  operators would not notice (CI, tests, the roadmap) `skip-changelog`.
+  operators would not notice (CI, tests, the roadmap) `skip-changelog`;
+  adding or removing the label re-runs the check on its own.
 - **Security** names every publicly known vulnerability in Open Garden's own
   code, with its CVE or GitHub security advisory id, that the release fixes.
   Dependency vulnerabilities are not listed (Dependabot and the weekly

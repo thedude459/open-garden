@@ -1,17 +1,14 @@
 import { weatherAlerts } from '@open-garden/care-reminders';
-import { GardenService } from '@open-garden/gardens';
 import { climateLookupFor, temperatureOutlookFor } from '@open-garden/garden-place';
 import {
-  CalendarEntryRepository,
-  GardenMembershipRepository,
   GardenRepository,
   PlantingRepository,
-  PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
-import { CalendarService } from '@open-garden/planting-calendar';
 import type { TodaySources } from '@open-garden/reminder-delivery';
 import { plantName, type FrostTolerance } from '@open-garden/shared-types';
+import { openCalendarService } from './calendar-service.factory';
+import { openGardenService } from './garden-service.factory';
 import { openCareReminderService } from './care-reminder-service.factory';
 
 /** Today's sources over the database: shared by the Today page and the daily reminders. */
@@ -20,14 +17,8 @@ export function todaySources(db: AppDatabase): TodaySources {
   const forecast = temperatureOutlookFor();
   const gardenRows = new GardenRepository(db);
   const plantings = new PlantingRepository(db);
-  const memberships = new GardenMembershipRepository(db);
-  const gardens = new GardenService(new GardenRepository(db), memberships, climate);
-  const calendar = new CalendarService(
-    new GardenRepository(db),
-    memberships,
-    new PlantRepository(db),
-    new CalendarEntryRepository(db),
-  );
+  const gardens = openGardenService(db, climate);
+  const calendar = openCalendarService(db);
   const reminders = openCareReminderService(db);
   return {
     gardens: async (userId) => (await gardens.list(userId, 1, 100)).items,

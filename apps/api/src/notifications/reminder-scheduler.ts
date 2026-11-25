@@ -77,7 +77,10 @@ export class ReminderScheduler implements OnApplicationBootstrap, OnModuleDestro
         this.logger.log(`reminders.sent push=${sent.push} email=${sent.email}`);
       }
     } catch (err) {
-      this.logger.error(`reminders.failed ${err instanceof Error ? err.message : String(err)}`);
+      this.logger.error(
+        `reminders.failed ${err instanceof Error ? err.message : String(err)}`,
+        err instanceof Error ? err.stack : undefined,
+      );
     } finally {
       this.running = false;
     }

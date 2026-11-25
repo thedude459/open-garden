@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import type { ReminderListDto } from '@open-garden/shared-types';
+import { deviceStore } from '../device-data';
 
 export function deviceToday(): string {
   const now = new Date();
@@ -29,17 +30,12 @@ interface RemindersCacheDb extends DBSchema {
 
 @Injectable({ providedIn: 'root' })
 export class GardenRemindersCacheService {
-  private dbPromise: Promise<IDBPDatabase<RemindersCacheDb>> | null = null;
+  private readonly store = deviceStore<RemindersCacheDb>('og-reminders', 1, (db) => {
+    db.createObjectStore('lists', { keyPath: 'key' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<RemindersCacheDb>('og-reminders', 1, {
-        upgrade(db) {
-          db.createObjectStore('lists', { keyPath: 'key' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   cacheKey(userId: string, gardenId: string): string {

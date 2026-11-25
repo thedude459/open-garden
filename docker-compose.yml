@@ -19,6 +19,9 @@ services:
   api:
     profiles: ['app']
     restart: unless-stopped
+    # A small init as PID 1 passes the stop signal on to Node, so the API
+    # finishes its requests and closes its database pool before it exits.
+    init: true
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     build:

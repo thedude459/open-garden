@@ -11,3 +11,4 @@ export {
   plantAgainRows,
   survivesSeasonClose,
 } from './lib/year-record';
+export { BedService } from './lib/bed-service';

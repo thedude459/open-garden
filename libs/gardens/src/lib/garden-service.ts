@@ -11,7 +11,7 @@ import type {
   PageDto,
   PlaceCandidateDto,
 } from '@open-garden/shared-types';
-import { frostRare } from '@open-garden/shared-types';
+import { frostRare, gardenAccess } from '@open-garden/shared-types';
 import type { GardenMembershipRepository, GardenRepository } from '@open-garden/plant-catalog-data';
 import { domainError } from './domain-error';
 import { validateSiteProfile } from './site-profile';
@@ -88,11 +88,9 @@ export class GardenService {
   }
 
   async patch(actorId: string, gardenId: string, dto: GardenPatchDto): Promise<GardenWriteDto> {
-    const membership = await this.memberships.get(gardenId, actorId);
-    if (!membership) throw domainError('NOT_FOUND', 'Garden not found');
-    if (membership.role === 'viewer') {
-      throw domainError('FORBIDDEN', 'Viewers cannot update this garden');
-    }
+    gardenAccess(await this.memberships.get(gardenId, actorId), 'edit', () =>
+      domainError('FORBIDDEN', 'Viewers cannot update this garden'),
+    );
     const garden = await this.gardens.getById(gardenId);
     if (!garden) throw domainError('NOT_FOUND', 'Garden not found');
 
@@ -161,11 +159,9 @@ export class GardenService {
   }
 
   async remove(actorId: string, gardenId: string): Promise<void> {
-    const membership = await this.memberships.get(gardenId, actorId);
-    if (!membership) throw domainError('NOT_FOUND', 'Garden not found');
-    if (membership.role !== 'owner') {
-      throw domainError('FORBIDDEN', 'Only the owner can delete this garden');
-    }
+    gardenAccess(await this.memberships.get(gardenId, actorId), 'own', () =>
+      domainError('FORBIDDEN', 'Only the owner can delete this garden'),
+    );
     await this.gardens.hardDelete(gardenId);
   }
 

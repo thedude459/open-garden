@@ -7,7 +7,7 @@ import { GardenRepository } from './garden-repository';
 import { PlantingAreaRepository } from './planting-area-repository';
 import { SoilTestRepository } from './soil-test-repository';
 import { gardenSoilTests } from './schema';
-import { createTestDb, gardenInput, insertUser, type TestDb } from './test-db';
+import { createTestDb, gardenInput, insertUser, vegetableAreaId, type TestDb } from './test-db';
 
 let t: TestDb;
 let gardens: GardenRepository;
@@ -24,9 +24,10 @@ beforeAll(async () => {
 });
 afterAll(() => t.close());
 
-const bed = (gardenId: string, name: string) =>
+const bed = async (gardenId: string, name: string) =>
   beds.insert({
     gardenId,
+    areaId: await vegetableAreaId(t.db, gardenId),
     name,
     nameNormalized: name.toLowerCase(),
     originXInches: 0,
@@ -56,7 +57,7 @@ describe('SoilTestRepository', () => {
     const mine = await property();
     const other = await property();
     const veg = await areas.ensure(mine.id, 'vegetable');
-    const orchard = await areas.ensure(mine.id, 'orchard');
+    const orchard = await areas.ensure(mine.id, 'fruit');
     const north = await bed(mine.id, 'North');
     const south = await bed(mine.id, 'South');
     const elsewhere = await bed(other.id, 'North');

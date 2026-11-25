@@ -17,7 +17,7 @@ export class PlantDetailService {
   constructor(
     private readonly plants: PlantRepository,
     private readonly favorites: FavoriteRepository,
-    private readonly companions?: {
+    private readonly companions: {
       pairs: Pick<CatalogCompanionRepository, 'listForCrops'>;
       /** Hardiness zones of the member's properties, to rank pairs by. */
       zonesForUser(userId: string): Promise<number[]>;
@@ -69,7 +69,7 @@ export class PlantDetailService {
   }
 
   private async companionsFor(cropId: string | null, userId: string) {
-    if (!cropId || !this.companions) return { companions: [], companionZones: [] };
+    if (!cropId) return { companions: [], companionZones: [] };
     const [rows, zones] = await Promise.all([
       this.companions.pairs.listForCrops([cropId]),
       this.companions.zonesForUser(userId),

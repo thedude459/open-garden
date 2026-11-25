@@ -237,13 +237,21 @@ export function createLayoutMemory() {
   };
 
   const soilTests = { areas: new Map<string, SoilTestDto>(), beds: new Map<string, SoilTestDto>() };
+  /** The property's typed areas; a bed in none of them counts as in a vegetable garden. */
+  const plantingAreas: { id: string; kind: string }[] = [];
   const service = new LayoutService(
     membershipRepo as never,
     plantingRepo as never,
     bedRepo as never,
     areaRepo as never,
-    undefined,
+    {
+      currentYear: async () => new Date().getUTCFullYear(),
+      layoutAdvice: async () => ({ prior: [], pairs: [] }),
+    },
     { latestByGarden: async () => soilTests },
+    { listByGarden: async () => plantingAreas },
+    // In memory there is nothing to roll back; the db specs test that.
+    (work) => work({ beds: bedRepo, plantings: plantingRepo, areas: areaRepo } as never),
   );
 
   function addBed(name: string, id?: string) {
@@ -291,6 +299,7 @@ export function createLayoutMemory() {
     addBed,
     addPlanting,
     soilTests,
+    plantingAreas,
     plantings: plantingRepo,
     tomato,
     basil,

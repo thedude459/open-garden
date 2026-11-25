@@ -5,6 +5,7 @@ import { GardenMembershipRepository, type AppDatabase } from '@open-garden/plant
 import { Inject } from '@nestjs/common';
 import { CURRENT_USER } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
+import { isUuid } from '../common/ids';
 
 export const GARDEN_MEMBERSHIP = 'gardenMembership';
 
@@ -29,8 +30,10 @@ export class GardenMembershipGuard implements CanActivate {
     const user = req[CURRENT_USER];
     const gardenId = req.params['id'];
     if (!user || !gardenId) return true;
-    const repo = new GardenMembershipRepository(this.bundle.db);
-    const membership = await repo.get(gardenId, user.id);
+    // A malformed id names no property, so it is not found, not a server error.
+    const membership = isUuid(gardenId)
+      ? await new GardenMembershipRepository(this.bundle.db).get(gardenId, user.id)
+      : null;
     if (!membership) {
       throw new NotFoundException({
         error: { code: 'NOT_FOUND', message: 'Garden not found' },

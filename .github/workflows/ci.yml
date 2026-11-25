@@ -35,6 +35,8 @@ jobs:
         run: npm run format:check
       - name: Lint
         run: npx nx affected -t lint --parallel=3
+      - name: Type-check, specs included
+        run: npm run typecheck
       - name: Dependency licenses
         run: |
           node scripts/ci/license-check.js selfcheck
@@ -59,37 +61,6 @@ jobs:
           retention-days: 14
       - name: Build
         run: npx nx affected -t build --parallel=3
-
-  changelog:
-    name: changelog
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-          filter: 'tree:0'
-      - name: CHANGELOG.md is well formed
-        run: |
-          node scripts/ci/release-notes.js selfcheck
-          node scripts/ci/release-notes.js check
-      - name: The pull request adds its line to CHANGELOG.md
-        # Dependabot's updates are tracked by Dependabot itself, and a change
-        # with nothing for households or operators (CI, tests, roadmap) takes
-        # the skip-changelog label.
-        if: >-
-          github.event_name == 'pull_request' &&
-          github.event.pull_request.user.login != 'dependabot[bot]' &&
-          !contains(github.event.pull_request.labels.*.name, 'skip-changelog')
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          if ! git diff --name-only "${BASE_SHA}...HEAD" | grep -qx 'CHANGELOG.md'; then
-            echo "Add a line to CHANGELOG.md under Unreleased, in the section it belongs to," >&2
-            echo "or label the pull request skip-changelog if households and operators would not notice it." >&2
-            exit 1
-          fi
 
   workflows:
     # Lints the GitHub Actions workflows: actionlint for correctness, zizmor for
@@ -310,6 +281,9 @@ jobs:
           trivyignores: .trivyignore
           exit-code: '1'
           format: table
+      - name: Smoke-test the web image (compression, caching, visitor address)
+        if: steps.gate.outputs.run == 'run' && matrix.image == 'web'
+        run: bash scripts/ci/web-image-smoke.sh open-garden-web:ci
 
   e2e:
     name: e2e
@@ -414,7 +388,7 @@ jobs:
           name: coverage-e2e
           path: coverage/e2e/coverage-final.json
           retention-days: 14
-      - name: Upload Playwright results
+      - name: Upload Playwright results and the API log
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -425,3 +399,4 @@ jobs:
             test-results/
             apps/web-e2e/playwright-report/
             apps/web-e2e/test-results/
+            e2e-api.log

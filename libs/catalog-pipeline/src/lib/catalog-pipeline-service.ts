@@ -282,6 +282,7 @@ function toUpsert(
     family: plant.family,
     cropId: plant.cropId,
     frostTolerance: plant.frostTolerance,
+    perennial: plant.perennial,
     sourceLinks: plant.sourceLinks,
   };
 }

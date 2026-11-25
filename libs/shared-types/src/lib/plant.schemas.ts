@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { AREA_KINDS } from './placement';
 
 export const plantTypeSchema = z.enum([
   'vegetable',
@@ -7,6 +8,7 @@ export const plantTypeSchema = z.enum([
   'fruit',
   'cane',
   'shrub',
+  'vine',
   'tree',
 ]);
 
@@ -14,6 +16,7 @@ export const plantListQuerySchema = z.object({
   q: z.string().optional(),
   zone: z.coerce.number().int().min(1).max(13).optional(),
   plantType: plantTypeSchema.optional(),
+  area: z.enum(AREA_KINDS).optional(),
   family: z.string().trim().min(1).max(80).optional(),
   sowNowFor: z.uuid().optional(),
   asOf: z

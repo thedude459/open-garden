@@ -101,6 +101,36 @@ export default tseslint.config(
     },
   },
   {
+    // The browser bundle never takes server code: the database, Node's own
+    // modules, or a library's server entry point. Specs run under Node.
+    files: ['apps/web/src/**/*.ts', 'libs/web-ui/src/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@open-garden/garden-place',
+              message:
+                'Its main entry holds place and weather lookups; import a browser-safe subpath.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@open-garden/plant-catalog-data', '@open-garden/*/server'],
+              message: 'Server-only code; the web app talks to it through the API.',
+            },
+            {
+              group: ['drizzle-orm', 'drizzle-orm/*', 'pg', 'node:*'],
+              message: 'Server-only module; it cannot run in the browser.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['apps/web/src/**/*.ts', 'libs/web-ui/src/**/*.ts'],
     extends: [...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,

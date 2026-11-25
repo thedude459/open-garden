@@ -13,6 +13,7 @@ import { OnlineRequiredError } from './gardens-api.service';
 import { LayoutApiService } from './layout-api.service';
 import { PlantingsApiService } from './plantings-api.service';
 import { freshLayoutApplies, mergeWaitingTransplants, savePlannerDraft } from './planner-save';
+import { apiMessage } from '../ui/error-message';
 
 /** Where the plan's autosave stands, for the status line. */
 export type SaveStatus = 'saved' | 'pending' | 'saving' | 'failed' | 'blocked';
@@ -322,8 +323,6 @@ function saveError(err: unknown): string {
   if (err instanceof OnlineRequiredError) return err.message;
   if (err instanceof HttpErrorResponse) {
     if (err.status === 0) return 'You are offline';
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
   }
-  return 'Could not save the plan';
+  return apiMessage(err) ?? 'Could not save the plan';
 }

@@ -5,7 +5,7 @@ import type {
   PlantSummaryDto,
   PlantType,
 } from '@open-garden/shared-types';
-import { PLANT_TYPES, rootstockSpacing } from '@open-garden/shared-types';
+import { AREA_TYPES, PLANT_TYPES, rootstockSpacing } from '@open-garden/shared-types';
 
 export class CatalogService {
   constructor(private readonly plants: PlantRepository) {}
@@ -31,12 +31,16 @@ export class CatalogService {
     if (query.plantType && !PLANT_TYPES.includes(query.plantType)) {
       throw validationError('invalid plantType');
     }
+    if (query.area && !Object.hasOwn(AREA_TYPES, query.area)) {
+      throw validationError('invalid area');
+    }
 
     const q = query.q?.trim() ?? '';
     const filters = {
       q: q || undefined,
       zone,
       plantType: query.plantType,
+      plantTypes: query.area ? AREA_TYPES[query.area].accepts : undefined,
       family: query.family?.trim() || undefined,
     };
     if (keep) {

@@ -248,17 +248,27 @@ describe('DatasetReleaseProvider', () => {
     };
     const thyme = { ...tomato, id: 'thyme', use: 'herb', habit: 'shrub', varieties: [] };
     const melon = { ...tomato, id: 'melon', use: 'fruit', habit: 'vine', varieties: [] };
+    const grape = {
+      ...melon,
+      id: 'grape',
+      lifeCycle: 'perennial',
+      hardinessZones: { min: 4, max: 9 },
+    };
     const { items } = await pinned(
-      catalog([apple, rhubarb, raspberry, blueberry, thyme, melon]),
+      catalog([apple, rhubarb, raspberry, blueberry, thyme, melon, grape]),
     ).listPage();
-    expect(items.map((p) => [p.externalId, p.plantType, p.zoneMin, p.zoneMax])).toEqual([
-      ['apple', 'tree', 3, 8],
-      ['rhubarb', 'vegetable', null, null],
-      ['raspberry', 'cane', 1, 13],
-      ['blueberry', 'shrub', 4, 7],
-      // Herbs of any habit are herbs; other fruit goes by habit.
-      ['thyme', 'herb', 1, 13],
-      ['melon', 'fruit', 1, 13],
+    expect(
+      items.map((p) => [p.externalId, p.plantType, p.zoneMin, p.zoneMax, p.perennial]),
+    ).toEqual([
+      ['apple', 'tree', 3, 8, true],
+      ['rhubarb', 'vegetable', null, null, true],
+      ['raspberry', 'cane', 1, 13, false],
+      ['blueberry', 'shrub', 4, 7, true],
+      // Herbs of any habit are herbs; other fruit goes by habit, and a
+      // perennial vine is woody where an annual one is not.
+      ['thyme', 'herb', 1, 13, false],
+      ['melon', 'fruit', 1, 13, false],
+      ['grape', 'vine', 4, 9, true],
     ]);
     expect(items[0]?.rootstockSpacingInches).toEqual({ dwarf: 94, semiDwarf: null, standard: 295 });
     expect(items[1]?.rootstockSpacingInches).toBeNull();
@@ -372,6 +382,24 @@ describe('the bundled open-garden-data release', () => {
       maxC: 35,
       minSoilC: 16,
     });
+    // v0.2.3: coefficients for herbs and kale, and borage's soil temperature.
+    expect(items.find((p) => p.varietyKey === 'dataset:basil')?.cropCoefficients).toEqual({
+      initial: 0.6,
+      mid: 1.05,
+      end: 1.0,
+      stageDays: null,
+    });
+    expect(items.find((p) => p.varietyKey === 'dataset:borage')?.sowingTemperature?.minSoilC).toBe(
+      10,
+    );
+    // v0.3.0: 32 more vegetables and herbs.
+    expect(items.find((p) => p.varietyKey === 'dataset:kohlrabi')?.frostTolerance).toBe('hardy');
+    expect(items.find((p) => p.varietyKey === 'dataset:rosemary')?.cropCoefficients?.mid).toBe(1);
+    // v0.3.1: fruit and nuts; a perennial vine is woody, and perennials say so.
+    expect(items.find((p) => p.varietyKey === 'dataset:grape')?.plantType).toBe('vine');
+    expect(items.find((p) => p.varietyKey === 'dataset:hazelnut')?.plantType).toBe('shrub');
+    expect(items.find((p) => p.varietyKey === 'dataset:asparagus')?.perennial).toBe(true);
+    expect(items.find((p) => p.varietyKey === 'dataset:fig')?.soilPh).toEqual({ min: 6, max: 6.5 });
   });
 
   it('is accepted on its provenance attestation alone', async () => {

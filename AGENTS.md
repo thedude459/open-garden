@@ -86,19 +86,20 @@ across years.
 - Companion suggestions (helps, hinders, pollinates) are in scope when a feature
   asks for them. They are advice. They MUST NOT block save unless that feature
   says so. Spacing remains the hard gate.
-- A property is the garden record. A vegetable garden, an orchard, a
-  bramble patch, and a greenhouse are typed areas on that same record, not a
-  second product or a second database. Vegetable beds are raised or
-  in-ground. An orchard is one bed per tree, and underplanting may share that
-  bed. A bramble area holds cane fruit (raspberries, blackberries) and is its
-  own area type, not part of an orchard. A greenhouse is named trays.
+- A property is the garden record. A vegetable garden, a fruit garden, and a
+  greenhouse are typed areas on that same record, not a second product or a
+  second database. A vegetable garden holds herbaceous plants, perennials
+  such as asparagus and strawberries included; its beds are raised or
+  in-ground. A fruit garden holds woody fruit: fruit and nut trees, cane
+  fruit, fruit bushes, and woody vines (grape, kiwi), with herbaceous
+  underplanting. In it a tree has a bed of its own, which underplanting may
+  share; canes, bushes, and vines grow in rows. A greenhouse is named trays.
 - Each area type declares which plants it accepts, by growth habit and use
   from the catalog (for example, a vegetable area and a tray do not take
-  trees, shrubs, or canes; an orchard takes fruit and nut trees plus
-  herbaceous underplanting). A mismatch is **blocked**, like spacing — it is
-  a hard gate, not advice. New area types are added to that one list, not by
-  schema changes.
-- Principle IV still holds. An orchard canvas, a crop-family taxonomy, or a
+  trees, shrubs, canes, or woody vines). A mismatch is **blocked**, like
+  spacing — it is a hard gate, not advice. New area types are added to that
+  one list, not by schema changes.
+- Principle IV still holds. A fruit-garden canvas, a crop-family taxonomy, or a
   companion graph MUST NOT be built until a feature needs it. Companion
   pairs come from the open-garden-data dataset (a real source since v0.2.2),
   through the provider abstraction (principle III), each with its evidence
@@ -182,10 +183,11 @@ The visual design system (brand, palette, type, components) is in
 Use one word per concept, in the UI and in code comments:
 
 - **Property** — a household's garden record (the `gardens` table).
-- **Area** — a typed part of a property: vegetable garden, orchard, bramble
-  patch, or greenhouse.
-- **Bed** — a plot inside an area, raised or in-ground. An orchard is one bed
-  per tree.
+- **Area** — a typed part of a property: vegetable garden, fruit garden, or
+  greenhouse.
+- **Bed** — a plot inside an area, raised or in-ground. In a fruit garden a
+  tree has a bed of its own, and canes, bushes, and vines grow in a **fruit
+  row**.
 - **Tray** — a named seed-starting tray in a greenhouse. Nothing else is a tray.
 - **Planting** — one plant grown in a property, for a season or across seasons.
 - **Direct seed** — a planting sown where it grows.

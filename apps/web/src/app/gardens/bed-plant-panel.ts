@@ -1,9 +1,20 @@
-import { Component, OnInit, inject, input, model, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
   allowsPlant,
-  areaKindFor,
+  bedAreaKind,
+  type AreaKind,
   plantName,
   ROOTSTOCK_LABELS,
   ROOTSTOCKS,
@@ -17,7 +28,7 @@ import { PlantPicker } from '../plants/plant-picker';
 import { EmptyState } from '../ui/empty-state';
 import { PlantIcon } from '../ui/plant-icon';
 import { NoticeService } from '../ui/notice.service';
-import { gardenErrorMessage } from './garden-error-message';
+import { errorMessage } from '../ui/error-message';
 
 /**
  * Bed View's plant panel: favorites and catalog search, filtered to what the
@@ -81,6 +92,7 @@ import { gardenErrorMessage } from './garden-error-message';
         [filters]="true"
         [live]="true"
         [zone]="zone()"
+        [area]="area()"
         (results)="onCatalog($event)"
         (searched)="searched.set(true)"
         (zoneChange)="activeZone.set($event)"
@@ -133,7 +145,10 @@ export class BedPlantPanel implements OnInit {
   readonly picker = viewChild(PlantPicker);
 
   gardenId = input.required<string>();
+  /** Whether the bed is a tree bed (asks for a rootstock) or a row. */
   station = input<BedStation | null | undefined>(null);
+  /** The type of the bed's area, which decides what it takes. */
+  areaKind = input<AreaKind | undefined>(undefined);
   canEdit = input(false);
   /** The plant waiting to be placed, if any. */
   armedId = input<string | null>(null);
@@ -164,8 +179,13 @@ export class BedPlantPanel implements OnInit {
       .catch(() => undefined);
   }
 
+  /** What the bed takes: its area's type, or for an unsaved bed its station's. */
+  readonly area = computed(() =>
+    bedAreaKind({ areaKind: this.areaKind(), station: this.station() }),
+  );
+
   private accepts(plant: Pick<PlantSummaryDto, 'plantType'>) {
-    return allowsPlant(areaKindFor(this.station()), plant.plantType);
+    return allowsPlant(this.area(), plant.plantType);
   }
 
   onCatalog(items: PlantSummaryDto[]) {
@@ -174,7 +194,7 @@ export class BedPlantPanel implements OnInit {
 
   onSearchFailed(err: unknown) {
     this.catalogHits.set([]);
-    this.notices.error(gardenErrorMessage(err, 'Could not search the catalog'));
+    this.notices.error(errorMessage(err, 'Could not search the catalog'));
   }
 
   /** Favorites the bed accepts, with known spacing, that are still in the catalog. */

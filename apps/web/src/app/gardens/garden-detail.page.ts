@@ -12,16 +12,16 @@ import {
   lengthUnit,
   snapHalfFoot,
 } from '@open-garden/garden-layout';
-import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
+import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place/embed-map';
 import type { GardenDetailDto, PlaceCandidateDto, Units } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { GardenDangerSection } from './garden-danger.section';
-import { gardenErrorMessage } from './garden-error-message';
 import { GardenMembersSection } from './garden-members.section';
 import { GardenSeasonSection } from './garden-season.section';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
+import { errorMessage } from '../ui/error-message';
 @Component({
   standalone: true,
   imports: [
@@ -366,7 +366,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
       if (result.candidates.length === 1 && !result.truncated) this.choose(result.candidates[0]!);
       else this.refreshMap();
     } catch (err) {
-      this.lookupError.set(gardenErrorMessage(err));
+      this.lookupError.set(errorMessage(err, 'Could not update garden'));
       this.refreshMap();
     } finally {
       this.lookingUp.set(false);
@@ -470,7 +470,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
         this.refreshMap();
         this.notices.success(updated.seasonNotice ?? 'Garden saved');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }
@@ -491,7 +491,7 @@ export class GardenDetailPage implements OnInit, OnDestroy {
         this.seasonNotice.set(updated.seasonNotice);
         this.notices.success(updated.seasonNotice ?? 'Climate filled in from the address');
       } catch (err) {
-        this.notices.error(gardenErrorMessage(err));
+        this.notices.error(errorMessage(err, 'Could not update garden'));
       }
     });
   }
