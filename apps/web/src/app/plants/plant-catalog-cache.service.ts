@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import type { AreaKind, PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
 import { allowsPlant } from '@open-garden/shared-types';
 import { withCompanionDefaults } from './cached-detail';
+import { deviceStore } from '../device-data';
 
 interface CatalogCacheDb extends DBSchema {
   lists: {
@@ -17,18 +18,13 @@ interface CatalogCacheDb extends DBSchema {
 
 @Injectable({ providedIn: 'root' })
 export class PlantCatalogCacheService {
-  private dbPromise: Promise<IDBPDatabase<CatalogCacheDb>> | null = null;
+  private readonly store = deviceStore<CatalogCacheDb>('og-plant-catalog', 1, (db) => {
+    db.createObjectStore('lists', { keyPath: 'key' });
+    db.createObjectStore('details', { keyPath: 'id' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<CatalogCacheDb>('og-plant-catalog', 1, {
-        upgrade(db) {
-          db.createObjectStore('lists', { keyPath: 'key' });
-          db.createObjectStore('details', { keyPath: 'id' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   listKey(params: Record<string, string | number | undefined>): string {

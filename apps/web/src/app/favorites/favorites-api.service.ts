@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import type { FavoriteListItemDto, PageDto } from '@open-garden/shared-types';
+import { deviceStore } from '../device-data';
 
 const API = '/api';
 
@@ -21,17 +22,12 @@ interface FavDb extends DBSchema {
 @Injectable({ providedIn: 'root' })
 export class FavoritesApiService {
   private readonly http = inject(HttpClient);
-  private dbPromise: Promise<IDBPDatabase<FavDb>> | null = null;
+  private readonly store = deviceStore<FavDb>('og-favorites', 1, (db) => {
+    db.createObjectStore('pending', { keyPath: 'plantId' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<FavDb>('og-favorites', 1, {
-        upgrade(db) {
-          db.createObjectStore('pending', { keyPath: 'plantId' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   async list(): Promise<PageDto<FavoriteListItemDto>> {

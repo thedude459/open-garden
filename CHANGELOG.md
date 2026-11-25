@@ -72,6 +72,10 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- On a shared device, the next member no longer sees the last one's
+  properties. Signing out deletes what the app saved on the device for
+  offline use, and so does signing in as a different member after a session
+  ended.
 - Deleting a bed, saving the plan, and repeating a sowing now save
   completely or not at all. Before, a failure part-way could delete a bed's
   plantings and keep the bed, or save half a plan.

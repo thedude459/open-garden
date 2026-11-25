@@ -96,9 +96,10 @@ export class LoginPage {
           await this.auth.register(this.email, this.password, this.displayName.trim() || undefined);
         }
         this.auth.markAuthenticated();
-        await this.router.navigateByUrl(
-          safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl')),
-        );
+        const next = safeReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+        // Another member's gardens may still be held in memory: load afresh.
+        if (this.auth.replacedOtherMember) window.location.assign(next);
+        else await this.router.navigateByUrl(next);
       } catch (err) {
         // Sign-in keeps one generic message. Sign-up says when the email is
         // already registered, so people know to sign in instead, and both say
