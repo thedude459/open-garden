@@ -7,6 +7,7 @@ import {
   PlantRepository,
   SoilTestRepository,
   TrayRepository,
+  transactionOn,
   YearRecordRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
@@ -31,6 +32,7 @@ export function openPlantingService(db: AppDatabase) {
     new TrayRepository(db),
     { plan: (...args) => calendar.sowingPlanFor(...args) },
     new YearRecordRepository(db),
+    transactionOn(db, (tx) => ({ plantings: new PlantingRepository(tx) })),
   );
 }
 
@@ -41,6 +43,12 @@ export function openBedService(db: AppDatabase) {
     new BedRepository(db),
     new PlantingAreaRepository(db),
     new TrayRepository(db),
+    transactionOn(db, (tx) => ({
+      plantings: new PlantingRepository(tx),
+      beds: new BedRepository(tx),
+      areas: new PlantingAreaRepository(tx),
+      trays: new TrayRepository(tx),
+    })),
   );
 }
 

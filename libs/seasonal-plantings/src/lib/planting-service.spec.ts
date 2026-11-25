@@ -95,6 +95,7 @@ function buildService(parts: Parts): PlantingService {
     f.trays as unknown as Deps[5],
     parts.sowing ?? { plan: async () => null },
     parts.seasons ?? { currentYear: async () => new Date().getUTCFullYear() },
+    (work) => work(f as never),
   );
 }
 
@@ -103,10 +104,11 @@ function buildBeds(parts: Parts): BedService {
   const f = fakes(parts);
   return new BedService(
     f.memberships as BedDeps[0],
-    f.plantings as unknown as BedDeps[1],
+    f.plantings,
     f.beds as unknown as BedDeps[2],
     f.areas as unknown as BedDeps[3],
     f.trays as unknown as BedDeps[4],
+    (work) => work(f as never),
   );
 }
 

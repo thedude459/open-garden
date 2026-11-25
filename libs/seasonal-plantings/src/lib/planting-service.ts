@@ -16,6 +16,7 @@ import type {
 } from '@open-garden/shared-types';
 import {
   MAX_SUCCESSION_SOWINGS,
+  type Transaction,
   plantName,
   lifeForPlant,
   placementRefusal,
@@ -66,6 +67,8 @@ export class PlantingService {
     private readonly sowing: SowingPlanner,
     /** The property's current season, for planning the next one (ADR 0040). */
     private readonly seasons: { currentYear(gardenId: string): Promise<number> },
+    /** A succession series is added whole or not at all. */
+    private readonly transaction: Transaction<{ plantings: Pick<PlantingRepository, 'insert'> }>,
   ) {}
 
   /**
@@ -294,24 +297,26 @@ export class PlantingService {
     }
     if (!dates.length) throw PLANTING_ERRORS.repeatNothing(plan?.lastSowOn ?? null);
     const shift = (date: string) => diffDays(current.plantedOn, date);
-    for (const date of dates) {
-      await this.plantings.insert({
-        gardenId,
-        plantId: current.plantId,
-        bedId: null,
-        trayId: null,
-        // Each copy is a sowing still to come (ADR 0040).
-        plannedOn: date,
-        plantedOn: null,
-        harvestedOn: null,
-        startMethod: current.startMethod,
-        indoorStartedOn: current.indoorStartedOn
-          ? addDays(current.indoorStartedOn, shift(date))
-          : null,
-        life: current.life,
-        seasonYear: current.seasonYear,
-      });
-    }
+    await this.transaction(async ({ plantings }) => {
+      for (const date of dates) {
+        await plantings.insert({
+          gardenId,
+          plantId: current.plantId,
+          bedId: null,
+          trayId: null,
+          // Each copy is a sowing still to come (ADR 0040).
+          plannedOn: date,
+          plantedOn: null,
+          harvestedOn: null,
+          startMethod: current.startMethod,
+          indoorStartedOn: current.indoorStartedOn
+            ? addDays(current.indoorStartedOn, shift(date))
+            : null,
+          life: current.life,
+          seasonYear: current.seasonYear,
+        });
+      }
+    });
     return {
       list: await this.list(userId, gardenId),
       added: dates.length,

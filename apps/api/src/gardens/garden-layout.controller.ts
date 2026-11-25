@@ -13,17 +13,9 @@ import {
 } from '@nestjs/common';
 import type { AuthUser } from '@open-garden/auth';
 import { domainError } from '@open-garden/garden-layout';
-import { LayoutService } from '@open-garden/garden-layout/server';
-import {
-  AreaRepository,
-  BedRepository,
-  GardenMembershipRepository,
-  PlantingAreaRepository,
-  PlantingRepository,
-  SoilTestRepository,
-  YearRecordRepository,
-  type AppDatabase,
-} from '@open-garden/plant-catalog-data';
+import type { LayoutService } from '@open-garden/garden-layout/server';
+import type { AppDatabase } from '@open-garden/plant-catalog-data';
+import { openLayoutService } from './layout-service.factory';
 import { layoutPutSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
@@ -38,15 +30,7 @@ export class GardenLayoutController {
   private readonly layouts: LayoutService;
 
   constructor(@Inject(DATABASE) bundle: { db: AppDatabase }) {
-    this.layouts = new LayoutService(
-      new GardenMembershipRepository(bundle.db),
-      new PlantingRepository(bundle.db),
-      new BedRepository(bundle.db),
-      new AreaRepository(bundle.db),
-      new YearRecordRepository(bundle.db),
-      new SoilTestRepository(bundle.db),
-      new PlantingAreaRepository(bundle.db),
-    );
+    this.layouts = openLayoutService(bundle.db);
   }
 
   @Get('gardens/:id/layout')

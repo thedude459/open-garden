@@ -9,6 +9,7 @@ import type {
 } from '@open-garden/shared-types';
 import {
   AREA_KINDS,
+  type Transaction,
   areaKindFor,
   gardenAccess,
   mulchOrNone,
@@ -25,6 +26,17 @@ import type {
 import { domainError, PLANTING_ERRORS } from './domain-error';
 import { normalizeBedName } from './beds';
 
+/** What deleting a bed writes, inside one transaction. */
+export interface BedDeleteWrites {
+  plantings: Pick<
+    PlantingRepository,
+    'assignLooseTransplants' | 'deleteDirectSeedInBed' | 'unassignTransplantsInBed'
+  >;
+  beds: Pick<BedRepository, 'delete'>;
+  areas: Pick<PlantingAreaRepository, 'findByKind'>;
+  trays: Pick<TrayRepository, 'open'>;
+}
+
 /**
  * Beds, areas, and trays: the places a property grows things. Plantings
  * live in PlantingService; this service never changes one beyond moving
@@ -33,13 +45,10 @@ import { normalizeBedName } from './beds';
 export class BedService {
   constructor(
     private readonly memberships: Pick<GardenMembershipRepository, 'get'>,
-    private readonly plantings: Pick<
-      PlantingRepository,
-      'assignLooseTransplants' | 'deleteDirectSeedInBed' | 'occupants' | 'unassignTransplantsInBed'
-    >,
+    // Moving plantings out of a deleted bed happens in `transaction` only.
+    private readonly plantings: Pick<PlantingRepository, 'occupants'>,
     private readonly beds: Pick<
       BedRepository,
-      | 'delete'
       | 'findByNormalizedName'
       | 'getById'
       | 'getInGarden'
@@ -61,6 +70,8 @@ export class BedService {
       | 'rename'
     >,
     private readonly trays: Pick<TrayRepository, 'listByGarden' | 'open'>,
+    /** Deleting a bed moves and removes plantings; all of it or none. */
+    private readonly transaction: Transaction<BedDeleteWrites>,
   ) {}
 
   async createBed(
@@ -168,15 +179,17 @@ export class BedService {
     await this.requireBedEditor(userId, gardenId);
     const current = await this.beds.getInGarden(gardenId, bedId);
     if (!current) throw PLANTING_ERRORS.bedNotFound();
-    await this.plantings.deleteDirectSeedInBed(gardenId, bedId);
-    await this.plantings.unassignTransplantsInBed(gardenId, bedId);
-    const greenhouse = await this.areas.findByKind(gardenId, 'greenhouse');
-    if (greenhouse) {
-      const tray = await this.trays.open(gardenId, greenhouse.id, 'Tray');
-      await this.plantings.assignLooseTransplants(gardenId, tray.id);
-    }
-    const deleted = await this.beds.delete(gardenId, bedId);
-    if (!deleted) throw PLANTING_ERRORS.bedNotFound();
+    await this.transaction(async ({ plantings, beds, areas, trays }) => {
+      await plantings.deleteDirectSeedInBed(gardenId, bedId);
+      await plantings.unassignTransplantsInBed(gardenId, bedId);
+      const greenhouse = await areas.findByKind(gardenId, 'greenhouse');
+      if (greenhouse) {
+        const tray = await trays.open(gardenId, greenhouse.id, 'Tray');
+        await plantings.assignLooseTransplants(gardenId, tray.id);
+      }
+      // Throwing here undoes the plantings' changes above.
+      if (!(await beds.delete(gardenId, bedId))) throw PLANTING_ERRORS.bedNotFound();
+    });
   }
 
   async listAreas(userId: string, gardenId: string): Promise<PropertyAreaDto[]> {
