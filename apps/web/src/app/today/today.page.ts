@@ -50,8 +50,7 @@ type Alert = NonNullable<TodayDto['alerts']>[number];
                   <p>
                     <a [routerLink]="['/gardens', alert.gardenId, 'layout']">{{
                       alert.gardenName
-                    }}</a
-                    >: {{ advice(alert) }}
+                    }}</a>: {{ advice(alert) }}
                   </p>
                 </div>
               </li>
