@@ -7,6 +7,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { requestIdOf } from './request-log';
 
 const DOMAIN_STATUS: Record<string, HttpStatus> = {
   VALIDATION_ERROR: HttpStatus.BAD_REQUEST,
@@ -50,7 +51,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      if (status >= 500) this.logger.error(exception);
+      if (status >= 500) this.logFailure(exception, res);
       res.status(status).json({ error: httpError(status, exception.getResponse()) });
       return;
     }
@@ -60,9 +61,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? String(exception.code)
         : 'INTERNAL';
     const isDomain = rawCode in DOMAIN_STATUS;
-    if (!isDomain) {
-      this.logger.error(exception);
-    }
+    if (!isDomain) this.logFailure(exception, res);
     const message = exception instanceof Error ? exception.message : 'Unexpected error';
     // Only domain errors carry messages written for users. Anything else (a
     // failed query, a driver error) can include SQL and parameters such as
@@ -83,5 +82,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message: exposeDetails ? message : 'An unexpected error occurred',
       },
     });
+  }
+
+  /** The error with its stack, under the id of the request that caused it. */
+  private logFailure(exception: unknown, res: Response) {
+    const id = requestIdOf(res) ?? 'none';
+    if (exception instanceof Error) {
+      this.logger.error(`request.failed id=${id} ${exception.message}`, exception.stack);
+    } else {
+      this.logger.error(`request.failed id=${id} ${String(exception)}`);
+    }
   }
 }

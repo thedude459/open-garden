@@ -13,7 +13,7 @@ function respond(exception: unknown) {
   const json = vi.fn();
   const status = vi.fn().mockReturnValue({ json });
   const host = {
-    switchToHttp: () => ({ getResponse: () => ({ status }) }),
+    switchToHttp: () => ({ getResponse: () => ({ status, locals: { requestId: 'req-7' } }) }),
   } as unknown as ArgumentsHost;
   new AllExceptionsFilter().catch(exception, host);
   return { status: status.mock.calls[0]?.[0], body: json.mock.calls[0]?.[0] };
@@ -53,11 +53,11 @@ describe('AllExceptionsFilter', () => {
     expect(JSON.stringify(body)).not.toContain('secrethash');
   });
 
-  it('logs the unexpected error on the server', () => {
+  it('logs the unexpected error on the server, with its stack and request id', () => {
     const log = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     const err = new Error('Failed query: boom');
     respond(err);
-    expect(log).toHaveBeenCalledWith(err);
+    expect(log).toHaveBeenCalledWith('request.failed id=req-7 Failed query: boom', err.stack);
   });
 
   describe("Nest's own exceptions leave in the app's error shape", () => {
@@ -106,7 +106,10 @@ describe('AllExceptionsFilter', () => {
       expect(body).toEqual({
         error: { code: 'INTERNAL', message: 'An unexpected error occurred' },
       });
-      expect(log).toHaveBeenCalled();
+      expect(log).toHaveBeenCalledWith(
+        expect.stringContaining('request.failed id=req-7 pool exhausted'),
+        expect.any(String),
+      );
     });
   });
 });

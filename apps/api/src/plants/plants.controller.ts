@@ -69,7 +69,7 @@ export class PlantsController {
       ? await this.calendar.sowableNow(user.id, gardenId, localDate(asOfDate))
       : undefined;
     const result = await this.catalog.list(parsed.data, keep);
-    this.logger.log(`plants.list.assembly_ms=${Date.now() - started}`);
+    this.logger.debug(`plants.list.assembly_ms=${Date.now() - started}`);
     return result;
   }
 

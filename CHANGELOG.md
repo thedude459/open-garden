@@ -46,6 +46,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- The API log shows each request with an id that errors repeat, and a
+  `security.` line for sign-ins, lockouts, password changes and resets, account
+  deletions, and catalog runs. `LOG_LEVEL` sets how much is logged.
 - Error messages say what went wrong more often: the API sends every error in
   one form, and the app no longer shows technical text such as "Http failure
   response" in their place.
@@ -98,6 +101,7 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [Deployment](docs/deploy.md#logs): reading the API log, and `LOG_LEVEL`.
 - [ADR 0043](docs/adr/0043-atomic-writes.md): writes that span rows commit
   together.
 - [Deployment](docs/deploy.md#https): which proxies the `web` container
