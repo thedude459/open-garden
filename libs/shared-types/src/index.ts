@@ -13,3 +13,6 @@ export * from './lib/reminders';
 export * from './lib/reminders.schemas';
 export * from './lib/pipeline';
 export * from './lib/pipeline.schemas';
+export { domainError, type DomainError, type DomainErrorCode } from './lib/domain-error';
+export { gardenAccess, roleAllows, type GardenAccess } from './lib/garden-access';
+export type { Transaction } from './lib/transaction';

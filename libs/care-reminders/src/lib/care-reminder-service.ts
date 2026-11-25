@@ -1,3 +1,4 @@
+import { gardenAccess } from '@open-garden/shared-types';
 import type { CareAction, CareKind, ReminderListDto } from '@open-garden/shared-types';
 import { deriveReminders } from './derive';
 import { applyRainCover } from './rain-cover';
@@ -68,7 +69,7 @@ export class CareReminderService {
     private readonly plantings: ReminderPlantingReader,
     private readonly events: CareEventWriter,
     /** A property's evapotranspiration and rain by day; null when it has no location or the weather cannot be read. */
-    private readonly weather?: (
+    private readonly weather: (
       gardenId: string,
       asOf: string,
     ) => Promise<Record<string, DayWater> | null>,
@@ -106,7 +107,7 @@ export class CareReminderService {
     }));
 
     // A forecast that cannot be read means fixed intervals, never a failed list.
-    const weather = this.weather ? await this.weather(gardenId, asOf).catch(() => null) : null;
+    const weather = await this.weather(gardenId, asOf).catch(() => null);
     const rain = weather
       ? Object.fromEntries(Object.entries(weather).map(([day, w]) => [day, w.rainMm]))
       : null;
@@ -141,9 +142,11 @@ export class CareReminderService {
     dueOn: string,
   ): Promise<void> {
     if (!isIsoDate(dueOn)) throw CARE_ERRORS.dateRequired();
-    const membership = await this.memberships.getMembership(gardenId, userId);
-    if (!membership) throw CARE_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw CARE_ERRORS.viewerReminders();
+    gardenAccess(
+      await this.memberships.getMembership(gardenId, userId),
+      'edit',
+      CARE_ERRORS.viewerReminders,
+    );
     const planting = await this.plantings.getInGarden(gardenId, plantingId);
     if (!planting) throw CARE_ERRORS.plantingNotFound();
     if (typeof this.events.remove === 'function') {
@@ -172,13 +175,11 @@ export class CareReminderService {
     if (!isIsoDate(dueOn)) {
       throw CARE_ERRORS.dateRequired();
     }
-    const membership = await this.memberships.getMembership(gardenId, userId);
-    if (!membership) {
-      throw CARE_ERRORS.gardenNotFound();
-    }
-    if (membership.role === 'viewer') {
-      throw CARE_ERRORS.viewerReminders();
-    }
+    gardenAccess(
+      await this.memberships.getMembership(gardenId, userId),
+      'edit',
+      CARE_ERRORS.viewerReminders,
+    );
 
     const planting = await this.plantings.getInGarden(gardenId, plantingId);
     if (!planting) {

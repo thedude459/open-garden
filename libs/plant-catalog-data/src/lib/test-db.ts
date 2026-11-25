@@ -109,3 +109,13 @@ export async function insertPlant(db: AppDatabase, commonName = unique('Plant'))
     .returning();
   return plant!;
 }
+
+/** The property's vegetable garden, created if missing: every bed belongs to an area. */
+export async function vegetableAreaId(db: AppDatabase, gardenId: string): Promise<string> {
+  const result = await db.execute<{ id: string }>(sql`
+    insert into garden_areas (garden_id, name, name_normalized, kind)
+    values (${gardenId}, 'Vegetable garden', 'vegetable garden', 'vegetable')
+    on conflict (garden_id, name_normalized) do update set name = excluded.name
+    returning id`);
+  return (result as unknown as { rows: { id: string }[] }).rows[0]!.id;
+}

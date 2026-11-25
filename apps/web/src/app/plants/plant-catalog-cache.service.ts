@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type { DBSchema } from 'idb';
+import type { AreaKind, PageDto, PlantDetailDto, PlantSummaryDto } from '@open-garden/shared-types';
+import { allowsPlant } from '@open-garden/shared-types';
 import { withCompanionDefaults } from './cached-detail';
+import { deviceStore } from '../device-data';
 
 interface CatalogCacheDb extends DBSchema {
   lists: {
@@ -16,18 +18,13 @@ interface CatalogCacheDb extends DBSchema {
 
 @Injectable({ providedIn: 'root' })
 export class PlantCatalogCacheService {
-  private dbPromise: Promise<IDBPDatabase<CatalogCacheDb>> | null = null;
+  private readonly store = deviceStore<CatalogCacheDb>('og-plant-catalog', 1, (db) => {
+    db.createObjectStore('lists', { keyPath: 'key' });
+    db.createObjectStore('details', { keyPath: 'id' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<CatalogCacheDb>('og-plant-catalog', 1, {
-        upgrade(db) {
-          db.createObjectStore('lists', { keyPath: 'key' });
-          db.createObjectStore('details', { keyPath: 'id' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   listKey(params: Record<string, string | number | undefined>): string {
@@ -59,7 +56,7 @@ export class PlantCatalogCacheService {
   /** Offline filters apply only to an already-cached browse page. */
   filterCached(
     page: PageDto<PlantSummaryDto>,
-    opts: { zone?: number; plantType?: string; family?: string; q?: string },
+    opts: { zone?: number; plantType?: string; area?: AreaKind; family?: string; q?: string },
   ): PageDto<PlantSummaryDto> {
     let items = page.items;
     if (opts.family) {
@@ -67,6 +64,10 @@ export class PlantCatalogCacheService {
     }
     if (opts.plantType) {
       items = items.filter((p) => p.plantType === opts.plantType);
+    }
+    if (opts.area) {
+      const area = opts.area;
+      items = items.filter((p) => allowsPlant(area, p.plantType));
     }
     if (opts.zone !== undefined) {
       items = items.filter((p) => p.zoneMin <= opts.zone! && opts.zone! <= p.zoneMax);

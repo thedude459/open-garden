@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from './auth-api.service';
-import { serverMessage } from './forgot-password.page';
+import { apiMessage } from '../ui/error-message';
 
 /** The page a reset link opens: choose a new password. */
 @Component({
@@ -75,7 +75,7 @@ export class ResetPasswordPage {
         await this.router.navigateByUrl('/login');
         this.notices.success('Password changed. Sign in with the new one.');
       } catch (err) {
-        this.error.set(serverMessage(err) ?? 'Could not set the password. Try again later.');
+        this.error.set(apiMessage(err) ?? 'Could not set the password. Try again later.');
       }
     });
   }

@@ -59,6 +59,9 @@ const maple = plantRow({
   status: 'deprecated',
 });
 
+/** A property whose open season is this calendar year. */
+const seasons = { currentYear: async () => new Date().getUTCFullYear() };
+
 describe('CalendarService', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -114,13 +117,13 @@ describe('CalendarService', () => {
     });
   });
 
-  it('refuses a tree until the property has an orchard', async () => {
+  it('refuses a tree until the property has a fruit garden', async () => {
     const blocked = createMemory(false);
     await expect(
       blocked.service.add(blocked.ownerId, blocked.gardenId, maple.id),
     ).rejects.toMatchObject({
       code: 'VALIDATION_ERROR',
-      message: 'Add an orchard for this plant first',
+      message: 'Add a fruit garden for this plant first',
     });
     const open = createMemory(true);
     const added = await open.service.add(open.ownerId, open.gardenId, maple.id);
@@ -182,7 +185,8 @@ function plantRow(partial: Partial<typeof plantDefaults> & { id: string; commonN
   return { ...plantDefaults, ...partial };
 }
 
-function createMemory(hasOrchard?: boolean, frostFree = false) {
+/** `hasFruitGarden`: whether the property has an area for trees (default yes). */
+function createMemory(hasFruitGarden = true, frostFree = false) {
   const ownerId = 'owner-1';
   const viewerId = 'viewer-1';
   const strangerId = 'stranger-1';
@@ -286,7 +290,8 @@ function createMemory(hasOrchard?: boolean, frostFree = false) {
     membershipRepo as never,
     plantRepo as never,
     entryRepo as never,
-    hasOrchard === undefined ? undefined : ({ hasKind: async () => hasOrchard } as never),
+    { hasKind: async () => hasFruitGarden },
+    seasons,
   );
   return { service, ownerId, viewerId, strangerId, gardenId, entries };
 }
@@ -337,6 +342,8 @@ describe('CalendarService.sowingPlanFor (succession planting)', () => {
       {} as never,
       { getById: async () => tender } as never,
       {} as never,
+      { hasKind: async () => true },
+      seasons,
     );
     expect(
       (await service.sowingPlanFor('garden-1', tender.id, 'transplant', '2027-04-22'))?.lastSowOn,

@@ -11,7 +11,7 @@ import {
   planOutlineFrame,
   snapHalfFoot,
 } from '@open-garden/garden-layout';
-import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place';
+import { embedMapReachable, embedMapUrl } from '@open-garden/garden-place/embed-map';
 import type {
   GardenSummaryDto,
   PlaceCandidateDto,
@@ -19,11 +19,11 @@ import type {
   Units,
 } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
-import { HttpErrorResponse } from '@angular/common/http';
 import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { EmptyState } from '../ui/empty-state';
 import { localIso, nextTaskByGarden } from '../today/today-groups';
+import { errorMessage } from '../ui/error-message';
 
 @Component({
   standalone: true,
@@ -263,7 +263,7 @@ export class GardenListPage implements OnInit, OnDestroy {
       this.truncated.set(result.truncated);
       if (result.candidates.length === 1 && !result.truncated) this.choose(result.candidates[0]!);
     } catch (err) {
-      this.lookupError.set(userMessage(err));
+      this.lookupError.set(errorMessage(err, 'Could not save garden'));
     } finally {
       this.lookingUp.set(false);
     }
@@ -408,7 +408,7 @@ export class GardenListPage implements OnInit, OnDestroy {
           created.seasonNotice ? `Garden created. ${created.seasonNotice}` : 'Garden created',
         );
       } catch (err) {
-        this.notices.error(userMessage(err));
+        this.notices.error(errorMessage(err, 'Could not save garden'));
       }
     });
   }
@@ -416,15 +416,6 @@ export class GardenListPage implements OnInit, OnDestroy {
 
 function gardenInches(value: number, units: Units): number {
   return Math.max(6, snapHalfFoot(inchesFromInput(value, units)));
-}
-
-function userMessage(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
-  }
-  return 'Could not save garden';
 }
 
 function withCounts(g: GardenSummaryDto): GardenSummaryDto {

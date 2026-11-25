@@ -256,7 +256,8 @@ export class AppComponent {
     if (this.planner.dirty() && !window.confirm('Leave without saving this layout?')) return;
     if (this.planner.dirty()) this.planner.discard();
     await this.auth.logout();
-    await this.router.navigateByUrl('/login');
+    // A full load drops anything of this member's still held in memory.
+    window.location.assign('/login');
   }
 
   private dropDraftIfLeft(url: string) {

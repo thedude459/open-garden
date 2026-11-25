@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import type { BedStation, FavoriteListItemDto, PlantSummaryDto } from '@open-garden/shared-types';
+import type {
+  BedStation,
+  FavoriteListItemDto,
+  PlantSummaryDto,
+  AreaKind,
+} from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
@@ -27,6 +32,7 @@ const favorite = (p: PlantSummaryDto, unavailable = false) =>
 async function render(opts: {
   canEdit?: boolean;
   station?: BedStation | null;
+  areaKind?: AreaKind;
   favorites?: FavoriteListItemDto[];
   search?: () => Promise<unknown>;
   bedEmpty?: boolean;
@@ -48,6 +54,7 @@ async function render(opts: {
   fixture.componentRef.setInput('gardenId', 'g1');
   fixture.componentRef.setInput('canEdit', opts.canEdit ?? true);
   fixture.componentRef.setInput('station', opts.station ?? null);
+  fixture.componentRef.setInput('areaKind', opts.areaKind);
   fixture.componentRef.setInput('bedEmpty', opts.bedEmpty ?? false);
   fixture.componentRef.setInput('emptyBody', 'Nothing is planted in this bed yet.');
   const armed: string[] = [];
@@ -95,6 +102,17 @@ describe('BedPlantPanel', () => {
     select.value = 'dwarf';
     select.dispatchEvent(new Event('change'));
     expect(view.fixture.componentInstance.rootstock()).toBe('dwarf');
+  });
+
+  it('goes by the bed’s area when its station says otherwise', async () => {
+    const view = await render({
+      station: 'tree',
+      areaKind: 'vegetable',
+      search: async () => ({ items: [plant('apple', 'tree'), plant('kale', 'vegetable')] }),
+    });
+    await view.search();
+    expect(view.place('apple')).toBeNull();
+    expect(view.place('kale')).not.toBeNull();
   });
 
   it('says when nothing matches', async () => {

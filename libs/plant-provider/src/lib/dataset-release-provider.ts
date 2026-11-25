@@ -17,10 +17,10 @@ import type { PlantDataProvider, ProviderCompanion, ProviderPlant } from './plan
  * verify`); bump all three together.
  */
 export const BUNDLED_CATALOG = {
-  version: '0.2.2',
+  version: '0.3.1',
   /** Relative to the working directory: the repository root, or /app in the API image. */
-  file: 'libs/plant-provider/catalog/open-garden-catalog-0.2.2.json',
-  sha256: 'a585f9d9602357385957b5985b36257d9016be6267b936bf9b884ceca1b75adb',
+  file: 'libs/plant-provider/catalog/open-garden-catalog-0.3.1.json',
+  sha256: 'ca9fe37429c1dde52dec547052c5a6ec42467a44a4aa3dc9e9c7df3148de7322',
 } as const;
 
 /**
@@ -307,6 +307,7 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
     family,
     cropId: crop.id,
     frostTolerance: crop.frostTolerance ?? null,
+    perennial: crop.lifeCycle === 'perennial',
     growingGuidance: {
       indoorStart: guidance(crop.windows.indoorStart),
       outdoorSow: guidance(crop.windows.directSow),
@@ -327,10 +328,14 @@ function cropPlants(crop: Crop, family: string | null): ProviderPlant[] {
   ];
 }
 
-/** Habit first, except that an herb of any habit (thyme is a subshrub) is an herb. */
+/**
+ * Habit first, except that an herb of any habit (thyme is a subshrub) is an
+ * herb. A perennial vine (grape) is woody; an annual one (squash) is not.
+ */
 function plantType(crop: Crop): PlantType {
   if (crop.use === 'herb') return 'herb';
   if (crop.habit === 'tree' || crop.habit === 'shrub' || crop.habit === 'cane') return crop.habit;
+  if (crop.habit === 'vine' && crop.lifeCycle === 'perennial') return 'vine';
   return crop.use === 'nut' ? 'fruit' : crop.use;
 }
 

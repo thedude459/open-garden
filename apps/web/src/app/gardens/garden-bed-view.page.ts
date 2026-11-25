@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { plantName } from '@open-garden/shared-types';
 import {
   ChangeDetectionStrategy,
@@ -44,6 +43,7 @@ import { NoticeService } from '../ui/notice.service';
 import { AuthApiService } from '../auth/auth-api.service';
 import { PlaceMarker } from '../ui/place-marker';
 import { localIso } from '../today/today-groups';
+import { errorMessage } from '../ui/error-message';
 
 @Component({
   standalone: true,
@@ -155,6 +155,7 @@ import { localIso } from '../today/today-groups';
               <og-bed-plant-panel
                 [gardenId]="gardenId"
                 [station]="bed()?.station"
+                [areaKind]="bed()?.areaKind"
                 [canEdit]="canEdit()"
                 [armedId]="armedPlant()?.id ?? null"
                 [zone]="gardenZone()"
@@ -365,7 +366,7 @@ export class GardenBedViewPage implements OnInit {
     try {
       await this.planner.setSeason(year);
     } catch (err) {
-      this.notices.error(messageFrom(err));
+      this.notices.error(errorMessage(err, 'Something went wrong'));
     }
   }
 
@@ -580,7 +581,7 @@ export class GardenBedViewPage implements OnInit {
       try {
         await this.planner.deletePlantingNow(planting.id);
       } catch (err) {
-        this.notices.error(messageFrom(err));
+        this.notices.error(errorMessage(err, 'Something went wrong'));
       }
     } else if (planting.startMethod === 'direct_seed') {
       const d = this.draft();
@@ -599,7 +600,7 @@ export class GardenBedViewPage implements OnInit {
       await this.planner.markPlantedNow(planting.id, localIso());
       this.notices.success(`${plantName(planting)} planted`);
     } catch (err) {
-      this.notices.error(messageFrom(err));
+      this.notices.error(errorMessage(err, 'Something went wrong'));
     }
   }
 
@@ -660,14 +661,4 @@ export class GardenBedViewPage implements OnInit {
     }
     return true;
   }
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const body = err.error as { error?: { message?: string } } | undefined;
-    return body?.error?.message ?? err.message;
-  }
-  if (err instanceof Error) return err.message;
-  return 'Something went wrong';
 }

@@ -7,7 +7,14 @@ import { GardenRepository } from './garden-repository';
 import { PlantingAreaRepository } from './planting-area-repository';
 import { PlantingRepository } from './planting-repository';
 import { gardenSeasons } from './schema';
-import { createTestDb, gardenInput, insertPlant, insertUser, type TestDb } from './test-db';
+import {
+  createTestDb,
+  gardenInput,
+  insertPlant,
+  insertUser,
+  vegetableAreaId,
+  type TestDb,
+} from './test-db';
 import { TrayRepository } from './tray-repository';
 
 let t: TestDb;
@@ -34,6 +41,7 @@ async function setup() {
   const plant = await insertPlant(t.db, 'Tomato');
   const bed = await beds.insert({
     gardenId: garden.id,
+    areaId: await vegetableAreaId(t.db, garden.id),
     name: 'Bed',
     nameNormalized: 'bed',
     originXInches: 0,

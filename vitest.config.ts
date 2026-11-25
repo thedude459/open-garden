@@ -96,6 +96,10 @@ export default defineConfig({
         __dirname,
         'libs/seasonal-plantings/src/lib/group-plantings.ts',
       ),
+      '@open-garden/garden-layout/server': path.resolve(
+        __dirname,
+        'libs/garden-layout/src/server.ts',
+      ),
       '@open-garden/garden-layout': path.resolve(__dirname, 'libs/garden-layout/src/index.ts'),
       '@open-garden/garden-layout/evaluate': path.resolve(
         __dirname,
@@ -150,6 +154,10 @@ export default defineConfig({
       '@open-garden/catalog-pipeline': path.resolve(
         __dirname,
         'libs/catalog-pipeline/src/index.ts',
+      ),
+      '@open-garden/garden-place/embed-map': path.resolve(
+        __dirname,
+        'libs/garden-place/src/lib/embed-map.ts',
       ),
       '@open-garden/garden-place': path.resolve(__dirname, 'libs/garden-place/src/index.ts'),
     },

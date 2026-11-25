@@ -37,7 +37,7 @@ describe.skipIf(!liveEnabled)('areas http: rename, delete, move a bed', () => {
       await owner.post(`/api/gardens/${garden.id}/areas`, { data: { kind: 'vegetable' } })
     ).json()) as Area;
     const canes = (await (
-      await owner.post(`/api/gardens/${garden.id}/areas`, { data: { kind: 'bramble' } })
+      await owner.post(`/api/gardens/${garden.id}/areas`, { data: { kind: 'fruit' } })
     ).json()) as Area;
     const planted = await owner.post(`/api/gardens/${garden.id}/plantings`, {
       data: { id: crypto.randomUUID(), plantId: await plantId(owner, 'Tomato'), bedId: bed.id },
@@ -50,17 +50,38 @@ describe.skipIf(!liveEnabled)('areas http: rename, delete, move a bed', () => {
     expect(renamed.status(), await renamed.text()).toBe(200);
     expect(await renamed.json()).toMatchObject({ id: second.id, name: 'Back garden' });
     expect(
-      (await owner.patch(areaPath(second.id), { data: { name: 'bramble PATCH' } })).status(),
+      (await owner.patch(areaPath(second.id), { data: { name: 'fruit GARDEN' } })).status(),
     ).toBe(409);
     expect((await owner.patch(areaPath(second.id), { data: { name: ' ' } })).status()).toBe(400);
     expect((await viewer.patch(areaPath(second.id), { data: { name: 'X' } })).status()).toBe(403);
     expect((await stranger.patch(areaPath(second.id), { data: { name: 'X' } })).status()).toBe(404);
 
-    // Move: a tomato bed may go to another vegetable garden, not a bramble patch.
-    const bedPath = `/api/gardens/${garden.id}/beds/${bed.id}`;
-    const refused = await owner.patch(bedPath, { data: { name: 'North', areaId: canes.id } });
+    // Move: a raspberry row stays in a fruit garden; a tomato bed may move.
+    const row = (await (
+      await owner.post(`/api/gardens/${garden.id}/beds`, {
+        data: {
+          id: crypto.randomUUID(),
+          name: 'Canes',
+          lengthInches: 120,
+          widthInches: 36,
+          areaId: canes.id,
+          station: 'berry',
+        },
+      })
+    ).json()) as { id: string; station: string | null };
+    expect(row.station).toBe('berry');
+    const raspberry = await owner.post(`/api/gardens/${garden.id}/plantings`, {
+      data: { id: crypto.randomUUID(), plantId: await plantId(owner, 'Raspberry'), bedId: row.id },
+    });
+    expect(raspberry.status(), await raspberry.text()).toBe(201);
+    const refused = await owner.patch(`/api/gardens/${garden.id}/beds/${row.id}`, {
+      data: { name: 'Canes', areaId: second.id },
+    });
     expect(refused.status()).toBe(400);
-    expect(await refused.text()).toContain('Bramble patch will not take this bed');
+    expect(await refused.text()).toContain(
+      'Back garden will not take this bed: Cane fruit belongs in a fruit garden',
+    );
+    const bedPath = `/api/gardens/${garden.id}/beds/${bed.id}`;
     const moved = await owner.patch(bedPath, { data: { name: 'North', areaId: second.id } });
     expect(moved.status(), await moved.text()).toBe(200);
     expect(await moved.json()).toMatchObject({ areaId: second.id, station: null });
@@ -76,6 +97,6 @@ describe.skipIf(!liveEnabled)('areas http: rename, delete, move a bed', () => {
     expect((await viewer.delete(areaPath(bed.areaId))).status()).toBe(403);
     expect((await owner.delete(areaPath(bed.areaId))).status()).toBe(204);
     const areas = (await (await owner.get(`/api/gardens/${garden.id}/areas`)).json()) as Area[];
-    expect(areas.map((a) => a.name).sort()).toEqual(['Back garden', 'Bramble patch']);
+    expect(areas.map((a) => a.name).sort()).toEqual(['Back garden', 'Fruit garden']);
   });
 });

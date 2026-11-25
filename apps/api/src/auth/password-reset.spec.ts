@@ -11,7 +11,7 @@ const TOKEN = 'c'.repeat(64);
 const res = { req: { headers: {}, socket: { remoteAddress: '10.0.0.1' } } } as unknown as Response;
 
 function controller() {
-  return new AuthController({ db: {} as never });
+  return new AuthController(new AuthService({} as never));
 }
 
 describe('password reset by email', () => {

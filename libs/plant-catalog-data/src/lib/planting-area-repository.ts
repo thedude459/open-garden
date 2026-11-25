@@ -5,8 +5,7 @@ import { gardenAreas } from './schema';
 
 const AREA_NAMES: Record<AreaKind, string> = {
   vegetable: 'Vegetable garden',
-  orchard: 'Orchard',
-  bramble: 'Bramble patch',
+  fruit: 'Fruit garden',
   greenhouse: 'Greenhouse',
 };
 

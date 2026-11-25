@@ -1,13 +1,10 @@
 import type {
   AreaKind,
-  BedCreateDto,
-  BedPatchDto,
   BedStation,
   CropHarvestDto,
   GardenRole,
   HarvestDto,
   HarvestTotalsDto,
-  NamedBedDto,
   PlantingCreateDto,
   PlantingDto,
   PlantingListDto,
@@ -15,20 +12,16 @@ import type {
   PlantingRepeatResultDto,
   PlantStatus,
   PlantType,
-  PropertyAreaDto,
   StartMethod,
-  TrayDto,
 } from '@open-garden/shared-types';
 import {
-  AREA_KINDS,
-  areaKindFor,
   MAX_SUCCESSION_SOWINGS,
+  type Transaction,
   plantName,
   lifeForPlant,
-  mulchOrNone,
   placementRefusal,
   plantOutPatch,
-  stationFor,
+  gardenAccess,
 } from '@open-garden/shared-types';
 import type {
   BedRepository,
@@ -40,19 +33,42 @@ import type {
 } from '@open-garden/plant-catalog-data';
 import { domainError, PLANTING_ERRORS } from './domain-error';
 import { addDays, assertDatePair, diffDays, plannedOrPlanted, utcToday } from './dates';
-import { normalizeBedName } from './beds';
+import { isAreaKind, toAreaDto, toBedDto, toStation, toTrayDto } from './bed-service';
 
+/**
+ * Every dependency is required and typed as the slice this service uses: a
+ * caller cannot leave out the areas that enforce principle VIII, and a test
+ * fake needs only these methods.
+ */
 export class PlantingService {
   constructor(
-    private readonly memberships: GardenMembershipRepository,
-    private readonly plants: PlantRepository,
-    private readonly plantings: PlantingRepository,
-    private readonly beds: BedRepository,
-    private readonly areas?: PlantingAreaRepository,
-    private readonly trays?: TrayRepository,
-    private readonly sowing?: SowingPlanner,
+    private readonly memberships: Pick<GardenMembershipRepository, 'get'>,
+    private readonly plants: Pick<PlantRepository, 'getById'>,
+    private readonly plantings: Pick<
+      PlantingRepository,
+      | 'clearLayoutCoords'
+      | 'delete'
+      | 'deleteHarvest'
+      | 'getById'
+      | 'getInGarden'
+      | 'harvestSeasons'
+      | 'insert'
+      | 'listByGarden'
+      | 'listHarvests'
+      | 'listHarvestsForSeason'
+      | 'listUnplacedTransplants'
+      | 'logHarvest'
+      | 'occupants'
+      | 'update'
+    >,
+    private readonly beds: Pick<BedRepository, 'getInGarden' | 'listByGarden'>,
+    private readonly areas: Pick<PlantingAreaRepository, 'findByKind' | 'getById' | 'listByGarden'>,
+    private readonly trays: Pick<TrayRepository, 'getInGarden' | 'listByGarden' | 'open'>,
+    private readonly sowing: SowingPlanner,
     /** The property's current season, for planning the next one (ADR 0040). */
-    private readonly seasons?: { currentYear(gardenId: string): Promise<number> },
+    private readonly seasons: { currentYear(gardenId: string): Promise<number> },
+    /** A succession series is added whole or not at all. */
+    private readonly transaction: Transaction<{ plantings: Pick<PlantingRepository, 'insert'> }>,
   ) {}
 
   /**
@@ -61,9 +77,7 @@ export class PlantingService {
    * never closed one keeps its earlier years' annuals.
    */
   private async season(gardenId: string, seasonYear?: number) {
-    const current = this.seasons
-      ? await this.seasons.currentYear(gardenId)
-      : new Date().getUTCFullYear();
+    const current = await this.seasons.currentYear(gardenId);
     const year = seasonYear ?? current;
     if (year !== current && year !== current + 1) throw PLANTING_ERRORS.seasonOutOfRange();
     return { year, current, query: year === current ? undefined : year };
@@ -146,11 +160,11 @@ export class PlantingService {
       trayId = null;
     }
     if (trayId) await this.requireTray(gardenId, trayId);
-    if (startMethod === 'transplant' && !bedId && !trayId && this.areas && this.trays) {
+    if (startMethod === 'transplant' && !bedId && !trayId) {
       const greenhouse = await this.areas.findByKind(gardenId, 'greenhouse');
       if (greenhouse) trayId = (await this.trays.open(gardenId, greenhouse.id, 'Tray')).id;
     }
-    const life = lifeForPlant(plant.plantType, dto.life);
+    const life = lifeForPlant(plant.plantType, dto.life, plant.perennial);
     await this.assertFits(gardenId, plant, bedId, trayId, null);
     const plantedYear =
       dto.plantedYear !== undefined
@@ -225,11 +239,7 @@ export class PlantingService {
     if (bedChanging || dto.trayId) {
       await this.plantings.clearLayoutCoords(gardenId, plantingId);
     }
-    if (
-      dto.harvestedOn === null &&
-      current.harvestedOn &&
-      typeof this.plantings.deleteHarvest === 'function'
-    ) {
+    if (dto.harvestedOn === null && current.harvestedOn) {
       await this.plantings.deleteHarvest(plantingId, current.harvestedOn);
     }
     const updated = await this.plantings.update(gardenId, plantingId, {
@@ -287,24 +297,26 @@ export class PlantingService {
     }
     if (!dates.length) throw PLANTING_ERRORS.repeatNothing(plan?.lastSowOn ?? null);
     const shift = (date: string) => diffDays(current.plantedOn, date);
-    for (const date of dates) {
-      await this.plantings.insert({
-        gardenId,
-        plantId: current.plantId,
-        bedId: null,
-        trayId: null,
-        // Each copy is a sowing still to come (ADR 0040).
-        plannedOn: date,
-        plantedOn: null,
-        harvestedOn: null,
-        startMethod: current.startMethod,
-        indoorStartedOn: current.indoorStartedOn
-          ? addDays(current.indoorStartedOn, shift(date))
-          : null,
-        life: current.life,
-        seasonYear: current.seasonYear,
-      });
-    }
+    await this.transaction(async ({ plantings }) => {
+      for (const date of dates) {
+        await plantings.insert({
+          gardenId,
+          plantId: current.plantId,
+          bedId: null,
+          trayId: null,
+          // Each copy is a sowing still to come (ADR 0040).
+          plannedOn: date,
+          plantedOn: null,
+          harvestedOn: null,
+          startMethod: current.startMethod,
+          indoorStartedOn: current.indoorStartedOn
+            ? addDays(current.indoorStartedOn, shift(date))
+            : null,
+          life: current.life,
+          seasonYear: current.seasonYear,
+        });
+      }
+    });
     return {
       list: await this.list(userId, gardenId),
       added: dates.length,
@@ -339,10 +351,7 @@ export class PlantingService {
     gardenId: string,
     current: { plantId: string; startMethod: string; plantedOn: string },
   ) {
-    return (
-      this.sowing?.plan(gardenId, current.plantId, current.startMethod, current.plantedOn) ??
-      Promise.resolve(null)
-    );
+    return this.sowing.plan(gardenId, current.plantId, current.startMethod, current.plantedOn);
   }
 
   /**
@@ -448,208 +457,12 @@ export class PlantingService {
     };
   }
 
-  async createBed(
-    userId: string,
-    gardenId: string,
-    dto: BedCreateDto,
-  ): Promise<{ created: boolean; bed: NamedBedDto }> {
-    await this.requireBedEditor(userId, gardenId);
-    if (dto.lengthInches < 1 || dto.widthInches < 1) throw PLANTING_ERRORS.bedSizeRequired();
-    const names = normalizeBedName(dto.name);
-    if (dto.id) {
-      const existing = await this.beds.getById(dto.id);
-      if (existing) {
-        if (existing.gardenId !== gardenId) throw PLANTING_ERRORS.idInUse();
-        return { created: false, bed: toBedDto(existing) };
-      }
-    }
-    const taken = await this.beds.findByNormalizedName(gardenId, names.nameNormalized);
-    if (taken) throw PLANTING_ERRORS.bedNameTaken();
-    let station: BedStation | null = dto.station ?? null;
-    let areaId = dto.areaId;
-    if (this.areas) {
-      if (areaId) {
-        const area = await this.areas.getInGarden(gardenId, areaId);
-        if (!area) throw domainError('NOT_FOUND', 'Area not found');
-        // The station follows the area, so the bed's rules are the area's.
-        station = stationFor(isAreaKind(area.kind) ? area.kind : 'vegetable');
-      } else {
-        areaId = (await this.areas.ensure(gardenId, areaKindFor(station))).id;
-      }
-    }
-    const row = await this.beds.insert({
-      id: dto.id,
-      gardenId,
-      name: names.name,
-      nameNormalized: names.nameNormalized,
-      originXInches: dto.originXInches ?? 0,
-      originYInches: dto.originYInches ?? 0,
-      lengthInches: dto.lengthInches,
-      widthInches: dto.widthInches,
-      areaId,
-      site: dto.site ?? 'in_ground',
-      station,
-      mulch: mulchOrNone(dto.mulch),
-    });
-    return { created: true, bed: toBedDto(row) };
-  }
-
-  async renameBed(
-    userId: string,
-    gardenId: string,
-    bedId: string,
-    dto: BedPatchDto,
-  ): Promise<NamedBedDto> {
-    await this.requireBedEditor(userId, gardenId);
-    const current = await this.beds.getInGarden(gardenId, bedId);
-    if (!current) throw PLANTING_ERRORS.bedNotFound();
-    const names = normalizeBedName(dto.name);
-    const taken = await this.beds.findByNormalizedName(gardenId, names.nameNormalized);
-    if (taken && taken.id !== bedId) throw PLANTING_ERRORS.bedNameTaken();
-    let row = await this.beds.rename(gardenId, bedId, names.name, names.nameNormalized);
-    if (!row) throw PLANTING_ERRORS.bedNotFound();
-    if (
-      (dto.sun !== undefined || dto.site !== undefined || dto.mulch !== undefined) &&
-      typeof this.beds.setSite === 'function'
-    ) {
-      const site = await this.beds.setSite(gardenId, bedId, {
-        sun: dto.sun,
-        site: dto.site,
-        mulch: dto.mulch,
-      });
-      if (site) row = site;
-    }
-    if (dto.areaId !== undefined && dto.areaId !== row.areaId) {
-      row = await this.moveBed(gardenId, bedId, dto.areaId);
-    }
-    return toBedDto(row);
-  }
-
-  /**
-   * Moves a bed to another area of the property. Every plant in it must suit
-   * the new area, as when it was placed (a hard gate, principle VIII); its
-   * station follows the area's kind.
-   */
-  private async moveBed(gardenId: string, bedId: string, areaId: string) {
-    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
-    const area = await this.areas.getInGarden(gardenId, areaId);
-    if (!area) throw domainError('NOT_FOUND', 'Area not found');
-    const kind = isAreaKind(area.kind) ? area.kind : 'vegetable';
-    if (kind === 'greenhouse') {
-      throw domainError('VALIDATION_ERROR', 'A greenhouse holds trays, not beds');
-    }
-    const occupants =
-      typeof this.plantings.occupants === 'function' ? await this.plantings.occupants(bedId) : [];
-    for (const [i, plant] of occupants.entries()) {
-      const reason = placementRefusal(kind, plant.plantType, occupants.slice(0, i));
-      if (reason)
-        throw domainError('VALIDATION_ERROR', `${area.name} will not take this bed: ${reason}`);
-    }
-    const moved = await this.beds.setArea(gardenId, bedId, areaId, stationFor(kind));
-    if (!moved) throw PLANTING_ERRORS.bedNotFound();
-    return moved;
-  }
-
-  async deleteBed(userId: string, gardenId: string, bedId: string): Promise<void> {
-    await this.requireBedEditor(userId, gardenId);
-    const current = await this.beds.getInGarden(gardenId, bedId);
-    if (!current) throw PLANTING_ERRORS.bedNotFound();
-    await this.plantings.deleteDirectSeedInBed(gardenId, bedId);
-    await this.plantings.unassignTransplantsInBed(gardenId, bedId);
-    if (this.areas && this.trays && typeof this.plantings.assignLooseTransplants === 'function') {
-      const greenhouse = await this.areas.findByKind(gardenId, 'greenhouse');
-      if (greenhouse) {
-        const tray = await this.trays.open(gardenId, greenhouse.id, 'Tray');
-        await this.plantings.assignLooseTransplants(gardenId, tray.id);
-      }
-    }
-    const deleted = await this.beds.delete(gardenId, bedId);
-    if (!deleted) throw PLANTING_ERRORS.bedNotFound();
-  }
-
-  async listAreas(userId: string, gardenId: string): Promise<PropertyAreaDto[]> {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (!this.areas) return [];
-    return (await this.areas.listByGarden(gardenId)).map(toAreaDto);
-  }
-
-  async createArea(userId: string, gardenId: string, kind: AreaKind): Promise<PropertyAreaDto> {
-    await this.requireBedEditor(userId, gardenId);
-    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
-    return toAreaDto(await this.areas.add(gardenId, kind));
-  }
-
-  async renameArea(
-    userId: string,
-    gardenId: string,
-    areaId: string,
-    name: string,
-  ): Promise<PropertyAreaDto> {
-    await this.requireBedEditor(userId, gardenId);
-    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
-    const trimmed = name.trim();
-    if (!trimmed) throw domainError('VALIDATION_ERROR', 'Area name is required');
-    if (trimmed.length > 120) {
-      throw domainError('VALIDATION_ERROR', 'Area name must be at most 120 characters');
-    }
-    const taken = await this.areas.findByName(gardenId, trimmed);
-    if (taken && taken.id !== areaId) {
-      throw domainError('CONFLICT', 'That property already has an area with that name');
-    }
-    const row = await this.areas.rename(gardenId, areaId, trimmed);
-    if (!row) throw domainError('NOT_FOUND', 'Area not found');
-    return toAreaDto(row);
-  }
-
-  /** Deletes an empty area; one that holds beds or trays is refused, so nothing is lost. */
-  async deleteArea(userId: string, gardenId: string, areaId: string): Promise<void> {
-    await this.requireBedEditor(userId, gardenId);
-    if (!this.areas) throw domainError('VALIDATION_ERROR', 'Areas are not available');
-    const area = await this.areas.getInGarden(gardenId, areaId);
-    if (!area) throw domainError('NOT_FOUND', 'Area not found');
-    const beds = (await this.beds.listByGarden(gardenId)).filter((bed) => bed.areaId === areaId);
-    const trays = this.trays
-      ? (await this.trays.listByGarden(gardenId)).filter((tray) => tray.areaId === areaId)
-      : [];
-    if (beds.length || trays.length) {
-      const what = beds.length ? (beds.length === 1 ? '1 bed' : `${beds.length} beds`) : 'trays';
-      throw domainError(
-        'CONFLICT',
-        `${area.name} still holds ${what}: move or delete ${beds.length ? 'them' : 'its trays'} first`,
-      );
-    }
-    await this.areas.delete(gardenId, areaId);
-  }
-
-  async listTrays(userId: string, gardenId: string): Promise<TrayDto[]> {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (!this.trays) return [];
-    return (await this.trays.listByGarden(gardenId)).map(toTrayDto);
-  }
-
-  async createTray(userId: string, gardenId: string, name: string): Promise<TrayDto> {
-    await this.requireBedEditor(userId, gardenId);
-    const trimmed = name.trim();
-    if (!trimmed || trimmed.length > 120)
-      throw domainError('VALIDATION_ERROR', 'Tray name is required');
-    if (!this.areas || !this.trays)
-      throw domainError('VALIDATION_ERROR', 'Trays are not available');
-    const greenhouse = await this.areas.ensure(gardenId, 'greenhouse');
-    return toTrayDto(await this.trays.open(gardenId, greenhouse.id, trimmed));
-  }
-
   private async requirePlantingEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw PLANTING_ERRORS.viewerPlantings();
-  }
-
-  private async requireBedEditor(userId: string, gardenId: string) {
-    const membership = await this.memberships.get(gardenId, userId);
-    if (!membership) throw PLANTING_ERRORS.gardenNotFound();
-    if (membership.role === 'viewer') throw PLANTING_ERRORS.viewerBeds();
+    gardenAccess(
+      await this.memberships.get(gardenId, userId),
+      'edit',
+      PLANTING_ERRORS.viewerPlantings,
+    );
   }
 
   private async requireBedInGarden(gardenId: string, bedId: string) {
@@ -658,7 +471,6 @@ export class PlantingService {
   }
 
   private async requireTray(gardenId: string, trayId: string) {
-    if (!this.trays) throw domainError('NOT_FOUND', 'Tray not found');
     const tray = await this.trays.getInGarden(gardenId, trayId);
     if (!tray) throw domainError('NOT_FOUND', 'Tray not found');
   }
@@ -670,31 +482,28 @@ export class PlantingService {
     trayId: string | null,
     plantingId: string | null,
   ) {
-    if (!this.areas) return;
     let area: AreaKind = 'vegetable';
     let occupants: { id: string; plantType: string }[] = [];
+    let station: BedStation | null = null;
     if (trayId) {
       area = 'greenhouse';
     } else if (bedId) {
       const bed = await this.beds.getInGarden(gardenId, bedId);
       if (!bed) throw PLANTING_ERRORS.bedNotFound();
-      area = areaKindFor(toStation(bed.station));
-      if (bed.areaId) {
-        const row = await this.areas.getById(bed.areaId);
-        if (row && isAreaKind(row.kind)) area = row.kind;
-      }
-      if (typeof this.plantings.occupants === 'function') {
-        occupants = (await this.plantings.occupants(bedId)).filter((row) => row.id !== plantingId);
-      }
+      station = toStation(bed.station);
+      // The bed's area decides what it takes; its station only says whether
+      // it is a tree bed (one tree) or a row.
+      const row = await this.areas.getById(bed.areaId);
+      area = row && isAreaKind(row.kind) ? row.kind : 'vegetable';
+      occupants = (await this.plantings.occupants(bedId)).filter((row) => row.id !== plantingId);
     }
     // With no bed yet, a planting must be one a vegetable garden takes.
-    const reason = placementRefusal(area, plant.plantType, occupants);
+    const reason = placementRefusal(area, plant.plantType, occupants, station);
     if (reason) throw domainError('VALIDATION_ERROR', reason);
   }
 
   private async harvestsByPlanting(gardenId: string) {
     const map = new Map<string, HarvestDto[]>();
-    if (typeof this.plantings.listHarvests !== 'function') return map;
     for (const row of await this.plantings.listHarvests(gardenId)) {
       const list = map.get(row.plantingId) ?? [];
       list.push({
@@ -706,46 +515,6 @@ export class PlantingService {
     }
     return map;
   }
-}
-
-function isAreaKind(kind: string): kind is AreaKind {
-  return (AREA_KINDS as readonly string[]).includes(kind);
-}
-
-function toStation(value: string | null | undefined): BedStation | null {
-  return value === 'tree' || value === 'berry' ? value : null;
-}
-
-function toAreaDto(row: { id: string; name: string; kind: string }): PropertyAreaDto {
-  return { id: row.id, name: row.name, kind: isAreaKind(row.kind) ? row.kind : 'vegetable' };
-}
-
-function toTrayDto(row: { id: string; areaId: string; name: string }): TrayDto {
-  return { id: row.id, areaId: row.areaId, name: row.name };
-}
-
-function toBedDto(row: {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  sun?: string | null;
-  site?: string | null;
-  station?: string | null;
-  mulch?: string | null;
-  areaId?: string | null;
-}): NamedBedDto {
-  return {
-    id: row.id,
-    name: row.name,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    sun: (row.sun as NamedBedDto['sun']) ?? null,
-    site: row.site === 'raised' ? 'raised' : 'in_ground',
-    station: toStation(row.station),
-    mulch: mulchOrNone(row.mulch),
-    areaId: row.areaId ?? null,
-  };
 }
 
 function toPlantingDto(row: {

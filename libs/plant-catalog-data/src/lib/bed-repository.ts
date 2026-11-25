@@ -47,7 +47,7 @@ export class BedRepository {
     widthInches: number;
     orientation?: number;
     sun?: string | null;
-    areaId?: string | null;
+    areaId: string;
     site?: string;
     station?: string | null;
     mulch?: string;
@@ -65,7 +65,7 @@ export class BedRepository {
         widthInches: input.widthInches,
         orientation: input.orientation ?? 0,
         sun: input.sun ?? null,
-        ...(input.areaId ? { areaId: input.areaId } : {}),
+        areaId: input.areaId,
         ...(input.site ? { site: input.site } : {}),
         ...(input.station ? { station: input.station } : {}),
         ...(input.mulch ? { mulch: input.mulch } : {}),

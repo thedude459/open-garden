@@ -31,6 +31,7 @@ const MERGE_FIELDS = [
   'family',
   'cropId',
   'frostTolerance',
+  'perennial',
 ] as const;
 
 export type MergeField = (typeof MERGE_FIELDS)[number];
@@ -57,6 +58,7 @@ export interface MergedPlant {
   family: string | null;
   cropId: string | null;
   frostTolerance: FrostTolerance | null;
+  perennial: boolean | null;
   provider: string;
   providerExternalId: string;
   contributingSources: string[];
@@ -165,6 +167,7 @@ export function mergeCatalogRecords(
       family: row.values.family ?? null,
       cropId: row.values.cropId ?? null,
       frostTolerance: row.values.frostTolerance ?? null,
+      perennial: row.values.perennial ?? null,
       provider: last?.sourceId ?? row.contributingSources[row.contributingSources.length - 1] ?? '',
       providerExternalId: last?.externalId ?? '',
       contributingSources: row.contributingSources,
@@ -198,6 +201,7 @@ function applyFields(row: Acc, plant: ProviderPlant, sourceId: string) {
     family: plant.family ?? null,
     cropId: plant.cropId ?? null,
     frostTolerance: plant.frostTolerance ?? null,
+    perennial: plant.perennial ?? null,
   };
   for (const field of MERGE_FIELDS) {
     const value = incoming[field];

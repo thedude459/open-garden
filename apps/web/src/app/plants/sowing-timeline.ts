@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -11,8 +10,9 @@ import type {
 } from '@open-garden/shared-types';
 import { formatMonthDay } from '@open-garden/web-ui';
 import { CalendarApiService } from '../gardens/calendar-api.service';
-import { GardensApiService, OnlineRequiredError } from '../gardens/gardens-api.service';
+import { GardensApiService } from '../gardens/gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
+import { errorMessage } from '../ui/error-message';
 
 const MONTHS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
@@ -203,7 +203,7 @@ export class SowingTimeline implements OnInit {
         await this.calendarApi.add(id, { plantId: this.plant().id });
         this.notices.success(`Added to the ${garden.name} calendar`);
       } catch (err) {
-        this.notices.error(messageFrom(err));
+        this.notices.error(errorMessage(err, 'Could not add to the plan'));
       }
     });
   }
@@ -217,13 +217,4 @@ function dayOfYear(d: Date): number {
         86_400_000,
     ),
   );
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
-  }
-  return 'Could not add to the plan';
 }

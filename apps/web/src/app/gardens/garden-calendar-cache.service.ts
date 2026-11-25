@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import type { CalendarDto } from '@open-garden/shared-types';
+import { deviceStore } from '../device-data';
 
 interface CalendarCacheDb extends DBSchema {
   calendars: {
@@ -11,17 +12,12 @@ interface CalendarCacheDb extends DBSchema {
 
 @Injectable({ providedIn: 'root' })
 export class GardenCalendarCacheService {
-  private dbPromise: Promise<IDBPDatabase<CalendarCacheDb>> | null = null;
+  private readonly store = deviceStore<CalendarCacheDb>('og-calendar', 1, (db) => {
+    db.createObjectStore('calendars', { keyPath: 'key' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<CalendarCacheDb>('og-calendar', 1, {
-        upgrade(db) {
-          db.createObjectStore('calendars', { keyPath: 'key' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   cacheKey(userId: string, gardenId: string): string {

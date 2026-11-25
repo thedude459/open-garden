@@ -20,7 +20,8 @@ import { PlantPicker } from '../plants/plant-picker';
 import { CalendarApiService } from './calendar-api.service';
 import { SeasonPicker } from './season-picker';
 import { PlantingsApiService } from './plantings-api.service';
-import { GardensApiService, OnlineRequiredError } from './gardens-api.service';
+import { GardensApiService } from './gardens-api.service';
+import { errorMessage } from '../ui/error-message';
 @Component({
   standalone: true,
   imports: [FormsModule, PlantPicker, RouterLink, SeasonPicker],
@@ -274,7 +275,7 @@ export class GardenCalendarPage implements OnInit {
       await this.plantingsApi.update(this.gardenId, planting.id, { plannedOn: on });
       await this.load();
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update calendar'));
     }
   }
 
@@ -334,7 +335,7 @@ export class GardenCalendarPage implements OnInit {
   }
 
   onSearchFailed(err: unknown) {
-    this.error.set(messageFrom(err));
+    this.error.set(errorMessage(err, 'Could not update calendar'));
   }
 
   /** Shows the next season, to plan it, or this one again. */
@@ -359,7 +360,7 @@ export class GardenCalendarPage implements OnInit {
       });
       this.calendar.set(calendar);
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update calendar'));
     }
   }
 
@@ -369,7 +370,7 @@ export class GardenCalendarPage implements OnInit {
       await this.api.remove(this.gardenId, plantId, this.season());
       await this.load();
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update calendar'));
     }
   }
 }
@@ -407,13 +408,4 @@ function nextStartKey(entry: CalendarEntryDto, today: Date): number {
 
 function mdKey(md: { month: number; day: number }): number {
   return md.month * 100 + md.day;
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof OnlineRequiredError) return err.message;
-  if (err instanceof HttpErrorResponse) {
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
-  }
-  return 'Could not update calendar';
 }

@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -21,6 +20,7 @@ import { PlantingEditor } from './planting-editor';
 import { PlantingsApiService } from './plantings-api.service';
 import { SeasonPicker } from './season-picker';
 import type { ClientPlanting, ClientPlantingList, QueueItem } from './plantings-offline.queue';
+import { errorMessage } from '../ui/error-message';
 
 @Component({
   standalone: true,
@@ -252,7 +252,7 @@ export class GardenPlantingsPage implements OnInit {
       this.list.set(list);
       this.failures.set(await this.api.syncFailures(this.gardenId));
     } catch (err) {
-      if (epoch === this.listEpoch) this.error.set(messageFrom(err));
+      if (epoch === this.listEpoch) this.error.set(errorMessage(err, 'Could not update plantings'));
     }
     if (!silent && epoch === this.listEpoch) this.loading.set(false);
   }
@@ -297,7 +297,7 @@ export class GardenPlantingsPage implements OnInit {
       this.list.set(created);
       this.failures.set(await this.api.syncFailures(this.gardenId));
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update plantings'));
     }
   }
 
@@ -309,7 +309,7 @@ export class GardenPlantingsPage implements OnInit {
       await this.api.update(this.gardenId, plantingId, { bedId, trayId: null });
       await this.load(true);
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update plantings'));
     }
   }
 
@@ -330,7 +330,7 @@ export class GardenPlantingsPage implements OnInit {
       });
       await this.load(true);
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update plantings'));
     }
   }
 
@@ -344,7 +344,7 @@ export class GardenPlantingsPage implements OnInit {
         this.replace(await this.api.logHarvest(this.gardenId, planting.id, body));
         this.notices.success(`Harvest of ${plantName(planting)} saved.`);
       } catch (err) {
-        this.error.set(messageFrom(err));
+        this.error.set(errorMessage(err, 'Could not update plantings'));
       }
     });
   }
@@ -355,7 +355,7 @@ export class GardenPlantingsPage implements OnInit {
       try {
         this.replace(await this.api.deleteHarvest(this.gardenId, planting.id, harvestedOn));
       } catch (err) {
-        this.error.set(messageFrom(err));
+        this.error.set(errorMessage(err, 'Could not update plantings'));
       }
     });
   }
@@ -386,7 +386,7 @@ export class GardenPlantingsPage implements OnInit {
         await this.load(true);
         this.notices.success(repeatMessage(plantName(planting), result));
       } catch (err) {
-        this.error.set(messageFrom(err));
+        this.error.set(errorMessage(err, 'Could not update plantings'));
       }
     });
   }
@@ -418,7 +418,7 @@ export class GardenPlantingsPage implements OnInit {
       }
       this.failures.set(await this.api.syncFailures(this.gardenId));
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update plantings'));
       // A focused date keeps the rejected value; blur so the reload restores the last save.
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       await this.load(true);
@@ -439,18 +439,9 @@ export class GardenPlantingsPage implements OnInit {
       await this.api.remove(this.gardenId, planting.id);
       await this.load(true);
     } catch (err) {
-      this.error.set(messageFrom(err));
+      this.error.set(errorMessage(err, 'Could not update plantings'));
     }
   }
-}
-
-function messageFrom(err: unknown): string {
-  if (err instanceof HttpErrorResponse) {
-    const msg = (err.error as { error?: { message?: string } } | null)?.error?.message;
-    if (msg) return msg;
-  }
-  if (err instanceof Error && err.message) return err.message;
-  return 'Could not update plantings';
 }
 
 /** What a succession series did, in one line for the notice. */

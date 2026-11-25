@@ -148,6 +148,20 @@
       "when": 1795389073711,
       "tag": "0020_retire_calendar_entries",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795475598312,
+      "tag": "0021_fruit_gardens",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795488407289,
+      "tag": "0022_beds_need_an_area",
+      "breakpoints": true
     }
   ]
 }

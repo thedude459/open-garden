@@ -28,6 +28,28 @@ describe('placement notes', () => {
     ]);
   });
 
+  it('goes by the bed’s area, not its station', () => {
+    const grape = {
+      id: 'p1',
+      plantId: 'grape',
+      commonName: 'Grape',
+      plantType: 'vine',
+      spacingInches: 96,
+      placement: { bedId: 'bed' },
+    };
+    // A row moved into a fruit garden keeps no station; its area decides.
+    const fits = placementNotes({
+      beds: [{ id: 'bed', station: null, areaKind: 'fruit' }],
+      plantings: [grape],
+    });
+    expect(fits.filter((f) => f.kind === 'area')).toEqual([]);
+    const refused = placementNotes({
+      beds: [{ id: 'bed', station: 'berry', areaKind: 'vegetable' }],
+      plantings: [grape],
+    });
+    expect(refused.map((f) => f.kind)).toContain('area');
+  });
+
   it('flags a planting its bed would no longer accept, without blocking', () => {
     const flags = placementNotes({
       beds: [{ id: 'veg', station: null }],

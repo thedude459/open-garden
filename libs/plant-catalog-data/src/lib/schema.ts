@@ -130,6 +130,8 @@ export const plants = pgTable(
     cropId: text('crop_id'),
     /** How much frost the crop survives: tender, half-hardy, or hardy. */
     frostTolerance: text('frost_tolerance'),
+    /** Lives for years, so a planting of it outlives a season by default. */
+    perennial: boolean('perennial').notNull().default(false),
     indoorFrostAnchor: text('indoor_frost_anchor'),
     indoorWeeksEarliest: integer('indoor_weeks_earliest'),
     indoorWeeksLatest: integer('indoor_weeks_latest'),
@@ -286,7 +288,10 @@ export const gardenBeds = pgTable(
     widthInches: integer('width_inches'),
     orientation: smallint('orientation').notNull().default(0),
     sun: text('sun'),
-    areaId: uuid('area_id').references(() => gardenAreas.id, { onDelete: 'cascade' }),
+    /** Every bed is in an area, which decides what it takes (migration 0022). */
+    areaId: uuid('area_id')
+      .notNull()
+      .references(() => gardenAreas.id, { onDelete: 'cascade' }),
     site: text('site').notNull().default('in_ground'),
     station: text('station'),
     mulch: text('mulch').notNull().default('none'),

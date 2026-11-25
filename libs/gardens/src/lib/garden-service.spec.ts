@@ -194,6 +194,7 @@ describe('GardenService', () => {
       latitude: null,
       longitude: null,
       placeId: null,
+      monthlyMeanC: null,
     });
     const loaded = await mem.service.get(mem.ownerId, bare.id);
     expect(loaded.place).toBeNull();

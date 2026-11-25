@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { PlantSummaryDto, PlantType } from '@open-garden/shared-types';
+import type { AreaKind, PlantSummaryDto, PlantType } from '@open-garden/shared-types';
 import { PLANT_TYPES } from '@open-garden/shared-types';
 import { PlantsApiService } from './plants-api.service';
 
@@ -76,6 +76,8 @@ export class PlantPicker implements OnInit {
   readonly live = input(false);
   readonly requireQuery = input(false);
   readonly zone = input<number | undefined>(undefined);
+  /** Only plants this area type takes, so a page is not filled with ones it refuses. */
+  readonly area = input<AreaKind | undefined>(undefined);
   readonly beforeSearch = input<() => boolean>(() => true);
 
   readonly results = output<PlantSummaryDto[]>();
@@ -134,6 +136,7 @@ export class PlantPicker implements OnInit {
         q: this.q.trim() || undefined,
         zone: this.filters() ? this.zoneFilter : undefined,
         plantType: this.filters() ? this.typeFilter : undefined,
+        area: this.area(),
         page: 1,
         pageSize: 20,
       });
