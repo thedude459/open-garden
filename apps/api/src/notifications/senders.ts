@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import webpush from 'web-push';
+import * as webpush from 'web-push';
 import type {
   EmailSender,
   PushSender,
@@ -7,8 +7,15 @@ import type {
 } from '@open-garden/reminder-delivery';
 import type { NotificationConfig } from './notification-config';
 
-/** Web push through the browser's push service, signed with the VAPID keys. */
-export function webPushSender(push: NonNullable<NotificationConfig['push']>): PushSender {
+/**
+ * Web push through the browser's push service, signed with the VAPID keys.
+ * `send` is web-push's own; a test passes a fake, since an ES module's
+ * exports cannot be spied on.
+ */
+export function webPushSender(
+  push: NonNullable<NotificationConfig['push']>,
+  send: typeof webpush.sendNotification = webpush.sendNotification,
+): PushSender {
   const details = {
     subject: push.subject,
     publicKey: push.publicKey,
@@ -17,7 +24,7 @@ export function webPushSender(push: NonNullable<NotificationConfig['push']>): Pu
   return {
     async send(subscription: PushSubscriptionRecord, payload: string) {
       try {
-        await webpush.sendNotification(
+        await send(
           {
             endpoint: subscription.endpoint,
             keys: { p256dh: subscription.p256dh, auth: subscription.auth },

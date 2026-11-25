@@ -1,5 +1,5 @@
 import { createECDH, randomBytes } from 'node:crypto';
-import webpush from 'web-push';
+import * as webpush from 'web-push';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { webPushSender } from './senders';
 
@@ -12,13 +12,17 @@ const subscription = {
   auth: randomBytes(16).toString('base64url'),
 };
 const vapid = webpush.generateVAPIDKeys();
-const sender = webPushSender({ ...vapid, subject: 'mailto:test@example.com' });
+const send = vi.fn<typeof webpush.sendNotification>();
+const sender = webPushSender({ ...vapid, subject: 'mailto:test@example.com' }, send);
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  send.mockReset();
+});
 
 describe('webPushSender', () => {
   it('builds an encrypted, VAPID-signed request for the device', async () => {
-    const send = vi.spyOn(webpush, 'sendNotification').mockResolvedValue({
+    send.mockResolvedValue({
       statusCode: 201,
       body: '',
       headers: {},
@@ -39,7 +43,6 @@ describe('webPushSender', () => {
   });
 
   it('reports a subscription the push service has dropped, and throws on other errors', async () => {
-    const send = vi.spyOn(webpush, 'sendNotification');
     for (const statusCode of [410, 404]) {
       send.mockRejectedValueOnce(Object.assign(new Error('gone'), { statusCode }));
       expect(await sender.send(subscription, '{}')).toBe('gone');
