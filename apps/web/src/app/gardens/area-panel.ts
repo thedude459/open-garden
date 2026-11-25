@@ -34,8 +34,7 @@ export interface AreaBed {
         <ul class="area-beds">
           @for (bed of beds(); track bed.id) {
             <li>
-              <strong>{{ bed.name }}</strong
-              >: {{ bed.plants.join(', ') || 'nothing planted' }}
+              <strong>{{ bed.name }}</strong>: {{ bed.plants.join(', ') || 'nothing planted' }}
               @if (bed.soilTest; as t) {
                 <span class="muted"> · {{ ownTest(t) }}</span>
               }
