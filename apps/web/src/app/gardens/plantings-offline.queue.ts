@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { DBSchema } from 'idb';
 import type {
   BedCreateDto,
   NamedBedDto,
@@ -8,6 +8,7 @@ import type {
   PlantingListDto,
   PlantingPatchDto,
 } from '@open-garden/shared-types';
+import { deviceStore } from '../device-data';
 
 export type QueueOp = 'create' | 'update' | 'delete';
 
@@ -47,17 +48,12 @@ export type ClientPlantingList = Omit<PlantingListDto, 'plantings' | 'beds'> & {
 
 @Injectable({ providedIn: 'root' })
 export class PlantingsOfflineQueue {
-  private dbPromise: Promise<IDBPDatabase<QueueDb>> | null = null;
+  private readonly store = deviceStore<QueueDb>('og-plantings-queue', 1, (db) => {
+    db.createObjectStore('pending', { keyPath: 'key' });
+  });
 
   private db() {
-    if (!this.dbPromise) {
-      this.dbPromise = openDB<QueueDb>('og-plantings-queue', 1, {
-        upgrade(db) {
-          db.createObjectStore('pending', { keyPath: 'key' });
-        },
-      });
-    }
-    return this.dbPromise;
+    return this.store.db();
   }
 
   entityKey(kind: 'planting' | 'bed', id: string) {
