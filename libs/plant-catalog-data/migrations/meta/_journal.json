@@ -162,6 +162,13 @@
       "when": 1795488407289,
       "tag": "0022_beds_need_an_area",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795570322845,
+      "tag": "0023_lookup_indexes",
+      "breakpoints": true
     }
   ]
 }

@@ -38,4 +38,19 @@ describe.skipIf(!liveEnabled)('error answers', () => {
     expect(res.status).toBe(404);
     expect(((await res.json()) as ErrorBody).error.code).toBe('NOT_FOUND');
   });
+
+  test('a favorite with a malformed client id is refused before it reaches the database', async () => {
+    const client = new LiveClient();
+    await client.register(uniqueEmail('bad-favorite'));
+    const res = await client.put('/api/favorites/5c7d758d-75f2-489c-8e5b-780333c97c8f', {
+      data: { clientMutationId: { nested: 'object' } },
+    });
+    expect(res.status()).toBe(400);
+    expect(((await res.json()) as ErrorBody).error.code).toBe('VALIDATION_ERROR');
+  });
+
+  test('answers without naming its framework', async () => {
+    const res = await fetch(`${API_ORIGIN}/api/no-such-route`);
+    expect(res.headers.get('x-powered-by')).toBeNull();
+  });
 });

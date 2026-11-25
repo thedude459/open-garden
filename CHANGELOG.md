@@ -46,6 +46,13 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- Operators: the API reports unhealthy when it cannot reach the database,
+  stops a query after 30 seconds, no longer sends `X-Powered-By`, and spaces
+  address lookups a second apart with a one-hour cache, as Nominatim asks. The
+  compose files pin Postgres by digest.
+- A new password longer than the 72 bytes bcrypt reads is refused instead of
+  being cut short silently, and signing in with an unknown email takes as long
+  as with a known one, so its timing does not reveal who has an account.
 - The API log shows each request with an id that errors repeat, and a
   `security.` line for sign-ins, lockouts, password changes and resets, account
   deletions, and catalog runs. `LOG_LEVEL` sets how much is logged.
@@ -75,6 +82,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Creating or renaming a bed with a bad size now says what is wrong, not
+  "Bed name is required".
 - On a shared device, the next member no longer sees the last one's
   properties. Signing out deletes what the app saved on the device for
   offline use, and so does signing in as a different member after a session

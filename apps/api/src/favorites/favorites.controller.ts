@@ -17,6 +17,7 @@ import {
   PlantRepository,
   type AppDatabase,
 } from '@open-garden/plant-catalog-data';
+import { domainError, favoriteMutationSchema } from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { idOf } from '../common/ids';
@@ -50,9 +51,11 @@ export class FavoritesController {
   async add(
     @CurrentUser() user: AuthUser,
     @Param('plantId', idOf('Plant')) plantId: string,
-    @Body() body: { clientMutationId?: string },
+    @Body() body: unknown,
   ) {
-    return this.favorites.add(user.id, plantId, body?.clientMutationId);
+    const parsed = favoriteMutationSchema.safeParse(body ?? {});
+    if (!parsed.success) throw domainError('VALIDATION_ERROR', 'Invalid favorite request');
+    return this.favorites.add(user.id, plantId, parsed.data.clientMutationId);
   }
 
   @Delete(':plantId')

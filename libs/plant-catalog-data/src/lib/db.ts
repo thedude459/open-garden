@@ -14,6 +14,12 @@ export interface CreateDbOptions {
   onPoolError?: (error: Error) => void;
   /** Shown in pg_stat_activity, so operators and tests can find these connections. */
   applicationName?: string;
+  /**
+   * Cancels a statement that runs longer than this many milliseconds, so a
+   * stuck query cannot hold a connection forever. Unset for migrations and
+   * imports, which may run long.
+   */
+  statementTimeoutMs?: number;
 }
 
 const logPoolError = (error: Error): void => {
@@ -30,7 +36,11 @@ export function createDb(
   connectionString: string,
   options: CreateDbOptions = {},
 ): { db: AppDatabase; pool: Pool } {
-  const pool = new Pool({ connectionString, application_name: options.applicationName });
+  const pool = new Pool({
+    connectionString,
+    application_name: options.applicationName,
+    statement_timeout: options.statementTimeoutMs,
+  });
   pool.on('error', options.onPoolError ?? logPoolError);
   const db = drizzle(pool, { schema });
   return { db, pool };
