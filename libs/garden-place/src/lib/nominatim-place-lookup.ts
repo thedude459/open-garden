@@ -25,10 +25,65 @@ interface NominatimResult {
   address?: NominatimAddress;
 }
 
+/** Nominatim's usage policy: at most one request a second, and cache results. */
+const MIN_GAP_MS = 1000;
+const CACHE_MS = 60 * 60 * 1000;
+const CACHE_ENTRIES = 200;
+
+export interface LookupClock {
+  now(): number;
+  sleep(ms: number): Promise<void>;
+}
+
+const realClock: LookupClock = {
+  now: () => Date.now(),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+};
+
 export class NominatimPlaceLookup implements PlaceLookup {
-  constructor(private readonly fetchFn: typeof fetch = fetch) {}
+  /** Answers by query, newest last, so the oldest is dropped first. */
+  private readonly cache = new Map<string, { at: number; answer: PlaceLookupDto }>();
+  private queue: Promise<void> = Promise.resolve();
+  private lastRequestAt = -Infinity;
+
+  constructor(
+    private readonly fetchFn: typeof fetch = fetch,
+    private readonly clock: LookupClock = realClock,
+  ) {}
 
   async lookup(query: string): Promise<PlaceLookupDto> {
+    const key = query.trim().toLowerCase();
+    const cached = this.cache.get(key);
+    if (cached && this.clock.now() - cached.at < CACHE_MS) return cached.answer;
+    const answer = await this.inTurn(() => this.search(query));
+    this.cache.delete(key);
+    this.cache.set(key, { at: this.clock.now(), answer });
+    if (this.cache.size > CACHE_ENTRIES) {
+      this.cache.delete(this.cache.keys().next().value as string);
+    }
+    return answer;
+  }
+
+  /**
+   * Runs one request at a time, at least a second after the last began.
+   * ponytail: an unbounded queue; a burst of N lookups waits N seconds. Fine
+   * for a household typing an address; cap it if many members share a server.
+   */
+  private inTurn<T>(work: () => Promise<T>): Promise<T> {
+    const turn = this.queue.then(async () => {
+      const wait = this.lastRequestAt + MIN_GAP_MS - this.clock.now();
+      if (wait > 0) await this.clock.sleep(wait);
+      this.lastRequestAt = this.clock.now();
+      return work();
+    });
+    this.queue = turn.then(
+      () => undefined,
+      () => undefined,
+    );
+    return turn;
+  }
+
+  private async search(query: string): Promise<PlaceLookupDto> {
     const url = new URL('https://nominatim.openstreetmap.org/search');
     url.searchParams.set('format', 'jsonv2');
     url.searchParams.set('addressdetails', '1');

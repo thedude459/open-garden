@@ -35,6 +35,8 @@ export class ClosePoolOnShutdown implements OnApplicationShutdown {
         const logger = new Logger('DatabasePool');
         const { db, pool } = createDb(url, {
           applicationName: 'open-garden-api',
+          // A request's query should take milliseconds; 30 s means something is stuck.
+          statementTimeoutMs: 30_000,
           onPoolError: (error) =>
             logger.error(`Idle client error, client discarded: ${error.message}`),
         });

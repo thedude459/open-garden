@@ -1,5 +1,6 @@
 /** What went wrong, in terms the API maps to an HTTP status in one place. */
-export type DomainErrorCode = 'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT' | 'FORBIDDEN';
+export type DomainErrorCode =
+  'VALIDATION_ERROR' | 'NOT_FOUND' | 'CONFLICT' | 'FORBIDDEN' | 'SERVICE_UNAVAILABLE';
 
 export type DomainError = Error & { code: DomainErrorCode; httpStatus?: number };
 

@@ -27,3 +27,10 @@ test('the default handler logs the error', () => {
   expect(() => pool!.emit('error', new Error('server closed the connection'))).not.toThrow();
   expect(log).toHaveBeenCalledWith(expect.stringContaining('server closed the connection'));
 });
+
+test('passes a statement timeout to the pool when asked', () => {
+  ({ pool } = createDb('postgresql://nobody@127.0.0.1:1/none', { statementTimeoutMs: 30_000 }));
+  expect(
+    (pool as unknown as { options: { statement_timeout?: number } }).options.statement_timeout,
+  ).toBe(30_000);
+});

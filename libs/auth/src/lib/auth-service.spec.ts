@@ -320,4 +320,30 @@ describe('AuthService', () => {
       expect(set).not.toHaveBeenCalled();
     });
   });
+
+  it('checks a password even when no account has the email, so timing does not tell', async () => {
+    const compare = vi.spyOn(bcrypt, 'compare');
+    const limit = vi.fn().mockResolvedValue([]);
+    const db = {
+      select: vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({ where: vi.fn().mockReturnValue({ limit }) }),
+      }),
+    };
+    const svc = new AuthService(db as never);
+    expect(await svc.login('nobody@example.com', 'password123')).toBeNull();
+    expect(compare).toHaveBeenCalledTimes(1);
+    expect(String(compare.mock.calls[0]?.[1])).toMatch(/^\$2[aby]\$10\$/);
+  });
+
+  it('hashes new passwords at cost 10', async () => {
+    const hash = vi.spyOn(bcrypt, 'hash');
+    const returning = vi
+      .fn()
+      .mockResolvedValue([{ id: 'u1', email: 'a@example.com', displayName: null, role: 'user' }]);
+    const db = {
+      insert: vi.fn().mockReturnValue({ values: vi.fn().mockReturnValue({ returning }) }),
+    };
+    await new AuthService(db as never).register('a@example.com', 'password123');
+    expect(hash).toHaveBeenCalledWith('password123', 10);
+  });
 });

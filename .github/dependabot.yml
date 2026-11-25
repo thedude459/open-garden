@@ -104,9 +104,12 @@ updates:
         update-types:
           - version-update:semver-major
 
-  # postgres image in docker-compose.yml.
+  # The postgres image, in docker-compose.yml and the compose file operators
+  # download (deploy/compose.yaml).
   - package-ecosystem: docker-compose
-    directory: /
+    directories:
+      - /
+      - /deploy
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
