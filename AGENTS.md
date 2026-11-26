@@ -86,6 +86,9 @@ across years.
 - Companion suggestions (helps, hinders, pollinates) are in scope when a feature
   asks for them. They are advice. They MUST NOT block save unless that feature
   says so. Spacing remains the hard gate.
+- Advice is organic first: where it names a product or input (pest control,
+  amendments, feeding), the options allowed in organic growing come first
+  and are shown by default; conventional ones only on request (ADR 0044).
 - A property is the garden record. A vegetable garden, a fruit garden, and a
   greenhouse are typed areas on that same record, not a second product or a
   second database. A vegetable garden holds herbaceous plants, perennials
