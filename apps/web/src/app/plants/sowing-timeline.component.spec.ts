@@ -7,6 +7,7 @@ import { CalendarApiService } from '../gardens/calendar-api.service';
 import { GardensApiService } from '../gardens/gardens-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { SowingTimeline } from './sowing-timeline';
+import { settled } from '../settled';
 
 const tomato = {
   id: 't1',
@@ -69,7 +70,7 @@ async function render(gardens: GardenSummaryDto[]) {
   });
   const fixture = TestBed.createComponent(Host);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   return { fixture, el: fixture.nativeElement as HTMLElement, add, success };
 }
 
@@ -93,7 +94,7 @@ describe('SowingTimeline', () => {
     const select = el.querySelector('select')!;
     select.value = select.options[1]!.value;
     select.dispatchEvent(new Event('change'));
-    await fixture.whenStable();
+    await settled(fixture);
     expect(el.textContent).toContain("Set this property's frost dates");
   });
 

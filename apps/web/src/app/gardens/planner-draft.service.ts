@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { evaluateLayout } from '@open-garden/garden-layout/evaluate';
 import type { GardenLayoutDto, LayoutFlagDto, LayoutPutDto } from '@open-garden/shared-types';
 import {
@@ -26,7 +26,6 @@ const UNDO_LIMIT = 50;
 export class PlannerDraftService {
   private readonly api = inject(LayoutApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
-  private readonly zone = inject(NgZone);
 
   constructor() {
     inject(OpenPlanner).service.set(this);
@@ -262,10 +261,8 @@ export class PlannerDraftService {
   private schedule() {
     this.cancelTimer();
     this.status.set('pending');
-    // Outside Angular's zone: a waiting autosave is not unfinished work.
-    this.timer = this.zone.runOutsideAngular(() =>
-      setTimeout(() => this.zone.run(() => void this.flush()), this.autosaveDelayMs),
-    );
+    // A plain timer is not a pending task, so a waiting autosave is not unfinished work.
+    this.timer = setTimeout(() => void this.flush(), this.autosaveDelayMs);
   }
 
   private cancelTimer() {

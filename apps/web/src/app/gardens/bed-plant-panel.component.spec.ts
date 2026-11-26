@@ -11,6 +11,7 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { BedPlantPanel } from './bed-plant-panel';
+import { settled } from '../settled';
 
 const plant = (
   id: string,
@@ -60,14 +61,14 @@ async function render(opts: {
   const armed: string[] = [];
   fixture.componentInstance.armDown.subscribe(({ plant }) => armed.push(plant.id));
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const place = (name: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="Place ${name}"]`);
   const search = async () => {
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
     await vi.waitFor(() => expect(plants.list).toHaveBeenCalled());
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, place, search, armed, said, favorites };
 }

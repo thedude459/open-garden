@@ -5,6 +5,7 @@ import { PlantingEditor } from './planting-editor';
 import { localIso } from '../today/today-groups';
 import { planting } from './planting.testing';
 import type { ClientBed, ClientPlanting } from './plantings-offline.queue';
+import { settled } from '../settled';
 
 const beds = [{ id: 'b1', name: 'North' }] as ClientBed[];
 
@@ -17,7 +18,7 @@ async function render(p: ClientPlanting) {
   fixture.componentInstance.save.subscribe((patch) => saved.push(patch));
   fixture.componentInstance.remove.subscribe(() => removed.push(true));
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const field = <T extends HTMLElement>(name: string) => el.querySelector<T>(`[name="${name}"]`)!;
   const button = (name: string) =>
@@ -26,7 +27,7 @@ async function render(p: ClientPlanting) {
     const input = field<HTMLInputElement>(name);
     input.value = value;
     input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input'));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, field, button, type, saved, removed };
 }
@@ -69,7 +70,7 @@ describe('PlantingEditor', () => {
     view.field<HTMLInputElement>('planted-p1').value = '2027-09-09';
     view.button('Save planting')!.click();
     view.fixture.componentRef.setInput('planting', planting());
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.field<HTMLInputElement>('planted-p1').value).toBe('2027-05-01');
   });
 
@@ -80,19 +81,19 @@ describe('PlantingEditor', () => {
     view.button('Save planting')!.click();
     planted.value = '2027-07-01';
     view.fixture.componentRef.setInput('planting', planting({ plantedOn: '2027-06-01' }));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(planted.value).toBe('2027-07-01');
   });
 
   it('removes only after confirming', async () => {
     const view = await render(planting());
     view.el.querySelector<HTMLButtonElement>('[aria-label="Remove Tomato"]')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Cancel')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.button('Confirm remove')).toBeUndefined();
     view.el.querySelector<HTMLButtonElement>('[aria-label="Remove Tomato"]')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Confirm remove')!.click();
     expect(view.removed).toHaveLength(1);
   });
@@ -100,7 +101,7 @@ describe('PlantingEditor', () => {
   it('disables Save while a save is running', async () => {
     const view = await render(planting());
     view.fixture.componentRef.setInput('saving', true);
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.button('Save planting')!.disabled).toBe(true);
   });
 
@@ -110,7 +111,7 @@ describe('PlantingEditor', () => {
       const repeats: { everyWeeks: number; until: string }[] = [];
       view.fixture.componentInstance.repeat.subscribe((r) => repeats.push(r));
       view.button('Repeat sowing')!.click();
-      await view.fixture.whenStable();
+      await settled(view.fixture);
       await view.type('everyWeeks', '3');
       await view.type('repeatUntil', '2027-07-01');
       view.button('Add sowings')!.click();
@@ -122,7 +123,7 @@ describe('PlantingEditor', () => {
       const failures: string[] = [];
       view.fixture.componentInstance.failed.subscribe((m) => failures.push(m));
       view.button('Repeat sowing')!.click();
-      await view.fixture.whenStable();
+      await settled(view.fixture);
       view.button('Add sowings')!.click();
       expect(failures).toEqual(['Repeat every 1 to 12 weeks, until a date']);
     });

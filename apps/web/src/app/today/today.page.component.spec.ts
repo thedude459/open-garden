@@ -10,6 +10,7 @@ import { GardensApiService } from '../gardens/gardens-api.service';
 import { RemindersApiService } from '../gardens/reminders-api.service';
 import { NotificationsApiService } from './notifications-api.service';
 import { TodayPage } from './today.page';
+import { settled } from '../settled';
 
 const alert = (over: Partial<NonNullable<TodayDto['alerts']>[number]> = {}) => ({
   gardenId: 'g1',
@@ -43,7 +44,7 @@ async function render(today: TodayDto, units: 'metric' | 'imperial' = 'metric') 
   });
   const fixture = TestBed.createComponent(TodayPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   return { el, text: () => el.textContent.replace(/\s+/g, ' ') };
 }

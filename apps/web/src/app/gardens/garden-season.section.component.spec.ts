@@ -5,6 +5,7 @@ import { NoticeService } from '../ui/notice.service';
 import { CalendarApiService } from './calendar-api.service';
 import { GardenSeasonSection } from './garden-season.section';
 import { GardensApiService } from './gardens-api.service';
+import { settled } from '../settled';
 
 const season = (over: Partial<SeasonDto> = {}): SeasonDto => ({
   openYear: 2027,
@@ -31,7 +32,7 @@ async function render(api: Partial<GardensApiService>, canEdit = true) {
   fixture.componentRef.setInput('gardenId', 'g1');
   fixture.componentRef.setInput('canEdit', canEdit);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const button = (name: string) =>
     [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === name);
@@ -64,13 +65,13 @@ describe('GardenSeasonSection', () => {
     expect(view.el.querySelector('h3')!.textContent).toBe('Season 2027');
 
     view.button('Close season')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.el.querySelector('h3')!.textContent).toBe('Season 2028');
     expect(view.el.textContent.replace(/\s+/g, ' ')).toContain('Basil · North');
     expect(view.notices.said).toContain('Season closed');
 
     view.button('Plant again')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.calendar.add).toHaveBeenCalledWith('g1', { plantId: 'basil' });
   });
 
@@ -102,7 +103,7 @@ describe('GardenSeasonSection', () => {
 
     section.pairReason = ' Shades our basil ';
     await section.addPair();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(api.addCompanion).toHaveBeenCalledWith('g1', {
       plantId: 'tomato',
       otherPlantId: 'basil',
@@ -130,7 +131,7 @@ describe('GardenSeasonSection', () => {
       closeSeason: vi.fn().mockRejectedValue(new Error('no')),
     });
     view.button('Close season')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.notices.said).toContain('Could not close the season');
     expect(view.el.querySelector('h3')!.textContent).toBe('Season 2027');
   });

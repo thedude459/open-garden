@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { LoginPage } from './login.page';
+import { settled } from '../settled';
 
 async function render(url: string) {
   TestBed.configureTestingModule({
@@ -20,7 +21,7 @@ async function render(url: string) {
   await router.navigateByUrl(url);
   const fixture = TestBed.createComponent(LoginPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   return { fixture, router, http: TestBed.inject(HttpTestingController) };
 }
 
@@ -34,11 +35,11 @@ async function signIn(view: Awaited<ReturnType<typeof render>>) {
   type('email', 'gardener@example.com');
   type('password', 'password123');
   el.querySelector('form')!.dispatchEvent(new Event('submit'));
-  await view.fixture.whenStable();
+  await settled(view.fixture);
   view.http
     .expectOne('/api/auth/login')
     .flush({ user: { id: 'u1', email: 'gardener@example.com', role: 'member' } });
-  await view.fixture.whenStable();
+  await settled(view.fixture);
 }
 
 describe('LoginPage', () => {

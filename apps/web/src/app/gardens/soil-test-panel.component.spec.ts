@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { SoilTestCreateDto, SoilTestDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import { checkTest, SoilTestPanel } from './soil-test-panel';
+import { settled } from '../settled';
 
 const soilTest = (over: Partial<SoilTestDto> = {}): SoilTestDto => ({
   id: 't1',
@@ -41,7 +42,7 @@ async function render(
     return true;
   });
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const button = (text: string) =>
     [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === text);
@@ -53,7 +54,7 @@ async function render(
       field.value = value;
     }
     field.dispatchEvent(new Event(field instanceof HTMLSelectElement ? 'change' : 'input'));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, button, type, saved, removed };
 }
@@ -87,13 +88,13 @@ describe('SoilTestPanel', () => {
   it('records a test and closes the form once saved', async () => {
     const view = await render(null);
     view.button('Record a soil test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     await view.type('testedOn', '2026-03-15');
     await view.type('lab', '  County lab ');
     await view.type('ph', '6.4');
     await view.type('nitrogen', 'Low');
     view.button('Save test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.saved).toEqual([
       {
         testedOn: '2026-03-15',
@@ -112,16 +113,16 @@ describe('SoilTestPanel', () => {
   it('keeps the form open with what was typed when the save fails, and refuses an empty test', async () => {
     const view = await render(null, true, false);
     view.button('Record a soil test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Save test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.el.querySelector('[role="alert"]')?.textContent).toContain(
       'Enter at least one result',
     );
     expect(view.saved).toEqual([]);
     await view.type('ph', '6.4');
     view.button('Save test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.saved).toHaveLength(1);
     expect(view.button('Save test')).toBeDefined();
   });
@@ -129,9 +130,9 @@ describe('SoilTestPanel', () => {
   it('deletes the latest test after a confirm', async () => {
     const view = await render(soilTest());
     view.button('Delete this test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Confirm delete test')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.removed).toEqual(['t1']);
     expect(view.button('Delete this test')).toBeDefined();
   });

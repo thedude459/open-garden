@@ -7,6 +7,7 @@ import { PlantsApiService } from '../plants/plants-api.service';
 import { GardenTransplantsPage } from './garden-transplants.page';
 import { GardensApiService } from './gardens-api.service';
 import { LayoutApiService } from './layout-api.service';
+import { settled } from '../settled';
 
 const list: TransplantListDto = {
   gardenId: 'g1',
@@ -30,7 +31,7 @@ async function render(getTransplants: () => Promise<TransplantListDto | null>) {
   });
   const fixture = TestBed.createComponent(GardenTransplantsPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const text = () => el.textContent.replace(/\s+/g, ' ');
   return { fixture, el, text, transplants };
@@ -49,7 +50,7 @@ describe('GardenTransplantsPage', () => {
     expect(view.text()).not.toContain('Garden unavailable or not found');
     window.dispatchEvent(new Event('online'));
     await vi.waitFor(() => expect(view.transplants).toHaveBeenCalledTimes(2));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.text()).not.toContain('Could not load transplants');
     expect(view.el.querySelector('input[name="transplantSearch"]')).not.toBeNull();
   });
@@ -70,7 +71,7 @@ describe('GardenTransplantsPage', () => {
       .find((b) => b.textContent.includes('Try again'))!
       .click();
     await vi.waitFor(() => expect(view.transplants).toHaveBeenCalledTimes(2));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.text()).not.toContain('Could not load transplants');
   });
 

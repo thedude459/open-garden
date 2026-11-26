@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AuthApiService } from '../auth/auth-api.service';
 import { GardenDangerSection } from './garden-danger.section';
 import { GardensApiService } from './gardens-api.service';
+import { settled } from '../settled';
 
 async function render(myRole: GardenRole, api: Partial<GardensApiService>) {
   const router = { navigateByUrl: vi.fn().mockResolvedValue(true) };
@@ -18,7 +19,7 @@ async function render(myRole: GardenRole, api: Partial<GardensApiService>) {
   const fixture = TestBed.createComponent(GardenDangerSection);
   fixture.componentRef.setInput('garden', { id: 'g1', myRole });
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const button = (name: string) =>
     [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === name);
@@ -33,16 +34,16 @@ describe('GardenDangerSection', () => {
     expect(view.button('Confirm delete')).toBeUndefined();
 
     view.button('Delete garden')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.el.textContent).toContain('This cannot be undone.');
     view.button('Cancel')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(api.remove).not.toHaveBeenCalled();
 
     view.button('Delete garden')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Confirm delete')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(api.remove).toHaveBeenCalledWith('g1');
     expect(view.router.navigateByUrl).toHaveBeenCalledWith('/gardens');
   });
@@ -52,7 +53,7 @@ describe('GardenDangerSection', () => {
     const view = await render('viewer', api);
     expect(view.button('Delete garden')).toBeUndefined();
     view.button('Leave garden')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(api.removeMember).toHaveBeenCalledWith('g1', 'me');
     expect(view.router.navigateByUrl).toHaveBeenCalledWith('/gardens');
   });

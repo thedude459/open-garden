@@ -9,6 +9,7 @@ import { withCompanionDefaults } from './cached-detail';
 import { PlantsApiService } from './plants-api.service';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
+import { settled } from '../settled';
 
 const companion = (over: Partial<CatalogCompanionDto>): CatalogCompanionDto => ({
   cropId: 'basil',
@@ -64,7 +65,7 @@ async function render(plant: PlantDetailDto | null) {
   });
   const fixture = TestBed.createComponent(PlantDetailPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   return fixture.nativeElement as HTMLElement;
 }
 
