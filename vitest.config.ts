@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // Live tests make dozens of requests, sign-ups included (bcrypt on the
+    // API's one thread), against one API shared by every file at once: 1-4 s
+    // each on a quiet run, past the 5 s default when it starts cold (#270).
+    testTimeout: process.env['E2E_LIVE'] === '1' ? 20_000 : 5_000,
     include: [
       'libs/**/*.spec.ts',
       'apps/api/**/*.spec.ts',
