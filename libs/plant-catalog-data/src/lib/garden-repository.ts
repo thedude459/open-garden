@@ -24,6 +24,7 @@ export interface GardenInsert {
   latitude: number | null;
   longitude: number | null;
   placeId: string | null;
+  countryCode?: string | null;
 }
 
 export interface GardenUpdate {
@@ -47,6 +48,7 @@ export interface GardenUpdate {
   latitude?: number | null;
   longitude?: number | null;
   placeId?: string | null;
+  countryCode?: string | null;
 }
 
 export class GardenRepository {
