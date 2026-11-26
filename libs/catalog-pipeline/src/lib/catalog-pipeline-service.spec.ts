@@ -127,6 +127,42 @@ describe('CatalogPipelineService', () => {
     expect(mem.companions).toHaveLength(2);
   });
 
+  it('imports a source’s pests, and a change to pests alone is a change', async () => {
+    const mem = new MemoryPipeline();
+    const none = { cultural: [], physical: [], biological: [], organic: [], conventional: [] };
+    const pest = {
+      id: 'aphids',
+      name: 'Aphids',
+      aliases: [],
+      scientificName: null,
+      kind: 'insect' as const,
+      crops: ['lettuce'],
+      signs: 'Curled leaves.',
+      scoutStages: ['seedling' as const],
+      controls: none,
+      occursIn: null,
+      regions: [],
+    };
+    const pests = [pest];
+    const provider = Object.assign(
+      new MemoryProvider('a', [
+        samplePlant({ externalId: 'p', commonName: 'Pest', species: 'Pest species' }),
+      ]),
+      { pests: async () => pests },
+    );
+    const svc = mem.service([provider]);
+    await svc.runAndWait();
+    expect(mem.pests).toEqual([pest]);
+    expect((await svc.runAndWait()).plantsUpserted).toBe(0);
+    expect(mem.pests).toEqual([pest]);
+    pests.push({ ...pest, id: 'thrips' });
+    expect((await svc.runAndWait()).plantsUpserted).toBe(1);
+    expect(mem.pests).toHaveLength(2);
+    expect(hashCatalog([{ varietyKey: 'a' }], [], [pest])).not.toBe(
+      hashCatalog([{ varietyKey: 'a' }]),
+    );
+  });
+
   it('hashes a catalog the same way whatever order the plants arrive in', () => {
     const a = { varietyKey: 'a' };
     const b = { varietyKey: 'b' };

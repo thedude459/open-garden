@@ -27,6 +27,12 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **Pests and diseases on plant pages,** from plant catalog v0.3.2: 26
+  common pests with the signs to look for, the crop stages to check, and the
+  steps that need no product, then when to look, when to act, and organic
+  products from guidance for your property's country. Conventional products
+  show only when you ask. Guidance from elsewhere is labelled; a pest known
+  only in other countries is left out.
 - **17 more fruits and nuts** from plant catalog v0.3.1 for fruit gardens:
   apricot, plum, nectarine, sour cherry, almond, Asian pear, pawpaw, and
   American persimmon trees; fig, hazelnut, red currant, gooseberry,
@@ -46,6 +52,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- A property now keeps the country from its address, so advice can follow
+  it. Save an existing property's address again to set it.
 - The first page downloads about 21 KB less (19%): the planner's code now
   loads when a plan is opened, and the unused zone.js library is gone.
 - Operators: the API reports unhealthy when it cannot reach the database,
@@ -112,6 +120,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [ADR 0044](docs/adr/0044-organic-first-advice.md): advice is organic
+  first. [ADR 0045](docs/adr/0045-pest-advice.md): pest advice by the
+  member's country.
 - [Deployment](docs/deploy.md#logs): reading the API log, and `LOG_LEVEL`.
 - [ADR 0043](docs/adr/0043-atomic-writes.md): writes that span rows commit
   together.

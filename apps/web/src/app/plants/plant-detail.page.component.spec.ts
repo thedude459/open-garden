@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import type { CatalogCompanionDto, PlantDetailDto } from '@open-garden/shared-types';
+import type { CatalogCompanionDto, PlantDetailDto, PlantPestDto } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
 import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantDetailPage } from './plant-detail.page';
@@ -47,6 +47,29 @@ const tomato = (over: Partial<PlantDetailDto> = {}): PlantDetailDto => ({
   companions: [],
   companionZones: [],
   varieties: [],
+  pests: [],
+  ...over,
+});
+
+const none = { cultural: [], physical: [], biological: [], organic: [], conventional: [] };
+const hornworm = (over: Partial<PlantPestDto> = {}): PlantPestDto => ({
+  id: 'tomato-hornworm',
+  name: 'Tomato hornworm',
+  scientificName: 'Manduca quinquemaculata',
+  kind: 'insect',
+  signs: 'Large green caterpillars strip leaves.',
+  scoutStages: ['vegetative', 'fruiting'],
+  controls: { ...none, physical: ['Hand-pick them.'] },
+  region: {
+    where: 'Minnesota, USA',
+    country: 'US',
+    zones: { min: 3, max: 5 },
+    when: 'Midsummer.',
+    threshold: 'One per plant.',
+    controls: { ...none, organic: ['Bt.'], conventional: ['Carbaryl.'] },
+    reference: 'UMN Extension',
+  },
+  regionMatch: 'country',
   ...over,
 });
 
@@ -156,5 +179,53 @@ describe('PlantDetailPage', () => {
     );
     expect(items).toEqual(['Tomato (Roma)75 days · 24 in apart', 'Tomato']);
     expect(el.querySelector('section.varieties a')!.getAttribute('href')).toBe('/plants/r');
+  });
+
+  it('shows pests with organic products first and conventional ones only on request', async () => {
+    const el = await render(
+      tomato({
+        pests: [
+          hornworm(),
+          hornworm({
+            id: 'early-blight',
+            name: 'Early blight',
+            kind: 'disease',
+            scientificName: null,
+            region: {
+              ...hornworm().region!,
+              where: 'California, USA',
+              zones: { min: 9, max: 9 },
+              threshold: null,
+              controls: none,
+            },
+            regionMatch: 'nearest',
+          }),
+          hornworm({ id: 'aphids', name: 'Aphids', region: null, regionMatch: 'none' }),
+        ],
+      }),
+    );
+    const section = el.querySelector('section.pests')!;
+    const text = () =>
+      [...section.querySelectorAll('.pest-list > li')].map((li) =>
+        li.textContent.replace(/\s+/g, ' ').trim(),
+      );
+    const [worm, blight, aphids] = text();
+    expect(worm).toContain('Tomato hornworm Insect');
+    expect(worm).toContain('Look for it on growing plants, fruiting.');
+    expect(worm).toContain('By hand or barrierHand-pick them.');
+    expect(worm).toContain('Guidance for Minnesota, USA (zones 3–5).');
+    expect(worm).toContain('When: Midsummer.Act when: One per plant.');
+    expect(worm).toContain('Organic productsBt.');
+    expect(worm).not.toContain('Carbaryl');
+    expect(blight).toContain('Guidance from California, USA (zone 9), the nearest we have');
+    expect(blight).toContain('This guidance names no organic product');
+    expect(aphids).toContain('We have no timing or products for your country yet');
+    expect(section.textContent).toContain('choose products labelled for organic use');
+
+    section.querySelector<HTMLInputElement>('input[type=checkbox]')!.click();
+    // The page redraws itself on the signal change (no zone.js).
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(text()[0]).toContain('Conventional productsCarbaryl.');
+    expect(text()[1]).toContain('This guidance names no conventional product.');
   });
 });

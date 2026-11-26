@@ -1,6 +1,7 @@
 import type {
   PlantDataProvider,
   ProviderCompanion,
+  ProviderPest,
   ProviderPlant,
 } from '@open-garden/plant-provider';
 import type {
@@ -56,6 +57,7 @@ export class MemoryPipeline {
   runs: MemoryRun[] = [];
   plants = new Map<string, MemoryPlant>();
   companions: ProviderCompanion[] = [];
+  pests: ProviderPest[] = [];
   private seq = 0;
 
   readonly runsPort: PipelineRunPort = {
@@ -115,7 +117,10 @@ export class MemoryPipeline {
     publish: async (input) => {
       const run = this.runs.find((row) => row.id === input.runId);
       if (!run) return;
-      if (input.plants.length > 0) this.companions = input.companions;
+      if (input.plants.length > 0) {
+        this.companions = input.companions;
+        this.pests = input.pests;
+      }
       for (const plant of input.plants) {
         const existing = this.plants.get(plant.varietyKey);
         this.plants.set(plant.varietyKey, {

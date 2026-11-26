@@ -99,3 +99,29 @@ async function reopenBedNorth(page: Page) {
   await page.getByRole('button', { name: 'Open bed North' }).click();
   await fresh;
 }
+
+test('pests show on the plant page, organic first, conventional on request', async ({
+  browser,
+}) => {
+  test.setTimeout(60_000);
+  const page = await newUser(browser, `pests-${Date.now()}@example.com`);
+  await page.goto('/gardens');
+  await page.getByPlaceholder('Property name').fill('Pest plot');
+  await confirmFixtureAddress(page);
+  await page.getByRole('button', { name: 'Create property' }).click();
+  await expect(page.getByRole('link', { name: /Pest plot/ })).toBeVisible();
+
+  await page.goto('/plants');
+  await page.getByPlaceholder('Search name / species / variety').fill('Potato');
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await page.getByRole('link', { name: /^Potato — Solanum/ }).click();
+  const pests = page.locator('section.pests');
+  await expect(pests.getByRole('heading', { name: 'Pests and diseases' })).toBeVisible();
+  const beetle = pests.locator('.pest-list > li').filter({ hasText: 'Colorado potato beetle' });
+  await expect(beetle.getByText('Guidance for Minnesota, USA (zones 3–5).')).toBeVisible();
+  await expect(beetle.getByRole('heading', { name: 'Organic products' })).toBeVisible();
+  const hornworm = pests.locator('.pest-list > li').filter({ hasText: 'Tomato hornworm' });
+  await expect(hornworm.getByRole('heading', { name: 'Conventional products' })).toHaveCount(0);
+  await pests.getByLabel('Show conventional options').check();
+  await expect(hornworm.getByRole('heading', { name: 'Conventional products' })).toBeVisible();
+});

@@ -16,6 +16,7 @@ import {
   primaryKey,
   check,
 } from 'drizzle-orm/pg-core';
+import type { PestControlsDto, PestRegionDto } from '@open-garden/shared-types';
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -210,6 +211,8 @@ export const gardens = pgTable(
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
     placeId: text('place_id'),
+    /** ISO 3166-1 alpha-2 from the confirmed address; null for properties saved before it was kept. */
+    countryCode: text('country_code'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -518,6 +521,29 @@ export const catalogCompanions = pgTable(
     index('catalog_companions_crop_id_idx').on(t.cropId),
     index('catalog_companions_other_crop_id_idx').on(t.otherCropId),
   ],
+);
+
+/**
+ * Pests and diseases from the dataset, replaced whenever a catalog import
+ * writes plants (ADR 0045). Regional guidance is kept whole: the plant page
+ * picks a region per member.
+ */
+export const catalogPests = pgTable(
+  'catalog_pests',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    aliases: text('aliases').array().notNull(),
+    scientificName: text('scientific_name'),
+    kind: text('kind').notNull(),
+    crops: text('crops').array().notNull(),
+    signs: text('signs').notNull(),
+    scoutStages: text('scout_stages').array().notNull(),
+    controls: jsonb('controls').$type<PestControlsDto>().notNull(),
+    occursIn: text('occurs_in').array(),
+    regions: jsonb('regions').$type<PestRegionDto[]>().notNull(),
+  },
+  (t) => [index('catalog_pests_crops_idx').using('gin', t.crops)],
 );
 
 export const companionPairs = pgTable(

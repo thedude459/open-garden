@@ -9,6 +9,7 @@ describe('withCompanionDefaults', () => {
       companions: [],
       companionZones: [],
       varieties: [],
+      pests: [],
     });
   });
 

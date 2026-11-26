@@ -187,6 +187,7 @@ export class GardenService {
       latitude?: number | null;
       longitude?: number | null;
       placeId?: string | null;
+      countryCode?: string | null;
       updatedAt: Date | string;
     },
     actorId: string,
@@ -344,11 +345,14 @@ function requirePlace(place: PlaceCandidateDto | undefined, missing: string): Pl
 }
 
 function placeColumns(place: PlaceCandidateDto) {
+  const country = place.countryCode?.trim().toUpperCase() ?? '';
   return {
     formattedAddress: place.formattedAddress,
     latitude: place.latitude,
     longitude: place.longitude,
     placeId: place.placeId,
+    // Kept for regional pest guidance (ADR 0045); anything but a two-letter code is dropped.
+    countryCode: /^[A-Z]{2}$/.test(country) ? country : null,
   };
 }
 
@@ -357,6 +361,7 @@ function storedPlace(garden: {
   latitude?: number | null;
   longitude?: number | null;
   placeId?: string | null;
+  countryCode?: string | null;
 }): PlaceCandidateDto | null {
   if (
     garden.formattedAddress == null ||
@@ -372,7 +377,7 @@ function storedPlace(garden: {
     longitude: garden.longitude,
     placeId: garden.placeId,
     postalCode: null,
-    countryCode: null,
+    countryCode: garden.countryCode ?? null,
   };
 }
 

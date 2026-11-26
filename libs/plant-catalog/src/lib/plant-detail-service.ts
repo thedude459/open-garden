@@ -1,5 +1,6 @@
 import type {
   CatalogCompanionRepository,
+  CatalogPestRepository,
   FavoriteRepository,
   PlantRepository,
 } from '@open-garden/plant-catalog-data';
@@ -11,6 +12,7 @@ import type {
   PlantStatus,
   PlantType,
 } from '@open-garden/shared-types';
+import { pestsForPlaces, type MemberPlace } from './pest-guidance';
 import { rankCompanions } from './rank-companions';
 
 export class PlantDetailService {
@@ -22,6 +24,11 @@ export class PlantDetailService {
       /** Hardiness zones of the member's properties, to rank pairs by. */
       zonesForUser(userId: string): Promise<number[]>;
     },
+    private readonly pests: {
+      catalog: Pick<CatalogPestRepository, 'listForCrops'>;
+      /** Country and zone of each of the member's properties, to choose guidance by. */
+      placesForUser(userId: string): Promise<MemberPlace[]>;
+    },
   ) {}
 
   async getById(plantId: string, userId: string): Promise<PlantDetailDto | null> {
@@ -29,9 +36,10 @@ export class PlantDetailService {
     if (!row) return null;
     const isFavorite = await this.favorites.isFavorite(userId, plantId);
     const cropId = row.cropId ?? null;
-    const [{ companions, companionZones }, sameCrop] = await Promise.all([
+    const [{ companions, companionZones }, sameCrop, pests] = await Promise.all([
       this.companionsFor(cropId, userId),
       cropId ? this.plants.listByCrop(cropId) : [],
+      this.pestsFor(cropId, userId),
     ]);
     return {
       id: row.id,
@@ -64,8 +72,18 @@ export class PlantDetailService {
       cropCoefficients: cropCoefficientsFromRow(row),
       companions,
       companionZones,
+      pests,
       varieties: sameCrop.filter((v) => v.id !== row.id),
     };
+  }
+
+  private async pestsFor(cropId: string | null, userId: string) {
+    if (!cropId) return [];
+    const [pests, places] = await Promise.all([
+      this.pests.catalog.listForCrops([cropId]),
+      this.pests.placesForUser(userId),
+    ]);
+    return pestsForPlaces(pests, places);
   }
 
   private async companionsFor(cropId: string | null, userId: string) {
