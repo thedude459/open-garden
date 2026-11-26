@@ -92,6 +92,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Bug fixes
 
+- Signing out could leave a saved copy of your property list on the
+  device when a page was still loading: nothing is saved on the device again
+  until someone signs in (#277).
 - Creating or renaming a bed with a bad size now says what is wrong, not
   "Bed name is required".
 - On a shared device, the next member no longer sees the last one's
