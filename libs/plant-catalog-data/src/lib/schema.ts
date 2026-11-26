@@ -589,6 +589,25 @@ export const gardenCareEvents = pgTable(
 );
 
 /**
+ * A bed's weekly Scout task done or dismissed (ADR 0046). Scouting is per
+ * bed, not per planting, so it has its own table beside the care events.
+ */
+export const gardenScoutEvents = pgTable(
+  'garden_scout_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    bedId: uuid('bed_id')
+      .notNull()
+      .references(() => gardenBeds.id, { onDelete: 'cascade' }),
+    occurrenceOn: date('occurrence_on', { mode: 'string' }).notNull(),
+    action: text('action').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('garden_scout_events_occurrence_uidx').on(t.bedId, t.occurrenceOn)],
+);
+
+/**
  * Soil tests, as the lab reported them (ADR 0033). A test belongs to an area
  * (one sample of its ground) or to a bed whose soil differs, such as a raised
  * bed; the bed's own test wins. The latest one gives advice.

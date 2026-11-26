@@ -114,6 +114,27 @@ describe('todayFor', () => {
     ]);
   });
 
+  it('names a bed’s Scout task by the pests to look for', async () => {
+    const reminders = async () => [
+      reminder({
+        plantingId: 'b1',
+        kind: 'scout',
+        commonName: 'Aphids, Flea beetles',
+        cultivar: null,
+      }),
+    ];
+    const today = await todayFor(
+      sources({ reminders, calendar: async () => [] }),
+      'u',
+      '2026-06-01',
+    );
+    expect(today.tasks[0]).toMatchObject({
+      title: 'Scout for Aphids, Flea beetles',
+      bedName: 'North',
+      reminder: { plantingId: 'b1', kind: 'scout' },
+    });
+  });
+
   it('skips a property whose reminders or calendar cannot be read', async () => {
     const fail = async () => {
       throw new Error('gone');

@@ -289,6 +289,38 @@ describe('CalendarEntryRepository and CareEventRepository', () => {
     await care.deleteEvent(planting.id, 'water', '2026-05-01');
     expect((await care.listForGarden(garden.id)).map((e) => e.kind)).toEqual(['fertilize']);
   });
+
+  it('records a bed’s scouting once per day, and only lists the property’s beds (ADR 0046)', async () => {
+    const owner = await insertUser(t.db);
+    const gardens = new GardenRepository(t.db);
+    const bedIn = async (gardenId: string) =>
+      new BedRepository(t.db).insert({
+        gardenId,
+        areaId: await vegetableAreaId(t.db, gardenId),
+        name: 'Scout bed',
+        nameNormalized: 'scout bed',
+        originXInches: 0,
+        originYInches: 0,
+        lengthInches: 48,
+        widthInches: 48,
+      });
+    const garden = await gardens.createOwned(gardenInput(owner.id));
+    const other = await gardens.createOwned(gardenInput(owner.id));
+    const bed = await bedIn(garden.id);
+    const care = new CareEventRepository(t.db);
+    await care.upsertScout(bed.id, '2026-06-01', 'completed');
+    await care.upsertScout(bed.id, '2026-06-01', 'dismissed');
+    await care.upsertScout(bed.id, '2026-06-08', 'completed');
+    await care.upsertScout((await bedIn(other.id)).id, '2026-06-01', 'completed');
+    expect((await care.listScoutsForGarden(garden.id)).map((e) => e.occurrenceOn).sort()).toEqual([
+      '2026-06-01',
+      '2026-06-08',
+    ]);
+    await care.deleteScout(bed.id, '2026-06-08');
+    expect(await care.listScoutsForGarden(garden.id)).toEqual([
+      { bedId: bed.id, occurrenceOn: '2026-06-01' },
+    ]);
+  });
 });
 
 describe('YearRecordRepository', () => {

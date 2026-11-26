@@ -1,4 +1,5 @@
-export type CareKind = 'water' | 'fertilize' | 'harvest' | 'sow';
+/** `scout` is a bed's weekly look for pests (ADR 0046); the rest are a planting's. */
+export type CareKind = 'water' | 'fertilize' | 'harvest' | 'sow' | 'scout';
 
 /** The task as a verb: "Water", "Fertilize", "Harvest". */
 export const CARE_VERBS: Record<CareKind, string> = {
@@ -6,11 +7,13 @@ export const CARE_VERBS: Record<CareKind, string> = {
   fertilize: 'Fertilize',
   harvest: 'Harvest',
   sow: 'Sow',
+  scout: 'Scout',
 };
 export type CareAction = 'completed' | 'dismissed';
 export type ReminderUrgency = 'overdue' | 'dueToday' | 'upcoming';
 
 export interface ReminderItemDto {
+  /** The planting the task is for; for a Scout task, its bed (ADR 0046). */
   plantingId: string;
   kind: CareKind;
   dueOn: string;
@@ -28,6 +31,8 @@ export interface ReminderItemDto {
   bedName?: string | null;
   /** Watering by water balance: how far the soil is below full, in mm, on `dueOn`. */
   deficitMm?: number | null;
+  /** A Scout task: the pests to look for in the bed this week. */
+  pests?: string[];
 }
 
 export interface ReminderListDto {
@@ -39,6 +44,7 @@ export interface ReminderListDto {
 }
 
 export interface ReminderMutationDto {
+  /** The planting; for a Scout task, the bed. */
   plantingId: string;
   kind: CareKind;
   dueOn: string;

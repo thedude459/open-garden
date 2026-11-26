@@ -46,7 +46,10 @@ export async function todayFor(
           gardenId: garden.id,
           gardenName: garden.name,
           kind: item.urgency,
-          title: `${CARE_VERBS[item.kind]} ${plantName(item)}`,
+          title:
+            item.kind === 'scout'
+              ? `Scout for ${item.commonName}`
+              : `${CARE_VERBS[item.kind]} ${plantName(item)}`,
           bedName: item.bedName ?? null,
           reminder: {
             plantingId: item.plantingId,

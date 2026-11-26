@@ -176,6 +176,13 @@
       "when": 1795699638587,
       "tag": "0024_pests_and_property_country",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795704143640,
+      "tag": "0025_scout_events",
+      "breakpoints": true
     }
   ]
 }

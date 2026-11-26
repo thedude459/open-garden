@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { CareAction, CareKind } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
-import { gardenCareEvents, gardenPlantings } from './schema';
+import { gardenBeds, gardenCareEvents, gardenPlantings, gardenScoutEvents } from './schema';
 
 export class CareEventRepository {
   constructor(private readonly db: AppDatabase) {}
@@ -59,6 +59,35 @@ export class CareEventRepository {
           eq(gardenCareEvents.kind, kind),
           eq(gardenCareEvents.occurrenceOn, occurrenceOn),
         ),
+      );
+  }
+
+  /** The beds' Scout tasks done or dismissed in a property (ADR 0046). */
+  async listScoutsForGarden(
+    gardenId: string,
+  ): Promise<Array<{ bedId: string; occurrenceOn: string }>> {
+    return this.db
+      .select({ bedId: gardenScoutEvents.bedId, occurrenceOn: gardenScoutEvents.occurrenceOn })
+      .from(gardenScoutEvents)
+      .innerJoin(gardenBeds, eq(gardenScoutEvents.bedId, gardenBeds.id))
+      .where(eq(gardenBeds.gardenId, gardenId));
+  }
+
+  async upsertScout(bedId: string, occurrenceOn: string, action: CareAction) {
+    await this.db
+      .insert(gardenScoutEvents)
+      .values({ bedId, occurrenceOn, action, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [gardenScoutEvents.bedId, gardenScoutEvents.occurrenceOn],
+        set: { action, updatedAt: new Date() },
+      });
+  }
+
+  async deleteScout(bedId: string, occurrenceOn: string) {
+    await this.db
+      .delete(gardenScoutEvents)
+      .where(
+        and(eq(gardenScoutEvents.bedId, bedId), eq(gardenScoutEvents.occurrenceOn, occurrenceOn)),
       );
   }
 }

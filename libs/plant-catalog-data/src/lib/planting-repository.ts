@@ -396,6 +396,7 @@ export class PlantingRepository {
         .select({
           id: gardenPlantings.id,
           plantId: gardenPlantings.plantId,
+          cropId: plants.cropId,
           commonName: plants.commonName,
           species: plants.species,
           cultivar: plants.cultivar,
