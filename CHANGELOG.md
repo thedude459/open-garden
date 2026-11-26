@@ -46,6 +46,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- The first page downloads about 9 KB less (8%): the planner's code now loads
+  when a plan is opened.
 - Operators: the API reports unhealthy when it cannot reach the database,
   stops a query after 30 seconds, no longer sends `X-Powered-By`, and spaces
   address lookups a second apart with a one-hour cache, as Nominatim asks. The

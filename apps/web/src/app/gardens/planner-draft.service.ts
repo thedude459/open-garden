@@ -11,6 +11,7 @@ import {
 } from '@open-garden/garden-layout';
 import { OnlineRequiredError } from './gardens-api.service';
 import { LayoutApiService } from './layout-api.service';
+import { OpenPlanner } from './open-planner';
 import { PlantingsApiService } from './plantings-api.service';
 import { freshLayoutApplies, mergeWaitingTransplants, savePlannerDraft } from './planner-save';
 import { apiMessage } from '../ui/error-message';
@@ -26,6 +27,10 @@ export class PlannerDraftService {
   private readonly api = inject(LayoutApiService);
   private readonly plantingsApi = inject(PlantingsApiService);
   private readonly zone = inject(NgZone);
+
+  constructor() {
+    inject(OpenPlanner).service.set(this);
+  }
 
   readonly draft = signal<GardenLayoutDto | null>(null);
   readonly flags = signal<LayoutFlagDto[]>([]);

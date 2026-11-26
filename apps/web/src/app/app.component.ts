@@ -11,7 +11,7 @@ import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { AuthApiService } from './auth/auth-api.service';
 import { GardensApiService } from './gardens/gardens-api.service';
-import { PlannerDraftService } from './gardens/planner-draft.service';
+import { OpenPlanner } from './gardens/open-planner';
 import { staysOnPlanner } from './gardens/stays-on-planner';
 import { NoticeHost } from './ui/notice-host';
 import { NoticeService } from './ui/notice.service';
@@ -187,7 +187,8 @@ export class AppComponent {
   private readonly auth = inject(AuthApiService);
   private readonly router = inject(Router);
   private readonly gardens = inject(GardensApiService);
-  private readonly planner = inject(PlannerDraftService);
+  /** Null until a planner page has started the planner; its code loads with those pages. */
+  private readonly planner = inject(OpenPlanner).service;
 
   readonly menuOpen = signal(false);
   /** Which of the four property sections the page belongs to. */
@@ -198,13 +199,17 @@ export class AppComponent {
   readonly openBedName = computed(() => {
     const id = this.bedId();
     if (!id) return null;
-    return this.planner.draft()?.beds.find((bed) => bed.id === id)?.name ?? null;
+    return (
+      this.planner()
+        ?.draft()
+        ?.beds.find((bed) => bed.id === id)?.name ?? null
+    );
   });
 
   @HostListener('window:beforeunload', ['$event'])
   keepUnsavedLayout(event: BeforeUnloadEvent) {
     // Closing the tab cannot wait for a save, so warn while one is outstanding.
-    if (!this.planner.unsaved()) return;
+    if (!this.planner()?.unsaved()) return;
     event.preventDefault();
     event.returnValue = '';
   }
@@ -253,8 +258,9 @@ export class AppComponent {
   }
 
   async logout() {
-    if (this.planner.dirty() && !window.confirm('Leave without saving this layout?')) return;
-    if (this.planner.dirty()) this.planner.discard();
+    const planner = this.planner();
+    if (planner?.dirty() && !window.confirm('Leave without saving this layout?')) return;
+    if (planner?.dirty()) planner.discard();
     await this.auth.logout();
     // A full load drops anything of this member's still held in memory.
     window.location.assign('/login');
@@ -262,10 +268,11 @@ export class AppComponent {
 
   private dropDraftIfLeft(url: string) {
     // Closing the tab cannot wait for a save, so warn while one is outstanding.
-    if (!this.planner.unsaved()) return;
+    const planner = this.planner();
+    if (!planner?.unsaved()) return;
     const id = gardenIdFrom(url);
     if (id && staysOnPlanner(id, url)) return;
-    this.planner.discard();
+    planner.discard();
   }
 
   private syncGarden(url: string) {
