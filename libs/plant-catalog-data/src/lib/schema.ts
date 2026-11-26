@@ -62,15 +62,23 @@ export const reminderDeliveries = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.channel, t.sentOn] })],
 );
 
-export const sessions = pgTable('sessions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  tokenHash: text('token_hash').notNull().unique(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // Every sign-in deletes expired sessions; a password change ends a member's others.
+  (t) => [
+    index('sessions_user_id_idx').on(t.userId),
+    index('sessions_expires_at_idx').on(t.expiresAt),
+  ],
+);
 
 /**
  * One-time password reset links. Only the token's SHA-256 is stored; a row is
@@ -301,6 +309,8 @@ export const gardenBeds = pgTable(
   (t) => [
     uniqueIndex('garden_beds_garden_name_uidx').on(t.gardenId, t.nameNormalized),
     index('garden_beds_garden_id_idx').on(t.gardenId),
+    // Moving or deleting an area finds its beds.
+    index('garden_beds_area_id_idx').on(t.areaId),
   ],
 );
 

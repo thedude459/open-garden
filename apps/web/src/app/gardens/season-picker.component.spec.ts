@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { SeasonPicker } from './season-picker';
+import { settled } from '../settled';
 
 describe('SeasonPicker', () => {
   it('offers this season and the next, and says which is picked (ADR 0040)', async () => {
@@ -10,7 +11,7 @@ describe('SeasonPicker', () => {
     const picked: number[] = [];
     fixture.componentInstance.picked.subscribe((year) => picked.push(year));
     fixture.autoDetectChanges();
-    await fixture.whenStable();
+    await settled(fixture);
     const select = (fixture.nativeElement as HTMLElement).querySelector('select')!;
     expect([...select.options].map((o) => o.textContent.trim())).toEqual([
       '2026 (now)',

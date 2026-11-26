@@ -4,6 +4,7 @@ import type { GardenSummaryDto, TodayDto } from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
 import { GardenListPage } from './garden-list.page';
 import { GardensApiService } from './gardens-api.service';
+import { settled } from '../settled';
 
 const garden = (over: Partial<GardenSummaryDto> = {}): GardenSummaryDto => ({
   id: 'g1',
@@ -46,7 +47,7 @@ async function render(gardens: GardenSummaryDto[], today: TodayDto | Error) {
   });
   const fixture = TestBed.createComponent(GardenListPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const text = () => el.textContent.replace(/\s+/g, ' ');
   return { el, text, fixture };
@@ -91,7 +92,7 @@ describe('GardenListPage property cards', () => {
     const view = await render([garden()], { tasks: [], gardens: [] });
     expect(view.text()).not.toContain('Next: set up your new property');
     view.fixture.componentInstance.setUpId.set('g1');
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.text()).toContain('Next: set up your new property');
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     [...view.el.querySelectorAll('button')]

@@ -15,6 +15,7 @@ import { GardensApiService } from './gardens-api.service';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
 import { PlantingsApiService } from './plantings-api.service';
+import { settled } from '../settled';
 
 const planting = (
   id: string,
@@ -106,15 +107,15 @@ async function render(
   vi.spyOn(planner, 'syncWaitingTransplants').mockResolvedValue(undefined);
   const fixture = TestBed.createComponent(GardenBedViewPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const byLabel = (label: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
   const remove = async (name: string) => {
     byLabel(`Remove from bed ${name}`)!.click();
-    await fixture.whenStable();
+    await settled(fixture);
     byLabel(`Confirm remove ${name}`)!.click();
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, byLabel, remove, planner, plantingsApi, layoutApi };
 }

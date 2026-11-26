@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { LayoutPlantingDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import { BedPlantingsList } from './bed-plantings-list';
+import { settled } from '../settled';
 
 const planting = (
   id: string,
@@ -18,7 +19,7 @@ async function render(plantings: LayoutPlantingDto[], canEdit = true) {
   fixture.componentInstance.remove.subscribe((p) => removed.push(p.id));
   fixture.componentInstance.markPlanted.subscribe((p) => planted.push(p.id));
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const byLabel = (label: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
@@ -35,12 +36,12 @@ describe('BedPlantingsList', () => {
   it('removes only after a confirm, and Cancel backs out', async () => {
     const view = await render([planting('Basil')]);
     view.byLabel('Remove from bed Basil')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     [...view.el.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Cancel')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.byLabel('Confirm remove Basil')).toBeNull();
     view.byLabel('Remove from bed Basil')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Confirm remove Basil')!.click();
     expect(view.removed).toEqual(['Basil']);
   });

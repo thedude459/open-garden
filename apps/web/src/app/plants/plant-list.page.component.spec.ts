@@ -6,6 +6,7 @@ import { GardensApiService } from '../gardens/gardens-api.service';
 import { localIso } from '../today/today-groups';
 import { PlantListPage } from './plant-list.page';
 import { PlantsApiService } from './plants-api.service';
+import { settled } from '../settled';
 
 const basil: PlantSummaryDto = {
   id: 'p1',
@@ -55,7 +56,7 @@ async function render(items: PlantSummaryDto[] = [basil]) {
   });
   const fixture = TestBed.createComponent(PlantListPage);
   fixture.detectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   fixture.detectChanges();
   return {
     fixture,
@@ -113,7 +114,7 @@ describe('PlantListPage pages', () => {
       b.textContent?.includes('Show more'),
     )!;
     more.click();
-    await fixture.whenStable();
+    await settled(fixture);
     fixture.detectChanges();
 
     expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, pageSize: 100 }));

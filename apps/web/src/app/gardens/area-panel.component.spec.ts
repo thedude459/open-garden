@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type { PropertyAreaDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import { AreaPanel, type AreaBed } from './area-panel';
+import { settled } from '../settled';
 
 async function render(
   area: PropertyAreaDto,
@@ -23,7 +24,7 @@ async function render(
   fixture.componentInstance.rename.subscribe((name) => renamed.push(name));
   fixture.componentInstance.remove.subscribe(() => removed++);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const byLabel = (label: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
@@ -42,7 +43,7 @@ describe('AreaPanel', () => {
     view.byLabel('Rename Vegetable garden')!.click();
     input.value = ' Kitchen garden ';
     input.dispatchEvent(new Event('input'));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Rename Vegetable garden')!.click();
     expect(view.renamed).toEqual(['Kitchen garden']);
   });
@@ -55,7 +56,7 @@ describe('AreaPanel', () => {
     const empty = await render({ ...veg, name: 'Vegetable garden 2' });
     expect(empty.el.textContent).toContain('No beds yet');
     empty.byLabel('Delete area Vegetable garden 2')!.click();
-    await empty.fixture.whenStable();
+    await settled(empty.fixture);
     empty.byLabel('Confirm delete area Vegetable garden 2')!.click();
     expect(empty.removed()).toBe(1);
   });

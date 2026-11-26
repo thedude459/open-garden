@@ -3,6 +3,7 @@ import type { LayoutBedDto, LayoutPlantingDto } from '@open-garden/shared-types'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { frameAround, visibleArea } from '@open-garden/garden-layout';
 import { GardenPlanCanvas } from './garden-plan-canvas';
+import { settled } from '../settled';
 
 const bed: LayoutBedDto = {
   id: 'b1',
@@ -32,7 +33,7 @@ async function render(viewKey: string | null = 'og-plan-view:g1') {
   fixture.componentRef.setInput('plotWidthInches', 600);
   fixture.componentRef.setInput('viewKey', viewKey);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
   const scale = () => Number(/scale\(([\d.]+)\)/.exec(svg.style.transform)![1]);
   return { fixture, canvas: fixture.componentInstance, scale };
@@ -49,7 +50,7 @@ describe('GardenPlanCanvas view', () => {
     const first = await render();
     first.canvas.zoomOut();
     first.canvas.zoomOut();
-    await first.fixture.whenStable();
+    await settled(first.fixture);
     const zoomed = first.scale();
     expect(localStorage.getItem('og-plan-view:g1')).not.toBeNull();
     first.fixture.destroy();
@@ -69,14 +70,14 @@ describe('GardenPlanCanvas view', () => {
     const fixture = TestBed.createComponent(GardenPlanCanvas);
     fixture.componentRef.setInput('beds', [bed]);
     fixture.autoDetectChanges();
-    await fixture.whenStable();
+    await settled(fixture);
     const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
     const scale = () => Number(/scale\(([\d.]+)\)/.exec(svg.style.transform)![1]);
     // Before the size arrives the plan frames the bed itself.
     expect(scale()).toBeCloseTo(1, 0);
     fixture.componentRef.setInput('plotLengthInches', 1200);
     fixture.componentRef.setInput('plotWidthInches', 600);
-    await fixture.whenStable();
+    await settled(fixture);
     expect(scale()).toBeGreaterThan(4);
   });
 
@@ -84,7 +85,7 @@ describe('GardenPlanCanvas view', () => {
     const fixture = TestBed.createComponent(GardenPlanCanvas);
     fixture.componentRef.setInput('beds', [bed]);
     fixture.autoDetectChanges();
-    await fixture.whenStable();
+    await settled(fixture);
     const svg = (fixture.nativeElement as HTMLElement).querySelector('svg')!;
     const view = () => {
       const m = /translate\(([-\d.e]+)px, ([-\d.e]+)px\) scale\(([\d.e]+)\)/.exec(
@@ -94,13 +95,13 @@ describe('GardenPlanCanvas view', () => {
     };
     const size = { width: 800, height: 400 };
     fixture.componentInstance.zoomOut();
-    await fixture.whenStable();
+    await settled(fixture);
     // Before the size arrives the plot frames the bed (with its margin).
     const camera = frameAround([{ x0: 120, y0: 60, x1: 216, y1: 108 }]);
     const before = visibleArea(size, camera, view());
     fixture.componentRef.setInput('plotLengthInches', 1200);
     fixture.componentRef.setInput('plotWidthInches', 600);
-    await fixture.whenStable();
+    await settled(fixture);
     const after = visibleArea(size, { x: 0, y: 0, w: 1200, h: 600 }, view());
     expect(after.x).toBeCloseTo(before.x, 3);
     expect(after.y).toBeCloseTo(before.y, 3);
@@ -111,10 +112,10 @@ describe('GardenPlanCanvas view', () => {
     const view = await render(null);
     const fitted = view.scale();
     view.canvas.zoomOut();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.scale()).toBeLessThan(fitted);
     view.canvas.fit();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.scale()).toBeCloseTo(fitted, 5);
   });
 });
@@ -123,7 +124,7 @@ describe('GardenPlanCanvas keyboard', () => {
   it('on the plan, a bed is a button: Enter or Space selects it', async () => {
     const view = await render();
     view.fixture.componentRef.setInput('canEdit', true);
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     const selected: string[] = [];
     view.canvas.focusBed.subscribe((id) => selected.push(id));
     const frame = (view.fixture.nativeElement as HTMLElement).querySelector('.layout-bed-frame')!;
@@ -141,7 +142,7 @@ describe('GardenPlanCanvas keyboard', () => {
   it('in Bed View, a bed is a labelled picture and not a stop for Tab', async () => {
     const view = await render();
     view.fixture.componentRef.setInput('allowBedGeometry', false);
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     const frame = (view.fixture.nativeElement as HTMLElement).querySelector('.layout-bed-frame')!;
     expect(frame.getAttribute('role')).toBe('img');
     expect(frame.hasAttribute('tabindex')).toBe(false);
@@ -174,7 +175,7 @@ describe('GardenPlanCanvas planting marks', () => {
         placement: { plantingId: 'Basil', bedId: 'b1', xInches: 72, yInches: 24 },
       },
     ]);
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     const el = view.fixture.nativeElement as HTMLElement;
     const labelled = (name: string) => el.querySelector(`g[aria-label="${name}"] circle`);
     expect(labelled('Kale, planned')?.classList.contains('layout-plant-planned')).toBe(true);
@@ -200,7 +201,7 @@ describe('GardenPlanCanvas area outlines', () => {
       { id: 'orchard', name: 'Orchard', kind: 'fruit' },
     ]);
     fixture.autoDetectChanges();
-    await fixture.whenStable();
+    await settled(fixture);
     const el = fixture.nativeElement as HTMLElement;
     const outlines = [...el.querySelectorAll('rect.area-outline')];
     expect(outlines.map((r) => r.getAttribute('data-outline-of'))).toEqual([

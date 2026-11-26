@@ -4,6 +4,7 @@ import type { HarvestTotalsDto } from '@open-garden/shared-types';
 import { describe, expect, it, vi } from 'vitest';
 import { GardenHarvestsPage } from './garden-harvests.page';
 import { PlantingsApiService } from './plantings-api.service';
+import { settled } from '../settled';
 
 const season = (year: number, crops: HarvestTotalsDto['crops']): HarvestTotalsDto => ({
   seasonYear: year,
@@ -23,7 +24,7 @@ async function render(harvestTotals: PlantingsApiService['harvestTotals']) {
   });
   const fixture = TestBed.createComponent(GardenHarvestsPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   return { fixture, el, text: () => el.textContent.replace(/\s+/g, ' ') };
 }

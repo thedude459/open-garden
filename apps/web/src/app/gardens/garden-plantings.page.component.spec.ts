@@ -9,6 +9,7 @@ import { GardenPlantingsPage, repeatMessage } from './garden-plantings.page';
 import { planting } from './planting.testing';
 import { PlantingsApiService } from './plantings-api.service';
 import type { ClientPlantingList } from './plantings-offline.queue';
+import { settled } from '../settled';
 
 const list = (myRole: GardenRole = 'owner'): ClientPlantingList => ({
   gardenId: 'g1',
@@ -37,7 +38,7 @@ async function render(api: Partial<PlantingsApiService>) {
   });
   const fixture = TestBed.createComponent(GardenPlantingsPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const text = () => el.textContent.replace(/\s+/g, ' ');
   const byLabel = (label: string) =>
@@ -55,11 +56,11 @@ describe('GardenPlantingsPage', () => {
     const filter = view.el.querySelector<HTMLSelectElement>('select[name="bedFilter"]')!;
     filter.value = 'b1';
     filter.dispatchEvent(new Event('change'));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.text()).toContain('Tomato');
     expect(view.text()).not.toContain('Basil');
     view.button('Show all')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.text()).toContain('Basil');
   });
 
@@ -69,7 +70,7 @@ describe('GardenPlantingsPage', () => {
     );
     const view = await render({ list: async () => list(), update });
     view.byLabel('Edit Tomato')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Save planting')!.click();
     await vi.waitFor(() => expect(view.text()).toContain('Harvested'));
     expect(update).toHaveBeenCalledWith('g1', 'p1', expect.objectContaining({ bedId: 'b1' }));
@@ -80,7 +81,7 @@ describe('GardenPlantingsPage', () => {
     const update = vi.fn();
     const view = await render({ list: load, update });
     view.byLabel('Edit Tomato')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.el.querySelector<HTMLInputElement>('[name="harvested-p1"]')!.value = '2027-01-01';
     view.button('Save planting')!.click();
     await vi.waitFor(() => expect(view.el.querySelector('.error')).not.toBeNull());
@@ -92,9 +93,9 @@ describe('GardenPlantingsPage', () => {
     const remove = vi.fn(async () => undefined);
     const view = await render({ list: async () => list(), remove });
     view.byLabel('Edit Basil')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Remove Basil')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Confirm remove')!.click();
     await vi.waitFor(() => expect(remove).toHaveBeenCalledWith('g1', 'p2'));
   });
@@ -122,7 +123,7 @@ describe('GardenPlantingsPage', () => {
     const repeatPlan = vi.fn(async () => '2027-08-20');
     const view = await render({ list: async () => list(), repeat, repeatPlan });
     view.byLabel('Edit Tomato')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.button('Repeat sowing')!.click();
     await vi.waitFor(() => expect(view.text()).toContain('ripens before frost here is 2027-08-20'));
     const until = view.el.querySelector<HTMLInputElement>('input[name="repeatUntil"]')!;

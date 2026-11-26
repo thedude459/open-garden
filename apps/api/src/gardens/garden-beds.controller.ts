@@ -41,7 +41,7 @@ export class GardenBedsController {
   ) {
     const parsed = bedCreateSchema.safeParse(body);
     if (!parsed.success) {
-      throw domainError('VALIDATION_ERROR', 'Bed name is required');
+      throw domainError('VALIDATION_ERROR', bedProblem(parsed.error.issues[0]));
     }
     const result = await this.beds.createBed(user.id, id, parsed.data);
     res.status(result.created ? 201 : 200);
@@ -57,7 +57,7 @@ export class GardenBedsController {
   ) {
     const parsed = bedPatchSchema.safeParse(body);
     if (!parsed.success) {
-      throw domainError('VALIDATION_ERROR', 'Bed name is required');
+      throw domainError('VALIDATION_ERROR', bedProblem(parsed.error.issues[0]));
     }
     return this.beds.renameBed(user.id, id, bedId, parsed.data);
   }
@@ -92,4 +92,11 @@ export class GardenBedsController {
   ) {
     return this.soilTests.remove(user.id, id, { bedId }, testId);
   }
+}
+
+/** What is wrong with a bed sent to create or rename: its name, or the field named. */
+export function bedProblem(issue: { path: PropertyKey[]; message: string } | undefined): string {
+  const field = issue?.path[0];
+  if (!issue || field === undefined || field === 'name') return 'Bed name is required';
+  return `Check the bed's ${String(field)}: ${issue.message}`;
 }

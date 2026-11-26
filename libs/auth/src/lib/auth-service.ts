@@ -12,6 +12,19 @@ import {
   users,
 } from '@open-garden/plant-catalog-data';
 
+/**
+ * bcrypt's work factor. bcryptjs runs on the API's one thread, so each step up
+ * doubles the time every other request waits during a sign-in (cost 12 took
+ * 264 ms a hash on a 4-core runner, and timed out the live tests).
+ */
+const BCRYPT_COST = 10;
+
+/**
+ * Compared against when no account has the email, so a sign-in takes as long
+ * either way and its timing does not tell which addresses have accounts.
+ */
+const NO_ACCOUNT_HASH = '$2b$10$MQaMQszb1RvHwnQus9KVJu1hOMjWRztag.nuXAFChjdWCSilRmSw6';
+
 /** Why an account was not deleted, or that it was. */
 export type DeleteAccountResult =
   | { deleted: true }
@@ -30,7 +43,7 @@ export class AuthService {
   constructor(private readonly db: AppDatabase) {}
 
   async register(email: string, password: string, displayName?: string): Promise<AuthUser> {
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
     let user: typeof users.$inferSelect | undefined;
     try {
       [user] = await this.db
@@ -58,8 +71,8 @@ export class AuthService {
       .from(users)
       .where(eq(users.email, email.trim().toLowerCase()))
       .limit(1);
+    const ok = await bcrypt.compare(password, user?.passwordHash ?? NO_ACCOUNT_HASH);
     if (!user) return null;
-    const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return null;
     const token = randomBytes(32).toString('hex');
     const tokenHash = hashToken(token);
@@ -121,7 +134,7 @@ export class AuthService {
     keepToken: string,
   ): Promise<boolean> {
     if (!(await this.passwordMatches(userId, currentPassword))) return false;
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
     await this.db.transaction(async (tx) => {
       await tx.update(users).set({ passwordHash }).where(eq(users.id, userId));
       await tx
@@ -199,7 +212,7 @@ export class AuthService {
    * of the account is signed out. False when the link is unknown or expired.
    */
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
     return this.db.transaction(async (tx) => {
       const [reset] = await tx
         .delete(passwordResets)

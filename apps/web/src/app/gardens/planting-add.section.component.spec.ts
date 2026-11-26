@@ -5,6 +5,7 @@ import { FavoritesApiService } from '../favorites/favorites-api.service';
 import { PlantsApiService } from '../plants/plants-api.service';
 import { NoticeService } from '../ui/notice.service';
 import { PlantingAddSection, type PlantToAdd } from './planting-add.section';
+import { settled } from '../settled';
 
 const plant = (id: string, plantType: PlantSummaryDto['plantType']): PlantSummaryDto =>
   ({ id, commonName: id, species: id, cultivar: null, plantType }) as PlantSummaryDto;
@@ -36,14 +37,14 @@ async function render(opts: { trays?: TrayDto[]; hits?: PlantSummaryDto[]; favor
   fixture.componentInstance.add.subscribe((p) => added.push(p));
   fixture.componentInstance.startInTray.subscribe((s) => started.push(s));
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const byLabel = (label: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
   const search = async () => {
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
     await vi.waitFor(() => expect(plants.list).toHaveBeenCalled());
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, byLabel, search, added, started, said };
 }
@@ -65,7 +66,7 @@ describe('PlantingAddSection', () => {
     const select = view.el.querySelector<HTMLSelectElement>('select[name="startTray"]')!;
     select.value = 'b';
     select.dispatchEvent(new Event('change'));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Start basil in a tray')!.click();
     expect(view.started.map((s) => s.trayId)).toEqual(['a', 'b']);
   });

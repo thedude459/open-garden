@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { NoticeService } from '../ui/notice.service';
 import { AccountPage } from './account.page';
+import { settled } from '../settled';
 
 async function render() {
   TestBed.configureTestingModule({
@@ -16,7 +17,7 @@ async function render() {
   });
   const fixture = TestBed.createComponent(AccountPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const type = (name: string, value: string) => {
     const input = el.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
@@ -28,7 +29,7 @@ async function render() {
     type('newPassword', next);
     type('repeatPassword', repeat);
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, submit, http: TestBed.inject(HttpTestingController) };
 }
@@ -85,12 +86,12 @@ describe('AccountPage', () => {
     const button = (name: string) =>
       [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === name)!;
     button('Delete account').click();
-    await fixture.whenStable();
+    await settled(fixture);
     const input = el.querySelector<HTMLInputElement>('input[name="deletePassword"]')!;
     input.value = 'password123';
     input.dispatchEvent(new Event('input'));
     button('Delete my account permanently').click();
-    await fixture.whenStable();
+    await settled(fixture);
     const req = http.expectOne('/api/account');
     expect(req.request.method).toBe('DELETE');
     expect(req.request.body).toEqual({ password: 'password123' });
@@ -104,11 +105,11 @@ describe('AccountPage', () => {
     [...el.querySelectorAll('button')]
       .find((b) => b.textContent?.trim() === 'Delete account')!
       .click();
-    await fixture.whenStable();
+    await settled(fixture);
     [...el.querySelectorAll('button')]
       .find((b) => b.textContent?.trim() === 'Delete my account permanently')!
       .click();
-    await fixture.whenStable();
+    await settled(fixture);
     http
       .expectOne('/api/account')
       .flush(
