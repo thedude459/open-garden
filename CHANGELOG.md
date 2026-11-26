@@ -27,6 +27,11 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **A weekly Scout task for each bed** on Today and the Tasks page, naming
+  the pests to look for: those of what is growing in the bed, at its stage
+  (seedlings, growing, flowering, fruiting), and known in your property's
+  country. Mark it done or dismiss it like any task; the next one comes a
+  week later.
 - **Pests and diseases on plant pages,** from plant catalog v0.3.2: 26
   common pests with the signs to look for, the crop stages to check, and the
   steps that need no product, then when to look, when to act, and organic
@@ -123,6 +128,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [ADR 0046](docs/adr/0046-weekly-scout-task.md): a weekly Scout task per
+  bed.
 - [ADR 0044](docs/adr/0044-organic-first-advice.md): advice is organic
   first. [ADR 0045](docs/adr/0045-pest-advice.md): pest advice by the
   member's country.

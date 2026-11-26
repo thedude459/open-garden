@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createReminderMemory } from './test-memory';
+import { createReminderMemory, noScouting } from './test-memory';
 
 import { CareReminderService } from './care-reminder-service';
 describe('CareReminderService', () => {
@@ -167,6 +167,7 @@ describe('CareReminderService weather', () => {
       { listAllForReminders: async () => [row], getInGarden: async () => ({ id: 'p1' }) },
       { listForGarden: async () => [], upsert: async () => undefined },
       weather,
+      noScouting,
     );
 
   it('waters by the water balance and covers a rainy due day', async () => {
@@ -189,5 +190,110 @@ describe('CareReminderService weather', () => {
       expect(listed.outlookOn).toBeNull();
       expect(listed.items[0]).toMatchObject({ kind: 'water', intervalDays: 3 });
     }
+  });
+});
+
+describe('CareReminderService scouting', () => {
+  const row = {
+    id: 'p1',
+    plantId: 'tomato',
+    cropId: 'tomato',
+    commonName: 'Tomato',
+    species: 'Solanum lycopersicum',
+    cultivar: null,
+    plantType: 'vegetable',
+    status: 'active',
+    plantedOn: '2026-06-01',
+    harvestedOn: null,
+    daysToMaturity: null,
+    waterIntervalDays: null,
+    fertilizeIntervalDays: null,
+    bedId: 'b1',
+    bedName: 'North',
+  };
+  const none = { cultural: [], physical: [], biological: [], organic: [], conventional: [] };
+  const aphids = {
+    id: 'aphids',
+    name: 'Aphids',
+    aliases: [],
+    scientificName: null,
+    kind: 'insect' as const,
+    crops: ['tomato'],
+    signs: 'Curled leaves.',
+    scoutStages: ['seedling' as const],
+    controls: none,
+    occursIn: null,
+    regions: [],
+  };
+  function setup(role = 'owner') {
+    const scouts = new Map<string, string>();
+    const asked: string[][] = [];
+    const service = new CareReminderService(
+      { getMembership: async () => ({ role }) },
+      { listAllForReminders: async () => [row], getInGarden: async () => null },
+      { listForGarden: async () => [], upsert: async () => undefined },
+      async () => null,
+      {
+        pests: async (crops) => {
+          asked.push(crops);
+          return [aphids];
+        },
+        country: async () => 'US',
+        bedInGarden: async (_g, bed) => bed === 'b1',
+        listForGarden: async () =>
+          [...scouts.keys()].map((occurrenceOn) => ({ bedId: 'b1', occurrenceOn })),
+        upsert: async (_bed, on, action) => void scouts.set(on, action),
+        remove: async (_bed, on) => void scouts.delete(on),
+      },
+    );
+    return { service, scouts, asked };
+  }
+
+  it('lists a weekly Scout task for each bed with pests to look for', async () => {
+    const { service, asked } = setup();
+    const listed = await service.list('g', 'u', '2026-06-03');
+    expect(asked).toEqual([['tomato']]);
+    expect(listed.items).toEqual([
+      expect.objectContaining({
+        kind: 'scout',
+        plantingId: 'b1',
+        bedName: 'North',
+        pests: ['Aphids'],
+        dueOn: '2026-06-01',
+      }),
+    ]);
+  });
+
+  it('records the bed’s scouting done, dismissed, and undone', async () => {
+    const { service, scouts } = setup();
+    await service.complete('g', 'u', 'b1', 'scout', '2026-06-01');
+    expect(scouts.get('2026-06-01')).toBe('completed');
+    expect((await service.list('g', 'u', '2026-06-03')).items[0]?.dueOn).toBe('2026-06-08');
+    await service.dismiss('g', 'u', 'b1', 'scout', '2026-06-08');
+    expect(scouts.get('2026-06-08')).toBe('dismissed');
+    await service.undo('g', 'u', 'b1', 'scout', '2026-06-08');
+    expect(scouts.has('2026-06-08')).toBe(false);
+  });
+
+  it('refuses a bed in another property, and a viewer', async () => {
+    const { service } = setup();
+    await expect(service.complete('g', 'u', 'b2', 'scout', '2026-06-01')).rejects.toThrow();
+    await expect(service.undo('g', 'u', 'b2', 'scout', '2026-06-01')).rejects.toThrow();
+    await expect(
+      setup('viewer').service.complete('g', 'u', 'b1', 'scout', '2026-06-01'),
+    ).rejects.toThrow();
+  });
+
+  it('asks for no pests when no planting is in a bed', async () => {
+    const asked: string[][] = [];
+    const service = new CareReminderService(
+      { getMembership: async () => ({ role: 'owner' }) },
+      { listAllForReminders: async () => [{ ...row, bedId: null }], getInGarden: async () => null },
+      { listForGarden: async () => [], upsert: async () => undefined },
+      async () => null,
+      { ...noScouting, pests: async (c) => (asked.push(c), []) },
+    );
+    expect((await service.list('g', 'u', '2026-06-03')).items).toEqual([]);
+    expect(asked).toEqual([]);
   });
 });

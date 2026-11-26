@@ -58,7 +58,7 @@ function urgency(dueOn: string, asOf: string): ReminderUrgency {
   return 'upcoming';
 }
 
-function openRepeatingDueOn(
+export function openRepeatingDueOn(
   plantedOn: string,
   intervalDays: number,
   asOf: string,
@@ -75,7 +75,7 @@ function openRepeatingDueOn(
   return addIsoDateDays(plantedOn, n * intervalDays);
 }
 
-function greatestCursor(events: DeriveEventInput[]): DeriveEventInput | undefined {
+export function greatestCursor(events: DeriveEventInput[]): DeriveEventInput | undefined {
   if (events.length === 0) return undefined;
   return [...events].sort((a, b) => b.occurrenceOn.localeCompare(a.occurrenceOn))[0];
 }

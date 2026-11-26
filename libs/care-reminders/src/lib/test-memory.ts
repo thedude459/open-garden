@@ -146,6 +146,7 @@ export function createReminderMemory() {
     },
     // No weather: watering falls back to fixed intervals.
     async () => null,
+    noScouting,
   );
 
   return {
@@ -186,3 +187,13 @@ export function createReminderMemory() {
     },
   };
 }
+
+/** Scouting with no pests in the catalog: no Scout tasks. */
+export const noScouting = {
+  pests: async () => [],
+  country: async () => null,
+  bedInGarden: async () => false,
+  listForGarden: async () => [],
+  upsert: async () => undefined,
+  remove: async () => undefined,
+};

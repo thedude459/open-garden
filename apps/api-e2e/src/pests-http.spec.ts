@@ -43,4 +43,77 @@ describe.skipIf(!liveEnabled)('pests http', () => {
     expect(after).toMatchObject({ regionMatch: 'country', region: { country: 'US' } });
     expect(after?.region?.controls.organic.length).toBeGreaterThan(0);
   });
+
+  test('a bed gets a weekly Scout task naming the pests for its crops (ADR 0046)', async () => {
+    const owner = new LiveClient();
+    const stranger = new LiveClient();
+    await owner.register(uniqueEmail('scout'));
+    await stranger.register(uniqueEmail('scout-stranger'));
+    const garden = (await (
+      await owner.post('/api/gardens', {
+        data: { place: fixturePlace, name: `Scout plot ${Date.now()}` },
+      })
+    ).json()) as { id: string };
+    const bed = (await (
+      await owner.post(`/api/gardens/${garden.id}/beds`, {
+        data: { id: crypto.randomUUID(), name: 'North', lengthInches: 96, widthInches: 48 },
+      })
+    ).json()) as { id: string };
+    const search = (await (await owner.get('/api/plants?q=Potato&pageSize=20')).json()) as {
+      items: Array<{ id: string; commonName: string; cultivar: string | null }>;
+    };
+    const potato = search.items.find((p) => p.commonName === 'Potato' && !p.cultivar)!;
+    const now = new Date();
+    const asOf = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+    ].join('-');
+    const id = crypto.randomUUID();
+    const planted = await owner.post(`/api/gardens/${garden.id}/plantings`, {
+      data: { id, plantId: potato.id, bedId: bed.id },
+    });
+    expect(planted.status(), await planted.text()).toBe(201);
+    expect(
+      (
+        await owner.patch(`/api/gardens/${garden.id}/plantings/${id}`, {
+          data: { plantedOn: asOf },
+        })
+      ).ok(),
+    ).toBe(true);
+
+    type Item = {
+      plantingId: string;
+      kind: string;
+      dueOn: string;
+      bedName: string;
+      pests?: string[];
+    };
+    const scouts = async () =>
+      (
+        (await (await owner.get(`/api/gardens/${garden.id}/reminders?asOf=${asOf}`)).json()) as {
+          items: Item[];
+        }
+      ).items.filter((i) => i.kind === 'scout');
+    // Seedlings in the US: the beetle and flea beetles, and aphids; not yet blight.
+    expect(await scouts()).toEqual([
+      expect.objectContaining({
+        plantingId: bed.id,
+        bedName: 'North',
+        dueOn: asOf,
+        pests: ['Aphids', 'Colorado potato beetle', 'Flea beetles'],
+      }),
+    ]);
+
+    const body = { plantingId: bed.id, kind: 'scout', dueOn: asOf };
+    const path = `/api/gardens/${garden.id}/reminders/complete`;
+    expect((await stranger.post(path, { data: body })).status()).toBe(404);
+    expect((await owner.post(path, { data: body })).status()).toBe(204);
+    const [next] = await scouts();
+    expect((next?.dueOn ?? '') > asOf).toBe(true);
+    expect(
+      (await owner.post(`/api/gardens/${garden.id}/reminders/undo`, { data: body })).status(),
+    ).toBe(204);
+    expect((await scouts())[0]?.dueOn).toBe(asOf);
+  });
 });

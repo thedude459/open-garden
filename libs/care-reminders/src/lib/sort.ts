@@ -11,6 +11,7 @@ const KIND_ORDER: Record<CareKind, number> = {
   harvest: 1,
   water: 2,
   fertilize: 3,
+  scout: 4,
 };
 
 export function sortReminders(items: ReminderItemDto[]): ReminderItemDto[] {

@@ -1,6 +1,12 @@
 import { gardenAccess } from '@open-garden/shared-types';
-import type { CareAction, CareKind, ReminderListDto } from '@open-garden/shared-types';
+import type {
+  CareAction,
+  CareKind,
+  CatalogPestDto,
+  ReminderListDto,
+} from '@open-garden/shared-types';
 import { deriveReminders } from './derive';
+import { deriveScoutTasks } from './derive-scout';
 import { applyRainCover } from './rain-cover';
 import { bedWaterFactor, type DayWater } from './water-balance';
 import { sortReminders } from './sort';
@@ -16,6 +22,8 @@ export interface ReminderPlantingReader {
     Array<{
       id: string;
       plantId: string;
+      /** The dataset crop, whose pests a Scout task names (ADR 0046). */
+      cropId?: string | null;
       commonName: string;
       species: string;
       cultivar: string | null;
@@ -63,6 +71,18 @@ export interface CareEventWriter {
   remove?(plantingId: string, kind: CareKind, occurrenceOn: string): Promise<void>;
 }
 
+/** What a bed's weekly Scout task needs (ADR 0046). */
+export interface ScoutingSources {
+  /** The pests of any of these crops. */
+  pests(cropIds: string[]): Promise<CatalogPestDto[]>;
+  /** The property's country (ISO 3166-1 alpha-2), when known. */
+  country(gardenId: string): Promise<string | null>;
+  bedInGarden(gardenId: string, bedId: string): Promise<boolean>;
+  listForGarden(gardenId: string): Promise<Array<{ bedId: string; occurrenceOn: string }>>;
+  upsert(bedId: string, occurrenceOn: string, action: CareAction): Promise<void>;
+  remove(bedId: string, occurrenceOn: string): Promise<void>;
+}
+
 export class CareReminderService {
   constructor(
     private readonly memberships: GardenMembershipReader,
@@ -73,6 +93,7 @@ export class CareReminderService {
       gardenId: string,
       asOf: string,
     ) => Promise<Record<string, DayWater> | null>,
+    private readonly scouting: ScoutingSources,
   ) {}
 
   async list(gardenId: string, userId: string, asOf: string): Promise<ReminderListDto> {
@@ -111,9 +132,10 @@ export class CareReminderService {
     const rain = weather
       ? Object.fromEntries(Object.entries(weather).map(([day, w]) => [day, w.rainMm]))
       : null;
-    const items = sortReminders(
-      applyRainCover(deriveReminders(plantings, eventRows, asOf, weather), rain),
-    );
+    const items = sortReminders([
+      ...applyRainCover(deriveReminders(plantings, eventRows, asOf, weather), rain),
+      ...(await this.scoutTasks(gardenId, rows, asOf)),
+    ]);
 
     return {
       gardenId,
@@ -147,6 +169,13 @@ export class CareReminderService {
       'edit',
       CARE_ERRORS.viewerReminders,
     );
+    if (kind === 'scout') {
+      if (!(await this.scouting.bedInGarden(gardenId, plantingId))) {
+        throw CARE_ERRORS.plantingNotFound();
+      }
+      await this.scouting.remove(plantingId, dueOn);
+      return;
+    }
     const planting = await this.plantings.getInGarden(gardenId, plantingId);
     if (!planting) throw CARE_ERRORS.plantingNotFound();
     if (typeof this.events.remove === 'function') {
@@ -181,12 +210,47 @@ export class CareReminderService {
       CARE_ERRORS.viewerReminders,
     );
 
+    // A Scout task is the bed's (ADR 0046).
+    if (kind === 'scout') {
+      if (!(await this.scouting.bedInGarden(gardenId, plantingId))) {
+        throw CARE_ERRORS.plantingNotFound();
+      }
+      await this.scouting.upsert(plantingId, dueOn, action);
+      return;
+    }
+
     const planting = await this.plantings.getInGarden(gardenId, plantingId);
     if (!planting) {
       throw CARE_ERRORS.plantingNotFound();
     }
 
     await this.events.upsert(plantingId, kind, dueOn, action);
+  }
+
+  /** Each bed's weekly Scout task, naming the pests to look for. */
+  private async scoutTasks(gardenId: string, rows: ReminderRow[], asOf: string) {
+    const inBeds = rows.flatMap((row) =>
+      row.bedId && row.cropId
+        ? [
+            {
+              bedId: row.bedId,
+              bedName: row.bedName ?? '',
+              cropId: row.cropId,
+              plantedOn: row.plantedOn,
+              harvestedOn: row.harvestedOn,
+              annual: !row.life || row.life === 'annual',
+              stageDays: stageDaysOf(row),
+            },
+          ]
+        : [],
+    );
+    if (!inBeds.length) return [];
+    const [pests, country, events] = await Promise.all([
+      this.scouting.pests([...new Set(inBeds.map((p) => p.cropId))]),
+      this.scouting.country(gardenId),
+      this.scouting.listForGarden(gardenId),
+    ]);
+    return deriveScoutTasks(inBeds, pests, country, events, asOf);
   }
 }
 
@@ -195,18 +259,21 @@ type ReminderRow = Awaited<ReturnType<ReminderPlantingReader['listAllForReminder
 /** A planting in a bed whose crop has coefficients waters by the water balance. */
 function waterInput(row: ReminderRow) {
   if (!row.bedId || row.kcInitial == null || row.kcMid == null || row.kcEnd == null) return null;
-  const stages =
-    row.stageDaysInitial && row.stageDaysDevelopment && row.stageDaysMid && row.stageDaysLate
-      ? {
-          initial: row.stageDaysInitial,
-          development: row.stageDaysDevelopment,
-          mid: row.stageDaysMid,
-          late: row.stageDaysLate,
-        }
-      : null;
   return {
-    kc: { initial: row.kcInitial, mid: row.kcMid, end: row.kcEnd, stageDays: stages },
+    kc: { initial: row.kcInitial, mid: row.kcMid, end: row.kcEnd, stageDays: stageDaysOf(row) },
     annual: !row.life || row.life === 'annual',
     factor: bedWaterFactor(row.bedSun, row.bedMulch),
   };
+}
+
+/** The crop's FAO stage lengths, when the dataset has all four. */
+function stageDaysOf(row: ReminderRow) {
+  return row.stageDaysInitial && row.stageDaysDevelopment && row.stageDaysMid && row.stageDaysLate
+    ? {
+        initial: row.stageDaysInitial,
+        development: row.stageDaysDevelopment,
+        mid: row.stageDaysMid,
+        late: row.stageDaysLate,
+      }
+    : null;
 }
