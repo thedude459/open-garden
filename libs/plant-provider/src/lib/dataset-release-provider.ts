@@ -7,7 +7,12 @@ import type {
 } from '@open-garden/shared-types';
 import { z } from 'zod';
 import { verifyCatalogAttestation } from './catalog-attestation';
-import type { PlantDataProvider, ProviderCompanion, ProviderPlant } from './plant-data-provider';
+import type {
+  PlantDataProvider,
+  ProviderCompanion,
+  ProviderPest,
+  ProviderPlant,
+} from './plant-data-provider';
 
 /**
  * The open-garden-data release this app ships with and was tested against.
@@ -17,10 +22,10 @@ import type { PlantDataProvider, ProviderCompanion, ProviderPlant } from './plan
  * verify`); bump all three together.
  */
 export const BUNDLED_CATALOG = {
-  version: '0.3.1',
+  version: '0.3.2',
   /** Relative to the working directory: the repository root, or /app in the API image. */
-  file: 'libs/plant-provider/catalog/open-garden-catalog-0.3.1.json',
-  sha256: 'ca9fe37429c1dde52dec547052c5a6ec42467a44a4aa3dc9e9c7df3148de7322',
+  file: 'libs/plant-provider/catalog/open-garden-catalog-0.3.2.json',
+  sha256: '26e726a0e2ec37d6e47d77a4ee005144aaedb17fec9302630a9b2298a023afc9',
 } as const;
 
 /**
@@ -58,6 +63,11 @@ export class DatasetReleaseProvider implements PlantDataProvider {
     return (await this.load()).companions;
   }
 
+  /** The release's pests and diseases. Ones this app cannot read are left out. */
+  async pests(): Promise<ProviderPest[]> {
+    return (await this.load()).pests;
+  }
+
   /**
    * Read the file on every use, not at boot and not cached: a bad file fails
    * one pipeline run (recorded on the run) instead of stopping the API, and a
@@ -71,6 +81,7 @@ export class DatasetReleaseProvider implements PlantDataProvider {
 export interface Catalog {
   plants: ProviderPlant[];
   companions: ProviderCompanion[];
+  pests: ProviderPest[];
   /** Crops this app cannot read (a newer release may add values it does not know). */
   skipped: number;
 }
@@ -132,7 +143,12 @@ export async function readCatalog(
       shownIn: shownIn.map((place) => ({ where: place.where, zones: place.zones ?? null })),
     });
   }
-  return { plants, skipped, companions };
+  const pests: ProviderPest[] = [];
+  for (const raw of parsed.data.pests ?? []) {
+    const pest = pestSchema.safeParse(raw);
+    if (pest.success) pests.push(toPest(pest.data));
+  }
+  return { plants, skipped, companions, pests };
 }
 
 // Only the fields the app uses. Unknown fields are ignored, so a newer minor
@@ -219,7 +235,81 @@ const catalogSchema = z.object({
   // Crops and companion pairs are checked one by one in readCatalog.
   crops: z.array(z.unknown()),
   companions: z.array(z.unknown()).optional(),
+  pests: z.array(z.unknown()).optional(),
 });
+
+const steps = z.array(z.string().min(1)).optional();
+const controlsSchema = z.object({
+  cultural: steps,
+  physical: steps,
+  biological: steps,
+  organic: steps,
+  conventional: steps,
+});
+const pestSchema = z.object({
+  id: slug,
+  names: z.object({ en: z.string().min(1) }),
+  aliases: z.array(z.string().min(1)).optional(),
+  scientificName: z.string().optional(),
+  kind: z.enum(['insect', 'mite', 'disease']),
+  crops: z.array(slug).min(1),
+  signs: z.string().min(1),
+  scout: z.object({
+    stages: z.array(z.enum(['seedling', 'vegetative', 'flowering', 'fruiting'])).min(1),
+  }),
+  controls: controlsSchema.optional(),
+  occursIn: z.object({ countries: z.array(z.string().regex(/^[A-Z]{2}$/)).min(1) }).optional(),
+  regions: z
+    .array(
+      z.object({
+        where: z.string().min(1),
+        country: z.string().regex(/^[A-Z]{2}$/),
+        zones: zones.optional(),
+        when: z.string().min(1),
+        threshold: z.string().optional(),
+        controls: controlsSchema.optional(),
+        reference: z.string().min(1),
+      }),
+    )
+    .min(1),
+});
+
+type PestControls = z.infer<typeof controlsSchema> | undefined;
+
+function controlsOf(controls: PestControls) {
+  return {
+    cultural: controls?.cultural ?? [],
+    physical: controls?.physical ?? [],
+    biological: controls?.biological ?? [],
+    organic: controls?.organic ?? [],
+    conventional: controls?.conventional ?? [],
+  };
+}
+
+function toPest(pest: z.infer<typeof pestSchema>): ProviderPest {
+  return {
+    id: pest.id,
+    name: pest.names.en,
+    aliases: pest.aliases ?? [],
+    scientificName: pest.scientificName ?? null,
+    kind: pest.kind,
+    crops: pest.crops,
+    signs: pest.signs,
+    scoutStages: pest.scout.stages,
+    // Products are regional; the shared part never carries them.
+    controls: { ...controlsOf(pest.controls), organic: [], conventional: [] },
+    occursIn: pest.occursIn?.countries ?? null,
+    regions: pest.regions.map((region) => ({
+      where: region.where,
+      country: region.country,
+      zones: region.zones ?? null,
+      when: region.when,
+      threshold: region.threshold ?? null,
+      controls: controlsOf(region.controls),
+      reference: region.reference,
+    })),
+  };
+}
 
 const companionSchema = z.object({
   crops: z.tuple([slug, slug]),

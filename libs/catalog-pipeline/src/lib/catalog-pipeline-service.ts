@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
-import type { PlantDataProvider, ProviderCompanion } from '@open-garden/plant-provider';
+import type {
+  PlantDataProvider,
+  ProviderCompanion,
+  ProviderPest,
+} from '@open-garden/plant-provider';
 import type {
   PipelineMergeDecisionDto,
   PipelineRunSourceDto,
@@ -39,6 +43,8 @@ export interface PipelineRunPort {
     deprecateKeys: string[];
     /** Replaces every catalog companion pair; written only with the plants. */
     companions: ProviderCompanion[];
+    /** Replaces every catalog pest; written only with the plants. */
+    pests: ProviderPest[];
     plantsReactivated: number;
     recordsRejected: number;
     sources: PipelineRunSourceDto[];
@@ -112,12 +118,14 @@ export class CatalogPipelineService {
         skipped: number;
       }> = [];
       const companions: ProviderCompanion[] = [];
+      const pests: ProviderPest[] = [];
 
       for (const provider of this.sources) {
         const sourceId = provider.id;
         try {
           const { plants, skipped } = await fetchAllFromProvider(provider);
           companions.push(...((await provider.companions?.()) ?? []));
+          pests.push(...((await provider.pests?.()) ?? []));
           sourceRows.push({
             sourceId,
             status: 'succeeded',
@@ -200,7 +208,7 @@ export class CatalogPipelineService {
 
       const plants = merge.merged.map(toUpsert);
       const recordsRejected = merge.rejected + batches.reduce((n, b) => n + b.skipped, 0);
-      const catalogHash = overall === 'succeeded' ? hashCatalog(plants, companions) : null;
+      const catalogHash = overall === 'succeeded' ? hashCatalog(plants, companions, pests) : null;
       // The catalog matches the last successful run and nothing needs
       // deprecating or reactivating: record the run, write no plants.
       const unchanged =
@@ -220,6 +228,7 @@ export class CatalogPipelineService {
         plants: unchanged ? [] : plants,
         deprecateKeys,
         companions: unchanged ? [] : companions,
+        pests: unchanged ? [] : pests,
         plantsReactivated: reactivated,
         recordsRejected,
         sources: sourceRows,
@@ -245,13 +254,21 @@ export class CatalogPipelineService {
 }
 
 /** A stable SHA-256 of the plants a run would publish, independent of source order. */
-/** Plants and companion pairs: a release that changes only pairs is still a change. */
+/**
+ * Plants, companion pairs, and pests: a release that changes only pairs or
+ * pests is still a change. Each part joins the hash only when present, so a
+ * catalog without it hashes as before.
+ */
 export function hashCatalog(
   plants: Array<{ varietyKey: string }>,
   companions: ProviderCompanion[] = [],
+  pests: ProviderPest[] = [],
 ): string {
   const sorted = [...plants].sort((a, b) => a.varietyKey.localeCompare(b.varietyKey));
-  const content = companions.length ? { plants: sorted, companions } : sorted;
+  const content =
+    companions.length || pests.length
+      ? { plants: sorted, companions, ...(pests.length ? { pests } : {}) }
+      : sorted;
   return createHash('sha256').update(JSON.stringify(content)).digest('hex');
 }
 

@@ -119,6 +119,72 @@ export interface CatalogCompanionDto {
   shownIn: CompanionPlaceDto[];
 }
 
+export type PestKind = 'insect' | 'mite' | 'disease';
+/** The crop stages worth scouting at, so a reminder can be timed from a planting. */
+export type ScoutStage = 'seedling' | 'vegetative' | 'flowering' | 'fruiting';
+
+/**
+ * Controls in IPM order. Products allowed in organic growing come before
+ * conventional ones, which are shown only on request (ADR 0044).
+ */
+export interface PestControlsDto {
+  cultural: string[];
+  physical: string[];
+  biological: string[];
+  organic: string[];
+  conventional: string[];
+}
+
+/** Guidance written for one place: its timing, threshold, and products. */
+export interface PestRegionDto {
+  where: string;
+  /** ISO 3166-1 alpha-2. */
+  country: string;
+  zones: { min: number; max: number } | null;
+  when: string;
+  threshold: string | null;
+  controls: PestControlsDto;
+  reference: string;
+}
+
+/** A pest or disease from the dataset, as the catalog stores it (ADR 0045). */
+export interface CatalogPestDto {
+  id: string;
+  name: string;
+  aliases: string[];
+  scientificName: string | null;
+  kind: PestKind;
+  /** Dataset crop ids the guidance names as hosts; not a complete list. */
+  crops: string[];
+  signs: string;
+  scoutStages: ScoutStage[];
+  /** What works wherever the pest lives; never products. */
+  controls: PestControlsDto;
+  /** Countries it lives in, when a distribution reference gives them; null when not known. */
+  occursIn: string[] | null;
+  regions: PestRegionDto[];
+}
+
+/**
+ * How the region on a plant page was chosen for the member: from one of
+ * their properties' countries, the nearest by zone when no property's
+ * country is known, or none when their countries have no guidance.
+ */
+export type PestRegionMatch = 'country' | 'nearest' | 'none';
+
+/** A pest on a plant page: what it is, and the guidance chosen for the member. */
+export interface PlantPestDto {
+  id: string;
+  name: string;
+  scientificName: string | null;
+  kind: PestKind;
+  signs: string;
+  scoutStages: ScoutStage[];
+  controls: PestControlsDto;
+  region: PestRegionDto | null;
+  regionMatch: PestRegionMatch;
+}
+
 export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   sunRequirements: string | null;
   waterNeeds: string | null;
@@ -139,6 +205,8 @@ export interface PlantDetailDto extends Omit<PlantSummaryDto, 'spacingInches'> {
   companions: CatalogCompanionDto[];
   /** The zones of the member's properties the order was ranked for. */
   companionZones: number[];
+  /** Pests and diseases of this crop, by name, with guidance for the member's properties. */
+  pests: PlantPestDto[];
   /** The other catalog entries of the same crop (the crop itself and its varieties), A to Z. */
   varieties: PlantVarietyDto[];
 }

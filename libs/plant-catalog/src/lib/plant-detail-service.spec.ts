@@ -3,12 +3,14 @@ import { PlantDetailService } from './plant-detail-service';
 
 /** A plant page with no companion pairs to show. */
 const noCompanions = { pairs: { listForCrops: async () => [] }, zonesForUser: async () => [] };
+/** No pests in the catalog. */
+const noPests = { catalog: { listForCrops: async () => [] }, placesForUser: async () => [] };
 
 describe('PlantDetailService', () => {
   it('returns null when plant missing', async () => {
     const plants = { getById: vi.fn().mockResolvedValue(null) };
     const favorites = { isFavorite: vi.fn() };
-    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions, noPests);
     await expect(svc.getById('missing', 'user-1')).resolves.toBeNull();
     expect(favorites.isFavorite).not.toHaveBeenCalled();
   });
@@ -53,7 +55,7 @@ describe('PlantDetailService', () => {
       listByCrop: vi.fn().mockResolvedValue([]),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(true) };
-    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions, noPests);
     const detail = await svc.getById('p1', 'user-1');
     expect(detail?.isFavorite).toBe(true);
     expect(detail?.commonName).toBe('Tomato');
@@ -88,12 +90,14 @@ describe('PlantDetailService', () => {
       { getById: vi.fn().mockResolvedValue(row) } as never,
       favorites as never,
       noCompanions,
+      noPests,
     ).getById('m', 'u');
     expect(mint?.cropCoefficients).toEqual({ initial: 0.6, mid: 1.15, end: 1.1, stageDays: null });
     const basil = await new PlantDetailService(
       { getById: vi.fn().mockResolvedValue({ ...row, kcMid: null }) } as never,
       favorites as never,
       noCompanions,
+      noPests,
     ).getById('m', 'u');
     expect(basil?.cropCoefficients).toBeNull();
   });
@@ -118,6 +122,7 @@ describe('PlantDetailService', () => {
       } as never,
       { isFavorite: vi.fn().mockResolvedValue(false) } as never,
       { pairs: { listForCrops }, zonesForUser: vi.fn().mockResolvedValue([6, 4]) },
+      noPests,
     );
     const detail = await svc.getById('t', 'u');
     expect(listForCrops).toHaveBeenCalledWith(['tomato']);
@@ -130,6 +135,7 @@ describe('PlantDetailService', () => {
       { getById: vi.fn().mockResolvedValue({ id: 'c', status: 'active', cropId: null }) } as never,
       { isFavorite: vi.fn().mockResolvedValue(false) } as never,
       { pairs: { listForCrops }, zonesForUser: vi.fn() },
+      noPests,
     ).getById('c', 'u');
     expect(custom).toMatchObject({ companions: [], companionZones: [] });
   });
@@ -157,6 +163,7 @@ describe('PlantDetailService', () => {
       plants as never,
       { isFavorite: vi.fn().mockResolvedValue(false) } as never,
       noCompanions,
+      noPests,
     );
     const cherry = await svc.getById('c', 'u');
     expect(listByCrop).toHaveBeenCalledWith('tomato');
@@ -193,9 +200,56 @@ describe('PlantDetailService', () => {
       }),
     };
     const favorites = { isFavorite: vi.fn().mockResolvedValue(false) };
-    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions, noPests);
     const detail = await svc.getById('old', 'user-1');
     expect(detail?.spacingInches).toBeNull();
     expect(detail?.commonName).toBe('Heirloom');
+  });
+
+  it('shows the crop’s pests with guidance for the member’s properties', async () => {
+    const plants = {
+      getById: vi.fn().mockResolvedValue({ id: 'p1', commonName: 'Potato', cropId: 'potato' }),
+      listByCrop: vi.fn().mockResolvedValue([]),
+    };
+    const favorites = { isFavorite: vi.fn().mockResolvedValue(false) };
+    const none = { cultural: [], physical: [], biological: [], organic: [], conventional: [] };
+    const listForCrops = vi.fn().mockResolvedValue([
+      {
+        id: 'colorado-potato-beetle',
+        name: 'Colorado potato beetle',
+        aliases: [],
+        scientificName: null,
+        kind: 'insect',
+        crops: ['potato'],
+        signs: 'Striped beetles',
+        scoutStages: ['seedling'],
+        controls: none,
+        occursIn: ['US'],
+        regions: [
+          {
+            where: 'Minnesota, USA',
+            country: 'US',
+            zones: { min: 3, max: 5 },
+            when: 'Spring',
+            threshold: null,
+            controls: { ...none, organic: ['Spinosad'] },
+            reference: 'UMN',
+          },
+        ],
+      },
+    ]);
+    const svc = new PlantDetailService(plants as never, favorites as never, noCompanions, {
+      catalog: { listForCrops },
+      placesForUser: async () => [{ country: 'US', zone: 4 }],
+    });
+    const detail = await svc.getById('p1', 'user-1');
+    expect(listForCrops).toHaveBeenCalledWith(['potato']);
+    expect(detail?.pests).toEqual([
+      expect.objectContaining({
+        id: 'colorado-potato-beetle',
+        regionMatch: 'country',
+        region: expect.objectContaining({ where: 'Minnesota, USA' }),
+      }),
+    ]);
   });
 });

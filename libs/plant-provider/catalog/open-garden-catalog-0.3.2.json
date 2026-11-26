@@ -1,5 +1,5 @@
 {
-  "version": "0.3.1",
+  "version": "0.3.2",
   "license": "CC0-1.0",
   "units": {
     "length": "cm",
@@ -8283,6 +8283,11 @@
         }
       ],
       "reference": "Pinero (2017), University of Missouri Environment & Garden; UMN; Clemson (Hubbard types are the most damaged by squash bug)",
+      "pests": [
+        "squash-bug",
+        "cucumber-beetles",
+        "squash-vine-borer"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8306,6 +8311,9 @@
         }
       ],
       "reference": "UMN",
+      "pests": [
+        "cucumber-beetles"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8329,6 +8337,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; Doughty et al. (2016), Journal of Integrated Pest Management 7(1); UMN",
+      "pests": [
+        "squash-bug",
+        "cucumber-beetles"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8360,6 +8372,11 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; Lopez & Liburd (2019), SARE report GS17-171; UMN",
+      "pests": [
+        "squash-bug",
+        "cucumber-beetles",
+        "aphids"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8383,6 +8400,9 @@
         }
       ],
       "reference": "Lopez & Liburd (2019), SARE report GS17-171; UMN",
+      "pests": [
+        "aphids"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8406,6 +8426,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8429,6 +8453,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8452,6 +8480,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8475,6 +8507,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8498,6 +8534,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8521,6 +8561,10 @@
         }
       ],
       "reference": "Riesselman (2006), Iowa State Research Farm Progress Reports 295; UMN",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8544,6 +8588,10 @@
         }
       ],
       "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8567,6 +8615,10 @@
         }
       ],
       "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8590,6 +8642,10 @@
         }
       ],
       "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8613,6 +8669,10 @@
         }
       ],
       "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8636,6 +8696,10 @@
         }
       ],
       "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8659,6 +8723,10 @@
         }
       ],
       "reference": "Clemson Cooperative Extension HGIC, \"Attracting Beneficial Insects\" (A. Jeffers, 2020)",
+      "pests": [
+        "imported-cabbageworm",
+        "cabbage-looper"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8749,6 +8817,9 @@
         }
       ],
       "reference": "UC IPM",
+      "pests": [
+        "aphids"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8772,6 +8843,9 @@
         }
       ],
       "reference": "UC IPM",
+      "pests": [
+        "aphids"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8949,6 +9023,9 @@
         }
       ],
       "reference": "University of Minnesota Extension, \"Late blight of tomato and potato\"",
+      "pests": [
+        "late-blight"
+      ],
       "source": "hand-curation"
     },
     {
@@ -8972,6 +9049,9 @@
         }
       ],
       "reference": "University of Minnesota Extension, \"Colorado potato beetle\"",
+      "pests": [
+        "colorado-potato-beetle"
+      ],
       "source": "hand-curation"
     },
     {
@@ -9332,6 +9412,1809 @@
         }
       ],
       "reference": "Penn State Extension, \"Bramble Disease - Verticillium Wilt\"",
+      "source": "hand-curation"
+    }
+  ],
+  "pests": [
+    {
+      "id": "aphids",
+      "names": {
+        "en": "Aphids"
+      },
+      "scientificName": "Aphididae",
+      "kind": "insect",
+      "crops": [
+        "asparagus",
+        "cabbage",
+        "mustard-greens",
+        "spinach",
+        "potato",
+        "tomato",
+        "eggplant",
+        "sweet-pepper",
+        "hot-pepper",
+        "cucumber",
+        "watermelon",
+        "apple"
+      ],
+      "signs": "Soft, pear-shaped insects 2 to 4 mm long, green, black, red, yellow, brown, or grey, with two short tailpipes at the rear. They cluster under young leaves and on new shoots and buds, leave white cast skins, and drip sticky honeydew that grows black sooty mould. Heavy feeding twists and yellows leaves and stunts shoots, and aphids spread viruses such as cucumber mosaic.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Pull weeds that host aphids, such as sowthistle and wild mustard."
+        ],
+        "physical": [
+          "Knock aphids off with a strong spray of water, which also rinses off honeydew."
+        ],
+        "biological": [
+          "Lady beetles, lacewings, hoverfly larvae, and parasitic wasps eat aphids; give them time to catch up.",
+          "Grow flowers that bloom across the season to keep natural enemies near, and avoid broad-spectrum sprays that kill them."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Look under young leaves and on new shoots often all season; numbers can climb within days.",
+          "threshold": "Most aphid feeding does the plant little harm. Act only when leaves curl or yellow or shoots stunt.",
+          "controls": {
+            "organic": [
+              "Insecticidal soap, horticultural oil, or pyrethrins kill only the aphids they touch; spray both sides of the leaves and repeat.",
+              "Neem (azadirachtin) stops aphids feeding, and they die slowly."
+            ],
+            "conventional": [
+              "Long-lasting broad-spectrum insecticides kill natural enemies too and can make aphids worse."
+            ]
+          },
+          "reference": "UMN, \"Aphids\" (reviewed 2019)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "flea-beetles",
+      "names": {
+        "en": "Flea beetles"
+      },
+      "scientificName": "Phyllotreta, Epitrix, and related genera",
+      "kind": "insect",
+      "crops": [
+        "radish",
+        "turnip",
+        "mustard-greens",
+        "broccoli",
+        "cabbage",
+        "collards",
+        "kale",
+        "eggplant",
+        "sweet-pepper",
+        "hot-pepper",
+        "tomato",
+        "potato",
+        "spinach",
+        "melon"
+      ],
+      "signs": "Tiny beetles, 1.5 to 3 mm long, black, bronze, bluish, or grey and sometimes striped, that jump when disturbed. They chew shallow pits and many small round holes, under 3 mm across, in the leaves. Heavy feeding wilts or stunts young plants; seedlings suffer more than transplants.",
+      "scout": {
+        "stages": [
+          "seedling"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Control weeds near the garden and clear old crop debris, where adults spend the winter.",
+          "Plant late in the planting window, so warm weather makes plants grow past the damage quickly.",
+          "Sow a favoured crop such as radish a week or two before the main crop as a trap, and deal with the beetles on it."
+        ],
+        "physical": [
+          "Cover seedlings with row cover, on hoops for eggplant, and take it off before flowering so pollinators can reach the flowers.",
+          "Kaolin clay on the leaves can deter feeding, with mixed results; reapply after rain."
+        ],
+        "biological": [
+          "A native braconid wasp kills adult flea beetles, and lacewing larvae eat them; neither is sold."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "From the day seedlings come up or transplants go in, through spring. Yellow sticky cards show when they arrive, and beetles are slower and easier to see on cool mornings.",
+          "threshold": "Protect seedlings when there are more than five beetles per plant, or when 10 to 30 percent of their leaves are lost. Once plants have four or five leaves, usually by summer, they outgrow the damage.",
+          "controls": {
+            "organic": [
+              "Spinosad or pyrethrins."
+            ],
+            "conventional": [
+              "Broad-spectrum insecticides such as carbaryl, malathion, permethrin, lambda-cyhalothrin, or cyfluthrin."
+            ]
+          },
+          "reference": "UMN, \"Flea beetles\" (reviewed 2022); Clemson"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "colorado-potato-beetle",
+      "names": {
+        "en": "Colorado potato beetle"
+      },
+      "scientificName": "Leptinotarsa decemlineata",
+      "kind": "insect",
+      "crops": [
+        "potato",
+        "eggplant",
+        "tomatillo"
+      ],
+      "signs": "Oval beetles about 1 cm long with an orange shield behind the head and cream wing covers with ten narrow black stripes. Clusters of bright yellow-orange eggs sit under the leaves. Larvae are brick red when young, then pink to salmon, with black heads and two rows of dark spots on each side. Larvae and adults chew the leaves and can strip a plant.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "vegetative",
+          "flowering"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Pull nightshade and ground cherry near the garden, mulch between plants, and clean up at season's end.",
+          "Grow an early variety (under 80 days) to finish before midsummer adults build up.",
+          "Skip potatoes for a year; the beetles move little, so this works best with no other potatoes nearby."
+        ],
+        "physical": [
+          "Hand-pick adults and larvae into soapy water and crush the egg clusters, starting as adults come out in spring.",
+          "Cover rows with row cover before any beetles appear, where potatoes did not grow last year; remove it when weather turns hot and humid."
+        ],
+        "biological": [
+          "Lady beetles and stink bugs eat the eggs, though they seldom keep numbers down on their own."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "AD",
+          "AL",
+          "AM",
+          "AT",
+          "AZ",
+          "BA",
+          "BE",
+          "BG",
+          "BY",
+          "CA",
+          "CH",
+          "CN",
+          "CU",
+          "CZ",
+          "DE",
+          "EE",
+          "ES",
+          "FI",
+          "FR",
+          "GE",
+          "GR",
+          "GT",
+          "HR",
+          "HU",
+          "IQ",
+          "IR",
+          "IT",
+          "KG",
+          "KZ",
+          "LT",
+          "LU",
+          "LV",
+          "MD",
+          "MK",
+          "MX",
+          "NL",
+          "PL",
+          "PT",
+          "RO",
+          "RS",
+          "RU",
+          "SI",
+          "SK",
+          "TJ",
+          "TM",
+          "TR",
+          "UA",
+          "US",
+          "UZ"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Leptinotarsa decemlineata distribution, countries where present (accessed 2026-11-26); absent, eradicated, transient, or only intercepted elsewhere"
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "From when the potatoes come up in spring, as overwintered adults emerge; check regularly, as a second generation follows by midsummer in warmer areas.",
+          "threshold": "Potatoes can lose up to 30 percent of their leaves before flowering, but only about 10 percent once the tubers start to size, soon after flowering.",
+          "controls": {
+            "organic": [
+              "Bt or neem on small larvae, before numbers are high.",
+              "Spinosad, though some populations resist it.",
+              "This beetle resists more than 50 insecticides; never rely on one product, and treat young larvae, not eggs or adults."
+            ]
+          },
+          "reference": "UMN, \"Colorado potato beetles\" (reviewed 2026)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "squash-bug",
+      "names": {
+        "en": "Squash bug"
+      },
+      "scientificName": "Anasa tristis",
+      "kind": "insect",
+      "crops": [
+        "summer-squash",
+        "winter-squash",
+        "pumpkin",
+        "cucumber"
+      ],
+      "signs": "Flat, dark grey-brown bugs about 1.6 cm long with orange and brown stripes along the edge of the abdomen. Clusters of about 20 oval, yellow to bronze eggs sit under the leaves, often in the angle between veins. Nymphs start green with black legs and turn grey. Feeding makes yellow spots that turn brown, and heavy feeding wilts and can kill young plants. In fall they crowd onto the fruit.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Keep plants watered and fed, as sturdy plants tolerate feeding.",
+          "Clear plant debris during the season, and cucurbit vines in fall, where adults hide and spend the winter.",
+          "Butternut and buttercup squash and Sweet Cheese pumpkins tolerate feeding better than other kinds.",
+          "A border of Blue Hubbard squash draws squash bugs away from the main crop; deal with the bugs on it.",
+          "Where squash bugs are a steady problem, skip straw mulch, which shelters them."
+        ],
+        "physical": [
+          "Crush the egg clusters, and drop nymphs and adults into soapy water.",
+          "Lay boards or newspaper on the ground; the bugs gather under them at night, to be destroyed in the morning."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Adults reach cucurbits from late spring; look under the leaves for egg clusters from midsummer, as treatment works best on newly hatched nymphs.",
+          "threshold": "About one egg cluster per plant on average.",
+          "controls": {
+            "conventional": [
+              "Seldom needed in a garden. Treat newly hatched nymphs and cover the leaf undersides, late in the day when the flowers have closed, to spare bees."
+            ]
+          },
+          "reference": "UMN, \"Squash bugs\" (reviewed 2026)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "squash-vine-borer",
+      "names": {
+        "en": "Squash vine borer"
+      },
+      "scientificName": "Melittia cucurbitae",
+      "kind": "insect",
+      "crops": [
+        "summer-squash",
+        "winter-squash",
+        "pumpkin"
+      ],
+      "signs": "A day-flying, wasp-like moth about 1.3 cm long, with an orange abdomen dotted black and metallic green front wings. It lays flat brown eggs at the base of the plant, and cream larvae with brown heads, up to 2.5 cm long, bore into the stem. Plants wilt, first in strong sun and then by morning, and holes near the base ooze moist green or orange sawdust-like frass. The stem base can rot.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Grow crops it seldom attacks, such as butternut squash, cucumber, melon, and watermelon; Hubbard and acorn squash suffer most.",
+          "Rotate where cucurbits grow, and pull and destroy plants it kills."
+        ],
+        "physical": [
+          "Cover plants with row cover, sealed at the edges, when vines start to run or the first moth is seen, until about two weeks after that first moth; remove it at flowering, and do not use it where cucurbits grew last year, as moths emerge from the soil underneath.",
+          "Slit a wilting stem lengthwise, kill the larvae, and mound moist soil over the cut so new roots can form."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Moths fly from late June through July in Minnesota. Watch for them, set a yellow bowl of soapy water by late June and check it daily, and look closely at any plant wilted in the morning.",
+          "controls": {
+            "cultural": [
+              "Sow a second summer squash in early July, which matures after the moths have finished laying."
+            ],
+            "organic": [
+              "Bt does not work, as larvae inside the stem never eat it."
+            ],
+            "conventional": [
+              "Spray or dust the stem bases when vines start to run or the first moth is seen, and repeat every 7 to 10 days through July, before larvae enter the stems; carbaryl, permethrin, bifenthrin, or esfenvalerate. Spray in the evening, not on open flowers."
+            ]
+          },
+          "reference": "UMN, \"Squash vine borers\" (reviewed 2026); Clemson 2207 (scientific name)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "tomato-hornworm",
+      "names": {
+        "en": "Tomato hornworm"
+      },
+      "scientificName": "Manduca quinquemaculata",
+      "kind": "insect",
+      "crops": [
+        "tomato",
+        "potato",
+        "eggplant",
+        "sweet-pepper",
+        "hot-pepper"
+      ],
+      "signs": "A green caterpillar up to 10 cm long with eight white V-shaped marks on each side and a black horn at the tail; young ones are pale and unmarked. It strips leaves from the top of the plant down and chews holes in fruit, and leaves dark green or black droppings. It blends in and is often found only after much damage.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Pull weeds that host it, such as horsenettle, jimsonweed, and nightshade.",
+          "Till after harvest to destroy pupae in the soil."
+        ],
+        "physical": [
+          "Hand-pick caterpillars into soapy water; it is the most effective control."
+        ],
+        "biological": [
+          "Leave hornworms carrying white, rice-like cocoons; the parasitic wasps inside will kill them and go on to others.",
+          "Lady beetles, lacewings, and paper wasps eat the eggs and young caterpillars."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "At least twice a week in summer, looking for stripped tops and droppings; there are two generations a year.",
+          "threshold": "Hand-picking is usually enough. Treat only small caterpillars, before plants lose many leaves.",
+          "controls": {
+            "organic": [
+              "Bt (Bacillus thuringiensis var. kurstaki) on small caterpillars, which spares bees and other insects, or insecticidal soap, which has little effect on beneficial insects.",
+              "Spinosad, which is toxic to bees until it dries."
+            ],
+            "conventional": [
+              "Broad-spectrum pyrethroids such as bifenthrin or permethrin kill beneficial insects too."
+            ]
+          },
+          "reference": "UMN, \"Tomato hornworms\" (reviewed 2020)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "cucumber-beetles",
+      "names": {
+        "en": "Cucumber beetles"
+      },
+      "aliases": [
+        "striped cucumber beetle",
+        "spotted cucumber beetle"
+      ],
+      "scientificName": "Acalymma vittatum and Diabrotica undecimpunctata",
+      "kind": "insect",
+      "crops": [
+        "cucumber",
+        "melon",
+        "summer-squash",
+        "winter-squash",
+        "pumpkin"
+      ],
+      "signs": "Beetles about 5 mm long, yellow with three black stripes (striped) or with twelve black spots (spotted), with black heads. They chew leaves, flowers, and stems and scar fruit, and can strip small plants. The striped beetle carries bacterial wilt, which makes cucumbers and melons wilt and die.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "vegetative"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Pull weeds near the garden and clear debris and leaf litter in fall, where adults spend the winter, and rotate.",
+          "Pull any plant with bacterial wilt before beetles spread it.",
+          "Plant Blue Hubbard squash a week or two before the other cucurbits as a trap, and deal with the beetles on it."
+        ],
+        "physical": [
+          "Cover plants with row cover from emergence, and remove it at flowering so pollinators can reach them.",
+          "Thick straw at the base of plants makes egg-laying harder; knock beetles into soapy water on a few plants.",
+          "Kaolin clay deters feeding if applied before heavy damage."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "From when seedlings come up, watching closely from the seed leaves to the third true leaf; keep watching cucumbers and melons all season because of bacterial wilt. Beetles seen late in summer can be ignored.",
+          "threshold": "Treat seedlings when 25 percent of plants have two or more beetles, or once a plant has lost 25 percent of its leaves. Squash and pumpkins with four or more leaves tolerate feeding.",
+          "controls": {
+            "conventional": [
+              "Treat only at the threshold, with a product labelled for cucumber beetles on that crop."
+            ]
+          },
+          "reference": "UMN, \"Cucumber beetles\" (reviewed 2026)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "imported-cabbageworm",
+      "names": {
+        "en": "Imported cabbageworm"
+      },
+      "aliases": [
+        "cabbage white"
+      ],
+      "scientificName": "Pieris rapae",
+      "kind": "insect",
+      "crops": [
+        "cabbage",
+        "broccoli",
+        "cauliflower",
+        "brussels-sprouts",
+        "collards",
+        "kale",
+        "kohlrabi"
+      ],
+      "signs": "A velvety green caterpillar about 2.5 cm long, the young of the white cabbage butterfly. It chews holes in the leaves and pupates in a chrysalis on the plant.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "vegetative"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Control weeds, and clear crop debris right after harvest so pests cannot finish their life cycle."
+        ],
+        "physical": [
+          "Hand-pick caterpillars every few days on small plantings.",
+          "Cover plants with fine mesh netting to keep the butterflies from laying eggs."
+        ],
+        "biological": [
+          "Grow small flowers such as sweet alyssum, parsley, dill, cilantro, buckwheat, and fennel, which draw parasitic flies and wasps.",
+          "Avoid broad-spectrum insecticides, which kill these natural enemies."
+        ]
+      },
+      "regions": [
+        {
+          "where": "South Carolina, USA",
+          "country": "US",
+          "zones": {
+            "min": 7,
+            "max": 9
+          },
+          "when": "Every few days while the butterflies are flying, to catch caterpillars soon after they hatch.",
+          "controls": {
+            "organic": [
+              "Bt (Bacillus thuringiensis) or spinosad on active caterpillars, not on pupae."
+            ],
+            "conventional": [
+              "Broad-spectrum insecticides such as carbaryl or bifenthrin, as a last resort."
+            ]
+          },
+          "reference": "Clemson"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "early-blight",
+      "names": {
+        "en": "Early blight"
+      },
+      "scientificName": "Alternaria tomatophila and Alternaria solani",
+      "kind": "disease",
+      "crops": [
+        "tomato",
+        "potato",
+        "sweet-pepper",
+        "hot-pepper"
+      ],
+      "signs": "Round brown spots up to 1.3 cm across with target-like rings, often ringed with yellow, starting on the oldest leaves near the ground. Leaves brown and drop. Seedling stems can rot dark and sunken at the soil line, and tomato fruit gets leathery black spots near the stem.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Grow resistant varieties, often marked EB in catalogues; they still show some spots.",
+          "Wait at least two years before growing tomatoes, potatoes, or peppers in the same place, and pull nightshade weeds.",
+          "Mulch under plants, water at the base, and stake, space, and prune the lowest leaves so leaves stay dry and soil does not splash onto them.",
+          "Use clean seed, and remove or bury plants at the end of the season."
+        ],
+        "physical": [
+          "Remove spotted leaves, no more than a third of the plant, and wash hands and tools afterwards."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Check the lower leaves regularly from early summer (mid to late June in Minnesota), more in warm wet weather with heavy dew; it spreads at 15 to 27 °C and most at 28 to 30 °C.",
+          "threshold": "Tomato plants tolerate a lot of early blight without losing yield; garden plants seldom need a fungicide.",
+          "controls": {
+            "conventional": [
+              "Rarely needed in a garden. Where used, time fungicides to wet weather and rotate fungicide groups so resistance does not build."
+            ]
+          },
+          "reference": "UMN, \"Early blight in tomato and potato\" (reviewed 2024)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "late-blight",
+      "names": {
+        "en": "Late blight"
+      },
+      "scientificName": "Phytophthora infestans",
+      "kind": "disease",
+      "crops": [
+        "tomato",
+        "potato"
+      ],
+      "signs": "Large, dark brown blotches with a grey-green edge that cross the leaf veins, firm dark brown patches on stems, and in humid weather a thin white fuzz on infected parts. In cool wet weather whole plants turn brown as if frosted. Tomato fruit gets firm brown spots, and potato tubers discolour and rot.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Plant tomatoes where no tomatoes, potatoes, peppers, or eggplant have grown for three to four years.",
+          "Grow resistant varieties; they still show some symptoms in very wet years.",
+          "Plant certified seed potatoes, check transplants for spots, and pull volunteer potatoes.",
+          "Keep leaves dry with drip or soaker watering in the morning, and stake and space plants for air.",
+          "Remove or bury plants at the end of the season, and let potato culls break down over winter."
+        ],
+        "physical": [
+          "Remove diseased leaves, and pull badly infected plants before it spreads."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "In cool (16 to 21 °C), damp weather; it does not come every year. Check tomato transplants before buying them, and look early in the day.",
+          "controls": {
+            "conventional": [
+              "Not recommended in home gardens. Farms use fungicides made for water moulds, applied before infection and rotated."
+            ]
+          },
+          "reference": "UMN, \"Late blight\" (reviewed 2021)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "cucurbit-powdery-mildew",
+      "names": {
+        "en": "Powdery mildew of cucurbits"
+      },
+      "scientificName": "Podosphaera xanthii",
+      "kind": "disease",
+      "crops": [
+        "cucumber",
+        "melon",
+        "watermelon",
+        "summer-squash",
+        "winter-squash",
+        "pumpkin"
+      ],
+      "signs": "Pale yellow leaf spots, then white powdery patches on both sides of the leaves that spread over leaves, stems, and leaf stalks, older leaves first. Plants weaken, fruit ripens early and gets sunscald, and it stores and tastes worse.",
+      "scout": {
+        "stages": [
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Grow varieties with full or partial resistance.",
+          "Space plants properly, stake them, and control weeds so air moves around them; avoid shady sites.",
+          "Fertilize by soil test, without extra nitrogen."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "From mid to late summer, once plants are fruiting; once a week, look at five mature leaves.",
+          "threshold": "Where fungicides are used, start when 1 of every 50 leaves checked has powdery mildew.",
+          "controls": {
+            "conventional": [
+              "Only where susceptible varieties lost yield before; start when it first appears, and check current recommendations, as it keeps developing resistance."
+            ]
+          },
+          "reference": "UMN, \"Powdery mildew of cucurbits\" (reviewed 2026)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "japanese-beetle",
+      "names": {
+        "en": "Japanese beetle"
+      },
+      "scientificName": "Popillia japonica",
+      "kind": "insect",
+      "crops": [
+        "grape",
+        "apple",
+        "sweet-cherry",
+        "sour-cherry",
+        "plum",
+        "raspberry",
+        "red-currant",
+        "basil",
+        "marigold",
+        "sweet-corn"
+      ],
+      "signs": "Beetles 8 to 13 mm long with a metallic green head and copper-brown wing covers, and five tufts of white hair along each side and two at the tip. They eat the leaf between the veins, leaving a lacy skeleton that browns, and feed on flowers and fruit, often in clusters on one plant while its neighbours are spared. The C-shaped white grubs feed mainly on grass roots.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Harvest often while the beetles are feeding, which leaves them less of the crop."
+        ],
+        "physical": [
+          "Hand-pick or knock beetles into soapy water every day, best in the cool of morning or evening; fewer damaged leaves draw fewer beetles.",
+          "Cover plants with fine netting, but only after flowering and fruit set, so pollinators can reach the flowers.",
+          "Do not hang beetle traps in a garden; they draw in more beetles than they catch."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "CA",
+          "CH",
+          "DE",
+          "HR",
+          "IQ",
+          "IT",
+          "JP",
+          "PT",
+          "RU",
+          "US"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Popillia japonica distribution, countries where present (accessed 2026-11-26); absent, transient, or only intercepted elsewhere"
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Adults come out of the ground in late June or early July and feed for six to eight weeks, mostly finished by mid to late August. Start removing them as soon as the first appear.",
+          "threshold": "Damage to mature plants is mostly cosmetic; young or weak plants and fruit are worth protecting.",
+          "controls": {
+            "biological": [
+              "Two natural enemies are established in Minnesota, the Winsome fly (Istocheta aldrichi) on adults and the wasp Tiphia vernalis on grubs. Leave any beetle with a white egg on its back; the fly laid it and will kill the beetle within a week."
+            ],
+            "organic": [
+              "Neem oil deters feeding for a few days and is low risk to bees; repeat it.",
+              "Pyrethrins kill only beetles they hit and are toxic to bees."
+            ],
+            "conventional": [
+              "Chlorantraniliprole protects for two to four weeks and is low risk to bees.",
+              "Pyrethroids (bifenthrin, cyfluthrin, lambda-cyhalothrin, permethrin) and carbaryl last longer but are toxic to bees and other pollinators."
+            ]
+          },
+          "reference": "UMN, \"Japanese beetles\" (reviewed 2025)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "mexican-bean-beetle",
+      "names": {
+        "en": "Mexican bean beetle"
+      },
+      "scientificName": "Epilachna varivestis",
+      "kind": "insect",
+      "crops": [
+        "lima-bean",
+        "bush-bean",
+        "pole-bean",
+        "edamame",
+        "fava-bean"
+      ],
+      "signs": "A rounded beetle about 8 mm long, like a lady beetle, orange to copper with 16 black spots in three rows. Clusters of 40 to 60 bright yellow eggs stand on end under the leaves, and the yellow larvae are covered in soft black spines. Larvae and adults eat the underside of leaves between the veins, leaving them lacy and see-through; adults also feed on flowers, pods, and stems.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Sow a small patch of beans early in spring as a trap; once overwintered adults have gathered on it, pull the plants into sealed bags to destroy them.",
+          "Pull and bag bean plants after harvest, which kills the eggs, larvae, and pupae on them."
+        ],
+        "physical": [
+          "Cover bean rows with row cover after sowing; it can stay on until harvest, as beans need no pollinators.",
+          "Crush egg clusters, larvae, and adults by hand, and seal badly infested plants in a plastic bag for a week before composting them."
+        ],
+        "biological": [
+          "Release the parasitic wasp Pediobius faveolatus when the first larvae appear; it suits large plantings and community gardens."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "CA",
+          "CR",
+          "GT",
+          "HN",
+          "JP",
+          "MX",
+          "SV",
+          "US"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Epilachna varivestis distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "Maryland, USA",
+          "country": "US",
+          "zones": {
+            "min": 6,
+            "max": 8
+          },
+          "when": "From early summer, look under the leaves for yellow egg clusters; there are one to three generations a year.",
+          "threshold": "Beans tolerate the loss of up to 20 percent of their leaves before yield drops.",
+          "controls": {
+            "organic": [
+              "For severe infestations, spinosad, neem, or pyrethrum."
+            ]
+          },
+          "reference": "University of Maryland Extension HGIC, \"Mexican bean beetle\" (updated 2023)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "twospotted-spider-mite",
+      "names": {
+        "en": "Twospotted spider mite"
+      },
+      "aliases": [
+        "spider mite"
+      ],
+      "scientificName": "Tetranychus urticae",
+      "kind": "mite",
+      "crops": [
+        "strawberry",
+        "blueberry",
+        "blackberry",
+        "cucumber",
+        "bush-bean",
+        "pole-bean",
+        "pea",
+        "tomato",
+        "eggplant",
+        "lettuce",
+        "marigold"
+      ],
+      "signs": "Tiny yellow-orange mites, about 0.5 mm long, with a dark spot on each side, under the leaves. Feeding leaves fine white or yellow speckles, then a bronzed or bleached look, and leaves can drop; heavy infestations spin fine webbing over the leaves. It can be mistaken for drought stress.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Keep plants watered (about 2.5 cm a week) and mulched; mites thrive on stressed plants. Do not fertilize during drought."
+        ],
+        "physical": [
+          "Knock mites off with a strong spray of water, which also breaks up their webbing."
+        ],
+        "biological": [
+          "Predatory mites and the small lady beetles that eat mites keep numbers down; long-lasting insecticides such as bifenthrin and permethrin kill them and can make mites worse."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Every three to five days in hot, dry summer weather, looking under speckled leaves with a hand lens, or tapping leaves over white paper and watching for moving specks. Above 32 °C colonies can build up in under two weeks.",
+          "controls": {
+            "organic": [
+              "Insecticidal soap or horticultural oil kill only the mites they touch and have little effect on other insects; spray both sides of the leaves, repeat, and water plants first and spray in the cool of morning or evening."
+            ]
+          },
+          "reference": "UMN, \"Twospotted spider mites\" (reviewed 2020)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "cabbage-looper",
+      "names": {
+        "en": "Cabbage looper"
+      },
+      "scientificName": "Trichoplusia ni",
+      "kind": "insect",
+      "crops": [
+        "cabbage",
+        "broccoli",
+        "cauliflower",
+        "brussels-sprouts",
+        "collards",
+        "kale",
+        "kohlrabi"
+      ],
+      "signs": "A green caterpillar 3 to 4 cm long, wider at the tail than the head, that walks in loops like an inchworm and rears up when disturbed; it has only two pairs of fleshy legs on its abdomen, where other cabbage caterpillars have four. It chews large holes in the leaves and pupates in a loose cocoon under a leaf.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "vegetative"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Control weeds, and clear crop debris right after harvest so pests cannot finish their life cycle."
+        ],
+        "physical": [
+          "Hand-pick caterpillars every few days on small plantings.",
+          "Cover plants with fine mesh netting to keep the moths from laying eggs."
+        ],
+        "biological": [
+          "Grow small flowers such as sweet alyssum, parsley, dill, cilantro, buckwheat, and fennel, which draw parasitic flies and wasps.",
+          "Avoid broad-spectrum insecticides, which kill these natural enemies."
+        ]
+      },
+      "regions": [
+        {
+          "where": "South Carolina, USA",
+          "country": "US",
+          "zones": {
+            "min": 7,
+            "max": 9
+          },
+          "when": "Every few days, to catch caterpillars soon after they hatch.",
+          "controls": {
+            "organic": [
+              "Bt (Bacillus thuringiensis) or spinosad on active caterpillars, not on pupae."
+            ],
+            "conventional": [
+              "Broad-spectrum insecticides such as carbaryl or bifenthrin, as a last resort."
+            ]
+          },
+          "reference": "Clemson"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "septoria-leaf-spot",
+      "names": {
+        "en": "Septoria leaf spot"
+      },
+      "scientificName": "Septoria lycopersici",
+      "kind": "disease",
+      "crops": [
+        "tomato"
+      ],
+      "signs": "Small, round grey spots with dark borders on the lower leaves, with tiny black specks (the fungus's fruiting bodies) in their centres. The spots grow together, and leaves yellow and die from the bottom of the plant up.",
+      "scout": {
+        "stages": [
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Space plants for air, remove suckers from the base, and prune off the lowest three or four leaf branches once plants are setting fruit.",
+          "Mulch, and water at the base so the leaves stay dry.",
+          "Check transplants for spots before planting them, and pull horsenettle, a weed host.",
+          "Remove infected leaves during the season and all infected plant parts at its end; hot composting above 49 °C kills it."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Maryland, USA",
+          "country": "US",
+          "zones": {
+            "min": 6,
+            "max": 8
+          },
+          "when": "Spots usually appear as the first fruit forms, and spread in wet weather.",
+          "controls": {
+            "organic": [
+              "Where it blights plants badly every year, fixed copper, early in the season when spots first appear."
+            ],
+            "conventional": [
+              "A synthetic fungicide, at the same time and only in the same case."
+            ]
+          },
+          "reference": "University of Maryland Extension HGIC, \"Septoria leaf spot on tomatoes\" (updated 2024)"
+        },
+        {
+          "where": "North Carolina, USA",
+          "country": "US",
+          "zones": {
+            "min": 6,
+            "max": 8
+          },
+          "when": "In seasons of moderate temperatures and plenty of rain; rain splash spreads it, so look after wet spells.",
+          "controls": {
+            "cultural": [
+              "Rotate away from tomatoes for two years or more, and avoid working among wet plants."
+            ],
+            "organic": [
+              "Fixed copper."
+            ],
+            "conventional": [
+              "Chlorothalonil or mancozeb."
+            ]
+          },
+          "reference": "NC State Extension, \"Septoria leaf spot of tomato\" (I. Meadows and T. Clabby)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "bacterial-wilt",
+      "names": {
+        "en": "Bacterial wilt of cucurbits"
+      },
+      "scientificName": "Erwinia tracheiphila",
+      "kind": "disease",
+      "crops": [
+        "cucumber",
+        "melon",
+        "pumpkin",
+        "summer-squash",
+        "winter-squash"
+      ],
+      "signs": "Leaves turn dull green and wilt in the heat of the day, recover overnight at first, then yellow and brown from the edges and die as the wilt moves down the vine. Cucumbers and melons collapse fast, pumpkins over about two weeks, and summer squash may keep bearing for weeks. Cutting a wilted stem near the crown and slowly pulling the halves apart can show fine strands of ooze. Cucumber beetles carry it; it does not affect watermelon.",
+      "scout": {
+        "stages": [
+          "seedling",
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Control cucumber beetles, which carry the bacteria from plant to plant; it is the most effective protection.",
+          "Pull and bury plants that wilt from it, before beetles spread it further.",
+          "Grow resistant varieties where catalogues offer them.",
+          "Rule out squash vine borer at the crown, and drought, before blaming wilt."
+        ],
+        "physical": [
+          "Cover young plants with row cover from emergence, and remove it at flowering so pollinators can reach the flowers."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Watch for plants that wilt in the afternoon and have not recovered by morning; it does not appear every year.",
+          "threshold": "No spray cures an infected plant; any insecticide is aimed at the cucumber beetles that spread it.",
+          "reference": "UMN, \"Bacterial wilt of cucurbits\" (reviewed 2022)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "apple-scab",
+      "names": {
+        "en": "Apple scab"
+      },
+      "scientificName": "Venturia inaequalis",
+      "kind": "disease",
+      "crops": [
+        "apple",
+        "pear"
+      ],
+      "signs": "Round, velvety, olive-green spots up to 1.3 cm across with fringed edges, often along the leaf veins, that turn dark brown to black and run together. Badly spotted leaves yellow and drop by midsummer. Fruit gets olive spots that turn brown and corky, and fruit infected young cracks and misshapes. Years of early leaf loss weaken the tree.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Plant resistant or immune varieties; it is the best defence.",
+          "Rake up and destroy, bury, or compost fallen leaves before snow, or chop them with a mulching mower, as the fungus spends the winter in them.",
+          "Space trees by their mature size and prune for an open canopy, removing suckers and water sprouts, so leaves dry quickly."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Spores fly in spring and infect new leaves, flowers, and fruit whenever they stay wet for several hours; warm, rainy springs are worst. In mid-June, check leaves inside and outside the canopy for spots.",
+          "threshold": "Spray only trees whose fruit is for eating fresh and that have had severe scab before, or trees that lost most of their leaves three years running; not resistant varieties, and not a tree already spotted this year, since fungicides only protect.",
+          "controls": {
+            "cultural": [
+              "Resistant in Minnesota trials, Honeycrisp; immune, Dayton, Freedom, Liberty, McShay, Pixie Crunch, Pristine, Redfree, and William's Pride."
+            ],
+            "organic": [
+              "For edible apples, lime-sulfur or sulfur, from when half an inch of green leaf shows at bud break, repeated at the label's interval, shorter in rainy weather."
+            ],
+            "conventional": [
+              "Captan, at the same times; do not follow captan closely with lime-sulfur.",
+              "Never use an all-purpose fruit spray during bloom; its insecticide kills pollinators."
+            ]
+          },
+          "reference": "UMN, \"Apple scab\" (reviewed 2026)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "brown-marmorated-stink-bug",
+      "names": {
+        "en": "Brown marmorated stink bug"
+      },
+      "aliases": [
+        "BMSB"
+      ],
+      "scientificName": "Halyomorpha halys",
+      "kind": "insect",
+      "crops": [
+        "apple",
+        "bush-bean",
+        "pole-bean",
+        "eggplant",
+        "grape",
+        "sweet-pepper",
+        "hot-pepper",
+        "sweet-corn",
+        "swiss-chard",
+        "tomato"
+      ],
+      "signs": "A shield-shaped, mottled brown bug with alternating light and dark bands on its antennae and along the edge of its abdomen, which tell it from native stink bugs; it smells when crushed. It lays clusters of barrel-shaped eggs on leaves, and young nymphs have a yellow-red abdomen. Feeding on developing fruit leaves misshapen, discoloured patches.",
+      "scout": {
+        "stages": [
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "physical": [
+          "Pick or shake bugs into soapy water."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "AL",
+          "AM",
+          "AR",
+          "AT",
+          "AZ",
+          "BA",
+          "BE",
+          "BG",
+          "CA",
+          "CH",
+          "CL",
+          "CN",
+          "CZ",
+          "DE",
+          "DZ",
+          "ES",
+          "FR",
+          "GB",
+          "GE",
+          "GR",
+          "GU",
+          "HR",
+          "HU",
+          "IT",
+          "JP",
+          "KP",
+          "KR",
+          "KZ",
+          "LI",
+          "MA",
+          "MD",
+          "MK",
+          "MT",
+          "NL",
+          "NP",
+          "PL",
+          "PR",
+          "PT",
+          "RO",
+          "RS",
+          "RU",
+          "SI",
+          "SK",
+          "TR",
+          "TW",
+          "US",
+          "UZ",
+          "VN"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Halyomorpha halys distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Adults come out in May and numbers peak from mid-August through October, when they gather on buildings to spend the winter indoors.",
+          "threshold": "No garden damage has been reported in Minnesota, so no management aimed at it is needed there; it is a major pest of these crops in other states.",
+          "reference": "UMN, \"Brown marmorated stink bug\" (reviewed 2022)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "spotted-wing-drosophila",
+      "names": {
+        "en": "Spotted wing drosophila"
+      },
+      "aliases": [
+        "SWD"
+      ],
+      "scientificName": "Drosophila suzukii",
+      "kind": "insect",
+      "crops": [
+        "raspberry",
+        "blackberry",
+        "blueberry",
+        "strawberry",
+        "grape",
+        "plum",
+        "sweet-cherry",
+        "sour-cherry"
+      ],
+      "signs": "A small fruit fly, 2 to 3 mm, yellowish-brown with red eyes; the male has a dark spot near each wingtip. Unlike other fruit flies it lays eggs in sound, ripening fruit, and tiny white maggots feed inside, leaving soft, sunken, sour-smelling berries, sometimes only after picking. Healthy apples, pears, and cherry tomatoes are not attacked.",
+      "scout": {
+        "stages": [
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Pick often so ripe fruit does not linger, and remove old and fallen fruit.",
+          "Seal infested fruit in a plastic bag for the sun or the trash; do not compost or bury it, as the flies survive both.",
+          "Chill picked fruit to slow any larvae inside; it is safe to eat."
+        ],
+        "physical": [
+          "Cover plants with fine insect netting (80-gram) or a small tunnel; coarser netting lets the flies through. Raspberries still set fruit under it.",
+          "Hang vinegar traps (a cup with small holes and a little cider vinegar) near the fruit from fruit set to the end of harvest, and check them weekly, to know when flies are active."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "AR",
+          "AT",
+          "AZ",
+          "BA",
+          "BE",
+          "BG",
+          "BR",
+          "CA",
+          "CH",
+          "CL",
+          "CN",
+          "CO",
+          "CR",
+          "CY",
+          "CZ",
+          "DE",
+          "DZ",
+          "ES",
+          "FI",
+          "FR",
+          "GB",
+          "GE",
+          "GR",
+          "HN",
+          "HR",
+          "HU",
+          "IE",
+          "IL",
+          "IN",
+          "IR",
+          "IT",
+          "JP",
+          "KE",
+          "KM",
+          "KP",
+          "KR",
+          "MA",
+          "ME",
+          "MM",
+          "NL",
+          "PF",
+          "PK",
+          "PL",
+          "PT",
+          "RE",
+          "RO",
+          "RS",
+          "SE",
+          "SI",
+          "SK",
+          "TH",
+          "TR",
+          "TW",
+          "UA",
+          "US",
+          "UY",
+          "YT",
+          "ZA"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Drosophila suzukii distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "Flies appear in late June or early July and peak in August and September; watch most closely from when fruit starts to colour until harvest.",
+          "controls": {
+            "organic": [
+              "Spinosad or pyrethrin, both allowed in organic growing. They kill adults before they lay eggs, not larvae already in fruit; spray in the evening to spare pollinators, and rotate classes, as it can develop resistance."
+            ],
+            "conventional": [
+              "Carbaryl or malathion, with the same timing."
+            ]
+          },
+          "reference": "UMN, \"Spotted wing drosophila\" (reviewed 2026)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "onion-thrips",
+      "names": {
+        "en": "Onion thrips"
+      },
+      "scientificName": "Thrips tabaci",
+      "kind": "insect",
+      "crops": [
+        "onion",
+        "garlic",
+        "leek",
+        "cabbage",
+        "cauliflower",
+        "bush-bean",
+        "pole-bean",
+        "tomato",
+        "cucumber",
+        "asparagus"
+      ],
+      "signs": "Slender, yellow-brown insects about 1.5 mm long with fringed wings, hiding deep in the neck of onion plants among the youngest leaves. Feeding leaves white to silver patches and streaks, heavy feeding stunts the bulbs, and thrips spread iris yellow spot virus, which makes straw-coloured, diamond-shaped spots on onion leaves.",
+      "scout": {
+        "stages": [
+          "vegetative"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Check onion transplants and discard any carrying thrips.",
+          "Feed enough nitrogen but not too much, and mulch beds with straw.",
+          "Grow carrots among onions, which draws thrips away from them.",
+          "Overhead watering washes thrips off and slows them.",
+          "Remove volunteer onions and onion debris before planting and after harvest.",
+          "Varieties with an open neck and dark, glossy leaves draw fewer thrips; red onions suffer most."
+        ],
+        "biological": [
+          "Predators build up by late summer where broad-spectrum insecticides are not used."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Utah, USA",
+          "country": "US",
+          "zones": {
+            "min": 4,
+            "max": 9
+          },
+          "when": "From when plants have four or five leaves, or mid-June; open the neck and count the thrips at the base of the youngest leaves. Bulb swelling, in July and early August, is when they do most harm.",
+          "threshold": "About 15 thrips per plant in early summer or on red onions; about 30 per plant in July and August on tolerant yellow and white onions.",
+          "controls": {
+            "conventional": [
+              "Thrips quickly resist insecticides; spray as few times as possible, rotate insecticide classes, and drive the spray into the neck where they hide."
+            ]
+          },
+          "reference": "Utah State University Extension, \"Onion thrips\" fact sheet (D. Alston and D. Drost, 2008)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "codling-moth",
+      "names": {
+        "en": "Codling moth"
+      },
+      "scientificName": "Cydia pomonella",
+      "kind": "insect",
+      "crops": [
+        "apple",
+        "pear"
+      ],
+      "signs": "The pinkish-white \"worm\" in the apple, with a dark brown head. It bores into fruit soon after hatching and tunnels to the core, leaving entry holes plugged with reddish-brown, crumbly droppings. The grey moth, 1.3 to 2 cm, holds its wings like a tent and has a coppery band at the wingtips.",
+      "scout": {
+        "stages": [
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Choose early-maturing varieties, which suffer less, and keep trees low enough to reach the fruit.",
+          "Every week or two from six to eight weeks after bloom, remove fruit with frass-filled holes, and pick up dropped fruit at once."
+        ],
+        "physical": [
+          "Four to six weeks after bloom, when fruit is 1.3 to 2.5 cm across, thin to one fruit per cluster and enclose each in a paper lunch bag slit at the bottom and stapled shut; this alone protects fruit even in bad years."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "AF",
+          "AL",
+          "AM",
+          "AR",
+          "AT",
+          "AU",
+          "AZ",
+          "BE",
+          "BG",
+          "BO",
+          "BY",
+          "CA",
+          "CH",
+          "CL",
+          "CN",
+          "CO",
+          "CY",
+          "CZ",
+          "DE",
+          "DK",
+          "DZ",
+          "EE",
+          "EG",
+          "ES",
+          "FI",
+          "FR",
+          "GB",
+          "GE",
+          "GR",
+          "HU",
+          "IE",
+          "IL",
+          "IN",
+          "IQ",
+          "IR",
+          "IT",
+          "JO",
+          "KG",
+          "KZ",
+          "LB",
+          "LT",
+          "LV",
+          "LY",
+          "MA",
+          "MD",
+          "MT",
+          "MU",
+          "MX",
+          "NL",
+          "NO",
+          "NZ",
+          "PE",
+          "PK",
+          "PL",
+          "PT",
+          "RO",
+          "RS",
+          "RU",
+          "SE",
+          "SI",
+          "SK",
+          "SY",
+          "TJ",
+          "TM",
+          "TN",
+          "TR",
+          "UA",
+          "US",
+          "UY",
+          "UZ",
+          "ZA"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Cydia pomonella distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "California, USA",
+          "country": "US",
+          "zones": {
+            "min": 5,
+            "max": 11
+          },
+          "when": "Moths emerge from mid-March to April and mate once sunset temperatures pass 17 °C; two to four generations follow. Hang a pheromone trap in March and check it every few days; eggs hatch about 250 to 300 degree-days (°F) after the first moths are caught.",
+          "controls": {
+            "organic": [
+              "Time every spray to egg hatch, by degree-days or the first fresh entry holes; sprays miss larvae already inside fruit.",
+              "Codling moth granulosis virus, with 1 percent horticultural oil, every 7 days, three or four times a generation; it spares bees and beneficial insects.",
+              "Spinosad with 1 percent horticultural oil, every 10 days, about three times a generation."
+            ]
+          },
+          "reference": "UC IPM, \"Codling moth\" Pest Notes and Quick Tips (Home and Landscape)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "plum-curculio",
+      "names": {
+        "en": "Plum curculio"
+      },
+      "scientificName": "Conotrachelus nenuphar",
+      "kind": "insect",
+      "crops": [
+        "apple",
+        "peach",
+        "plum",
+        "pear",
+        "apricot"
+      ],
+      "signs": "A dark brown snout beetle about 5 mm long, its snout a third as long as its body, with four bumps and grey-white patches on its back. Females cut small crescent scars in young fruit to lay eggs; the legless, curved white grubs feed inside, and infested apples drop with the June drop. Egg scars stay on fruit that does not fall.",
+      "scout": {
+        "stages": [
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "physical": [
+          "Repeated coats of kaolin clay protect fruit, and organic growers rely on it."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "CA",
+          "US"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Conotrachelus nenuphar distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "New Hampshire, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 6
+          },
+          "when": "From bloom until about two weeks after petal fall, check the outer trees for fresh feeding and egg scars; attacks on apple start once fruit is about 6 mm across.",
+          "controls": {
+            "conventional": [
+              "Usually two or three sprays aimed at the beetle, timed by the current regional tree fruit guide."
+            ]
+          },
+          "reference": "University of New Hampshire Extension, \"Plum curculio\" fact sheet (A. T. Eaton)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "carrot-rust-fly",
+      "names": {
+        "en": "Carrot rust fly"
+      },
+      "scientificName": "Chamaepsila rosae (formerly Psila rosae)",
+      "kind": "insect",
+      "crops": [
+        "carrot",
+        "parsley",
+        "celery"
+      ],
+      "signs": "Stiff white maggots about 8 mm long tunnel just under the skin of carrot roots, leaving tunnels filled with rusty mush. Nothing shows above ground.",
+      "scout": {
+        "stages": [
+          "vegetative"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Harvest as soon as roots are ready, a whole block at a time rather than a few, and do not leave carrots in the ground over winter.",
+          "Remove parsley, celery, and related plants that harbour it, and peel off damaged parts before eating."
+        ],
+        "physical": [
+          "Cover seedbeds with row cover, or single plants with protective cones."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "AT",
+          "BE",
+          "BY",
+          "CA",
+          "CH",
+          "CZ",
+          "DE",
+          "DK",
+          "ES",
+          "FI",
+          "FR",
+          "GB",
+          "GE",
+          "HU",
+          "IE",
+          "IT",
+          "LV",
+          "MN",
+          "NL",
+          "NO",
+          "NZ",
+          "PL",
+          "RU",
+          "SE",
+          "TR",
+          "UA",
+          "US"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Chamaepsila rosae (its accepted name) distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "California, USA",
+          "country": "US",
+          "zones": {
+            "min": 5,
+            "max": 11
+          },
+          "when": "Check roots as you harvest; there is no sign above ground.",
+          "controls": {
+            "cultural": [
+              "Sow to miss the fly's egg-laying, in early summer in cold areas and in late winter or late summer in mild ones."
+            ]
+          },
+          "reference": "UC IPM, \"Carrot rust fly\" (Home and Landscape)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "cucurbit-downy-mildew",
+      "names": {
+        "en": "Downy mildew of cucurbits"
+      },
+      "scientificName": "Pseudoperonospora cubensis",
+      "kind": "disease",
+      "crops": [
+        "cucumber",
+        "melon",
+        "watermelon",
+        "pumpkin",
+        "summer-squash",
+        "winter-squash"
+      ],
+      "signs": "Pale green to yellow spots on the upper side of leaves, angular because the veins bound them (clearest on cucumber), with dark purplish-grey fuzz underneath in humid weather. The spots brown and run together until leaves look frost-killed; watermelon leaves curl upward. Angular leaf spot and powdery mildew can look similar.",
+      "scout": {
+        "stages": [
+          "flowering",
+          "fruiting"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Grow resistant varieties where you have had it before; cucumbers have the best resistance, melons less.",
+          "Water by drip, space rows widely, and trellis plants so leaves dry quickly.",
+          "Remove plants with symptoms."
+        ]
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "It does not survive Minnesota winters and arrives on winds from the south, in many years not at all, and often not before August. It spreads fastest at 15 to 20 °C with wet leaves.",
+          "threshold": "No product that works against it is available to home gardeners.",
+          "reference": "UMN, \"Downy mildew of cucurbits\" (reviewed 2022)"
+        }
+      ],
+      "source": "hand-curation"
+    },
+    {
+      "id": "fire-blight",
+      "names": {
+        "en": "Fire blight"
+      },
+      "scientificName": "Erwinia amylovora",
+      "kind": "disease",
+      "crops": [
+        "apple",
+        "raspberry"
+      ],
+      "signs": "Young shoots wilt, turn grey-green, and bend into a shepherd's hook, then blacken, so the tree looks scorched; the dead leaves cling into winter. Blossoms turn water-soaked and then brown or black, fruit shrivels into mummies, and sunken, cracked cankers on branches ooze cream to yellow droplets in humid weather. It can kill young trees.",
+      "scout": {
+        "stages": [
+          "vegetative",
+          "flowering"
+        ]
+      },
+      "controls": {
+        "cultural": [
+          "Plant resistant varieties; none is immune, but resistant ones slow it enough to prune it out.",
+          "During the season, cut out infected shoots at least 30 cm below the infection; cut larger branches in late winter, at least 20 cm below the canker into healthy wood, and disinfect tools if a cut may have touched diseased wood.",
+          "Avoid heavy pruning and too much nitrogen, which push the soft new growth it infects; fertilize by soil test."
+        ]
+      },
+      "occursIn": {
+        "countries": [
+          "AL",
+          "AM",
+          "AT",
+          "AZ",
+          "BA",
+          "BE",
+          "BG",
+          "BM",
+          "BY",
+          "CA",
+          "CH",
+          "CN",
+          "CY",
+          "CZ",
+          "DE",
+          "DK",
+          "DZ",
+          "EG",
+          "ES",
+          "FR",
+          "GB",
+          "GE",
+          "GR",
+          "GT",
+          "HR",
+          "HU",
+          "IE",
+          "IL",
+          "IQ",
+          "IR",
+          "IT",
+          "JO",
+          "KG",
+          "KZ",
+          "LB",
+          "LT",
+          "LU",
+          "MA",
+          "ME",
+          "MK",
+          "MX",
+          "NL",
+          "NO",
+          "NZ",
+          "PL",
+          "PT",
+          "RO",
+          "RS",
+          "RU",
+          "SA",
+          "SE",
+          "SI",
+          "SK",
+          "SY",
+          "TN",
+          "TR",
+          "UA",
+          "US"
+        ],
+        "reference": "EPPO (2026), EPPO Global Database, Erwinia amylovora distribution, countries where present (accessed 2026-11-26)"
+      },
+      "regions": [
+        {
+          "where": "Minnesota, USA",
+          "country": "US",
+          "zones": {
+            "min": 3,
+            "max": 5
+          },
+          "when": "In warm (above 18 °C), humid or rainy spells in spring and summer; blossom infection is less common in Minnesota, where it is usually cool at bloom.",
+          "controls": {
+            "cultural": [
+              "Most resistant of the apples hardy in Minnesota, Haralson, Liberty, Red Baron, SnowSweet, and the Chestnut and Dolgo crabs; Honeycrisp and Zestar! are somewhat resistant."
+            ]
+          },
+          "reference": "UMN, \"Fire blight\" (reviewed 2026)"
+        }
+      ],
       "source": "hand-curation"
     }
   ]

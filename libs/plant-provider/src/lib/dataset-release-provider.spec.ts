@@ -206,6 +206,42 @@ describe('DatasetReleaseProvider', () => {
     expect(await pinned(catalog([tomato])).companions()).toEqual([]);
   });
 
+  it('reads pests with their regions, keeping products out of the shared part', async () => {
+    const pest = {
+      id: 'aphids',
+      names: { en: 'Aphids' },
+      kind: 'insect',
+      crops: ['tomato'],
+      signs: 'Curled leaves.',
+      scout: { stages: ['seedling'] },
+      controls: { physical: ['Hose them off.'], organic: ['Not here.'] },
+      occursIn: { countries: ['US'] },
+      regions: [
+        {
+          where: 'Minnesota, USA',
+          country: 'US',
+          zones: { min: 3, max: 5 },
+          when: 'Spring.',
+          controls: { organic: ['Insecticidal soap.'] },
+          reference: 'A guide',
+        },
+      ],
+    };
+    const provider = pinned(catalog([tomato], { pests: [pest, { ...pest, kind: 'virus' }] }));
+    const pests = await provider.pests();
+    expect(pests).toHaveLength(1);
+    expect(pests[0]).toMatchObject({
+      name: 'Aphids',
+      aliases: [],
+      scientificName: null,
+      scoutStages: ['seedling'],
+      controls: { physical: ['Hose them off.'], organic: [], conventional: [] },
+      occursIn: ['US'],
+      regions: [{ threshold: null, controls: { organic: ['Insecticidal soap.'], cultural: [] } }],
+    });
+    expect(await pinned(catalog([tomato])).pests()).toEqual([]);
+  });
+
   it('uses hardiness zones for perennials and leaves them unset when missing', async () => {
     const apple = {
       ...tomato,
@@ -400,6 +436,11 @@ describe('the bundled open-garden-data release', () => {
     expect(items.find((p) => p.varietyKey === 'dataset:hazelnut')?.plantType).toBe('shrub');
     expect(items.find((p) => p.varietyKey === 'dataset:asparagus')?.perennial).toBe(true);
     expect(items.find((p) => p.varietyKey === 'dataset:fig')?.soilPh).toEqual({ min: 6, max: 6.5 });
+    // v0.3.2: pests, each with guidance by region and no products in the shared part.
+    const pests = await new DatasetReleaseProvider().pests();
+    expect(pests.length).toBeGreaterThanOrEqual(26);
+    expect(pests.every((p) => p.regions.length > 0 && p.controls.organic.length === 0)).toBe(true);
+    expect(pests.find((p) => p.id === 'colorado-potato-beetle')?.crops).toContain('potato');
   });
 
   it('is accepted on its provenance attestation alone', async () => {

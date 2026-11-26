@@ -8,8 +8,12 @@ import {
 } from '@open-garden/garden-layout';
 import type {
   CatalogCompanionDto,
+  PestControlsDto,
+  PestKind,
   PlantDetailDto,
+  PlantPestDto,
   PlantVarietyDto,
+  ScoutStage,
 } from '@open-garden/shared-types';
 import { plantName } from '@open-garden/shared-types';
 import { AuthApiService } from '../auth/auth-api.service';
@@ -39,6 +43,28 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
   'shares-pests': 'shares pests',
 };
 
+const PEST_KIND_LABELS: Record<PestKind, string> = {
+  insect: 'Insect',
+  mite: 'Mite',
+  disease: 'Disease',
+};
+
+const STAGE_LABELS: Record<ScoutStage, string> = {
+  seedling: 'seedlings',
+  vegetative: 'growing plants',
+  flowering: 'flowering',
+  fruiting: 'fruiting',
+};
+
+/** Steps that need no product first; organic products before conventional ones (ADR 0044). */
+const CONTROL_GROUPS: ReadonlyArray<{ key: keyof PestControlsDto; title: string }> = [
+  { key: 'cultural', title: 'Growing practices' },
+  { key: 'physical', title: 'By hand or barrier' },
+  { key: 'biological', title: 'Natural enemies' },
+  { key: 'organic', title: 'Organic products' },
+  { key: 'conventional', title: 'Conventional products' },
+];
+
 @Component({
   standalone: true,
   imports: [RouterLink, SowingTimeline, PlantIcon],
@@ -55,6 +81,20 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
     }
     .companion-list p {
       margin: 0.25rem 0 0;
+    }
+    .pest-list {
+      list-style: none;
+      padding: 0;
+    }
+    .pest-list > li {
+      margin-block: 1.25rem;
+    }
+    .pest-list h3,
+    .pest-list h4 {
+      margin-block: 0.5rem 0.25rem;
+    }
+    .pest-list p {
+      margin: 0.25rem 0;
     }
     .small {
       font-size: 0.875rem;
@@ -181,6 +221,80 @@ const BENEFIT_LABELS: Record<CatalogCompanionDto['benefits'][number], string> = 
           }
         </section>
       }
+      @if (p.pests.length) {
+        <section class="pests" aria-labelledby="pests-heading">
+          <h2 id="pests-heading">Pests and diseases</h2>
+          <p class="muted">
+            Common problems for this crop, not a complete list. Try the steps that need no product
+            first; organic products are shown before any other.
+          </p>
+          <label>
+            <input
+              type="checkbox"
+              [checked]="showConventional()"
+              (change)="showConventional.set(!showConventional())"
+            />
+            Show conventional options
+          </label>
+          <ul class="pest-list">
+            @for (pest of p.pests; track pest.id) {
+              <li>
+                <h3>
+                  {{ pest.name }}&ngsp;<span class="badge">{{ kindLabel(pest.kind) }}</span>
+                </h3>
+                @if (pest.scientificName) {
+                  <p class="muted small">
+                    <i>{{ pest.scientificName }}</i>
+                  </p>
+                }
+                <p>{{ pest.signs }}</p>
+                <p class="muted small">Look for it on {{ stagesLabel(pest) }}.</p>
+                @for (group of controlGroups(pest.controls); track group.title) {
+                  <h4>{{ group.title }}</h4>
+                  <ul>
+                    @for (step of group.steps; track step) {
+                      <li>{{ step }}</li>
+                    }
+                  </ul>
+                }
+                @if (pest.region; as r) {
+                  <p class="muted small">{{ regionLabel(pest) }}</p>
+                  <p><strong>When:</strong> {{ r.when }}</p>
+                  @if (r.threshold) {
+                    <p><strong>Act when:</strong> {{ r.threshold }}</p>
+                  }
+                  @for (group of controlGroups(r.controls); track group.title) {
+                    <h4>{{ group.title }}</h4>
+                    <ul>
+                      @for (step of group.steps; track step) {
+                        <li>{{ step }}</li>
+                      }
+                    </ul>
+                  }
+                  @if (!r.controls.organic.length) {
+                    <p class="muted small">
+                      This guidance names no organic product; the steps above are the organic
+                      options.
+                    </p>
+                  }
+                  @if (showConventional() && !r.controls.conventional.length) {
+                    <p class="muted small">This guidance names no conventional product.</p>
+                  }
+                  <p class="muted small">Source: {{ r.reference }}.</p>
+                } @else {
+                  <p class="muted small">
+                    We have no timing or products for your country yet; the steps above apply
+                    anywhere.
+                  </p>
+                }
+              </li>
+            }
+          </ul>
+          <p class="muted small">
+            The label is the law: follow it, and choose products labelled for organic use.
+          </p>
+        </section>
+      }
     } @else {
       <p class="muted">Plant unavailable offline or not found.</p>
     }
@@ -200,6 +314,8 @@ export class PlantDetailPage implements OnInit {
   plant = signal<PlantDetailDto | null>(null);
   pending = signal(false);
   loading = signal(true);
+  /** Conventional products are shown only on request (ADR 0044). */
+  showConventional = signal(false);
   /** The plant being shown; a slower earlier load must not replace it. */
   private current = '';
 
@@ -258,6 +374,32 @@ export class PlantDetailPage implements OnInit {
           : place.where,
       )
       .join('; ');
+  }
+
+  kindLabel(kind: PestKind): string {
+    return PEST_KIND_LABELS[kind];
+  }
+
+  stagesLabel(pest: PlantPestDto): string {
+    return pest.scoutStages.map((s) => STAGE_LABELS[s]).join(', ');
+  }
+
+  controlGroups(controls: PestControlsDto) {
+    return CONTROL_GROUPS.filter((g) => g.key !== 'conventional' || this.showConventional())
+      .map((g) => ({ title: g.title, steps: controls[g.key] }))
+      .filter((g) => g.steps.length > 0);
+  }
+
+  /** Where the guidance is from; said plainly when it is not from the member's country. */
+  regionLabel(pest: PlantPestDto): string {
+    const r = pest.region;
+    if (!r) return '';
+    const zones = r.zones
+      ? ` (zone${r.zones.min === r.zones.max ? ` ${r.zones.min}` : `s ${r.zones.min}–${r.zones.max}`})`
+      : '';
+    return pest.regionMatch === 'nearest'
+      ? `Guidance from ${r.where}${zones}, the nearest we have: add your property's address to get guidance for its country.`
+      : `Guidance for ${r.where}${zones}.`;
   }
 
   async toggleFavorite() {

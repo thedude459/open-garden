@@ -1,4 +1,4 @@
-import type { PlantType } from '@open-garden/shared-types';
+import type { CatalogPestDto, PlantType } from '@open-garden/shared-types';
 import type {
   CompanionBenefit,
   CompanionEvidence,
@@ -56,6 +56,9 @@ export interface ProviderCompanion {
   shownIn: CompanionPlaceDto[];
 }
 
+/** A pest or disease, with its regional guidance (ADR 0045). */
+export type ProviderPest = CatalogPestDto;
+
 export interface PlantDataProvider {
   readonly id: string;
   searchByName(query: string, options?: { limit?: number }): Promise<ProviderPlant[]>;
@@ -67,4 +70,6 @@ export interface PlantDataProvider {
   }>;
   /** Companion pairs, for a source that has them (the dataset). */
   companions?(): Promise<ProviderCompanion[]>;
+  /** Pests and diseases, for a source that has them (the dataset). */
+  pests?(): Promise<ProviderPest[]>;
 }

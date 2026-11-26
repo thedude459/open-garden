@@ -4,6 +4,7 @@ import { CatalogService, PlantDetailService } from '@open-garden/plant-catalog';
 import type { CalendarService } from '@open-garden/planting-calendar';
 import {
   CatalogCompanionRepository,
+  CatalogPestRepository,
   FavoriteRepository,
   GardenRepository,
   PlantRepository,
@@ -30,10 +31,18 @@ export class PlantsController {
     this.catalog = new CatalogService(plants);
     const gardens = new GardenRepository(bundle.db);
     this.calendar = openCalendarService(bundle.db);
-    this.details = new PlantDetailService(plants, favorites, {
-      pairs: new CatalogCompanionRepository(bundle.db),
-      zonesForUser: (userId) => gardens.zonesForUser(userId),
-    });
+    this.details = new PlantDetailService(
+      plants,
+      favorites,
+      {
+        pairs: new CatalogCompanionRepository(bundle.db),
+        zonesForUser: (userId) => gardens.zonesForUser(userId),
+      },
+      {
+        catalog: new CatalogPestRepository(bundle.db),
+        placesForUser: (userId) => gardens.placesForUser(userId),
+      },
+    );
   }
 
   @Get()

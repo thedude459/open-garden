@@ -169,9 +169,20 @@ describe('GardenService', () => {
       longitude: WASHINGTON_PLACE.longitude,
       placeId: WASHINGTON_PLACE.placeId,
       postalCode: null,
-      countryCode: null,
+      countryCode: 'US',
     });
     expect(created.seasonNotice).toBeNull();
+    // The country is kept as an upper-case ISO code, or not at all.
+    const lower = await mem.service.create(mem.ownerId, {
+      name: 'Lower',
+      place: { ...WASHINGTON_PLACE, countryCode: ' us ' },
+    });
+    expect(lower.place?.countryCode).toBe('US');
+    const odd = await mem.service.create(mem.ownerId, {
+      name: 'Odd',
+      place: { ...WASHINGTON_PLACE, countryCode: 'USA' },
+    });
+    expect(odd.place?.countryCode).toBeNull();
 
     const replaced = await mem.service.patch(mem.ownerId, created.id, {
       place: MAIN_STREET_PLACES[0],
