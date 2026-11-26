@@ -76,7 +76,7 @@
     "angular-eslint": "22.8.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^10.15.0",
-    "fast-check": "4.10.3",
+    "fast-check": "4.11.0",
     "istanbul-lib-coverage": "^3.2.2",
     "jsdom": "^31.0.1",
     "nx": "^24.0.7",
