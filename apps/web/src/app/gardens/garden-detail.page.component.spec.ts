@@ -8,6 +8,7 @@ import { CalendarApiService } from './calendar-api.service';
 import { GardenDetailPage } from './garden-detail.page';
 import { GardensApiService } from './gardens-api.service';
 import { PlannerDraftService } from './planner-draft.service';
+import { settled } from '../settled';
 
 const place = {
   formattedAddress: '1 Main St',
@@ -76,7 +77,7 @@ async function render(myRole: GardenRole = 'owner', over: Partial<GardenDetailDt
   });
   const fixture = TestBed.createComponent(GardenDetailPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const button = (name: string) =>
     [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === name);
@@ -113,7 +114,7 @@ describe('GardenDetailPage (Settings)', () => {
     const { fixture, el, api, button } = await render();
     button("Use this address's climate")!.click();
     await vi.waitFor(() => expect(api.patch).toHaveBeenCalledWith('g1', { place }));
-    await fixture.whenStable();
+    await settled(fixture);
     expect(el.querySelector<HTMLSelectElement>('select[name="zone"]')!.value).toBe('8');
     expect(el.textContent).toContain('Zone and frost dates updated for this address.');
   });

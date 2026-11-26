@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { NoticeService } from '../ui/notice.service';
 import { GardenMembersSection } from './garden-members.section';
 import { GardensApiService } from './gardens-api.service';
+import { settled } from '../settled';
 
 const garden = (myRole: GardenRole): GardenDetailDto =>
   ({
@@ -25,7 +26,7 @@ async function render(myRole: GardenRole, api: Partial<GardensApiService> = {}) 
   const changed = vi.fn();
   fixture.componentInstance.changed.subscribe(changed);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const buttons = (name: string) =>
     [...el.querySelectorAll('button')].filter((b) => b.textContent.trim() === name);
@@ -56,7 +57,7 @@ describe('GardenMembersSection', () => {
     expect(view.buttons('Remove')).toHaveLength(1);
 
     view.buttons('Make collaborator')[0]!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(api.patchMember).toHaveBeenCalledWith('g1', 'friend', { role: 'collaborator' });
     expect(view.changed).toHaveBeenCalledTimes(1);
     expect(view.notices.said).toContain('Role updated');

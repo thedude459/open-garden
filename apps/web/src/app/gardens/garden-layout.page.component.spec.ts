@@ -7,6 +7,7 @@ import { GardenPlanCanvas } from './garden-plan-canvas';
 import { GardensApiService } from './gardens-api.service';
 import { LayoutApiService } from './layout-api.service';
 import { PlannerDraftService } from './planner-draft.service';
+import { settled } from '../settled';
 
 const layout = (myRole: GardenRole): GardenLayoutDto => ({
   gardenId: 'g1',
@@ -65,15 +66,15 @@ async function render(myRole: GardenRole = 'owner', autosaveDelayMs = 60_000) {
   });
   const fixture = TestBed.createComponent(GardenLayoutPage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const byLabel = (label: string) =>
     el.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
   const openAdd = async (label: string) => {
     [...el.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Add')!.click();
-    await fixture.whenStable();
+    await settled(fixture);
     byLabel(label)!.click();
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, byLabel, openAdd, planner, layoutApi };
 }
@@ -86,7 +87,7 @@ describe('GardenLayoutPage', () => {
     name.value = 'South';
     name.dispatchEvent(new Event('input'));
     view.el.querySelector('form[aria-label="New bed"]')!.dispatchEvent(new Event('submit'));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     const south = view.planner.draft()!.beds.find((b) => b.name === 'South')!;
     expect(south).toBeDefined();
     await vi.waitFor(() => expect(view.el.textContent).toContain('All changes saved'));
@@ -107,9 +108,9 @@ describe('GardenLayoutPage', () => {
     const view = await render();
     await view.openAdd('Add tree');
     view.byLabel('Delete bed Tree')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Confirm delete Tree')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.planner.draft()!.beds.map((b) => b.name)).toEqual(['North']);
     expect(view.planner.dirty()).toBe(false);
   });
@@ -138,11 +139,11 @@ describe('GardenLayoutPage', () => {
         },
       ],
     });
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Delete bed Tree')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Confirm delete Tree')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.planner.draft()!.plantings).toEqual([]);
     expect(view.planner.dirty()).toBe(false);
   });

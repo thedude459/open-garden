@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { PlantIcon, plantIconFile } from './plant-icon';
+import { settled } from '../settled';
 
 describe('plantIconFile', () => {
   it('uses the crop’s icon where the crop has one', () => {
@@ -21,7 +22,7 @@ describe('PlantIcon', () => {
     fixture.componentRef.setInput('plantType', 'vegetable');
     fixture.componentRef.setInput('cropId', 'sweet-corn');
     fixture.detectChanges();
-    await fixture.whenStable();
+    await settled(fixture);
     const host = fixture.nativeElement as HTMLElement;
     expect(host.dataset['icon']).toBe('sweet-corn');
     const img = host.querySelector('img')!;

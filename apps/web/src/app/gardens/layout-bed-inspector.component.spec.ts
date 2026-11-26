@@ -3,6 +3,7 @@ import type { BedGeometryDto, LayoutBedDto } from '@open-garden/shared-types';
 import { describe, expect, it } from 'vitest';
 import { AuthApiService } from '../auth/auth-api.service';
 import { LayoutBedInspector, type BedSettingsPatch } from './layout-bed-inspector';
+import { settled } from '../settled';
 
 const bed = (over: Partial<LayoutBedDto> = {}): LayoutBedDto => ({
   id: 'b1',
@@ -31,7 +32,7 @@ async function render(saved = true) {
   c.geometryChange.subscribe((p) => geometry.push(p));
   c.remove.subscribe(() => removed++);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const field = <T extends HTMLElement>(name: string) => el.querySelector<T>(`[name="${name}"]`)!;
   const byLabel = (label: string) =>
@@ -40,7 +41,7 @@ async function render(saved = true) {
     const input = field<HTMLInputElement>(name);
     input.value = value;
     input.dispatchEvent(new Event(type));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, field, byLabel, fire, settings, geometry, removed: () => removed };
 }
@@ -62,10 +63,10 @@ describe('LayoutBedInspector', () => {
       'bed',
       bed({ geometry: { ...bed().geometry!, originXInches: 12 } }),
     );
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.fixture.componentInstance.renameDraft()).toBe('South');
     view.fixture.componentRef.setInput('bed', bed({ id: 'b2', name: 'East' }));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.fixture.componentInstance.renameDraft()).toBe('East');
   });
 
@@ -90,12 +91,12 @@ describe('LayoutBedInspector', () => {
   it('deletes only after a confirm, which another bed does not inherit', async () => {
     const view = await render();
     view.byLabel('Delete bed North')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.fixture.componentRef.setInput('bed', bed({ id: 'b2', name: 'East' }));
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.byLabel('Confirm delete East')).toBeNull();
     view.byLabel('Delete bed East')!.click();
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     view.byLabel('Confirm delete East')!.click();
     expect(view.removed()).toBe(1);
   });
@@ -117,20 +118,20 @@ describe('LayoutBedInspector', () => {
       return allow;
     });
     fixture.autoDetectChanges();
-    await fixture.whenStable();
+    await settled(fixture);
     const select = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
       'select[name="selectedArea"]',
     )!;
     expect(select.value).toBe('veg');
     select.value = 'canes';
     select.dispatchEvent(new Event('change'));
-    await fixture.whenStable();
+    await settled(fixture);
     expect(moves).toEqual(['canes']);
     expect(select.value).toBe('veg');
     allow = true;
     select.value = 'canes';
     select.dispatchEvent(new Event('change'));
-    await fixture.whenStable();
+    await settled(fixture);
     expect(select.value).toBe('canes');
   });
 });

@@ -8,6 +8,7 @@ import {
   type NewBed,
   type NewPlot,
 } from './layout-add-forms';
+import { settled } from '../settled';
 
 async function render<T extends LayoutNewBedForm | LayoutNewWalkwayForm>(type: Type<T>) {
   const fixture = TestBed.createComponent(type);
@@ -16,17 +17,17 @@ async function render<T extends LayoutNewBedForm | LayoutNewWalkwayForm>(type: T
   fixture.componentInstance.create.subscribe((value: NewBed | NewPlot) => created.push(value));
   fixture.componentInstance.cancelled.subscribe(() => cancelled++);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const type_ = async (name: string, value: string) => {
     const input = el.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${name}"]`)!;
     input.value = value;
     input.dispatchEvent(new Event(input.tagName === 'SELECT' ? 'change' : 'input'));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   const submit = async () => {
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, type: type_, submit, created, cancelled: () => cancelled };
 }
@@ -56,7 +57,7 @@ describe('LayoutNewBedForm', () => {
   it('converts what is typed when the member switches units', async () => {
     const view = await render(LayoutNewBedForm);
     TestBed.inject(AuthApiService).units.set('metric');
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     const length = view.el.querySelector<HTMLInputElement>('[name="newLength"]')!;
     expect(Number(length.value)).toBeCloseTo(2.44, 1);
     expect(view.el.textContent).toContain('Length (m)');
@@ -66,7 +67,7 @@ describe('LayoutNewBedForm', () => {
     const view = await render(LayoutNewBedForm);
     view.fixture.componentRef.setInput('note', 'Add a named bed');
     view.fixture.componentRef.setInput('canCancel', false);
-    await view.fixture.whenStable();
+    await settled(view.fixture);
     expect(view.el.textContent).toContain('Add a named bed');
     expect(view.el.textContent).not.toContain('Cancel');
   });

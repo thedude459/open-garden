@@ -8,6 +8,7 @@ import { NoticeService } from '../ui/notice.service';
 import { ForgotPasswordPage } from './forgot-password.page';
 import { LoginPage } from './login.page';
 import { ResetPasswordPage } from './reset-password.page';
+import { settled } from '../settled';
 
 const TOKEN = 'd'.repeat(64);
 
@@ -27,7 +28,7 @@ async function render<T>(page: Type<T>, url: string) {
   await TestBed.inject(Router).navigateByUrl(url);
   const fixture = TestBed.createComponent(page);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const type = (name: string, value: string) => {
     const input = el.querySelector<HTMLInputElement>(`input[name="${name}"]`)!;
@@ -36,7 +37,7 @@ async function render<T>(page: Type<T>, url: string) {
   };
   const submit = async () => {
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
-    await fixture.whenStable();
+    await settled(fixture);
   };
   return { fixture, el, type, submit, http: TestBed.inject(HttpTestingController) };
 }
@@ -47,7 +48,7 @@ describe('Forgot password on sign-in', () => {
   it('shows the link only where the server can email one', async () => {
     const off = await render(LoginPage, '/login');
     off.http.expectOne('/api/auth/password-reset').flush({ byEmail: false });
-    await off.fixture.whenStable();
+    await settled(off.fixture);
     expect(off.el.textContent).not.toContain('Forgot password?');
     TestBed.resetTestingModule();
 

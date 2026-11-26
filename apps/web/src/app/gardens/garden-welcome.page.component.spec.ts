@@ -13,6 +13,7 @@ import { CalendarApiService } from './calendar-api.service';
 import { GardenWelcomePage } from './garden-welcome.page';
 import { GardensApiService } from './gardens-api.service';
 import { PlantingsApiService } from './plantings-api.service';
+import { settled } from '../settled';
 
 const crop = (cropId: string, name: string): PlantSummaryDto => ({
   id: `p-${cropId}`,
@@ -65,7 +66,7 @@ async function render(g: GardenDetailDto = garden()) {
   });
   const fixture = TestBed.createComponent(GardenWelcomePage);
   fixture.autoDetectChanges();
-  await fixture.whenStable();
+  await settled(fixture);
   const el: HTMLElement = fixture.nativeElement;
   const text = () => el.textContent.replace(/\s+/g, ' ');
   const button = (name: RegExp) =>
@@ -94,10 +95,10 @@ describe('GardenWelcomePage', () => {
     expect(labels).toEqual(['Radish Sow this week', 'Tomato']);
     expect(button(/^Add 0 to the calendar$/).disabled).toBe(true);
     el.querySelectorAll<HTMLInputElement>('.starter-list input')[1]!.click();
-    await fixture.whenStable();
+    await settled(fixture);
     button(/^Add 1 to the calendar$/).click();
     await vi.waitFor(() => expect(add).toHaveBeenCalledWith('g1', { plantId: 'p-tomato' }));
-    await fixture.whenStable();
+    await settled(fixture);
     expect(text()).toContain('Tomato · on the calendar');
   });
 
@@ -113,7 +114,7 @@ describe('GardenWelcomePage', () => {
         originYInches: 36,
       }),
     );
-    await fixture.whenStable();
+    await settled(fixture);
     expect(text()).toContain('Bed 1 is on the plan.');
   });
 });
