@@ -24,8 +24,16 @@ const open = new Map<DeviceStoreName, { close(): void }>();
 const OWNER_KEY = 'og_device_owner';
 
 /**
+ * Set by {@link clearDeviceData} until a member claims the device again
+ * ({@link recordDeviceOwner}). A request still in flight when its member
+ * signed out must not open, and so recreate, a database just deleted (#277).
+ */
+let cleared = false;
+
+/**
  * A lazily opened database. `db()` opens it on first use, and again after
- * {@link clearDeviceData} has closed and deleted it.
+ * {@link clearDeviceData} has closed and deleted it once a member has
+ * claimed the device; until then it refuses.
  */
 export function deviceStore<S extends DBSchema>(
   name: DeviceStoreName,
@@ -35,6 +43,7 @@ export function deviceStore<S extends DBSchema>(
   let opening: Promise<IDBPDatabase<S>> | null = null;
   const store = {
     db(): Promise<IDBPDatabase<S>> {
+      if (cleared) return Promise.reject(new Error('Signed out: nothing is kept on this device'));
       opening ??= openDB<S>(name, version, {
         upgrade,
         // Another tab is deleting this database: let go so it can.
@@ -57,6 +66,7 @@ export function deviceStore<S extends DBSchema>(
  * plantings, reminders, favorites, the catalog, and changes waiting to sync.
  */
 export async function clearDeviceData(): Promise<void> {
+  cleared = true;
   for (const store of open.values()) store.close();
   // Without IndexedDB (some private windows) nothing was stored to delete.
   if (typeof indexedDB !== 'undefined') {
@@ -75,6 +85,7 @@ export async function clearDeviceData(): Promise<void> {
  * recorded), or an `other` member, whose data must go before anything shows.
  */
 export function recordDeviceOwner(userId: string): 'same' | 'none' | 'other' {
+  cleared = false;
   try {
     const previous = localStorage.getItem(OWNER_KEY);
     localStorage.setItem(OWNER_KEY, userId);
