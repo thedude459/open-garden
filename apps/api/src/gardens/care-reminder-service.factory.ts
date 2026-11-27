@@ -49,6 +49,10 @@ export function openCareReminderService(db: AppDatabase): CareReminderService {
       listForGarden: (gardenId) => events.listScoutsForGarden(gardenId),
       upsert: (bedId, occurrenceOn, action) => events.upsertScout(bedId, occurrenceOn, action),
       remove: (bedId, occurrenceOn) => events.deleteScout(bedId, occurrenceOn),
+      ignored: (gardenId) => events.listIgnoredPests(gardenId),
+      ignore: (gardenId, pestId) => events.ignorePest(gardenId, pestId),
+      restore: (gardenId, pestId) => events.restorePest(gardenId, pestId),
+      names: (pestIds) => pests.namesFor(pestIds),
     },
   );
 }

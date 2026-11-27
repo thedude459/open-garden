@@ -227,6 +227,7 @@ describe('CareReminderService scouting', () => {
   };
   function setup(role = 'owner') {
     const scouts = new Map<string, string>();
+    const ignored = new Set<string>();
     const asked: string[][] = [];
     const service = new CareReminderService(
       { getMembership: async () => ({ role }) },
@@ -244,9 +245,13 @@ describe('CareReminderService scouting', () => {
           [...scouts.keys()].map((occurrenceOn) => ({ bedId: 'b1', occurrenceOn })),
         upsert: async (_bed, on, action) => void scouts.set(on, action),
         remove: async (_bed, on) => void scouts.delete(on),
+        ignored: async () => [...ignored],
+        ignore: async (_g, pest) => void ignored.add(pest),
+        restore: async (_g, pest) => void ignored.delete(pest),
+        names: async (ids) => (ids.includes('aphids') ? [{ id: 'aphids', name: 'Aphids' }] : []),
       },
     );
-    return { service, scouts, asked };
+    return { service, scouts, asked, ignored };
   }
 
   it('lists a weekly Scout task for each bed with pests to look for', async () => {
@@ -258,10 +263,28 @@ describe('CareReminderService scouting', () => {
         kind: 'scout',
         plantingId: 'b1',
         bedName: 'North',
-        pests: ['Aphids'],
+        pests: [{ id: 'aphids', name: 'Aphids' }],
         dueOn: '2026-06-01',
       }),
     ]);
+  });
+
+  it('leaves out a pest marked not a problem here, until it is named again', async () => {
+    const { service, ignored } = setup();
+    await service.ignorePest('g', 'u', 'aphids');
+    expect(ignored.has('aphids')).toBe(true);
+    let listed = await service.list('g', 'u', '2026-06-03');
+    expect(listed.items).toEqual([]);
+    expect(listed.ignoredPests).toEqual([{ id: 'aphids', name: 'Aphids' }]);
+    await service.ignorePest('g', 'u', 'aphids', true);
+    listed = await service.list('g', 'u', '2026-06-03');
+    expect(listed.items).toHaveLength(1);
+    expect(listed.ignoredPests).toEqual([]);
+  });
+
+  it('marks only a pest the catalog has, and only for a member who may edit', async () => {
+    await expect(setup().service.ignorePest('g', 'u', 'dragons')).rejects.toThrow('Pest not found');
+    await expect(setup('viewer').service.ignorePest('g', 'u', 'aphids')).rejects.toThrow();
   });
 
   it('records the bed’s scouting done, dismissed, and undone', async () => {

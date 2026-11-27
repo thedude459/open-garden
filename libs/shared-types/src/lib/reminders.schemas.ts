@@ -13,6 +13,14 @@ export const reminderMutationSchema = z.object({
   doneOn: isoDate.optional(),
 });
 
+/** A dataset pest id, such as `colorado-potato-beetle`. */
+export const pestMutationSchema = z.object({
+  pestId: z
+    .string()
+    .max(80)
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+});
+
 export const asOfQuerySchema = z.object({
   asOf: isoDate,
 });

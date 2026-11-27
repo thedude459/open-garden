@@ -69,7 +69,10 @@ describe('deriveScoutTasks', () => {
       bedId: 'bed-1',
       bedName: 'North',
       // Seedlings: no hornworm yet.
-      pests: ['Aphids', 'Colorado potato beetle'],
+      pests: [
+        { id: 'aphids', name: 'Aphids' },
+        { id: 'cpb', name: 'Colorado potato beetle' },
+      ],
       commonName: 'Aphids, Colorado potato beetle',
       intervalDays: 7,
       dueOn: '2026-05-08',
@@ -79,7 +82,7 @@ describe('deriveScoutTasks', () => {
 
   it('leaves out pests not known in the property’s country', () => {
     const [task] = deriveScoutTasks([tomato()], [aphids, beetle], 'GB', [], '2026-05-10');
-    expect(task?.pests).toEqual(['Aphids']);
+    expect(task?.pests).toEqual([{ id: 'aphids', name: 'Aphids' }]);
     // Country unknown: every pest stays.
     expect(deriveScoutTasks([tomato()], [beetle], null, [], '2026-05-10')).toHaveLength(1);
   });

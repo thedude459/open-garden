@@ -96,6 +96,26 @@ export class RemindersApiService {
     );
   }
 
+  /**
+   * Marks a pest not a problem at this property, or names it again
+   * (`restore`), then reloads the list (ADR 0047). Needs a connection.
+   */
+  async ignorePest(
+    gardenId: string,
+    pestId: string,
+    restore = false,
+  ): Promise<ClientReminderList | null> {
+    const action = restore ? 'restore-pest' : 'ignore-pest';
+    await firstValueFrom(
+      this.http.post(
+        `${API}/gardens/${gardenId}/reminders/${action}`,
+        { pestId },
+        { withCredentials: true, responseType: 'text' },
+      ),
+    );
+    return this.list(gardenId);
+  }
+
   async dismiss(
     gardenId: string,
     body: ReminderMutationDto,

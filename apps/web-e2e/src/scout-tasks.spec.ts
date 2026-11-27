@@ -55,4 +55,13 @@ test('a bed’s weekly Scout task names its pests on Today and the Tasks page', 
   await scout.getByRole('button', { name: 'Complete' }).click();
   // Done for this week: next week's is upcoming.
   await expect(scout).toContainText('Upcoming');
+
+  // Not a problem here: the beetle leaves this property's Scout task (ADR 0047).
+  await page.getByRole('button', { name: 'Not a problem here: Colorado potato beetle' }).click();
+  await expect(scout.locator('strong')).toHaveText('Aphids, Flea beetles');
+  const ignored = page.getByRole('region', { name: 'Not a problem here' });
+  await expect(ignored).toContainText('Colorado potato beetle');
+  await ignored.getByRole('button', { name: 'Show again: Colorado potato beetle' }).click();
+  await expect(scout.locator('strong')).toHaveText('Aphids, Colorado potato beetle, Flea beetles');
+  await expect(ignored).toHaveCount(0);
 });

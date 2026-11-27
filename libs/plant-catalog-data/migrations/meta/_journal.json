@@ -183,6 +183,13 @@
       "when": 1795704143640,
       "tag": "0025_scout_events",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795823221348,
+      "tag": "0026_ignored_pests",
+      "breakpoints": true
     }
   ]
 }

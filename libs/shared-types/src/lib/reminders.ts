@@ -32,7 +32,13 @@ export interface ReminderItemDto {
   /** Watering by water balance: how far the soil is below full, in mm, on `dueOn`. */
   deficitMm?: number | null;
   /** A Scout task: the pests to look for in the bed this week. */
-  pests?: string[];
+  pests?: ScoutPestDto[];
+}
+
+/** A pest a Scout task names, or one marked not a problem at a property (ADR 0047). */
+export interface ScoutPestDto {
+  id: string;
+  name: string;
 }
 
 export interface ReminderListDto {
@@ -41,6 +47,12 @@ export interface ReminderListDto {
   myRole: import('./garden').GardenRole;
   items: ReminderItemDto[];
   outlookOn: string | null;
+  /** Pests the household marked not a problem here; Scout tasks leave them out. */
+  ignoredPests?: ScoutPestDto[];
+}
+
+export interface PestMutationDto {
+  pestId: string;
 }
 
 export interface ReminderMutationDto {

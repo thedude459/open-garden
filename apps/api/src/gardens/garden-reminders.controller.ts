@@ -13,7 +13,11 @@ import type { AuthUser } from '@open-garden/auth';
 import { CareReminderService, domainError } from '@open-garden/care-reminders';
 import { PlantingService } from '@open-garden/seasonal-plantings';
 import type { AppDatabase } from '@open-garden/plant-catalog-data';
-import { asOfQuerySchema, reminderMutationSchema } from '@open-garden/shared-types';
+import {
+  asOfQuerySchema,
+  pestMutationSchema,
+  reminderMutationSchema,
+} from '@open-garden/shared-types';
 import { CurrentUser, SessionGuard } from '../auth/session.guard';
 import { DATABASE } from '../database/database.tokens';
 import { GardenMembershipGuard } from './garden-membership.guard';
@@ -118,4 +122,24 @@ export class GardenRemindersController {
       parsed.data.dueOn,
     );
   }
+
+  /** Not a problem here: this property's Scout tasks leave the pest out (ADR 0047). */
+  @Post('ignore-pest')
+  @HttpCode(204)
+  async ignorePest(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
+    await this.reminders.ignorePest(id, user.id, parsePest(body));
+  }
+
+  /** Names a pest marked not a problem here again. */
+  @Post('restore-pest')
+  @HttpCode(204)
+  async restorePest(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: unknown) {
+    await this.reminders.ignorePest(id, user.id, parsePest(body), true);
+  }
+}
+
+function parsePest(body: unknown): string {
+  const parsed = pestMutationSchema.safeParse(body);
+  if (!parsed.success) throw domainError('VALIDATION_ERROR', 'A pest id is required');
+  return parsed.data.pestId;
 }
