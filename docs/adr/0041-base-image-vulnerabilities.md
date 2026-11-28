@@ -18,6 +18,9 @@ with six fixed CVEs:
     image had not been rebuilt with 1.30.7.
   - The Dockerfile's daily `apk upgrade` cannot reach nginx, which comes from
     nginx.org's packages, not Alpine's.
+  - The api image had no such step until #280: Debian's fixes for PAM
+    waited for a rebuilt `node:24-bookworm-slim`. It now runs `apt-get
+    upgrade` on the same daily date.
   - The weekly Image scan only scanned the last released images.
 - The fix was a different channel of the same image, `mainline-alpine`, which
   had nginx 1.31.7 with none of them. A person had to find it.

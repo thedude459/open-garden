@@ -60,6 +60,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- The `api` image installs Debian's security updates when it is built, as
+  the `web` image does with Alpine's, so a fix released after the base image
+  reaches the next build (#280).
 - A property now keeps the country from its address, so advice can follow
   it. Save an existing property's address again to set it.
 - The first page downloads about 21 KB less (19%): the planner's code now
