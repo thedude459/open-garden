@@ -27,6 +27,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### New features
 
+- **Not a problem here:** on a property's Tasks page, mark a pest its Scout
+  tasks name as not a problem at that property, and it is left out from then
+  on. Marked pests are listed at the foot of the page, with **Show again**.
 - **A weekly Scout task for each bed** on Today and the Tasks page, naming
   the pests to look for: those of what is growing in the bed, at its stage
   (seedlings, growing, flowering, fruiting), and known in your property's
@@ -57,6 +60,9 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Improvements
 
+- The `api` image installs Debian's security updates when it is built, as
+  the `web` image does with Alpine's, so a fix released after the base image
+  reaches the next build (#280).
 - A property now keeps the country from its address, so advice can follow
   it. Save an existing property's address again to set it.
 - The first page downloads about 21 KB less (19%): the planner's code now
@@ -128,6 +134,8 @@ Headings, in this order (leave one empty when nothing belongs there):
 
 ### Documentation
 
+- [ADR 0047](docs/adr/0047-not-a-problem-here.md): pests that are not a
+  problem here.
 - [ADR 0046](docs/adr/0046-weekly-scout-task.md): a weekly Scout task per
   bed.
 - [ADR 0044](docs/adr/0044-organic-first-advice.md): advice is organic

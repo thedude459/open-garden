@@ -3,6 +3,7 @@
 // places a member's pest guidance is chosen for.
 import type { CatalogPestDto } from '@open-garden/shared-types';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { CareEventRepository } from './care-event-repository';
 import { CatalogPestRepository } from './catalog-pest-repository';
 import { GardenRepository } from './garden-repository';
 import { PipelineRunRepository, type PublishPlantInput } from './pipeline-run-repository';
@@ -111,5 +112,27 @@ describe('catalog pests', () => {
       { country: 'US', zone: 5 },
     ]);
     expect(await gardens.placesForUser((await insertUser(t.db)).id)).toEqual([]);
+  });
+
+  it('names catalog pests by id, and keeps a property’s not-a-problem pests (ADR 0047)', async () => {
+    await publish([potato], [beetle, aphids]);
+    expect(await pests.namesFor(['colorado-potato-beetle', 'aphids', 'dragons'])).toEqual([
+      { id: 'aphids', name: 'Aphids' },
+      { id: 'colorado-potato-beetle', name: 'Colorado potato beetle' },
+    ]);
+    expect(await pests.namesFor([])).toEqual([]);
+
+    const owner = await insertUser(t.db);
+    const gardens = new GardenRepository(t.db);
+    const garden = await gardens.createOwned(gardenInput(owner.id));
+    const other = await gardens.createOwned(gardenInput(owner.id));
+    const care = new CareEventRepository(t.db);
+    await care.ignorePest(garden.id, 'aphids');
+    await care.ignorePest(garden.id, 'aphids');
+    await care.ignorePest(other.id, 'colorado-potato-beetle');
+    expect(await care.listIgnoredPests(garden.id)).toEqual(['aphids']);
+    await care.restorePest(garden.id, 'aphids');
+    expect(await care.listIgnoredPests(garden.id)).toEqual([]);
+    expect(await care.listIgnoredPests(other.id)).toEqual(['colorado-potato-beetle']);
   });
 });

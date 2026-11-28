@@ -196,4 +196,8 @@ export const noScouting = {
   listForGarden: async () => [],
   upsert: async () => undefined,
   remove: async () => undefined,
+  ignored: async () => [],
+  ignore: async () => undefined,
+  restore: async () => undefined,
+  names: async () => [],
 };

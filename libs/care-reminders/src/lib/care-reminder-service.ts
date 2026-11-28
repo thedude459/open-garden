@@ -81,6 +81,12 @@ export interface ScoutingSources {
   listForGarden(gardenId: string): Promise<Array<{ bedId: string; occurrenceOn: string }>>;
   upsert(bedId: string, occurrenceOn: string, action: CareAction): Promise<void>;
   remove(bedId: string, occurrenceOn: string): Promise<void>;
+  /** Pests marked not a problem at the property (ADR 0047). */
+  ignored(gardenId: string): Promise<string[]>;
+  ignore(gardenId: string, pestId: string): Promise<void>;
+  restore(gardenId: string, pestId: string): Promise<void>;
+  /** The ids and names of these pests that the catalog holds. */
+  names(pestIds: string[]): Promise<Array<{ id: string; name: string }>>;
 }
 
 export class CareReminderService {
@@ -137,12 +143,14 @@ export class CareReminderService {
       ...(await this.scoutTasks(gardenId, rows, asOf)),
     ]);
 
+    const ignored = await this.scouting.ignored(gardenId);
     return {
       gardenId,
       asOf,
       myRole: membership.role as ReminderListDto['myRole'],
       items,
       outlookOn: weather ? asOf : null,
+      ignoredPests: await this.scouting.names(ignored),
     };
   }
 
@@ -227,6 +235,24 @@ export class CareReminderService {
     await this.events.upsert(plantingId, kind, dueOn, action);
   }
 
+  /**
+   * Marks a pest not a problem at this property, or names it again
+   * (`restore`): its Scout tasks there leave it out (ADR 0047).
+   */
+  async ignorePest(gardenId: string, userId: string, pestId: string, restore = false) {
+    gardenAccess(
+      await this.memberships.getMembership(gardenId, userId),
+      'edit',
+      CARE_ERRORS.viewerReminders,
+    );
+    if (restore) {
+      await this.scouting.restore(gardenId, pestId);
+      return;
+    }
+    if ((await this.scouting.names([pestId])).length === 0) throw CARE_ERRORS.pestNotFound();
+    await this.scouting.ignore(gardenId, pestId);
+  }
+
   /** Each bed's weekly Scout task, naming the pests to look for. */
   private async scoutTasks(gardenId: string, rows: ReminderRow[], asOf: string) {
     const inBeds = rows.flatMap((row) =>
@@ -245,12 +271,14 @@ export class CareReminderService {
         : [],
     );
     if (!inBeds.length) return [];
-    const [pests, country, events] = await Promise.all([
+    const [pests, country, events, ignored] = await Promise.all([
       this.scouting.pests([...new Set(inBeds.map((p) => p.cropId))]),
       this.scouting.country(gardenId),
       this.scouting.listForGarden(gardenId),
+      this.scouting.ignored(gardenId),
     ]);
-    return deriveScoutTasks(inBeds, pests, country, events, asOf);
+    const named = pests.filter((p) => !ignored.includes(p.id));
+    return deriveScoutTasks(inBeds, named, country, events, asOf);
   }
 }
 

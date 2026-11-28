@@ -1,7 +1,13 @@
 import { and, eq } from 'drizzle-orm';
 import type { CareAction, CareKind } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
-import { gardenBeds, gardenCareEvents, gardenPlantings, gardenScoutEvents } from './schema';
+import {
+  gardenBeds,
+  gardenCareEvents,
+  gardenIgnoredPests,
+  gardenPlantings,
+  gardenScoutEvents,
+} from './schema';
 
 export class CareEventRepository {
   constructor(private readonly db: AppDatabase) {}
@@ -89,5 +95,24 @@ export class CareEventRepository {
       .where(
         and(eq(gardenScoutEvents.bedId, bedId), eq(gardenScoutEvents.occurrenceOn, occurrenceOn)),
       );
+  }
+
+  /** Pests marked not a problem at this property (ADR 0047). */
+  async listIgnoredPests(gardenId: string): Promise<string[]> {
+    const rows = await this.db
+      .select({ pestId: gardenIgnoredPests.pestId })
+      .from(gardenIgnoredPests)
+      .where(eq(gardenIgnoredPests.gardenId, gardenId));
+    return rows.map((r) => r.pestId);
+  }
+
+  async ignorePest(gardenId: string, pestId: string) {
+    await this.db.insert(gardenIgnoredPests).values({ gardenId, pestId }).onConflictDoNothing();
+  }
+
+  async restorePest(gardenId: string, pestId: string) {
+    await this.db
+      .delete(gardenIgnoredPests)
+      .where(and(eq(gardenIgnoredPests.gardenId, gardenId), eq(gardenIgnoredPests.pestId, pestId)));
   }
 }

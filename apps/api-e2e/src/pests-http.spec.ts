@@ -87,7 +87,7 @@ describe.skipIf(!liveEnabled)('pests http', () => {
       kind: string;
       dueOn: string;
       bedName: string;
-      pests?: string[];
+      pests?: Array<{ id: string; name: string }>;
     };
     const scouts = async () =>
       (
@@ -101,7 +101,11 @@ describe.skipIf(!liveEnabled)('pests http', () => {
         plantingId: bed.id,
         bedName: 'North',
         dueOn: asOf,
-        pests: ['Aphids', 'Colorado potato beetle', 'Flea beetles'],
+        pests: [
+          { id: 'aphids', name: 'Aphids' },
+          { id: 'colorado-potato-beetle', name: 'Colorado potato beetle' },
+          { id: 'flea-beetles', name: 'Flea beetles' },
+        ],
       }),
     ]);
 
@@ -115,5 +119,22 @@ describe.skipIf(!liveEnabled)('pests http', () => {
       (await owner.post(`/api/gardens/${garden.id}/reminders/undo`, { data: body })).status(),
     ).toBe(204);
     expect((await scouts())[0]?.dueOn).toBe(asOf);
+
+    // Not a problem here: the beetle leaves this property's Scout task (ADR 0047).
+    const pest = (action: string, client: LiveClient, pestId: string) =>
+      client.post(`/api/gardens/${garden.id}/reminders/${action}`, { data: { pestId } });
+    expect((await pest('ignore-pest', owner, 'Not An Id')).status()).toBe(400);
+    expect((await pest('ignore-pest', owner, 'no-such-pest')).status()).toBe(404);
+    expect((await pest('ignore-pest', stranger, 'colorado-potato-beetle')).status()).toBe(404);
+    expect((await pest('ignore-pest', owner, 'colorado-potato-beetle')).status()).toBe(204);
+    expect((await scouts())[0]?.pests?.map((p) => p.id)).toEqual(['aphids', 'flea-beetles']);
+    const list = (await (
+      await owner.get(`/api/gardens/${garden.id}/reminders?asOf=${asOf}`)
+    ).json()) as { ignoredPests: Array<{ id: string }> };
+    expect(list.ignoredPests).toEqual([
+      { id: 'colorado-potato-beetle', name: 'Colorado potato beetle' },
+    ]);
+    expect((await pest('restore-pest', owner, 'colorado-potato-beetle')).status()).toBe(204);
+    expect((await scouts())[0]?.pests).toHaveLength(3);
   });
 });

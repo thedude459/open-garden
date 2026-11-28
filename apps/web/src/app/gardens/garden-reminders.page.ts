@@ -67,6 +67,23 @@ import { errorMessage } from '../ui/error-message';
                       <span class="badge">needs attention</span>
                     }
                   </p>
+                  @if (item.kind === 'scout' && canEdit() && item.pests?.length) {
+                    <ul class="scout-pests">
+                      @for (pest of item.pests; track pest.id) {
+                        <li>
+                          {{ pest.name }}
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            [attr.aria-label]="'Not a problem here: ' + pest.name"
+                            (click)="ignorePest(pest.id)"
+                          >
+                            Not a problem here
+                          </button>
+                        </li>
+                      }
+                    </ul>
+                  }
                 </div>
                 @if (canEdit()) {
                   <div class="filters">
@@ -116,6 +133,29 @@ import { errorMessage } from '../ui/error-message';
             }
           </ul>
         }
+      }
+      @if (data.ignoredPests?.length) {
+        <section aria-labelledby="ignored-pests-heading">
+          <h3 id="ignored-pests-heading">Not a problem here</h3>
+          <p class="muted">Scout tasks for this property leave these out.</p>
+          <ul class="card-list">
+            @for (pest of data.ignoredPests; track pest.id) {
+              <li class="row">
+                <span>{{ pest.name }}</span>
+                @if (canEdit()) {
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    [attr.aria-label]="'Show again: ' + pest.name"
+                    (click)="ignorePest(pest.id, true)"
+                  >
+                    Show again
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+        </section>
       }
     }
   `,
@@ -221,6 +261,17 @@ export class GardenRemindersPage implements OnInit {
 
   async dismiss(item: ClientReminderItem) {
     await this.mutate(item, 'dismiss');
+  }
+
+  /** Not a problem here, or `restore` to name the pest again (ADR 0047). */
+  async ignorePest(pestId: string, restore = false) {
+    this.error.set(null);
+    try {
+      const next = await this.api.ignorePest(this.gardenId, pestId, restore);
+      this.list.set(next ? rainForDeviceDay(next) : next);
+    } catch (err) {
+      this.error.set(errorMessage(err, 'Could not change which pests are named; try when online'));
+    }
   }
 
   private async mutate(item: ClientReminderItem, action: 'complete' | 'dismiss') {

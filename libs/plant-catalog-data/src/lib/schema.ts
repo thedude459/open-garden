@@ -608,6 +608,23 @@ export const gardenScoutEvents = pgTable(
 );
 
 /**
+ * Pests a household marked not a problem at its property (ADR 0047). Scout
+ * tasks there leave them out. A pest id, not a reference: the catalog's pests
+ * are replaced on each import, and a pest that leaves it is simply not named.
+ */
+export const gardenIgnoredPests = pgTable(
+  'garden_ignored_pests',
+  {
+    gardenId: uuid('garden_id')
+      .notNull()
+      .references(() => gardens.id, { onDelete: 'cascade' }),
+    pestId: text('pest_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.gardenId, t.pestId] })],
+);
+
+/**
  * Soil tests, as the lab reported them (ADR 0033). A test belongs to an area
  * (one sample of its ground) or to a bed whose soil differs, such as a raised
  * bed; the bed's own test wins. The latest one gives advice.

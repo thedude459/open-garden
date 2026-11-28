@@ -1,4 +1,4 @@
-import { arrayOverlaps } from 'drizzle-orm';
+import { arrayOverlaps, inArray } from 'drizzle-orm';
 import type { CatalogPestDto, PestKind, ScoutStage } from '@open-garden/shared-types';
 import type { AppDatabase } from './db';
 import { catalogPests } from './schema';
@@ -27,6 +27,16 @@ export class CatalogPestRepository {
         regions: pest.regions,
       })),
     );
+  }
+
+  /** The ids and names of these pests that the catalog holds, A to Z. */
+  async namesFor(ids: string[]): Promise<Array<{ id: string; name: string }>> {
+    if (ids.length === 0) return [];
+    return this.db
+      .select({ id: catalogPests.id, name: catalogPests.name })
+      .from(catalogPests)
+      .where(inArray(catalogPests.id, ids))
+      .orderBy(catalogPests.name);
   }
 
   /** Pests that attack any of these crops, A to Z. */

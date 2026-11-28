@@ -55,7 +55,7 @@ export function deriveScoutTasks(
   asOf: string,
 ): ReminderItemDto[] {
   const here = pests.filter((p) => !country || p.occursIn === null || p.occursIn.includes(country));
-  const beds = new Map<string, { name: string; plantedOn: string; pests: Set<string> }>();
+  const beds = new Map<string, { name: string; plantedOn: string; pests: Map<string, string> }>();
   for (const planting of plantings) {
     const { cropId, plantedOn } = planting;
     if (!cropId || !plantedOn || plantedOn > asOf || planting.harvestedOn) continue;
@@ -67,10 +67,10 @@ export function deriveScoutTasks(
     const bed = beds.get(planting.bedId) ?? {
       name: planting.bedName,
       plantedOn,
-      pests: new Set<string>(),
+      pests: new Map<string, string>(),
     };
     if (plantedOn < bed.plantedOn) bed.plantedOn = plantedOn;
-    for (const pest of found) bed.pests.add(pest.name);
+    for (const pest of found) bed.pests.set(pest.id, pest.name);
     beds.set(planting.bedId, bed);
   }
 
@@ -81,7 +81,9 @@ export function deriveScoutTasks(
         .map((e) => ({ plantingId: bedId, kind: 'scout' as const, occurrenceOn: e.occurrenceOn })),
     );
     const dueOn = openRepeatingDueOn(bed.plantedOn, WEEK, asOf, cursor);
-    const names = [...bed.pests].sort((a, b) => a.localeCompare(b));
+    const named = [...bed.pests]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     return {
       // A Scout task's subject is its bed, so the bed's id stands where a
       // planting's would (ADR 0046).
@@ -91,7 +93,7 @@ export function deriveScoutTasks(
       urgency: dueOn < asOf ? 'overdue' : dueOn === asOf ? 'dueToday' : 'upcoming',
       intervalDays: WEEK,
       plantId: '',
-      commonName: names.join(', '),
+      commonName: named.map((p) => p.name).join(', '),
       species: '',
       cultivar: null,
       plantType: 'vegetable',
@@ -100,7 +102,7 @@ export function deriveScoutTasks(
       rainNote: null,
       bedId,
       bedName: bed.name,
-      pests: names,
+      pests: named,
     };
   });
 }
